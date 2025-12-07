@@ -16,7 +16,7 @@ export function Navbar() {
             <span className="text-sm font-medium text-zinc-100">Learning Hub</span>
           </div>
         </div>
-        <nav className="flex items-center gap-2 text-[11px] font-medium text-zinc-300 sm:gap-4 sm:text-xs">
+        <nav className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-zinc-300 sm:gap-4 sm:text-xs">
           <Link
             href="/"
             className="rounded-full px-3 py-1.5 text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
@@ -28,6 +28,30 @@ export function Navbar() {
             className="rounded-full px-3 py-1.5 text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
           >
             Chapters
+          </Link>
+          <Link
+            href="/apply"
+            className="rounded-full px-3 py-1.5 text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+          >
+            Apply
+          </Link>
+          <Link
+            href="/mentorship"
+            className="rounded-full px-3 py-1.5 text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+          >
+            Mentorship
+          </Link>
+          <Link
+            href="/impact"
+            className="rounded-full px-3 py-1.5 text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+          >
+            Impact
+          </Link>
+          <Link
+            href="/donate"
+            className="rounded-full bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-3 py-1.5 text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
+          >
+            Donate
           </Link>
           <Link
             href="/about"
