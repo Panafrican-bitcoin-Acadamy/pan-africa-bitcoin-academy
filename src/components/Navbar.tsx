@@ -1,6 +1,12 @@
+'use client';
+
 import Link from "next/link";
+import { useState } from "react";
+import { AuthModal } from "./AuthModal";
 
 export function Navbar() {
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   return (
     <header className="border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
@@ -79,8 +85,22 @@ export function Navbar() {
           >
             About
           </Link>
+          <button
+            onClick={() => {
+              setAuthMode('signin');
+              setAuthModalOpen(true);
+            }}
+            className="rounded-full bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-3 py-1.5 text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
+          >
+            Sign In
+          </button>
         </nav>
       </div>
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        mode={authMode}
+      />
     </header>
   );
 }

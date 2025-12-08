@@ -82,8 +82,31 @@ export default async function ChapterPage(props: ChapterPageProps) {
   const { slug } = await props.params;
   const chapter = chapterSummaries[slug];
 
+  // If chapter not found in summaries, create a basic entry from the slug
   if (!chapter) {
-    notFound();
+    // Convert slug back to title for display
+    const titleFromSlug = slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    return (
+      <PageContainer
+        title={`Chapter: ${titleFromSlug}`}
+        subtitle="This chapter is part of the Bitcoin Academy curriculum. Full content coming soon."
+      >
+        <div className="space-y-8 text-sm text-zinc-100 sm:text-base">
+          <section className="rounded-xl border border-orange-500/25 bg-zinc-950/80 p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-orange-200 sm:text-base">
+              Chapter Content
+            </h2>
+            <p className="mt-2 text-sm text-zinc-200">
+              This chapter is being developed. Please check back soon for the full lesson content, including theory, practice exercises, videos, and quizzes.
+            </p>
+          </section>
+        </div>
+      </PageContainer>
+    );
   }
 
   return (

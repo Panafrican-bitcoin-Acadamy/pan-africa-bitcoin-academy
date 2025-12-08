@@ -4,6 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { BitcoinIcon, WalletIcon, LightningIcon, BookIcon, ToolIcon, BlockchainIcon, KeysIcon, UTXOIcon, TransactionIcon, MiningIcon } from "@/components/BitcoinIcons";
 
+// Helper function to generate slug from title
+const generateSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
 const levels = [
   { id: 1, name: "Level I (Genesis)", description: "Foundations, the fiat problem, and first steps into Bitcoin", color: "cyan" },
   { id: 2, name: "Level II (Difficulty-Adjustment 1)", description: "Intermediate concepts and practical skills", color: "orange" },
@@ -549,7 +557,7 @@ export default function ChaptersPage() {
               {chapters.slice(0, 8).map((chapter) => (
                 <Link
                   key={chapter.id}
-                  href={`/chapters/${chapter.id}`}
+                  href={`/chapters/${generateSlug(chapter.title)}`}
                   className="group rounded-xl border border-orange-400/30 bg-black/60 px-4 py-3 text-center transition hover:border-orange-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]"
                 >
                   <div className="text-sm font-medium text-orange-300 transition group-hover:text-orange-200">
@@ -678,7 +686,7 @@ export default function ChaptersPage() {
 
                       {/* View Chapter Button */}
                       <Link
-                        href={`/chapters/${chapter.id}`}
+                        href={`/chapters/${generateSlug(chapter.title)}`}
                         className="block w-full rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-4 py-2 text-center text-sm font-semibold text-black transition hover:brightness-110"
                       >
                         View Chapter →

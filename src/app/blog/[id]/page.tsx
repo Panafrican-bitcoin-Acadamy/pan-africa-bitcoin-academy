@@ -68,6 +68,39 @@ Bitcoin adoption in Africa is growing, but we need more tools built specifically
 
 I believe we can build a thriving Bitcoin ecosystem in Africa that serves our communities while contributing to the global Bitcoin network.`,
   },
+  3: {
+    id: 3,
+    title: "Why Bitcoin Makes Sense for African Youth",
+    author: "Fatima A.",
+    authorRole: "Graduate, Cohort 1",
+    date: "March 10, 2025",
+    category: "Bitcoin in Africa",
+    readTime: "7 min read",
+    image: "🌍",
+    content: `As a young person in Africa, Bitcoin represents more than money—it's a tool for building the future we want.
+
+## My Perspective
+
+Growing up, I've seen how traditional financial systems often exclude young people and limit our opportunities. Bitcoin changes that equation entirely.
+
+## Why Bitcoin Matters for Us
+
+1. **Financial Inclusion**: Bitcoin doesn't require a bank account or credit history
+2. **Global Access**: We can participate in the global economy without barriers
+3. **Sovereignty**: We control our own money, no intermediaries needed
+4. **Opportunity**: Bitcoin opens doors to new economic possibilities
+
+## Real-World Impact
+
+Since learning about Bitcoin, I've started using it for:
+- Receiving payments from international clients
+- Saving money that can't be inflated away
+- Teaching my peers about financial sovereignty
+
+## The Future
+
+I believe African youth will be at the forefront of Bitcoin adoption. We understand the need for better money, and we're ready to build the tools and communities that will make Bitcoin thrive across our continent.`,
+  },
   // Add more posts as needed
 };
 
