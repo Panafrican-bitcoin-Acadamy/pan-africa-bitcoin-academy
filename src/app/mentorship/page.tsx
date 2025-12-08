@@ -60,7 +60,7 @@ export default function MentorshipPage() {
     name: "",
     email: "",
     country: "",
-    telegram: "",
+    whatsapp: "",
     role: "",
     experience: "",
     teachingExperience: "",
@@ -189,13 +189,13 @@ export default function MentorshipPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-zinc-300">Telegram / X / Nostr</label>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">WhatsApp / X / Nostr</label>
                 <input
                   type="text"
-                  value={formData.telegram}
-                  onChange={(e) => setFormData({ ...formData, telegram: e.target.value })}
+                  value={formData.whatsapp}
+                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                   className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                  placeholder="@username"
+                  placeholder="Phone number or @username"
                 />
               </div>
             </div>
@@ -326,7 +326,7 @@ export default function MentorshipPage() {
             </div>
             <div className="flex items-start gap-2">
               <span className="text-purple-400">5.</span>
-              <span><strong className="text-purple-200">Public Welcome</strong> — Introduce you to the community (Telegram + X/Nostr).</span>
+              <span><strong className="text-purple-200">Public Welcome</strong> — Introduce you to the community (WhatsApp + X/Nostr).</span>
             </div>
           </div>
         </section>

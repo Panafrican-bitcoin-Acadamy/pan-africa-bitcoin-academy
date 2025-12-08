@@ -13,7 +13,7 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 - **Learning Path** - Interactive chapter cards with status indicators (completed, in-progress, locked)
 - **Assignments & Tasks** - Organized view of due assignments and completed tasks
 - **Live Sessions** - Upcoming events with join buttons and calendar integration
-- **Community Integration** - Quick access to Telegram, Nostr, mentor messaging, and Q&A
+- **Community Integration** - Quick access to WhatsApp, Nostr, mentor messaging, and Q&A
 - **Resources Hub** - Centralized access to guides, wallets, tools, and tutorials
 - **Certification Tracking** - Progress towards certification with requirements checklist
 - **Leaderboard** - Rankings based on sats earned, assignments completed, and attendance
@@ -28,7 +28,7 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 
 ## Pages
 
-- **Home** - Overview with Bitcoin-themed visuals, funder logos, and community links (Telegram, Nostr, Discord, WhatsApp)
+- **Home** - Overview with Bitcoin-themed visuals, funder logos, and community links (WhatsApp, Nostr, Discord)
 - **Dashboard** - Student dashboard with progress tracking, calendar, achievements, assignments, and learning path
 - **Chapters** - Learning content with progress, suggested order, and Bitcoin iconography
 - **Apply** - Registration form with Africa-focused country codes and cohort details

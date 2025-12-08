@@ -278,12 +278,12 @@ export default function Home() {
             </div>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a
-                href="https://t.me/bitcoinacademy"
+                href="https://chat.whatsapp.com/YOUR_GROUP_LINK"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-8 py-4 text-base font-semibold text-white transition hover:brightness-110"
+                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-8 py-4 text-base font-semibold text-white transition hover:brightness-110"
               >
-                👉 Join Telegram Community
+                👉 Join WhatsApp Community
               </a>
               <a
                 href="https://nostr.com"
@@ -463,10 +463,10 @@ export default function Home() {
                   color: "hover:bg-purple-500/20",
                 },
                 {
-                  name: "Telegram",
-                  icon: "✈️",
-                  url: "https://t.me/bitcoinacademy",
-                  color: "hover:bg-cyan-500/20",
+                  name: "WhatsApp",
+                  icon: "📱",
+                  url: "https://chat.whatsapp.com/YOUR_GROUP_LINK",
+                  color: "hover:bg-green-500/20",
                 },
                 {
                   name: "LinkedIn",

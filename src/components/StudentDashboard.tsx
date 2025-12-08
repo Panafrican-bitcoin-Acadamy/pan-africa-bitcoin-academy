@@ -446,11 +446,11 @@ export function StudentDashboard() {
               <h2 className="mb-4 text-2xl font-semibold text-zinc-50">Community</h2>
               <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Link
-                  href="https://t.me/bitcoinacademy"
+                  href="https://chat.whatsapp.com/YOUR_GROUP_LINK"
                   target="_blank"
-                  className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-3 text-center font-medium text-cyan-300 transition hover:bg-cyan-500/20"
+                  className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-center font-medium text-green-300 transition hover:bg-green-500/20"
                 >
-                  Join Telegram
+                  Join WhatsApp
                 </Link>
                 <Link
                   href="https://nostr.com"

@@ -55,7 +55,7 @@ const events: CalendarEvent[] = [
   },
   {
     id: '6',
-    title: 'Telegram Q&A Session',
+    title: 'WhatsApp Q&A Session',
     date: new Date(2025, 1, 9), // Feb 9, 2025
     type: 'community',
     time: '5:00 PM EAT',

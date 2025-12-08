@@ -734,12 +734,12 @@ export default function ChaptersPage() {
                 🔸 Download the Syllabus
               </Link>
               <a
-                href="https://t.me/bitcoinacademy"
+                href="https://chat.whatsapp.com/YOUR_GROUP_LINK"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border border-purple-400/30 bg-purple-400/10 px-6 py-3 text-base font-semibold text-purple-300 transition hover:bg-purple-400/20"
+                className="inline-flex items-center justify-center rounded-lg border border-green-400/30 bg-green-400/10 px-6 py-3 text-base font-semibold text-green-300 transition hover:bg-green-400/20"
               >
-                🔸 Join Telegram Community
+                🔸 Join WhatsApp Community
               </a>
             </div>
           </div>
