@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const cohorts = [
   {
@@ -92,9 +92,11 @@ const africanCountries = [
 export default function ApplyPage() {
   const [selectedCohort, setSelectedCohort] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedCountryCode, setSelectedCountryCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
     country: "",
@@ -107,8 +109,20 @@ export default function ApplyPage() {
     const country = e.target.value;
     setSelectedCountry(country);
     const countryData = africanCountries.find((c) => c.name === country);
+    // Auto-fill country code if country is selected
+    if (countryData) {
+      setSelectedCountryCode(countryData.code);
+    }
     // Update form data with country
     setFormData({ ...formData, country });
+  };
+
+  const handleCountryCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    setSelectedCountryCode(code);
+    // Update phone number in form data
+    const fullPhone = code && phoneNumber ? `${code} ${phoneNumber}`.trim() : phoneNumber;
+    setFormData({ ...formData, phone: fullPhone });
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,17 +131,24 @@ export default function ApplyPage() {
     const cleanedValue = value.replace(/[^\d\s]/g, "");
     setPhoneNumber(cleanedValue);
     
-    // Combine with country code for form data
-    const countryData = africanCountries.find((c) => c.name === selectedCountry);
-    const fullPhone = countryData ? `${countryData.code} ${cleanedValue}`.trim() : cleanedValue;
+    // Combine with selected country code for form data
+    const fullPhone = selectedCountryCode && cleanedValue ? `${selectedCountryCode} ${cleanedValue}`.trim() : cleanedValue;
     setFormData({ ...formData, phone: fullPhone });
   };
+
+  // Auto-fill preferred cohort when a cohort is selected
+  useEffect(() => {
+    if (selectedCohort !== null) {
+      setFormData((prev) => ({ ...prev, preferredCohort: selectedCohort.toString() }));
+    }
+  }, [selectedCohort]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // The phone number is already combined in formData.phone via handlePhoneChange
     const finalFormData = {
       ...formData,
+      name: `${formData.firstName} ${formData.lastName}`.trim(), // Combine first and last name
       country: selectedCountry,
     };
     
@@ -200,20 +221,38 @@ export default function ApplyPage() {
         <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
           <h2 className="mb-6 text-xl font-semibold text-cyan-200">Application Form</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* First Name and Last Name */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
-                  Full Name <span className="text-red-400">*</span>
+                  First Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
-                  placeholder="John Doe"
+                  placeholder="John"
                 />
               </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Last Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
+            {/* Email and Phone */}
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
                   Email <span className="text-red-400">*</span>
@@ -227,100 +266,119 @@ export default function ApplyPage() {
                   placeholder="john@example.com"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Country <span className="text-red-400">*</span>
-              </label>
-              <select
-                required
-                value={selectedCountry}
-                onChange={handleCountryChange}
-                className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
-              >
-                <option value="" className="bg-zinc-950 text-zinc-400">Select your country</option>
-                {africanCountries.map((country) => (
-                  <option key={country.name} value={country.name} className="bg-zinc-950 text-zinc-50">
-                    {country.flag} {country.name} {country.code}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Phone <span className="text-red-400">*</span>
-              </label>
-              <div className="flex gap-2">
-                <div className="flex-shrink-0">
-                  <div className="flex h-9 items-center rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 text-sm text-zinc-400">
-                    {selectedCountry
-                      ? africanCountries.find((c) => c.name === selectedCountry)?.code || "+"
-                      : "+"}
-                  </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Phone <span className="text-red-400">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedCountryCode}
+                    onChange={handleCountryCodeChange}
+                    className="flex-shrink-0 rounded-lg border border-cyan-400/30 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                    style={{ minWidth: '90px' }}
+                    title={selectedCountryCode ? africanCountries.find(c => c.code === selectedCountryCode)?.name : "Select country code"}
+                  >
+                    <option value="" className="bg-zinc-950 text-zinc-400">Code</option>
+                    {africanCountries.map((country) => (
+                      <option key={country.code} value={country.code} className="bg-zinc-950 text-zinc-50">
+                        {country.flag} {country.code}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    required
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    className="flex-1 rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                    placeholder="1234567890"
+                  />
                 </div>
-                <input
-                  type="tel"
+                {selectedCountry && selectedCountryCode && (
+                  <p className="mt-1 text-xs text-green-400">
+                    ✓ Country code auto-filled from country selection
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Country and City */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Country <span className="text-red-400">*</span>
+                </label>
+                <select
                   required
-                  value={phoneNumber}
-                  onChange={handlePhoneChange}
-                  className="flex-1 rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                  placeholder="1234567890"
+                  value={selectedCountry}
+                  onChange={handleCountryChange}
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                >
+                  <option value="" className="bg-zinc-950 text-zinc-400">Select your country</option>
+                  {africanCountries.map((country) => (
+                    <option key={country.name} value={country.name} className="bg-zinc-950 text-zinc-50">
+                      {country.flag} {country.name} {country.code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">City</label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                  placeholder="Lagos"
                 />
               </div>
-              <p className="mt-1 text-xs text-zinc-500">
-                {selectedCountry
-                  ? `Country code ${africanCountries.find((c) => c.name === selectedCountry)?.code} will be added automatically`
-                  : "Select your country first to auto-fill the country code"}
-              </p>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">City</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Lagos"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Experience Level <span className="text-red-400">*</span>
-              </label>
-              <select
-                required
-                value={formData.experienceLevel}
-                onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
-                className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
-              >
-                <option value="" className="bg-zinc-950 text-zinc-400">Select your level</option>
-                <option value="beginner" className="bg-zinc-950 text-zinc-50">Beginner - New to Bitcoin</option>
-                <option value="intermediate" className="bg-zinc-950 text-zinc-50">Intermediate - Some knowledge</option>
-                <option value="advanced" className="bg-zinc-950 text-zinc-50">Advanced - Experienced user</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Preferred Cohort <span className="text-red-400">*</span>
-              </label>
-              <select
-                required
-                value={formData.preferredCohort}
-                onChange={(e) => setFormData({ ...formData, preferredCohort: e.target.value })}
-                className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
-              >
-                <option value="" className="bg-zinc-950 text-zinc-400">Select a cohort</option>
-                {cohorts.map((cohort) => (
-                  <option key={cohort.id} value={cohort.id} className="bg-zinc-950 text-zinc-50">
-                    {cohort.name} ({cohort.available} seats available)
-                  </option>
-                ))}
-              </select>
+            {/* Experience Level and Preferred Cohort */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Experience Level <span className="text-red-400">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.experienceLevel}
+                  onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                >
+                  <option value="" className="bg-zinc-950 text-zinc-400">Select your level</option>
+                  <option value="beginner" className="bg-zinc-950 text-zinc-50">Beginner - New to Bitcoin</option>
+                  <option value="intermediate" className="bg-zinc-950 text-zinc-50">Intermediate - Some knowledge</option>
+                  <option value="advanced" className="bg-zinc-950 text-zinc-50">Advanced - Experienced user</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Preferred Cohort <span className="text-red-400">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.preferredCohort}
+                  onChange={(e) => {
+                    const cohortId = e.target.value;
+                    setFormData({ ...formData, preferredCohort: cohortId });
+                    setSelectedCohort(cohortId ? parseInt(cohortId) : null);
+                  }}
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                >
+                  <option value="" className="bg-zinc-950 text-zinc-400">Select a cohort</option>
+                  {cohorts.map((cohort) => (
+                    <option key={cohort.id} value={cohort.id} className="bg-zinc-950 text-zinc-50">
+                      {cohort.name} ({cohort.available} seats available)
+                    </option>
+                  ))}
+                </select>
+                {selectedCohort && (
+                  <p className="mt-1 text-xs text-green-400">
+                    ✓ {cohorts.find((c) => c.id === selectedCohort)?.name}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-4">
