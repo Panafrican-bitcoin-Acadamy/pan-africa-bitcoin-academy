@@ -420,6 +420,18 @@ export default function DeveloperHubPage() {
                     Developer-Focused Conferences →
                   </a>
                 </div>
+
+                <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
+                  <h4 className="mb-3 font-semibold text-yellow-300">Bitrust</h4>
+                  <a
+                    href="https://bitrust.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-zinc-400 hover:text-yellow-300"
+                  >
+                    Bitcoin Developer Community →
+                  </a>
+                </div>
               </div>
             </div>
           </section>
@@ -433,21 +445,77 @@ export default function DeveloperHubPage() {
               <h2 className="text-2xl font-semibold text-zinc-50">Mentors & Guest Developers</h2>
             </div>
             <p className="mb-6 text-zinc-400">
-              Connect with experienced Bitcoin developers who are willing to assist, share knowledge, and guide your journey.
+              Meet the experienced Bitcoin developers who have been willing to work with us as mentors and guest developers, sharing their knowledge and guiding your journey.
             </p>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Placeholder for mentor cards - will be populated from Notion */}
-              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-500 to-cyan-500"></div>
+              {/* Mentor cards - can be populated from Notion or static for now */}
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
+                <div className="mb-4 flex items-center gap-4">
+                  <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-cyan-500 flex items-center justify-center text-xl font-bold text-black">
+                    JD
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-zinc-100">John Doe</h3>
+                    <p className="text-sm text-zinc-400">Bitcoin Core Contributor</p>
+                    <p className="text-xs text-zinc-500">@johndoe</p>
+                  </div>
                 </div>
-                <h3 className="mb-2 font-semibold text-zinc-100">Mentor Name</h3>
-                <p className="mb-2 text-sm text-zinc-400">Company/Project</p>
-                <p className="mb-4 text-xs text-zinc-500">Lightning Network Developer</p>
-                <button className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm text-cyan-300 transition hover:bg-cyan-500/30">
-                  Book a Session
-                </button>
+                <p className="mb-4 text-sm text-zinc-300">
+                  Core developer with 5+ years contributing to Bitcoin Core. Specializes in consensus layer and network protocols.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs text-orange-300">Bitcoin Core</span>
+                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">Mentor</span>
+                </div>
               </div>
+
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
+                <div className="mb-4 flex items-center gap-4">
+                  <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-black">
+                    JS
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-zinc-100">Jane Smith</h3>
+                    <p className="text-sm text-zinc-400">Lightning Network Developer</p>
+                    <p className="text-xs text-zinc-500">@janesmith</p>
+                  </div>
+                </div>
+                <p className="mb-4 text-sm text-zinc-300">
+                  Building Lightning applications and infrastructure. Expert in payment channels and routing optimization.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs text-purple-300">Lightning</span>
+                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">Guest Developer</span>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
+                <div className="mb-4 flex items-center gap-4">
+                  <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-xl font-bold text-black">
+                    AB
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-zinc-100">Alex Brown</h3>
+                    <p className="text-sm text-zinc-400">Wallet Developer</p>
+                    <p className="text-xs text-zinc-500">@alexbrown</p>
+                  </div>
+                </div>
+                <p className="mb-4 text-sm text-zinc-300">
+                  Creator of popular Bitcoin wallet software. Focuses on security, UX, and privacy features.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs text-green-300">Wallet Dev</span>
+                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">Mentor</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-center">
+              <p className="text-sm text-cyan-200">
+                💡 <strong>Interested in becoming a mentor?</strong> Check out our{' '}
+                <Link href="/mentorship" className="underline hover:text-cyan-100">
+                  Mentorship Program
+                </Link>
+              </p>
             </div>
           </section>
 
