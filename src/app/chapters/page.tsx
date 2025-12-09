@@ -734,7 +734,7 @@ export default function ChaptersPage() {
                 🔸 Download the Syllabus
               </Link>
               <a
-                href="https://chat.whatsapp.com/YOUR_GROUP_LINK"
+                href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-lg border border-green-400/30 bg-green-400/10 px-6 py-3 text-base font-semibold text-green-300 transition hover:bg-green-400/20"

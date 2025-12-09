@@ -35,6 +35,7 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 - **Dashboard** - Student dashboard with progress tracking, calendar, achievements, assignments, and learning path
 - **Chapters** - Learning content with progress, suggested order, and Bitcoin iconography
 - **Apply** - Registration form with Africa-focused country codes and cohort details
+- **Developer Hub** - Roadmap for Bitcoin developers with learning resources, global communities, opportunities, and portfolio project ideas
 - **FAQ** - Frequently asked questions
 - **Mentorship** - Volunteer and mentor application
 - **Impact** - Impact dashboard with metrics and student outcomes
@@ -72,6 +73,8 @@ NOTION_EVENTS_DB_ID=your_events_database_id_here
 NOTION_SATS_REWARDS_DB_ID=your_sats_rewards_database_id_here
 NOTION_ACHIEVEMENTS_DB_ID=your_achievements_database_id_here
 NOTION_PROFILE_DB_ID=your_profile_database_id_here
+NOTION_DEVELOPER_RESOURCES_DB_ID=your_developer_resources_database_id_here
+NOTION_DEVELOPER_EVENTS_DB_ID=your_developer_events_database_id_here
 # ... and more (see env.template for full list)
 ```
 
@@ -104,6 +107,7 @@ src/
 │   ├── dashboard/         # Student dashboard
 │   ├── chapters/          # Learning content
 │   ├── apply/             # Cohort registration
+│   ├── developer-hub/     # Developer Hub with roadmap and resources
 │   ├── donate/            # Donation page
 │   ├── faq/               # FAQ page
 │   ├── impact/            # Impact dashboard
@@ -130,7 +134,9 @@ src/
 │           ├── events/    # Events/calendar data endpoint
 │           ├── sats/      # Sats rewards data endpoint
 │           ├── leaderboard/ # Leaderboard data endpoint
-│           └── profile/   # Profile management endpoints (login, register, update)
+│           ├── profile/   # Profile management endpoints (login, register, update)
+│           ├── developer-resources/ # Developer resources from Notion
+│           └── developer-events/ # Developer events and mentors from Notion
 ├── app/layout.tsx         # Root layout with Bitcoin backgrounds
 └── tailwind.config.ts     # Tailwind theme (Bitcoin palette)
 ```
