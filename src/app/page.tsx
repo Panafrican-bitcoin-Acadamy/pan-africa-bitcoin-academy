@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Github, MessageCircle, Link as LinkIcon, MessageSquare } from "lucide-react";
 
 const curriculumCards = [
   {
@@ -443,67 +444,52 @@ export default function Home() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
-                  name: "Twitter / X",
-                  icon: "𝕏",
-                  url: "https://twitter.com/bitcoinacademy",
-                  color: "hover:bg-zinc-800",
-                },
-                {
-                  name: "Nostr",
-                  icon: "🔗",
-                  url: "https://nostr.com",
-                  color: "hover:bg-purple-500/20",
+                  name: "GitHub",
+                  icon: "Github",
+                  url: "https://github.com/Joie199/pan-africa-bitcoin-academy",
+                  color: "hover:bg-zinc-700",
                 },
                 {
                   name: "WhatsApp",
-                  icon: "📱",
+                  icon: "MessageCircle",
                   url: "https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji",
                   color: "hover:bg-green-500/20",
                 },
                 {
-                  name: "LinkedIn",
-                  icon: "💼",
-                  url: "https://linkedin.com/company/bitcoinacademy",
-                  color: "hover:bg-blue-500/20",
-                },
-                {
-                  name: "YouTube",
-                  icon: "▶️",
-                  url: "https://youtube.com/@bitcoinacademy",
-                  color: "hover:bg-red-500/20",
-                },
-                {
-                  name: "GitHub",
-                  icon: "💻",
-                  url: "https://github.com/bitcoinacademy",
-                  color: "hover:bg-zinc-700",
+                  name: "Nostr",
+                  icon: "Link",
+                  url: "https://nostr.com",
+                  color: "hover:bg-purple-500/20",
                 },
                 {
                   name: "Discord",
-                  icon: "💬",
+                  icon: "MessageSquare",
                   url: "https://discord.gg/bitcoinacademy",
                   color: "hover:bg-indigo-500/20",
                 },
-                {
-                  name: "Instagram",
-                  icon: "📷",
-                  url: "https://instagram.com/bitcoinacademy",
-                  color: "hover:bg-pink-500/20",
-                },
-              ].map((social, index) => (
-                <a
-                  key={index}
-                  href={social.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`group flex flex-col items-center justify-center rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)] ${social.color}`}
-                >
-                  <div className="mb-3 text-4xl">{social.icon}</div>
-                  <h3 className="text-sm font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
-                    {social.name}
-                  </h3>
-                </a>
-              ))}
+              ].map((social, index) => {
+                const IconComponent = social.icon === "Github" ? Github :
+                                    social.icon === "MessageCircle" ? MessageCircle :
+                                    social.icon === "Link" ? LinkIcon :
+                                    social.icon === "MessageSquare" ? MessageSquare : null;
+                
+                return (
+                  <a
+                    key={index}
+                    href={social.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`group flex flex-col items-center justify-center rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)] ${social.color}`}
+                  >
+                    {IconComponent && (
+                      <IconComponent className="mb-3 h-8 w-8 text-cyan-400 group-hover:text-cyan-300 transition" />
+                    )}
+                    <h3 className="text-sm font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
+                      {social.name}
+                    </h3>
+                  </a>
+                );
+              })}
             </div>
           </section>
 
