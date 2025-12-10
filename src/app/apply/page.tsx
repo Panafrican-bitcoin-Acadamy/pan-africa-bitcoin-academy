@@ -119,17 +119,20 @@ export default function ApplyPage() {
     setFormData({ ...formData, phone: fullPhone });
   };
 
-  // Fetch cohorts from Notion
+  // TODO: Fetch cohorts from Supabase
   useEffect(() => {
     const fetchCohorts = async () => {
       try {
         setCohortsLoading(true);
         setCohortsError(null);
-        const res = await fetch('/api/notion/cohorts');
-        if (!res.ok) {
-          throw new Error(`Failed to fetch cohorts: ${res.status}`);
-        }
-        const data = await res.json();
+        // TODO: Replace with Supabase query
+        // const res = await fetch('/api/notion/cohorts');
+        // if (!res.ok) {
+        //   throw new Error(`Failed to fetch cohorts: ${res.status}`);
+        // }
+        // const data = await res.json();
+        // For now, set empty array until Supabase is implemented
+        const data = { cohorts: [] };
         
         // Format dates and transform data
         const formattedCohorts: Cohort[] = (data.cohorts || []).map((cohort: any) => {
@@ -198,32 +201,35 @@ export default function ApplyPage() {
     const cohortName = selectedCohortObj ? selectedCohortObj.name : formData.preferredCohort || '';
 
     try {
-      // Submit to Notion API
-      const [applicationRes] = await Promise.all([
-        fetch('/api/notion/submit-application', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(finalFormData),
-        }),
-        // Best-effort profile registration (does not block success)
-        fetch('/api/notion/profile/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            cohortNumber,
-            cohortName,
-          }),
-        }).catch((err) => {
-          console.warn('Profile registration failed:', err);
-        }),
-      ]);
+      // TODO: Submit to Supabase
+      // const [applicationRes] = await Promise.all([
+      //   // TODO: Replace with Supabase insert
+      //   // fetch('/api/notion/submit-application', {
+      //   //   method: 'POST',
+      //   //   headers: {
+      //   //     'Content-Type': 'application/json',
+      //   //   },
+      //   //   body: JSON.stringify(finalFormData),
+      //   // }),
+      //   // Best-effort profile registration (does not block success)
+      //   // TODO: Replace with Supabase insert
+      //   // fetch('/api/notion/profile/register', {
+      //   //   method: 'POST',
+      //   //   headers: {
+      //   //     'Content-Type': 'application/json',
+      //   //   },
+      //   //   body: JSON.stringify({
+      //   //     firstName: formData.firstName,
+      //   //     lastName: formData.lastName,
+      //   //     email: formData.email,
+      //   //     cohortNumber,
+      //   //     cohortName,
+      //   //   }),
+      //   // }).catch((err) => {
+      //   //   console.warn('Profile registration failed:', err);
+      //   // }),
+      // ]);
+      throw new Error('Application submission not yet implemented with Supabase');
 
       const result = await applicationRes.json();
 

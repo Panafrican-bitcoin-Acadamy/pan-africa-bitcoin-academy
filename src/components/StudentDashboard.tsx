@@ -38,17 +38,18 @@ export function StudentDashboard() {
     }
     const fetchStudent = async () => {
       try {
-        const res = await fetch('/api/notion/students');
-        if (!res.ok) {
-          throw new Error(`Failed to load students (${res.status})`);
-        }
-        const data = await res.json();
-        const students: any[] = data.students || [];
-        // Prefer the first student that has a name; otherwise fallback to the first record
-        const first = students.find((s) => s?.name) || students[0];
-        if (mounted) {
-          setStudentData(first || null);
-        }
+        // TODO: Replace with Supabase query
+        // const res = await fetch('/api/notion/students');
+        // if (!res.ok) {
+        //   throw new Error(`Failed to load students (${res.status})`);
+        // }
+        // const data = await res.json();
+        // const students: any[] = data.students || [];
+        // const first = students.find((s) => s?.name) || students[0];
+        // if (mounted) {
+        //   setStudentData(first || null);
+        // }
+        throw new Error('Student data not yet implemented with Supabase');
       } catch (err: any) {
         if (mounted) {
           setError(err.message || 'Failed to load student data');
@@ -58,16 +59,21 @@ export function StudentDashboard() {
 
     const fetchSatsTotals = async () => {
       try {
-        const res = await fetch('/api/notion/sats');
-        if (!res.ok) {
-          throw new Error(`Failed to load sats (${res.status})`);
-        }
-        const data = await res.json();
+        // TODO: Replace with Supabase query
+        // const res = await fetch('/api/notion/sats');
+        // if (!res.ok) {
+        //   throw new Error(`Failed to load sats (${res.status})`);
+        // }
+        // const data = await res.json();
+        // if (mounted) {
+        //   setSatsTotals({
+        //     paid: data.totalPaid ?? 0,
+        //     pending: data.totalPending ?? 0,
+        //   });
+        // }
+        // For now, set zeros until Supabase is implemented
         if (mounted) {
-          setSatsTotals({
-            paid: data.totalPaid ?? 0,
-            pending: data.totalPending ?? 0,
-          });
+          setSatsTotals({ paid: 0, pending: 0 });
         }
       } catch (err) {
         // Keep fallback zeros; no user-facing error needed here
@@ -76,11 +82,17 @@ export function StudentDashboard() {
 
     const fetchLeaderboard = async () => {
       try {
-        const res = await fetch('/api/notion/leaderboard');
-        if (!res.ok) throw new Error(`Failed to load leaderboard (${res.status})`);
-        const data = await res.json();
-        if (mounted && Array.isArray(data.leaderboard)) {
-          setLeaderboardData(data.leaderboard);
+        // TODO: Replace with Supabase query
+        // const res = await fetch('/api/notion/leaderboard');
+        // if (!res.ok) throw new Error(`Failed to load leaderboard (${res.status})`);
+        // const data = await res.json();
+        // if (mounted && Array.isArray(data.leaderboard)) {
+        //   setLeaderboardData(data.leaderboard);
+        //   setLeaderboardError(null);
+        // }
+        // For now, set empty array until Supabase is implemented
+        if (mounted) {
+          setLeaderboardData([]);
           setLeaderboardError(null);
         }
       } catch (err) {
@@ -107,18 +119,20 @@ export function StudentDashboard() {
       setProfileLoading(true);
       setProfileError(null);
       setProfileData(null);
-      const res = await fetch('/api/notion/profile/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: lookupEmail }),
-      });
-      if (!res.ok) throw new Error(`Failed (${res.status})`);
-      const data = await res.json();
-      if (data.found) {
-        setProfileData(data.profile);
-      } else {
-        setProfileError('Profile not found for this email.');
-      }
+      // TODO: Replace with Supabase query
+      // const res = await fetch('/api/notion/profile/login', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ email: lookupEmail }),
+      // });
+      // if (!res.ok) throw new Error(`Failed (${res.status})`);
+      // const data = await res.json();
+      // if (data.found) {
+      //   setProfileData(data.profile);
+      // } else {
+      //   setProfileError('Profile not found for this email.');
+      // }
+      throw new Error('Profile lookup not yet implemented with Supabase');
     } catch (err: any) {
       setProfileError(err.message || 'Failed to load profile.');
     } finally {
@@ -207,16 +221,18 @@ export function StudentDashboard() {
           onImageChange={setProfileImage}
           onUpdate={async (updatedData: any) => {
             try {
-              const res = await fetch('/api/notion/profile/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: storedProfileEmail || profileEmail, ...updatedData }),
-              });
-              if (!res.ok) throw new Error('Failed to update profile');
-              const data = await res.json();
-              setProfileData(data.profile);
-              setIsEditingProfile(false);
-              alert('Profile updated successfully!');
+              // TODO: Replace with Supabase update
+              // const res = await fetch('/api/notion/profile/update', {
+              //   method: 'POST',
+              //   headers: { 'Content-Type': 'application/json' },
+              //   body: JSON.stringify({ email: storedProfileEmail || profileEmail, ...updatedData }),
+              // });
+              // if (!res.ok) throw new Error('Failed to update profile');
+              // const data = await res.json();
+              // setProfileData(data.profile);
+              // setIsEditingProfile(false);
+              // alert('Profile updated successfully!');
+              throw new Error('Profile update not yet implemented with Supabase');
             } catch (err: any) {
               alert(`Error: ${err.message}`);
             }
@@ -277,7 +293,7 @@ export function StudentDashboard() {
 
         {loading && (
           <div className="mb-4 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-cyan-100">
-            Loading student data from Notion...
+            Loading student data...
           </div>
         )}
         {error && (
@@ -865,7 +881,7 @@ function ProfileModal({
                       reader.onload = (event) => {
                         const result = event.target?.result as string;
                         onImageChange(result);
-                        // TODO: Upload to server/storage and save URL to Notion
+                        // TODO: Upload to server/storage and save URL to Supabase
                       };
                       reader.readAsDataURL(file);
                     }
@@ -1004,7 +1020,7 @@ function ProfileModal({
             )}
           </div>
           <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-2 text-xs text-orange-200">
-            To change password, please contact support or use your auth provider. Passwords are not stored in Notion.
+            To change password, please contact support or use your auth provider. Passwords are managed through Supabase Auth.
           </div>
         </div>
       </div>

@@ -68,19 +68,20 @@ export function Calendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch events from Notion API
+  // TODO: Fetch events from Supabase
   useEffect(() => {
     async function fetchEvents() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('/api/notion/events');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch events: ${response.status}`);
-        }
-
-        const data = await response.json();
+        // TODO: Replace with Supabase query
+        // const response = await fetch('/api/notion/events');
+        // if (!response.ok) {
+        //   throw new Error(`Failed to fetch events: ${response.status}`);
+        // }
+        // const data = await response.json();
+        // For now, use empty array until Supabase is implemented
+        const data = { events: [] };
         
         if (data.events && Array.isArray(data.events)) {
           // Transform API events (date is ISO string) to CalendarEvent format

@@ -28,7 +28,7 @@ export default function DeveloperHubPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch resources and events from Notion (when APIs are ready)
+    // TODO: Fetch resources and events from Supabase
     // For now, using placeholder data
     setResources([
       {
@@ -594,7 +594,7 @@ export default function DeveloperHubPage() {
               Meet the experienced Bitcoin developers who have been willing to work with us as mentors and guest developers, sharing their knowledge and guiding your journey.
             </p>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Mentor cards - can be populated from Notion or static for now */}
+              {/* TODO: Mentor cards - can be populated from Supabase or static for now */}
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
                 <div className="mb-4 flex items-center gap-4">
                   <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-cyan-500 flex items-center justify-center text-xl font-bold text-black">
@@ -674,7 +674,7 @@ export default function DeveloperHubPage() {
               <h2 className="text-2xl font-semibold text-zinc-50">Developer Meetings, Workshops & Meetups</h2>
             </div>
             <div className="space-y-4">
-              {/* Events will be populated from Notion Events DB */}
+              {/* TODO: Events will be populated from Supabase Events table */}
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-semibold text-zinc-100">Lightning Builder Hangout</h3>
