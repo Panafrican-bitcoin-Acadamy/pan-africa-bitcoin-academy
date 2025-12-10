@@ -8,6 +8,10 @@ interface Profile {
   email: string;
   studentId?: string;
   photoUrl?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  status?: string;
 }
 
 export function useAuth() {
@@ -31,7 +35,16 @@ export function useAuth() {
             const data = await res.json();
             if (data.found && data.profile) {
               setIsAuthenticated(true);
-              setProfile(data.profile);
+              setProfile({
+                id: data.profile.id,
+                name: data.profile.name,
+                email: data.profile.email,
+                photoUrl: data.profile.photoUrl,
+                phone: data.profile.phone,
+                country: data.profile.country,
+                city: data.profile.city,
+                status: data.profile.status,
+              });
             } else {
               // Profile not found, clear storage
               localStorage.removeItem('profileEmail');
