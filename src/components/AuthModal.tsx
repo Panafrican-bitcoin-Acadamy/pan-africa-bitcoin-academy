@@ -71,11 +71,14 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
           if (data.found) {
             try {
               localStorage.setItem('profileEmail', formData.email);
+              // Trigger storage event to update auth state in other components
+              window.dispatchEvent(new Event('storage'));
             } catch {
               // ignore
             }
             onClose();
-            window.location.href = '/dashboard';
+            // Reload page to update navbar with new auth state
+            window.location.reload();
           } else {
             setServerError('Invalid credentials. User not found.');
           }
@@ -110,16 +113,32 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
               email: formData.email,
             }),
           });
-          if (!res.ok) throw new Error(`Sign up failed (${res.status})`);
-          await res.json();
-          try {
-            localStorage.setItem('profileEmail', formData.email);
-          } catch {
-            // ignore
+          
+          const data = await res.json();
+          
+          if (!res.ok) {
+            const errorMsg = data.details || data.error || `Sign up failed (${res.status})`;
+            throw new Error(errorMsg);
           }
-          onClose();
+          
+          // Success - profile was created
+          if (data.success) {
+            try {
+              localStorage.setItem('profileEmail', formData.email);
+              // Trigger storage event to update auth state in other components
+              window.dispatchEvent(new Event('storage'));
+            } catch {
+              // ignore
+            }
+            onClose();
+            // Reload page to update navbar with new auth state
+            window.location.reload();
+          } else {
+            throw new Error(data.error || 'Sign up failed');
+          }
         } catch (err: any) {
-          setServerError(err.message || 'Sign up failed.');
+          console.error('Registration error:', err);
+          setServerError(err.message || 'Sign up failed. Please try again.');
         } finally {
           setLoading(false);
         }

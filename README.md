@@ -44,6 +44,17 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 - **Blog** - Featured stories, categories, submissions, and individual posts
 - **About** - Mission and project information
 
+## SEO & Optimization
+
+- **Enhanced Metadata** - Open Graph, Twitter Cards, and comprehensive meta tags
+- **Structured Data (JSON-LD)** - Schema.org markup for better search visibility
+- **Dynamic Sitemap** - Auto-generated sitemap.xml for search engines
+- **robots.txt** - Proper crawling directives
+- **Performance Optimizations** - Image optimization, compression, security headers
+- **Page-Specific SEO** - Custom metadata for each page
+
+See [SEO_OPTIMIZATION.md](./SEO_OPTIMIZATION.md) for detailed SEO setup and testing guide.
+
 ## Tech Stack
 
 - **Next.js 16** - React framework with App Router
@@ -68,6 +79,9 @@ The project uses Supabase for database and backend services. Environment variabl
 For local development, create a `.env.local` file (see `env.template` for reference):
 
 ```env
+# Site Configuration
+NEXT_PUBLIC_SITE_URL=https://panafricanbitcoin.com
+
 # Supabase Configuration (auto-configured via Vercel integration)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key

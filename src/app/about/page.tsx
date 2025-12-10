@@ -1,3 +1,15 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About Us',
+  description: 'Learn about Pan-African Bitcoin Academy - our mission, target audience, developer support, and community involvement. We provide comprehensive Bitcoin education across Africa.',
+  openGraph: {
+    title: 'About Us | Pan-African Bitcoin Academy',
+    description: 'Learn about Pan-African Bitcoin Academy - our mission, target audience, developer support, and community involvement.',
+    url: '/about',
+  },
+};
+
 export default function AboutPage() {
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">

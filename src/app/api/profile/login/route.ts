@@ -17,8 +17,7 @@ export async function POST(req: NextRequest) {
       .from('profiles')
       .select('*')
       .eq('email', email.toLowerCase().trim())
-      .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !profiles) {
       return NextResponse.json(

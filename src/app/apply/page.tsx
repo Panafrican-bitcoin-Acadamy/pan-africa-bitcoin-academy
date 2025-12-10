@@ -280,15 +280,16 @@ export default function ApplyPage() {
           ) : cohorts.length === 0 ? (
             <div className="text-center py-8 text-zinc-400">No upcoming cohorts available at this time.</div>
           ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cohorts.map((cohort) => (
-              <div
-                key={cohort.id}
-                className={`rounded-xl border p-6 transition ${
-                  selectedCohort === cohort.id
-                    ? "border-orange-400/50 bg-orange-500/10 shadow-[0_0_30px_rgba(249,115,22,0.3)]"
-                    : "border-cyan-400/25 bg-black/80 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-                }`}
+          <div className="w-full overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex flex-row flex-nowrap sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:w-full snap-x snap-mandatory sm:snap-none pb-2 sm:pb-0">
+              {cohorts.map((cohort) => (
+                <div
+                  key={cohort.id}
+                  className={`flex-none w-[90vw] sm:w-auto sm:max-w-none rounded-xl border p-6 transition snap-start ${
+                    selectedCohort === cohort.id
+                      ? "border-orange-400/50 bg-orange-500/10 shadow-[0_0_30px_rgba(249,115,22,0.3)]"
+                      : "border-cyan-400/25 bg-black/80 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                  }`}
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-zinc-50">{cohort.name}</h3>
@@ -336,7 +337,8 @@ export default function ApplyPage() {
                   {selectedCohort === cohort.id ? "Selected" : "Select This Cohort"}
                 </button>
               </div>
-            ))}
+              ))}
+            </div>
           </div>
           )}
         </section>

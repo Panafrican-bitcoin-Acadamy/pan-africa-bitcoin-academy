@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Github, MessageCircle, Link as LinkIcon, MessageSquare } from "lucide-react";
+import { StructuredData } from "@/components/StructuredData";
 
 const curriculumCards = [
   {
@@ -508,6 +509,31 @@ export default function Home() {
           </section>
         </div>
       </div>
+      <StructuredData
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'EducationalOrganization',
+          name: 'Pan-African Bitcoin Academy',
+          description: 'Learn Bitcoin the right way with clear, technical guidance. Comprehensive Bitcoin education, developer resources, and community support across Africa.',
+          url: 'https://panafricanbitcoin.com',
+          logo: 'https://panafricanbitcoin.com/icon.svg',
+          sameAs: [
+            'https://github.com/Joie199/pan-africa-bitcoin-academy',
+            'https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji',
+            'https://nostr.com',
+            'https://discord.gg/bitcoinacademy',
+          ],
+          address: {
+            '@type': 'PostalAddress',
+            addressCountry: 'UG',
+          },
+          offers: {
+            '@type': 'Offer',
+            category: 'Education',
+            description: 'Bitcoin education courses and developer training',
+          },
+        }}
+      />
     </div>
   );
 }
