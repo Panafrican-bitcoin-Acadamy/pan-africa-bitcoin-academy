@@ -6,20 +6,20 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 
 - **Student Dashboard** - Comprehensive dashboard with progress tracking, achievements, sats wallet, calendar, assignments, and learning path
 - **Interactive Calendar** - Full-featured calendar with month/list views, color-coded events (live classes, assignments, deadlines, quizzes), and Google Calendar integration
-- **Authentication System** - Sign In/Sign Up modal with beautiful UI, backdrop blur effects, and Notion-based profile management
-- **Profile Management** - User profiles with editable information, profile picture upload, and automatic data sync with Notion
+- **Authentication System** - Sign In/Sign Up modal with beautiful UI, backdrop blur effects, and Supabase-based profile management
+- **Profile Management** - User profiles with editable information, profile picture upload, and automatic data sync with Supabase
 - **Progress Tracking** - Gamified progress overview with course completion, chapters, assignments, sats earned, and attendance rates
-- **Achievements System** - Unlockable achievements with visual badges fetched from Notion
-- **Sats Wallet** - Track earned sats with pending rewards from Notion Sats Rewards database
+- **Achievements System** - Unlockable achievements with visual badges fetched from Supabase
+- **Sats Wallet** - Track earned sats with pending rewards from Supabase database
 - **Learning Path** - Interactive chapter cards with status indicators (completed, in-progress, locked) and icons
 - **Assignments & Tasks** - Organized view of due assignments and completed tasks
-- **Live Sessions** - Upcoming events fetched from Notion Events database with join buttons and calendar integration
+- **Live Sessions** - Upcoming events fetched from Supabase Events table with join buttons and calendar integration
 - **Community Integration** - Quick access to WhatsApp, Nostr, mentor messaging, and Q&A
 - **Resources Hub** - Centralized access to guides, wallets, tools, and tutorials
 - **Certification Tracking** - Progress towards certification with requirements checklist
-- **Leaderboard** - Rankings based on sats earned from Notion Achievements database
+- **Leaderboard** - Rankings based on sats earned from Supabase database
 - **Interactive Learning Chapters** - Comprehensive Bitcoin education from basics to advanced topics with Bitcoin-themed icons and suggested order
-- **Cohort Registration** - Africa-focused registration with automatic country codes, flags, cohort selection from Notion, and real-time seat availability
+- **Cohort Registration** - Africa-focused registration with automatic country codes, flags, cohort selection from Supabase, and real-time seat availability
 - **Cohort Management** - Dynamic cohort display with status, sessions, level badges (Beginner/Intermediate/Advanced), and available seats calculated from enrollments
 - **Developer Hub** - Comprehensive roadmap for Bitcoin developers with learning resources, community links, opportunities, portfolio projects, and certification path
 - **Mentorship Program** - Apply to become a mentor, guest lecturer, volunteer, or ambassador with clear vetting steps
@@ -28,7 +28,7 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 - **Blog ("Voices of the Pan-Africa Bitcoin Academy")** - Student and mentor stories, technical deep dives, featured posts, and submissions
 - **FAQ Section** - Answers to common questions about time zones, requirements, and policies
 - **Full-width Layout & Bitcoin Backgrounds** - Futuristic Bitcoin B, blockchain, and keys visuals across all pages
-- **Notion Integration** - Full database integration for students, applications, cohorts, enrollments, events, sats rewards, achievements, and profiles
+- **Supabase Integration** - Full database integration for students, applications, cohorts, enrollments, events, sats rewards, achievements, and profiles
 
 ## Pages
 
@@ -50,7 +50,8 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 - **TypeScript** - Type-safe development
 - **Tailwind CSS 4** - Utility-first CSS framework
 - **React 19** - Latest React features
-- **Notion API** - Database integration for applications and cohorts
+- **Supabase** - PostgreSQL database with real-time capabilities and authentication
+- **Vercel** - Deployment and hosting platform
 
 ## Getting Started
 
@@ -62,42 +63,32 @@ npm install
 
 ### Environment Setup
 
-Create a `.env.local` file in the root directory (see `env.template` for reference):
+The project uses Supabase for database and backend services. Environment variables are automatically configured when using the Vercel Supabase integration.
+
+For local development, create a `.env.local` file (see `env.template` for reference):
 
 ```env
-NOTION_API_KEY=secret_your_notion_api_key_here
-NOTION_APPLICATIONS_DB_ID=your_applications_database_id_here
-NOTION_COHORTS_DB_ID=your_cohorts_database_id_here
-NOTION_COHORT_ENROLLMENT_DB_ID=your_cohort_enrollment_database_id_here
-NOTION_STUDENTS_DB_ID=your_students_database_id_here
-NOTION_EVENTS_DB_ID=your_events_database_id_here
-NOTION_SATS_REWARDS_DB_ID=your_sats_rewards_database_id_here
-NOTION_ACHIEVEMENTS_DB_ID=your_achievements_database_id_here
-NOTION_PROFILE_DB_ID=your_profile_database_id_here
-NOTION_DEVELOPER_RESOURCES_DB_ID=your_developer_resources_database_id_here
-NOTION_DEVELOPER_EVENTS_DB_ID=your_developer_events_database_id_here
-# ... and more (see env.template for full list)
+# Supabase Configuration (auto-configured via Vercel integration)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-See [NOTION_SETUP.md](./NOTION_SETUP.md) and [NOTION_DATABASES.md](./NOTION_DATABASES.md) for detailed setup instructions.
+See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) and [STEP_BY_STEP_GUIDE.md](./STEP_BY_STEP_GUIDE.md) for detailed setup instructions.
+
+### Database Setup
+
+1. Run the SQL schema in Supabase SQL Editor (see `supabase/schema.sql`)
+2. Add sample data (optional, see `supabase/sample-data.sql`)
+3. Verify tables are created and RLS policies are enabled
 
 ### Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-### Test Notion Connection
-
-Visit [http://localhost:3000/api/notion/test](http://localhost:3000/api/notion/test) to verify your Notion integration is working.
 
 ## Project Structure
 
@@ -124,20 +115,19 @@ src/
 │   ├── PageContainer.tsx  # Page layout wrapper (full-width)
 │   └── BitcoinIcons.tsx   # Custom Bitcoin B iconography
 ├── lib/                   # Utility libraries
-│   └── notion.ts          # Notion API client and helpers
+│   └── supabase.ts        # Supabase client initialization
 ├── app/
 │   └── api/               # API routes
-│       └── notion/        # Notion integration endpoints
-│           ├── test/      # Connection test endpoint
-│           ├── submit-application/ # Form submission endpoint
-│           ├── cohorts/   # Cohorts data endpoint
-│           ├── students/  # Students data endpoint
-│           ├── events/    # Events/calendar data endpoint
-│           ├── sats/      # Sats rewards data endpoint
-│           ├── leaderboard/ # Leaderboard data endpoint
-│           ├── profile/   # Profile management endpoints (login, register, update)
-│           ├── developer-resources/ # Developer resources from Notion
-│           └── developer-events/ # Developer events and mentors from Notion
+│       ├── students/      # Students data endpoint
+│       ├── events/        # Events/calendar data endpoint
+│       ├── cohorts/       # Cohorts data endpoint
+│       ├── sats/          # Sats rewards data endpoint
+│       ├── leaderboard/   # Leaderboard data endpoint
+│       ├── profile/        # Profile management endpoints (login, register, update)
+│       └── submit-application/ # Application submission endpoint
+├── supabase/              # Database schema and migrations
+│   ├── schema.sql         # Complete database schema
+│   └── sample-data.sql    # Sample data for testing
 ├── app/layout.tsx         # Root layout with Bitcoin backgrounds
 └── tailwind.config.ts     # Tailwind theme (Bitcoin palette)
 ```
@@ -151,6 +141,21 @@ The site uses a futuristic Bitcoin-themed design with:
 - Bitcoin network-inspired background effects
 - Glowing neon-style elements
 
+## Deployment
+
+The project is deployed on Vercel with automatic deployments from GitHub. Supabase integration is configured via Vercel's integration system.
+
+- **Production URL**: https://pan-africa-bitcoin-academy-yohannes-projects-586fef0b.vercel.app
+- **Custom Domain**: https://panafricanbitcoin.com
+- **Vercel Dashboard**: https://vercel.com/yohannes-projects-586fef0b/pan-africa-bitcoin-academy
+
+## Documentation
+
+- [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) - Supabase database setup guide
+- [STEP_BY_STEP_GUIDE.md](./STEP_BY_STEP_GUIDE.md) - Complete step-by-step implementation guide
+- [TESTING_CHECKLIST.md](./TESTING_CHECKLIST.md) - Testing checklist for all features
+- [DEPLOYMENT_STATUS.md](./DEPLOYMENT_STATUS.md) - Current deployment status and information
+
 ## Contributing
 
 This project is part of a broader effort to build Bitcoin education and sovereignty in Africa. Contributions are welcome!
@@ -161,7 +166,7 @@ Educational content - use responsibly. Not financial advice.
 
 ## Contact
 
-For questions or support, visit the [FAQ page](/faq) or contact us through the [Contact page](/about).
+For questions or support, visit the [FAQ page](/faq) or contact us through the [About page](/about).
 
 ---
 
