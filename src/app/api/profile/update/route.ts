@@ -12,6 +12,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate email format if email is being updated
+    if (updateData.email && !/\S+@\S+\.\S+/.test(updateData.email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate name length
+    if (updateData.name && updateData.name.length < 2) {
+      return NextResponse.json(
+        { error: 'Name must be at least 2 characters' },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone format (basic validation)
+    if (updateData.phone && updateData.phone.length > 20) {
+      return NextResponse.json(
+        { error: 'Phone number is too long' },
+        { status: 400 }
+      );
+    }
+
     // Update profile
     const { data: profile, error } = await supabase
       .from('profiles')

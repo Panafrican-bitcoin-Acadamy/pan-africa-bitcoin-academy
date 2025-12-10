@@ -29,14 +29,14 @@ export function Navbar() {
         setProfileLoading(true);
         setProfileError(null);
         try {
-          const res = await fetch('/api/profile/login', {
+          const res = await fetch('/api/profile/verify-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: profile.email }),
           });
           if (res.ok) {
             const data = await res.json();
-            if (data.found && data.profile) {
+            if (data.valid && data.profile) {
               setProfileData(data.profile);
               setProfileImage(data.profile.photoUrl || null);
             } else {
@@ -58,6 +58,11 @@ export function Navbar() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Don't close if clicking on logout button (it handles its own redirect)
+      const target = event.target as HTMLElement;
+      if (target.closest('button') && target.closest('button')?.textContent?.includes('Logout')) {
+        return;
+      }
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setAccountDropdownOpen(false);
       }
@@ -196,8 +201,11 @@ export function Navbar() {
                     </button>
                     <div className="my-1 border-t border-zinc-700" />
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         setAccountDropdownOpen(false);
+                        // Call logout immediately - don't wait for state update
                         logout();
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
@@ -304,8 +312,11 @@ export function Navbar() {
                     </button>
                     <div className="my-1 border-t border-zinc-700" />
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         setAccountDropdownOpen(false);
+                        // Call logout immediately - don't wait for state update
                         logout();
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
@@ -444,8 +455,11 @@ export function Navbar() {
                   Change Password
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setMobileMenuOpen(false);
+                    // Call logout immediately
                     logout();
                   }}
                   className="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
@@ -499,14 +513,14 @@ export function Navbar() {
               // Refresh auth state after profile update
               if (profile?.email) {
                 try {
-                  const res = await fetch('/api/profile/login', {
+                  const res = await fetch('/api/profile/verify-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: profile.email }),
                   });
                   if (res.ok) {
                     const data = await res.json();
-                    if (data.found && data.profile) {
+                    if (data.valid && data.profile) {
                       // Trigger a storage event to update useAuth hook
                       localStorage.setItem('profileEmail', profile.email);
                       window.dispatchEvent(new Event('storage'));

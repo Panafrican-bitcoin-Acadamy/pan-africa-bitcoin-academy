@@ -12,6 +12,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate image data format
+    if (!imageData.startsWith('data:image/')) {
+      return NextResponse.json(
+        { error: 'Invalid image format. Please upload a valid image file.' },
+        { status: 400 }
+      );
+    }
+
+    // Check image size (max 5MB)
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const imageSizeInBytes = (base64Data.length * 3) / 4;
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+
+    if (imageSizeInBytes > maxSizeInBytes) {
+      return NextResponse.json(
+        { error: 'Image size exceeds 5MB limit. Please upload a smaller image.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate image type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const imageType = imageData.split(';')[0].split(':')[1];
+    if (!allowedTypes.includes(imageType)) {
+      return NextResponse.json(
+        { error: 'Invalid image type. Please upload JPEG, PNG, WebP, or GIF.' },
+        { status: 400 }
+      );
+    }
+
     // Get profile to get the ID
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -26,8 +56,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Convert base64 to buffer
-    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    // Convert base64 to buffer (already extracted above for validation)
     const buffer = Buffer.from(base64Data, 'base64');
     
     // Generate unique filename

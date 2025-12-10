@@ -142,14 +142,14 @@ export function StudentDashboard() {
       setProfileLoading(true);
       setProfileError(null);
       setProfileData(null);
-      const res = await fetch('/api/profile/login', {
+      const res = await fetch('/api/profile/verify-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: lookupEmail }),
       });
       if (!res.ok) throw new Error(`Failed (${res.status})`);
       const data = await res.json();
-      if (data.found) {
+      if (data.valid && data.profile) {
         setProfileData(data.profile);
       } else {
         setProfileError('Profile not found for this email.');

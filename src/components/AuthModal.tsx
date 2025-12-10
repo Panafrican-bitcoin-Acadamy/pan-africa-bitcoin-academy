@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -64,11 +66,22 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
           const res = await fetch('/api/profile/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: formData.email }),
+            body: JSON.stringify({ 
+              email: formData.email,
+              password: formData.password 
+            }),
           });
-          if (!res.ok) throw new Error(`Login failed (${res.status})`);
+          
           const data = await res.json();
-          if (data.found) {
+          
+          if (!res.ok) {
+            // Handle specific error messages from API
+            const errorMsg = data.error || `Sign in failed (${res.status})`;
+            setServerError(errorMsg);
+            return;
+          }
+          
+          if (data.found && data.success) {
             try {
               localStorage.setItem('profileEmail', formData.email);
               // Trigger storage event to update auth state in other components
@@ -80,10 +93,11 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             // Redirect to dashboard after successful sign-in
             window.location.href = '/dashboard';
           } else {
-            setServerError('Invalid credentials. User not found.');
+            setServerError(data.error || 'Invalid credentials. Please try again.');
           }
         } catch (err: any) {
-          setServerError(err.message || 'Sign in failed.');
+          console.error('Login error:', err);
+          setServerError(err.message || 'Sign in failed. Please try again.');
         } finally {
           setLoading(false);
         }
@@ -337,12 +351,16 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
                 />
                 <span className="text-sm text-zinc-400">Remember me</span>
               </label>
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setForgotPasswordOpen(true);
+                }}
                 className="text-sm text-orange-400 hover:text-orange-300"
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
           )}
 
@@ -377,7 +395,15 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      <ForgotPasswordModal
+        isOpen={forgotPasswordOpen}
+        onClose={() => setForgotPasswordOpen(false)}
+      />
+    </>
+  );
 }
 
 

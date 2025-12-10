@@ -24,8 +24,8 @@ export function useAuth() {
       try {
         const storedEmail = localStorage.getItem('profileEmail');
         if (storedEmail) {
-          // Verify the profile exists
-          const res = await fetch('/api/profile/login', {
+          // Verify the session (profile exists) without requiring password
+          const res = await fetch('/api/profile/verify-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: storedEmail }),
@@ -33,7 +33,7 @@ export function useAuth() {
 
           if (res.ok) {
             const data = await res.json();
-            if (data.found && data.profile) {
+            if (data.valid && data.profile) {
               setIsAuthenticated(true);
               setProfile({
                 id: data.profile.id,
@@ -72,21 +72,64 @@ export function useAuth() {
     checkAuth();
 
     // Listen for storage changes (e.g., when user signs in/out in another tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'profileEmail') {
+    const handleStorageChange = (e: StorageEvent | Event) => {
+      // Check if profileEmail was removed (logout)
+      const currentEmail = localStorage.getItem('profileEmail');
+      if (!currentEmail) {
+        // Email was removed - user logged out
+        setIsAuthenticated(false);
+        setProfile(null);
+        setLoading(false);
+      } else if (e instanceof StorageEvent && e.key === 'profileEmail') {
+        // Email changed - re-check auth
+        checkAuth();
+      } else if (e.type === 'storage' && currentEmail) {
+        // Generic storage event with email present - re-check
         checkAuth();
       }
     };
 
+    // Listen for custom logout event
+    const handleLogout = () => {
+      setIsAuthenticated(false);
+      setProfile(null);
+      setLoading(false);
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('userLogout', handleLogout);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLogout', handleLogout);
+    };
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('profileEmail');
-    setIsAuthenticated(false);
-    setProfile(null);
-    window.location.href = '/';
+    try {
+      // Clear localStorage immediately
+      localStorage.removeItem('profileEmail');
+      
+      // Update state immediately - this is critical
+      setIsAuthenticated(false);
+      setProfile(null);
+      setLoading(false);
+      
+      // Dispatch custom logout event for other components
+      window.dispatchEvent(new CustomEvent('userLogout'));
+      
+      // Force immediate redirect - don't wait
+      // Using replace to prevent back button issues
+      window.location.replace('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Fallback: clear everything and force redirect
+      try {
+        localStorage.removeItem('profileEmail');
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+      window.location.replace('/');
+    }
   };
 
   return { isAuthenticated, profile, loading, logout };

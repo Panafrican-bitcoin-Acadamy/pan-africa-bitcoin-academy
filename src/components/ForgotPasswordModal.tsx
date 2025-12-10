@@ -1,0 +1,158 @@
+'use client';
+
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Mail, CheckCircle } from 'lucide-react';
+
+interface ForgotPasswordModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!email) {
+      setError('Email is required');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch('/api/profile/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Don't reveal if email exists for security
+        // Always show success message
+        setSuccess(true);
+        setEmail('');
+        setTimeout(() => {
+          onClose();
+          setSuccess(false);
+        }, 3000);
+        return;
+      }
+
+      setSuccess(true);
+      setEmail('');
+      setTimeout(() => {
+        onClose();
+        setSuccess(false);
+      }, 3000);
+    } catch (err: any) {
+      // Even on error, show success for security
+      setSuccess(true);
+      setEmail('');
+      setTimeout(() => {
+        onClose();
+        setSuccess(false);
+      }, 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-xl p-4">
+      <div className="w-full max-w-md rounded-2xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-cyan-400" />
+            <h3 className="text-lg font-semibold text-zinc-50">Reset Password</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full px-3 py-1 text-sm text-zinc-400 hover:bg-zinc-800"
+          >
+            ×
+          </button>
+        </div>
+
+        {success ? (
+          <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-center">
+            <CheckCircle className="mx-auto mb-2 h-12 w-12 text-green-400" />
+            <p className="mb-2 text-sm font-medium text-green-200">
+              Password reset email sent!
+            </p>
+            <p className="text-xs text-green-300/80">
+              If an account exists with this email, you'll receive instructions to reset your password.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <p className="text-sm text-zinc-400">
+              Enter your email address and we'll send you instructions to reset your password.
+            </p>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-zinc-300">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                placeholder="your@email.com"
+                disabled={loading}
+              />
+              {error && (
+                <p className="mt-1 text-sm text-red-400">{error}</p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 font-medium text-zinc-300 transition hover:bg-zinc-800"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-3 font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                  </div>
+                ) : (
+                  'Send Reset Link'
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
+}
+

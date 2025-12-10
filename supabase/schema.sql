@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS profiles (
   city TEXT,
   photo_url TEXT,
   status TEXT DEFAULT 'New', -- New, Active, Graduated, etc.
+  password_hash TEXT, -- Bcrypt hashed password for authentication
+  reset_token TEXT, -- Secure token for password reset
+  reset_token_expiry TIMESTAMP WITH TIME ZONE, -- Expiration for reset token
   cohort_id UUID REFERENCES cohorts(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

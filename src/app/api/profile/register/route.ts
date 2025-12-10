@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +13,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!password || password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password is required and must be at least 6 characters' },
+        { status: 400 }
+      );
+    }
+
     // Check if profile already exists
     const { data: existingProfile } = await supabase
       .from('profiles')
@@ -20,17 +28,15 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (existingProfile) {
-      // Profile already exists - return success
       return NextResponse.json(
-        { success: true, profileId: existingProfile.id, message: 'Profile already exists' },
-        { status: 200 }
+        { error: 'An account with this email already exists' },
+        { status: 409 }
       );
     }
 
-    // Hash password (simple hash - in production use bcrypt or Supabase Auth)
-    // For now, we'll just store it (NOT RECOMMENDED FOR PRODUCTION)
-    // TODO: Use Supabase Auth for proper password hashing
-    const passwordHash = password ? `hashed_${password}` : null;
+    // Hash password using bcrypt with salt rounds
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // Create profile - simplified, no student_id
     const { data: newProfile, error: profileError } = await supabase

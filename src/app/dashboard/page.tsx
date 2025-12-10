@@ -19,8 +19,8 @@ export default function DashboardPage() {
           return;
         }
 
-        // Verify the profile exists
-        const res = await fetch('/api/profile/login', {
+        // Verify the session (profile exists)
+        const res = await fetch('/api/profile/verify-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: storedEmail }),
@@ -33,7 +33,7 @@ export default function DashboardPage() {
         }
 
         const data = await res.json();
-        if (!data.found || !data.profile) {
+        if (!data.valid || !data.profile) {
           localStorage.removeItem('profileEmail');
           router.push('/');
           return;
