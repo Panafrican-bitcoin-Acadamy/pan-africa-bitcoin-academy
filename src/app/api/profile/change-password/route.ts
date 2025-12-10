@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the user's profile to verify old password
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('password_hash')
       .eq('email', email.toLowerCase().trim())
@@ -38,6 +38,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    if (!profile.password_hash) {
+      return NextResponse.json(
+        { error: 'Password not set for this account' },
+        { status: 400 }
       );
     }
 
@@ -56,7 +63,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
     // Update password
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({ password_hash: hashedPassword })
       .eq('email', email.toLowerCase().trim());
@@ -64,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('Error updating password:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update password' },
+        { error: 'Failed to update password', details: updateError.message },
         { status: 500 }
       );
     }

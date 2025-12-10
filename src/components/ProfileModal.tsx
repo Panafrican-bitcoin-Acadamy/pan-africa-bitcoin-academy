@@ -102,7 +102,6 @@ export function ProfileModal({
       const reader = new FileReader();
       reader.onload = async (event) => {
         const result = event.target?.result as string;
-        setCurrentProfileImage(result);
         
         try {
           const res = await fetch('/api/profile/upload-image', {
@@ -116,9 +115,17 @@ export function ProfileModal({
           if (res.ok) {
             const data = await res.json();
             setCurrentProfileImage(data.photoUrl);
+            // Update the profile data with the new photo URL
+            if (profileData) {
+              profileData.photoUrl = data.photoUrl;
+            }
+          } else {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Failed to upload image');
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error uploading image:', err);
+          alert(err.message || 'Failed to upload image');
         } finally {
           setUploadingImage(false);
         }
@@ -139,8 +146,29 @@ export function ProfileModal({
         ...otherData,
       };
 
-      if (currentProfileImage && currentProfileImage.startsWith('http')) {
-        updatePayload.photoUrl = currentProfileImage;
+      // Include photoUrl if we have a URL (from upload) or if it's already a URL
+      if (currentProfileImage) {
+        if (currentProfileImage.startsWith('http')) {
+          updatePayload.photoUrl = currentProfileImage;
+        } else if (currentProfileImage.startsWith('data:')) {
+          // If it's a base64 image that hasn't been uploaded yet, upload it first
+          try {
+            const uploadRes = await fetch('/api/profile/upload-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: userEmail,
+                imageData: currentProfileImage,
+              }),
+            });
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json();
+              updatePayload.photoUrl = uploadData.photoUrl;
+            }
+          } catch (uploadErr) {
+            console.error('Error uploading image during save:', uploadErr);
+          }
+        }
       }
 
       const res = await fetch('/api/profile/update', {
@@ -149,11 +177,16 @@ export function ProfileModal({
         body: JSON.stringify(updatePayload),
       });
 
-      if (!res.ok) throw new Error('Failed to update profile');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
 
+      const data = await res.json();
       setOriginalData(editFormData);
       setOriginalProfileImage(currentProfileImage);
       setIsEditing(false);
+      // Call onProfileUpdate to refresh the navbar
       onProfileUpdate();
     } catch (err: any) {
       alert(`Error: ${err.message}`);

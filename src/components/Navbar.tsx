@@ -495,9 +495,32 @@ export function Navbar() {
             profileLoading={profileLoading}
             profileError={profileError}
             profileImage={profileImage}
-            onProfileUpdate={() => {
+            onProfileUpdate={async () => {
               // Refresh auth state after profile update
-              window.location.reload();
+              if (profile?.email) {
+                try {
+                  const res = await fetch('/api/profile/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: profile.email }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.found && data.profile) {
+                      // Trigger a storage event to update useAuth hook
+                      localStorage.setItem('profileEmail', profile.email);
+                      window.dispatchEvent(new Event('storage'));
+                      // Reload to ensure all components update
+                      window.location.reload();
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error refreshing profile:', err);
+                  window.location.reload();
+                }
+              } else {
+                window.location.reload();
+              }
             }}
           />
         </>
