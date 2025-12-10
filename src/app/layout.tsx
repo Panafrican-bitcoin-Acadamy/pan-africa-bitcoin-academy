@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   title: "Pan-African Bitcoin Academy",
   description:
     "Pan-African Bitcoin Academy — learn Bitcoin the right way with clear, technical guidance.",
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+  },
 };
 
 export default function RootLayout({
