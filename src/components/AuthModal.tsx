@@ -77,8 +77,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
               // ignore
             }
             onClose();
-            // Reload page to update navbar with new auth state
-            window.location.reload();
+            // Redirect to dashboard after successful sign-in
+            window.location.href = '/dashboard';
           } else {
             setServerError('Invalid credentials. User not found.');
           }

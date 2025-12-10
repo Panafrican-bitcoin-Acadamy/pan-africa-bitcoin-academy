@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, LogOut, LayoutDashboard, Key } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Key, ChevronDown } from "lucide-react";
 import { AuthModal } from "./AuthModal";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -10,6 +10,8 @@ export function Navbar() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, profile, loading, logout } = useAuth();
 
   
@@ -96,42 +98,59 @@ export function Navbar() {
           {loading ? (
             <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
           ) : isAuthenticated && profile ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-orange-300 max-w-[120px] truncate">{profile.name || 'User'}</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    // Navigate to dashboard and trigger profile modal
-                    if (window.location.pathname === '/dashboard') {
-                      window.dispatchEvent(new CustomEvent('openProfileModal'));
-                    } else {
-                      window.location.href = '/dashboard?openProfile=true';
-                    }
-                  }}
-                  className="rounded-full px-2 py-1 text-xs text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                  title="Profile"
-                >
-                  <User className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    alert('Password change not implemented yet. Please contact support.');
-                  }}
-                  className="rounded-full px-2 py-1 text-xs text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                  title="Change Password"
-                >
-                  <Key className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    logout();
-                  }}
-                  className="rounded-full px-2 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
-                  title="Logout"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+              >
+                <span className="max-w-[120px] truncate">{profile.name || 'User'}</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${accountDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {accountDropdownOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-cyan-400/20 bg-zinc-900/95 backdrop-blur-xl shadow-xl">
+                  <div className="p-2">
+                    <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-700 mb-1">
+                      {profile.email}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAccountDropdownOpen(false);
+                        // Navigate to dashboard and trigger profile modal
+                        if (window.location.pathname === '/dashboard') {
+                          window.dispatchEvent(new CustomEvent('openProfileModal'));
+                        } else {
+                          window.location.href = '/dashboard?openProfile=true';
+                        }
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                    >
+                      <User className="h-4 w-4" />
+                      Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAccountDropdownOpen(false);
+                        alert('Password change not implemented yet. Please contact support.');
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                    >
+                      <Key className="h-4 w-4" />
+                      Change Password
+                    </button>
+                    <div className="my-1 border-t border-zinc-700" />
+                    <button
+                      onClick={() => {
+                        setAccountDropdownOpen(false);
+                        logout();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <button
@@ -181,42 +200,59 @@ export function Navbar() {
           {loading ? (
             <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
           ) : isAuthenticated && profile ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-orange-300 max-w-[100px] truncate">{profile.name || 'User'}</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    // Navigate to dashboard and trigger profile modal
-                    if (window.location.pathname === '/dashboard') {
-                      window.dispatchEvent(new CustomEvent('openProfileModal'));
-                    } else {
-                      window.location.href = '/dashboard?openProfile=true';
-                    }
-                  }}
-                  className="rounded-full px-2 py-1 text-xs text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                  title="Profile"
-                >
-                  <User className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    alert('Password change not implemented yet. Please contact support.');
-                  }}
-                  className="rounded-full px-2 py-1 text-xs text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                  title="Change Password"
-                >
-                  <Key className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    logout();
-                  }}
-                  className="rounded-full px-2 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
-                  title="Logout"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+              >
+                <span className="max-w-[100px] truncate">{profile.name || 'User'}</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${accountDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {accountDropdownOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-cyan-400/20 bg-zinc-900/95 backdrop-blur-xl shadow-xl">
+                  <div className="p-2">
+                    <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-700 mb-1">
+                      {profile.email}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAccountDropdownOpen(false);
+                        // Navigate to dashboard and trigger profile modal
+                        if (window.location.pathname === '/dashboard') {
+                          window.dispatchEvent(new CustomEvent('openProfileModal'));
+                        } else {
+                          window.location.href = '/dashboard?openProfile=true';
+                        }
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                    >
+                      <User className="h-4 w-4" />
+                      Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAccountDropdownOpen(false);
+                        alert('Password change not implemented yet. Please contact support.');
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                    >
+                      <Key className="h-4 w-4" />
+                      Change Password
+                    </button>
+                    <div className="my-1 border-t border-zinc-700" />
+                    <button
+                      onClick={() => {
+                        setAccountDropdownOpen(false);
+                        logout();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <button
