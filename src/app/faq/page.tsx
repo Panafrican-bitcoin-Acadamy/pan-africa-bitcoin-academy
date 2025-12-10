@@ -106,7 +106,7 @@ export default function FAQPage() {
               Frequently Asked Questions
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Everything you need to know about joining our Bitcoin Academy.
+              Everything you need to know about joining our Pan-Africa Bitcoin Academy.
             </p>
           </div>
 

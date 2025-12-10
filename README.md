@@ -1,4 +1,4 @@
-# Bitcoin Academy - Learning Hub
+# Pan-Africa Bitcoin Academy - Learning Hub
 
 A modern, visual guide to understanding Bitcoin — from keys and UTXOs to mining and wallets. Built to empower the next generation of African Bitcoin talent through education, mentorship, and community.
 
@@ -25,7 +25,7 @@ A modern, visual guide to understanding Bitcoin — from keys and UTXOs to minin
 - **Mentorship Program** - Apply to become a mentor, guest lecturer, volunteer, or ambassador with clear vetting steps
 - **Impact Dashboard** - Track progress with metrics, cohort history, and outcomes
 - **Donation Support** - Lightning Network and on-chain Bitcoin donations
-- **Blog ("Voices of the Bitcoin Academy")** - Student and mentor stories, technical deep dives, featured posts, and submissions
+- **Blog ("Voices of the Pan-Africa Bitcoin Academy")** - Student and mentor stories, technical deep dives, featured posts, and submissions
 - **FAQ Section** - Answers to common questions about time zones, requirements, and policies
 - **Full-width Layout & Bitcoin Backgrounds** - Futuristic Bitcoin B, blockchain, and keys visuals across all pages
 - **Notion Integration** - Full database integration for students, applications, cohorts, enrollments, events, sats rewards, achievements, and profiles

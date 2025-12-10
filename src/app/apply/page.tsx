@@ -263,7 +263,7 @@ export default function ApplyPage() {
               Join Our Next Cohort
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Apply to join our Bitcoin Academy and start your journey toward financial sovereignty.
+              Apply to join the Pan-Africa Bitcoin Academy and start your journey toward financial sovereignty.
             </p>
           </div>
 

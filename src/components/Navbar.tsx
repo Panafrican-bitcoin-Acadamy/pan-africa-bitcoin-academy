@@ -36,7 +36,7 @@ export function Navbar() {
             <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300">
               Pan-African
             </span>
-            <span className="text-sm font-medium text-zinc-100">Bitcoin Academy</span>
+            <span className="text-sm font-medium text-zinc-100">Pan-Africa Bitcoin Academy</span>
           </div>
         </Link>
         

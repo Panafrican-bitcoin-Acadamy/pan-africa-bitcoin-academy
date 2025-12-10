@@ -18,7 +18,7 @@ NOTION_COHORTS_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ### 1. Create Notion Integration
 1. Go to https://www.notion.so/my-integrations
 2. Click "New integration"
-3. Name it (e.g., "Bitconers Academy")
+3. Name it (e.g., "Pan-Africa Bitcoin Academy")
 4. Copy the "Internal Integration Token" (starts with `secret_`)
 5. Add it to `.env.local` as `NOTION_API_KEY`
 

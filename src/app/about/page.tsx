@@ -6,22 +6,18 @@ export default function AboutPage() {
           {/* Hero */}
           <div className="mb-14 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">
-              Pan-African Bitcoin Academy
+              Pan-Africa Bitcoin Academy
             </p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Learn Bitcoin the right way — with clarity, honesty, and depth
+              Understand Bitcoin the right way — through precise explanations, transparent guidance, and meaningful technical depth
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              A calm, practical space to understand how Bitcoin really works: keys, UTXOs, transactions,
-              blocks, mining, wallets, and responsible self-custody.
-            </p>
           </div>
 
           <div className="space-y-10 text-base text-zinc-100 sm:text-lg">
             {/* Mission */}
             <section className="space-y-3">
               <p className="text-zinc-200">
-                Pan-African Bitcoin Academy exists to help people across Africa learn Bitcoin the right way —
+                Pan-Africa Bitcoin Academy exists to help people across Africa learn Bitcoin the right way —
                 with clarity, honesty, and technical depth. Our mission is to create a trusted learning
                 environment where anyone can understand how Bitcoin truly works: keys, UTXOs, transactions,
                 mining, blocks, wallets, and responsible self-custody.

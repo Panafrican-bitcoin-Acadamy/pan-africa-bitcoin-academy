@@ -177,7 +177,7 @@ export default function BlogPage() {
               Bitcoin Stories, Ideas & Experiences
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              A community-driven publication featuring essays, insights, and experiences from graduates of the Bitcoin Academy — exploring the future of Bitcoin in Africa and beyond.
+              A community-driven publication featuring essays, insights, and experiences from graduates of the Pan-Africa Bitcoin Academy — exploring the future of Bitcoin in Africa and beyond.
             </p>
           </div>
 

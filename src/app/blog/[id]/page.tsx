@@ -21,11 +21,11 @@ const blogPosts: Record<number, {
     category: "Use Cases",
     readTime: "5 min read",
     image: "🌍",
-    content: `After completing the Bitcoin Academy, I've started using Lightning Network for daily transactions and helping my community understand Bitcoin. The journey from learning to implementation has been transformative.
+    content: `After completing the Pan-Africa Bitcoin Academy, I've started using Lightning Network for daily transactions and helping my community understand Bitcoin. The journey from learning to implementation has been transformative.
 
 ## My Bitcoin Journey
 
-When I first enrolled in the Bitcoin Academy, I had no idea how much this technology would change my perspective on money and financial independence. The course opened my eyes to the possibilities of decentralized finance.
+When I first enrolled in the Pan-Africa Bitcoin Academy, I had no idea how much this technology would change my perspective on money and financial independence. The course opened my eyes to the possibilities of decentralized finance.
 
 ## Practical Applications
 
@@ -199,7 +199,7 @@ export default function BlogPostPage({ params }: { params: { id: string } }) {
                 </div>
                 <p className="mb-2 text-sm text-zinc-400">{post.authorRole}</p>
                 <p className="mb-3 text-sm text-zinc-300">
-                  Graduate of the Bitcoin Academy passionate about Bitcoin adoption in Africa. 
+                  Graduate of the Pan-Africa Bitcoin Academy passionate about Bitcoin adoption in Africa. 
                   Building tools and educating communities about financial sovereignty.
                 </p>
                 <div className="flex items-center gap-3">

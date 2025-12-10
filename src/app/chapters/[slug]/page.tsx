@@ -93,7 +93,7 @@ export default async function ChapterPage(props: ChapterPageProps) {
     return (
       <PageContainer
         title={`Chapter: ${titleFromSlug}`}
-        subtitle="This chapter is part of the Bitcoin Academy curriculum. Full content coming soon."
+        subtitle="This chapter is part of the Pan-Africa Bitcoin Academy curriculum. Full content coming soon."
       >
         <div className="space-y-8 text-sm text-zinc-100 sm:text-base">
           <section className="rounded-xl border border-orange-500/25 bg-zinc-950/80 p-4 sm:p-5">

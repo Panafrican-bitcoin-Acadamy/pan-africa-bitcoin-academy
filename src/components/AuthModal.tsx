@@ -213,7 +213,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
           <p className="mt-2 text-sm text-zinc-400">
             {isSignIn
               ? 'Sign in to continue your Bitcoin journey'
-              : 'Join the Pan-African Bitcoin Academy'}
+              : 'Join the Pan-Africa Bitcoin Academy'}
           </p>
         </div>
 
