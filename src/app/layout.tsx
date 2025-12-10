@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bitcoin Academy",
+  title: "Pan-African Bitcoin Academy",
   description:
-    "Bitcoin Academy — learn Bitcoin the right way with clear, technical guidance.",
+    "Pan-African Bitcoin Academy — learn Bitcoin the right way with clear, technical guidance.",
 };
 
 export default function RootLayout({
