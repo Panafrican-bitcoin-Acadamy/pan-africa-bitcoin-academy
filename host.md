@@ -1,6 +1,6 @@
 ## Deploying the Bitcoin Learning Site to Vercel
 
-This project lives in `/Users/samir/Sites/john/bitcoin-site` and is a standard **Next.js + TypeScript + Tailwind** app, perfect for Vercel.
+This project lives in `/Users/samir/Sites/john/pan-africa-bitcoin-academy` and is a standard **Next.js + TypeScript + Tailwind** app, perfect for Vercel.
 
 ---
 
@@ -9,7 +9,7 @@ This project lives in `/Users/samir/Sites/john/bitcoin-site` and is a standard *
 From your terminal:
 
 ```bash
-cd /Users/samir/Sites/john/bitcoin-site
+cd /Users/samir/Sites/john/pan-africa-bitcoin-academy
 npm install        # if not already done
 npm run lint       # optional but recommended
 npm run dev        # optional, to verify locally at http://localhost:3000
@@ -21,10 +21,10 @@ If everything looks good in the browser, stop the dev server with `Ctrl + C`.
 
 ### 2. Initialize a Git repo (if you haven't already)
 
-Inside `bitcoin-site`:
+Inside `pan-africa-bitcoin-academy`:
 
 ```bash
-cd /Users/samir/Sites/john/bitcoin-site
+cd /Users/samir/Sites/john/pan-africa-bitcoin-academy
 git init
 git add .
 git commit -m "Initial Bitcoin learning site"
@@ -76,7 +76,7 @@ The first deployment will take a minute; when done, Vercel gives you:
 After the initial setup, you **don’t** deploy from your machine manually; you just push to Git:
 
 ```bash
-cd /Users/samir/Sites/john/bitcoin-site
+cd /Users/samir/Sites/john/pan-africa-bitcoin-academy
 git add .
 git commit -m "Update content or features"
 git push
@@ -92,7 +92,7 @@ If you want a quick one-off deploy directly from your laptop:
 
 ```bash
 npm install -g vercel
-cd /Users/samir/Sites/john/bitcoin-site
+cd /Users/samir/Sites/john/pan-africa-bitcoin-academy
 vercel          # first time – follow prompts, link project
 vercel --prod   # deploy a production version
 ```
