@@ -22,7 +22,50 @@ export function Navbar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, profile, loading, logout } = useAuth();
 
-  
+  // Fetch profile data when modal opens
+  useEffect(() => {
+    if (profileModalOpen && profile?.email) {
+      const fetchProfileData = async () => {
+        setProfileLoading(true);
+        setProfileError(null);
+        try {
+          const res = await fetch('/api/profile/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: profile.email }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.found && data.profile) {
+              setProfileData(data.profile);
+              setProfileImage(data.profile.photoUrl || null);
+            } else {
+              setProfileError('Profile not found');
+            }
+          } else {
+            setProfileError('Failed to load profile');
+          }
+        } catch (err: any) {
+          setProfileError(err.message || 'Failed to load profile');
+        } finally {
+          setProfileLoading(false);
+        }
+      };
+      fetchProfileData();
+    }
+  }, [profileModalOpen, profile?.email]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setAccountDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <header className="border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
@@ -134,12 +177,7 @@ export function Navbar() {
                     <button
                       onClick={() => {
                         setAccountDropdownOpen(false);
-                        // Navigate to dashboard and trigger profile modal
-                        if (window.location.pathname === '/dashboard') {
-                          window.dispatchEvent(new CustomEvent('openProfileModal'));
-                        } else {
-                          window.location.href = '/dashboard?openProfile=true';
-                        }
+                        setProfileModalOpen(true);
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
                     >
@@ -149,7 +187,7 @@ export function Navbar() {
                     <button
                       onClick={() => {
                         setAccountDropdownOpen(false);
-                        alert('Password change not implemented yet. Please contact support.');
+                        setChangePasswordOpen(true);
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
                     >
@@ -247,12 +285,7 @@ export function Navbar() {
                     <button
                       onClick={() => {
                         setAccountDropdownOpen(false);
-                        // Navigate to dashboard and trigger profile modal
-                        if (window.location.pathname === '/dashboard') {
-                          window.dispatchEvent(new CustomEvent('openProfileModal'));
-                        } else {
-                          window.location.href = '/dashboard?openProfile=true';
-                        }
+                        setProfileModalOpen(true);
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
                     >
@@ -262,7 +295,7 @@ export function Navbar() {
                     <button
                       onClick={() => {
                         setAccountDropdownOpen(false);
-                        alert('Password change not implemented yet. Please contact support.');
+                        setChangePasswordOpen(true);
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
                     >
