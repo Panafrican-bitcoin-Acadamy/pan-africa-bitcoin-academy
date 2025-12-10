@@ -36,15 +36,27 @@ export function StudentDashboard() {
     }
     const fetchStudent = async () => {
       try {
-        const res = await fetch('/api/students');
+        const emailToUse = storedProfileEmail || profileEmail;
+        const url = emailToUse ? `/api/students?email=${encodeURIComponent(emailToUse)}` : '/api/students';
+        const res = await fetch(url);
         if (!res.ok) {
           throw new Error(`Failed to load students (${res.status})`);
         }
         const data = await res.json();
         const students: any[] = data.students || [];
+        // If no students found, that's okay - user might not be enrolled yet
+        if (students.length === 0) {
+          if (mounted) {
+            setStudentData(null);
+            // Don't show error if user just isn't a student yet
+            setError(null);
+          }
+          return;
+        }
         const first = students.find((s) => s?.name) || students[0];
         if (mounted) {
           setStudentData(first || null);
+          setError(null);
         }
       } catch (err: any) {
         if (mounted) {
@@ -266,8 +278,15 @@ export function StudentDashboard() {
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-red-200">
-            {error}
+          <div className="mb-4 rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-red-200 relative z-0 flex items-center justify-between gap-4">
+            <span>{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-300 hover:text-red-100 transition-colors"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
           </div>
         )}
 

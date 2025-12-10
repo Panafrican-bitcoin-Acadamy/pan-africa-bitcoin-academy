@@ -67,7 +67,7 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl">
+    <header className="relative z-50 border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative flex h-12 w-12 items-center justify-center">
