@@ -1,187 +1,395 @@
-# Pan-Africa Bitcoin Academy - Learning Hub
+# 🟠 Pan-Africa Bitcoin Academy
 
-A modern, visual guide to understanding Bitcoin — from keys and UTXOs to mining and wallets. Built to empower the next generation of African Bitcoin talent through education, mentorship, and community.
+<div align="center">
 
-## Features
+![Bitcoin Academy](https://img.shields.io/badge/Bitcoin-Education-orange?style=for-the-badge&logo=bitcoin)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
+![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase)
 
-- **Student Dashboard** - Comprehensive dashboard with progress tracking, achievements, sats wallet, calendar, assignments, and learning path
-- **Interactive Calendar** - Full-featured calendar with month/list views, color-coded events (live classes, assignments, deadlines, quizzes), and Google Calendar integration
-- **Authentication System** - Sign In/Sign Up modal with beautiful UI, backdrop blur effects, and Supabase-based profile management
-- **Profile Management** - User profiles with editable information, profile picture upload, and automatic data sync with Supabase
-- **Progress Tracking** - Gamified progress overview with course completion, chapters, assignments, sats earned, and attendance rates
-- **Achievements System** - Unlockable achievements with visual badges fetched from Supabase
-- **Sats Wallet** - Track earned sats with pending rewards from Supabase database
-- **Learning Path** - Interactive chapter cards with status indicators (completed, in-progress, locked) and icons
-- **Assignments & Tasks** - Organized view of due assignments and completed tasks
-- **Live Sessions** - Upcoming events fetched from Supabase Events table with join buttons and calendar integration
-- **Community Integration** - Quick access to WhatsApp, Nostr, mentor messaging, and Q&A
-- **Resources Hub** - Centralized access to guides, wallets, tools, and tutorials
-- **Certification Tracking** - Progress towards certification with requirements checklist
-- **Leaderboard** - Rankings based on sats earned from Supabase database
-- **Interactive Learning Chapters** - Comprehensive Bitcoin education from basics to advanced topics with Bitcoin-themed icons and suggested order
-- **Cohort Registration** - Africa-focused registration with automatic country codes, flags, cohort selection from Supabase, and real-time seat availability
-- **Cohort Management** - Dynamic cohort display with status, sessions, level badges (Beginner/Intermediate/Advanced), and available seats calculated from enrollments
-- **Developer Hub** - Comprehensive roadmap for Bitcoin developers with learning resources, community links, opportunities, portfolio projects, and certification path
-- **Mentorship Program** - Apply to become a mentor, guest lecturer, volunteer, or ambassador with clear vetting steps
-- **Impact Dashboard** - Track progress with metrics, cohort history, and outcomes
-- **Donation Support** - Lightning Network and on-chain Bitcoin donations
-- **Blog ("Voices of the Pan-Africa Bitcoin Academy")** - Student and mentor stories, technical deep dives, featured posts, and submissions
-- **FAQ Section** - Answers to common questions about time zones, requirements, and policies
-- **Full-width Layout & Bitcoin Backgrounds** - Futuristic Bitcoin B, blockchain, and keys visuals across all pages
-- **Supabase Integration** - Full database integration for students, applications, cohorts, enrollments, events, sats rewards, achievements, and profiles
+**Empowering the next generation of African Bitcoin talent through education, mentorship, and community.**
 
-## Pages
+[🌐 Live Website](https://panafricanbitcoin.com) • [📚 Documentation](./STEP_BY_STEP_GUIDE.md) • [💬 Community](#community) • [🤝 Contribute](#contributing)
 
-- **Home** - Overview with Bitcoin-themed visuals, funder logos, and community links (WhatsApp, Nostr, Discord)
-- **Dashboard** - Student dashboard with progress tracking, calendar, achievements, assignments, and learning path
-- **Chapters** - Learning content with progress, suggested order, and Bitcoin iconography
-- **Apply** - Registration form with Africa-focused country codes and cohort details
-- **Developer Hub** - Roadmap for Bitcoin developers with learning resources, global communities, opportunities, and portfolio project ideas
-- **FAQ** - Frequently asked questions
-- **Mentorship** - Volunteer and mentor application
-- **Impact** - Impact dashboard with metrics and student outcomes
-- **Donate** - Bitcoin donation page with Lightning and on-chain options
-- **Blog** - Featured stories, categories, submissions, and individual posts
-- **About** - Mission and project information
+</div>
 
-## SEO & Optimization
+---
 
-- **Enhanced Metadata** - Open Graph, Twitter Cards, and comprehensive meta tags
-- **Structured Data (JSON-LD)** - Schema.org markup for better search visibility
-- **Dynamic Sitemap** - Auto-generated sitemap.xml for search engines
-- **robots.txt** - Proper crawling directives
-- **Performance Optimizations** - Image optimization, compression, security headers
-- **Page-Specific SEO** - Custom metadata for each page
+## 📸 Project Screenshots
 
-See [SEO_OPTIMIZATION.md](./SEO_OPTIMIZATION.md) for detailed SEO setup and testing guide.
+<!-- Add screenshots here when available -->
+<div align="center">
 
-## Tech Stack
+![Home Page](./public/images/screenshots/home.png)
+*Home page with Bitcoin-themed visuals and community links*
 
+![Student Dashboard](./public/images/screenshots/dashboard.png)
+*Student dashboard with progress tracking and achievements*
+
+![Chapters](./public/images/screenshots/chapters.png)
+*Interactive learning chapters with progress indicators*
+
+![Calendar](./public/images/screenshots/calendar.png)
+*Interactive calendar with events and assignments*
+
+</div>
+
+---
+
+## 🎯 Overview
+
+A modern, comprehensive Bitcoin education platform designed specifically for African students. The Pan-Africa Bitcoin Academy provides structured learning paths, interactive content, gamified progress tracking, and community support to help students master Bitcoin from basics to advanced topics.
+
+### 🌟 Key Highlights
+
+- **20 Comprehensive Chapters** - From "The Nature of Money" to "Why Bitcoin? Philosophy & Adoption"
+- **Interactive Learning** - Progress tracking, achievements, sats rewards, and gamification
+- **Community-Driven** - Mentorship programs, cohort-based learning, and peer support
+- **Bitcoin-First** - Lightning Network donations, sats-based rewards, and Bitcoin-native features
+- **Africa-Focused** - Designed for African students with local context and examples
+
+---
+
+## ✨ Features
+
+### 📚 Learning System
+- **20 Structured Chapters** - Complete Bitcoin education curriculum
+  - Beginner: Nature of Money, What is Bitcoin, Keys & Addresses, Wallets
+  - Intermediate: UTXO Model, Bitcoin Hygiene, Hardware Signers, Layer 2
+  - Advanced: Full Nodes, Lightning Channels, Multi-Sig, Bitcoin Script
+- **Progress Tracking** - Visual progress indicators, completion status, and learning paths
+- **Interactive Content** - Notes, tips, warnings, examples, and image placeholders
+- **Key Terms Glossary** - Clickable terms that link to definitions within chapters
+
+### 🎮 Gamification
+- **Achievements System** - Unlockable badges and rewards
+- **Sats Wallet** - Earn and track sats for completing activities
+- **Leaderboard** - Rankings based on sats earned and progress
+- **Progress Dashboard** - Course completion, chapters completed, assignments done
+
+### 📅 Calendar & Events
+- **Interactive Calendar** - Month and list views with color-coded events
+- **Event Types** - Live classes, assignments, deadlines, quizzes
+- **Google Calendar Integration** - Sync events to personal calendars
+- **Cohort Sessions** - Track scheduled learning sessions
+
+### 👥 Community Features
+- **Cohort System** - Join cohorts with other students at your level
+- **Mentorship Program** - Apply to become a mentor or get mentored
+- **Community Links** - WhatsApp, Nostr, Discord integration
+- **Blog** - "Voices of the Pan-Africa Bitcoin Academy" - student and mentor stories
+
+### 💰 Bitcoin Integration
+- **Lightning Network** - Fast, low-fee payments
+- **On-Chain Donations** - Support the academy with Bitcoin
+- **Sats Rewards** - Earn sats for learning and participation
+- **Bitcoin Wallet Integration** - Track your Bitcoin holdings
+
+### 🔐 Authentication & Profiles
+- **Secure Authentication** - Supabase-based auth system
+- **Profile Management** - Edit profile, upload pictures, manage settings
+- **Student Dashboard** - Personalized learning experience
+- **Progress Sync** - Real-time progress tracking across devices
+
+---
+
+## 📖 Chapter Content
+
+The academy includes **20 comprehensive chapters** covering:
+
+1. **The Nature of Money** - Understanding money, inflation, and Bitcoin's role
+2. **What is Bitcoin?** - Introduction to Bitcoin, blockchain, and decentralization
+3. **Keys & Addresses** - Public/private keys, addresses, and security
+4. **Wallets** - Types of wallets, seed phrases, and best practices
+5. **Exchanges** - How to buy Bitcoin, KYC, and security
+6. **Your First Transaction** - Sending and receiving Bitcoin safely
+7. **Bitcoin Hygiene** - Privacy, security, and best practices
+8. **UTXO Model** - Understanding Bitcoin's transaction model
+9. **Good Bitcoin Hygiene** - Address reuse, labeling, and privacy habits
+10. **Hardware Signers** - Hardware wallets, PSBT, and cold storage
+11. **Layer 2 & Sidechains** - Lightning Network and scaling solutions
+12. **Verify - Block Explorers & Nodes** - Independent verification
+13. **Proof of Work** - Mining, block rewards, and security
+14. **Mining in Practice** - Difficulty, pools, and economics
+15. **Full Node & Lightning** - Running your own node and channels
+16. **Multi-Sig** - Collaborative custody and security
+17. **Bitcoin Script** - Understanding Bitcoin's programming language
+18. **UTXO Consolidation** - Privacy risks and best practices
+19. **Why Bitcoin?** - Philosophy, adoption, and impact
+
+Each chapter includes:
+- ✅ Detailed explanations (not summaries)
+- 📝 Notes, tips, warnings, and examples
+- 🖼️ Image placeholders for visual learning
+- 🎯 Key terms with clickable links
+- 📋 Activities and exercises
+- 📊 Summary and takeaways
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
 - **Next.js 16** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS 4** - Utility-first CSS framework
 - **React 19** - Latest React features
-- **Supabase** - PostgreSQL database with real-time capabilities and authentication
-- **Vercel** - Deployment and hosting platform
 
-## Getting Started
+### Backend & Database
+- **Supabase** - PostgreSQL database with real-time capabilities
+- **Supabase Auth** - Authentication and user management
+- **Supabase Storage** - File uploads and media storage
 
-First, install dependencies:
+### Deployment
+- **Vercel** - Hosting and deployment platform
+- **Custom Domain** - panafricanbitcoin.com
 
-```bash
-npm install
-```
-
-### Environment Setup
-
-The project uses Supabase for database and backend services. Environment variables are automatically configured when using the Vercel Supabase integration.
-
-For local development, create a `.env.local` file (see `env.template` for reference):
-
-```env
-# Site Configuration
-NEXT_PUBLIC_SITE_URL=https://panafricanbitcoin.com
-
-# Supabase Configuration (auto-configured via Vercel integration)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
-See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) and [STEP_BY_STEP_GUIDE.md](./STEP_BY_STEP_GUIDE.md) for detailed setup instructions.
-
-### Database Setup
-
-1. Run the SQL schema in Supabase SQL Editor (see `supabase/schema.sql`)
-2. Add sample data (optional, see `supabase/sample-data.sql`)
-3. Verify tables are created and RLS policies are enabled
-
-### Run the Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Project Structure
-
-```
-src/
-├── app/                   # Next.js App Router pages
-│   ├── page.tsx           # Home page
-│   ├── dashboard/         # Student dashboard
-│   ├── chapters/          # Learning content
-│   ├── apply/             # Cohort registration
-│   ├── developer-hub/     # Developer Hub with roadmap and resources
-│   ├── donate/            # Donation page
-│   ├── faq/               # FAQ page
-│   ├── impact/            # Impact dashboard
-│   ├── mentorship/        # Mentorship application
-│   ├── blog/              # Blog listing, submit, and post routes
-│   └── globals.css        # Global styles and Bitcoin theme
-├── components/            # React components
-│   ├── Navbar.tsx         # Navigation header with Sign In button
-│   ├── Footer.tsx         # Footer component with social links
-│   ├── AuthModal.tsx      # Sign In modal with backdrop blur
-│   ├── StudentDashboard.tsx # Main student dashboard component
-│   ├── Calendar.tsx        # Interactive calendar with events
-│   ├── PageContainer.tsx  # Page layout wrapper (full-width)
-│   └── BitcoinIcons.tsx   # Custom Bitcoin B iconography
-├── lib/                   # Utility libraries
-│   └── supabase.ts        # Supabase client initialization
-├── app/
-│   └── api/               # API routes
-│       ├── students/      # Students data endpoint
-│       ├── events/        # Events/calendar data endpoint
-│       ├── cohorts/       # Cohorts data endpoint
-│       ├── sats/          # Sats rewards data endpoint
-│       ├── leaderboard/   # Leaderboard data endpoint
-│       ├── profile/        # Profile management endpoints (login, register, update)
-│       └── submit-application/ # Application submission endpoint
-├── supabase/              # Database schema and migrations
-│   ├── schema.sql         # Complete database schema
-│   └── sample-data.sql    # Sample data for testing
-├── app/layout.tsx         # Root layout with Bitcoin backgrounds
-└── tailwind.config.ts     # Tailwind theme (Bitcoin palette)
-```
-
-## Bitcoin Theme
-
-The site uses a futuristic Bitcoin-themed design with:
-- Deep blue backgrounds (`#02000a`)
-- Orange accents (`#f97602`)
-- Cyan and purple highlights
-- Bitcoin network-inspired background effects
-- Glowing neon-style elements
-
-## Deployment
-
-The project is deployed on Vercel with automatic deployments from GitHub. Supabase integration is configured via Vercel's integration system.
-
-- **Production URL**: https://pan-africa-bitcoin-academy-yohannes-projects-586fef0b.vercel.app
-- **Custom Domain**: https://panafricanbitcoin.com
-- **Vercel Dashboard**: https://vercel.com/yohannes-projects-586fef0b/pan-africa-bitcoin-academy
-
-## Documentation
-
-- [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) - Supabase database setup guide
-- [STEP_BY_STEP_GUIDE.md](./STEP_BY_STEP_GUIDE.md) - Complete step-by-step implementation guide
-- [TESTING_CHECKLIST.md](./TESTING_CHECKLIST.md) - Testing checklist for all features
-- [DEPLOYMENT_STATUS.md](./DEPLOYMENT_STATUS.md) - Current deployment status and information
-
-## Contributing
-
-This project is part of a broader effort to build Bitcoin education and sovereignty in Africa. Contributions are welcome!
-
-## License
-
-Educational content - use responsibly. Not financial advice.
-
-## Contact
-
-For questions or support, visit the [FAQ page](/faq) or contact us through the [About page](/about).
+### Bitcoin Integration
+- **Lightning Network** - Fast payments
+- **Bitcoin Core** - Full node support
+- **Wallet Integration** - Multiple wallet support
 
 ---
 
-Built with ❤️ for the Bitcoin community in Africa.
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Git
+- Supabase account (for database)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Joie199/pan-africa-bitcoin-academy.git
+   cd pan-africa-bitcoin-academy
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   
+   Create a `.env.local` file:
+   ```env
+   # Site Configuration
+   NEXT_PUBLIC_SITE_URL=https://panafricanbitcoin.com
+   
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ```
+
+4. **Set up the database**
+   
+   Run the SQL schema in Supabase SQL Editor:
+   - See `supabase/schema.sql` for the complete schema
+   - Optional: Add sample data with `supabase/sample-data.sql`
+
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Open your browser**
+   
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+### 📚 Documentation
+
+- [Supabase Setup Guide](./SUPABASE_SETUP.md) - Database setup instructions
+- [Step-by-Step Guide](./STEP_BY_STEP_GUIDE.md) - Complete implementation guide
+- [Testing Checklist](./TESTING_CHECKLIST.md) - Testing procedures
+- [Deployment Guide](./DEPLOYMENT_STATUS.md) - Deployment information
+- [SEO Optimization](./SEO_OPTIMIZATION.md) - SEO setup and best practices
+
+---
+
+## 📁 Project Structure
+
+```
+pan-africa-bitcoin-academy/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── page.tsx            # Home page
+│   │   ├── dashboard/          # Student dashboard
+│   │   ├── chapters/           # Learning chapters (20 chapters)
+│   │   │   ├── page.tsx        # Chapters listing
+│   │   │   └── [slug]/         # Individual chapter pages
+│   │   ├── apply/              # Cohort registration
+│   │   ├── developer-hub/      # Developer resources
+│   │   ├── donate/             # Bitcoin donations
+│   │   ├── faq/                # FAQ page
+│   │   ├── impact/             # Impact dashboard
+│   │   ├── mentorship/         # Mentorship program
+│   │   └── blog/               # Blog system
+│   ├── components/             # React components
+│   │   ├── Navbar.tsx          # Navigation header
+│   │   ├── Footer.tsx          # Footer component
+│   │   ├── AuthModal.tsx       # Authentication modal
+│   │   ├── StudentDashboard.tsx # Main dashboard
+│   │   ├── Calendar.tsx        # Interactive calendar
+│   │   └── PageContainer.tsx   # Page layout wrapper
+│   ├── content/                 # Content files
+│   │   └── chaptersContent.ts  # All 20 chapters content
+│   ├── lib/                     # Utility libraries
+│   │   └── supabase.ts         # Supabase client
+│   └── hooks/                   # React hooks
+│       └── useAuth.ts           # Authentication hook
+├── public/                      # Static assets
+│   └── images/                  # Images and screenshots
+├── supabase/                    # Database files
+│   ├── schema.sql              # Database schema
+│   └── sample-data.sql         # Sample data
+└── README.md                   # This file
+```
+
+---
+
+## 🎨 Design & Theme
+
+The platform features a **futuristic Bitcoin-themed design**:
+
+- **Color Palette**
+  - Deep blue backgrounds (`#02000a`)
+  - Orange accents (`#f97602`)
+  - Cyan and purple highlights
+  - Glowing neon-style elements
+
+- **Visual Elements**
+  - Bitcoin network-inspired backgrounds
+  - Blockchain visualization effects
+  - Key and lock iconography
+  - Modern, clean UI with smooth animations
+
+---
+
+## 🌍 Deployment
+
+### Production URLs
+
+- **Live Website**: [https://panafricanbitcoin.com](https://panafricanbitcoin.com)
+- **Vercel Dashboard**: [Vercel Project](https://vercel.com/yohannes-projects-586fef0b/pan-africa-bitcoin-academy)
+
+### Deployment Features
+
+- ✅ Automatic deployments from GitHub
+- ✅ Supabase integration via Vercel
+- ✅ Custom domain configuration
+- ✅ SSL/HTTPS enabled
+- ✅ Performance optimizations
+- ✅ SEO optimization
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! This project is part of a broader effort to build Bitcoin education and sovereignty in Africa.
+
+### How to Contribute
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes**
+4. **Commit your changes** (`git commit -m 'Add some amazing feature'`)
+5. **Push to the branch** (`git push origin feature/amazing-feature`)
+6. **Open a Pull Request**
+
+### Contribution Areas
+
+- 📝 Content improvements (chapters, examples, translations)
+- 🐛 Bug fixes and improvements
+- 🎨 UI/UX enhancements
+- 📚 Documentation updates
+- 🌍 Localization (African languages)
+- 🧪 Testing and quality assurance
+
+---
+
+## 📊 Project Status
+
+### ✅ Completed Features
+
+- [x] 20 comprehensive learning chapters
+- [x] Student dashboard with progress tracking
+- [x] Interactive calendar system
+- [x] Authentication and profile management
+- [x] Gamification (achievements, sats, leaderboard)
+- [x] Cohort registration and management
+- [x] Blog system
+- [x] Bitcoin donations (Lightning + on-chain)
+- [x] Mentorship program
+- [x] Developer hub
+- [x] SEO optimization
+- [x] Mobile responsive design
+
+### 🚧 In Progress
+
+- [ ] Additional chapter content expansion
+- [ ] More interactive exercises
+- [ ] Enhanced analytics
+- [ ] Mobile app development
+
+### 📋 Planned Features
+
+- [ ] Multi-language support
+- [ ] Video content integration
+- [ ] Live streaming for classes
+- [ ] Advanced certificate system
+- [ ] Community forums
+- [ ] Mobile app (iOS/Android)
+
+---
+
+## 📞 Community
+
+Join our community:
+
+- **WhatsApp** - [Join Group](#) (link to be added)
+- **Nostr** - [Follow Us](#) (link to be added)
+- **Discord** - [Join Server](#) (link to be added)
+- **Email** - Contact via [About page](/about)
+
+---
+
+## 📄 License
+
+Educational content - use responsibly. Not financial advice.
+
+This project is open source and available for educational purposes. Please use responsibly and do not consider this as financial advice.
+
+---
+
+## 🙏 Acknowledgments
+
+- Bitcoin community for inspiration and support
+- African Bitcoin developers and educators
+- Open source contributors
+- All students and mentors of the Pan-Africa Bitcoin Academy
+
+---
+
+## 📈 Impact
+
+The Pan-Africa Bitcoin Academy aims to:
+
+- 🎓 Educate thousands of African students about Bitcoin
+- 💡 Build a strong Bitcoin developer community in Africa
+- 🌍 Promote financial sovereignty across the continent
+- 🤝 Create mentorship opportunities
+- 📚 Provide free, high-quality Bitcoin education
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the Bitcoin community in Africa**
+
+[⬆ Back to Top](#-pan-africa-bitcoin-academy)
+
+</div>
