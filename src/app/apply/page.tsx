@@ -623,11 +623,6 @@ export default function ApplyPage() {
                   <option value="intermediate" className="bg-zinc-950 text-zinc-50">Intermediate - Some knowledge</option>
                   <option value="advanced" className="bg-zinc-950 text-zinc-50">Advanced - Experienced user</option>
                 </select>
-                {selectedCohort && (
-                  <p className="mt-1 text-xs text-green-300">
-                    Auto-set to <span className="font-semibold">{selectedCohortData?.level || 'Beginner'}</span> from <span className="font-semibold">{selectedCohortData?.name || 'Cohort'}</span>.
-                  </p>
-                )}
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
