@@ -15,7 +15,8 @@ interface AuthModalProps {
 export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const [isSignIn, setIsSignIn] = useState(mode === 'signin');
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -120,8 +121,12 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
       }
     } else {
       // Sign up logic
-      if (!formData.name) {
-        newErrors.name = 'Name is required';
+      if (!formData.firstName) {
+        newErrors.firstName = 'First name is required';
+      }
+
+      if (!formData.lastName) {
+        newErrors.lastName = 'Last name is required';
       }
 
       if (!formData.confirmPassword) {
@@ -133,15 +138,14 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
       if (Object.keys(newErrors).length === 0) {
         try {
           setLoading(true);
-          const [firstName = '', lastName = ''] = formData.name.split(' ');
           const res = await fetch('/api/profile/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              firstName: firstName || formData.name,
-              lastName: lastName || '',
+              firstName: formData.firstName,
+              lastName: formData.lastName,
               email: formData.email,
-              password: formData.password, // Include password
+              password: formData.password,
             }),
           });
           
@@ -196,7 +200,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const switchMode = () => {
     setIsSignIn(!isSignIn);
     setFormData({
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -271,25 +276,47 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isSignIn && (
-            <div>
-              <label
-                htmlFor="name"
-                className="mb-2 block text-sm font-medium text-zinc-300"
-              >
-                Full Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
-                placeholder="Enter your full name"
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-400">{errors.name}</p>
-              )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="firstName"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+                  placeholder="First name"
+                />
+                {errors.firstName && (
+                  <p className="mt-1 text-sm text-red-400">{errors.firstName}</p>
+                )}
+              </div>
+              <div>
+                <label
+                  htmlFor="lastName"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+                  placeholder="Last name"
+                />
+                {errors.lastName && (
+                  <p className="mt-1 text-sm text-red-400">{errors.lastName}</p>
+                )}
+              </div>
             </div>
           )}
 
