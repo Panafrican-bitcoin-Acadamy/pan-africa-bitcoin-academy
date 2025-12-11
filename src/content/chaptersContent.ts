@@ -1,3 +1,6 @@
+// Chapter content definitions for Pan-Africa Bitcoin Academy
+// All chapters (1-20) with full detailed content, notes, tips, warnings, examples, and image placeholders
+
 export type ChapterCallout = {
   type: "note" | "tip" | "warning" | "example";
   content: string;
