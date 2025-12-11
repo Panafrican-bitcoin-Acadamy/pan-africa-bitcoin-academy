@@ -188,8 +188,9 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('Error creating application:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { error: 'Failed to submit application', details: error.message },
+        { error: 'Failed to submit application', details: error.message, code: error.code },
         { status: 500 }
       );
     }

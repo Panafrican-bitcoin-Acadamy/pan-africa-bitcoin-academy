@@ -296,17 +296,17 @@ export default function ApplyPage() {
     }
     
     // The phone number is already combined in formData.phone via handlePhoneChange
+    const selectedCohortObj = selectedCohort ? cohorts.find((c) => c.id === selectedCohort) : null;
+    const cohortNumber = selectedCohortObj ? selectedCohortObj.id : null;
+    
     const finalFormData = {
       ...formData,
       name: `${formData.firstName} ${formData.lastName}`.trim(), // Combine first and last name
       country: selectedCountry,
       birthDate: birthDate || null,
       phone: `${selectedCountryCode} ${phoneNumber}`.trim(),
+      preferredCohort: cohortNumber, // Add preferredCohort (cohort ID) to the request
     };
-
-    const selectedCohortObj = selectedCohort ? cohorts.find((c) => c.id === selectedCohort) : null;
-    const cohortNumber = selectedCohortObj ? selectedCohortObj.id : null;
-    const cohortName = selectedCohortObj ? selectedCohortObj.name : formData.preferredCohort || '';
 
     try {
       const applicationRes = await fetch('/api/submit-application', {
@@ -349,11 +349,15 @@ export default function ApplyPage() {
             'Your application was already approved! Please set up your password to complete registration.'
           );
         } else {
-          throw new Error(result.error || 'Failed to submit application');
+          // Show detailed error message if available
+          const errorMsg = result.error || 'Failed to submit application';
+          const errorDetails = result.details ? ` (${result.details})` : '';
+          throw new Error(errorMsg + errorDetails);
         }
       }
     } catch (error: any) {
       console.error('Error submitting application:', error);
+      console.error('Full error object:', error);
       setSubmitError(error.message || 'Failed to submit application. Please try again.');
     } finally {
       setSubmitting(false);

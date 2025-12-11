@@ -38,3 +38,15 @@ CREATE TRIGGER trigger_unlock_chapter_one
   FOR EACH ROW
   EXECUTE FUNCTION unlock_chapter_one_for_student();
 
+-- Enable Row Level Security (RLS) to restrict access
+ALTER TABLE chapter_progress ENABLE ROW LEVEL SECURITY;
+
+-- Restrictive Policy: Block ALL direct client access
+-- Only API endpoints using service role (supabaseAdmin) can access
+-- This ensures all access goes through secure API endpoints with proper authentication
+CREATE POLICY "API only - no direct client access"
+ON chapter_progress
+FOR ALL
+USING (false)
+WITH CHECK (false);
+
