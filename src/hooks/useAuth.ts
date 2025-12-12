@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { SessionExpiredModal } from '@/components/SessionExpiredModal';
 
 interface Profile {
   id: string;
@@ -18,6 +19,7 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSessionExpired, setShowSessionExpired] = useState(false);
   const logoutInProgressRef = useRef(false);
 
   // Session inactivity config (30 minutes)
@@ -58,8 +60,8 @@ export function useAuth() {
       setProfile(null);
       setLoading(false);
       window.dispatchEvent(new CustomEvent('userLogout'));
-      alert('Session expired due to inactivity. Please sign in again.');
-      window.location.replace('/');
+      // Show session expired modal instead of alert
+      setShowSessionExpired(true);
     };
 
     const checkAuth = async () => {
@@ -105,6 +107,12 @@ export function useAuth() {
               setIsAuthenticated(false);
               setProfile(null);
             }
+          } else if (res.status === 401 || res.status === 403) {
+            // Session expired or unauthorized
+            localStorage.removeItem('profileEmail');
+            setIsAuthenticated(false);
+            setProfile(null);
+            setShowSessionExpired(true);
           } else {
             localStorage.removeItem('profileEmail');
             setIsAuthenticated(false);
@@ -200,6 +208,17 @@ export function useAuth() {
     }
   };
 
-  return { isAuthenticated, profile, loading, logout };
+  const SessionExpiredPopup = () => (
+    <SessionExpiredModal
+      isOpen={showSessionExpired}
+      onClose={() => {
+        setShowSessionExpired(false);
+        window.location.replace('/');
+      }}
+      userType="student"
+    />
+  );
+
+  return { isAuthenticated, profile, loading, logout, SessionExpiredPopup };
 }
 

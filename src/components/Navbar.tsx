@@ -20,7 +20,7 @@ export function Navbar() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { isAuthenticated, profile, loading, logout } = useAuth();
+  const { isAuthenticated, profile, loading, logout, SessionExpiredPopup } = useAuth();
 
   // Fetch profile data when modal opens
   useEffect(() => {
@@ -594,6 +594,9 @@ export function Navbar() {
           />
         </>
       )}
+
+      {/* Session Expired Modal */}
+      <SessionExpiredPopup />
     </header>
   );
 }

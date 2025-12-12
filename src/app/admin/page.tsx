@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { SessionExpiredModal } from '@/components/SessionExpiredModal';
 
 interface Application {
   id: string;
@@ -107,6 +108,7 @@ export default function AdminDashboardPage() {
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
+  const [showSessionExpired, setShowSessionExpired] = useState(false);
 
   const [eventForm, setEventForm] = useState({
     name: '',
@@ -135,6 +137,10 @@ export default function AdminDashboardPage() {
         setAuthLoading(true);
         const res = await fetch('/api/admin/me');
         if (!res.ok) {
+          if (res.status === 401) {
+            // Session expired
+            setShowSessionExpired(true);
+          }
           setAdmin(null);
           return;
         }
@@ -154,7 +160,9 @@ export default function AdminDashboardPage() {
   const fetchWithAuth = async (url: string, options?: RequestInit) => {
     const res = await fetch(url, options);
     if (res.status === 401) {
+      // Session expired
       setAdmin(null);
+      setShowSessionExpired(true);
       throw new Error('Unauthorized');
     }
     return res;
@@ -962,6 +970,16 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Session Expired Modal */}
+      <SessionExpiredModal
+        isOpen={showSessionExpired}
+        onClose={() => {
+          setShowSessionExpired(false);
+          setAdmin(null);
+        }}
+        userType="admin"
+      />
     </div>
   );
 }

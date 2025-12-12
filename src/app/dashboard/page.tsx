@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StudentDashboard } from "@/components/StudentDashboard";
+import { SessionExpiredModal } from '@/components/SessionExpiredModal';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
+  const [showSessionExpired, setShowSessionExpired] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated and get user data
@@ -28,6 +30,12 @@ export default function DashboardPage() {
         });
 
         if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            // Session expired - show modal
+            setShowSessionExpired(true);
+            localStorage.removeItem('profileEmail');
+            return;
+          }
           localStorage.removeItem('profileEmail');
           router.push('/');
           return;
@@ -64,5 +72,17 @@ export default function DashboardPage() {
     );
   }
 
-  return <StudentDashboard userData={userData} />;
+  return (
+    <>
+      <StudentDashboard userData={userData} />
+      <SessionExpiredModal
+        isOpen={showSessionExpired}
+        onClose={() => {
+          setShowSessionExpired(false);
+          router.push('/');
+        }}
+        userType="student"
+      />
+    </>
+  );
 }
