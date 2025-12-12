@@ -276,7 +276,10 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setAuthError(data.error || 'Login failed');
+        const errorMsg = data.error || 'Login failed';
+        const errorDetails = data.details ? `: ${data.details}` : '';
+        setAuthError(`${errorMsg}${errorDetails}`);
+        console.error('Admin login error:', data);
         return;
       }
       setAdmin({ email: data.admin.email, role: data.admin.role });
