@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 
 export async function POST(req: NextRequest) {
   try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { applicationId, rejectedReason, rejectedBy } = await req.json();
 
     if (!applicationId) {
@@ -58,10 +64,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       message: 'Application rejected successfully',
     });
+    attachRefresh(res, session);
+    return res;
   } catch (error: any) {
     console.error('Error rejecting application:', error);
     return NextResponse.json(

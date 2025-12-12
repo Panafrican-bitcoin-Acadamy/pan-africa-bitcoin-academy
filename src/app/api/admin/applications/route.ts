@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { attachRefresh, requireAdmin } from '@/lib/adminSession';
 
 export async function GET(req: NextRequest) {
   try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Get filter from query params
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
@@ -27,10 +33,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { applications: applications || [] },
       { status: 200 }
     );
+    attachRefresh(res, session);
+    return res;
   } catch (error: any) {
     console.error('Error in admin applications API:', error);
     return NextResponse.json(

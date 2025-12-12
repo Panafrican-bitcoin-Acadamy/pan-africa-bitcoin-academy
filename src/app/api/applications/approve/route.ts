@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 
 export async function POST(req: NextRequest) {
   try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { applicationId, approvedBy } = await req.json();
 
     if (!applicationId) {
@@ -249,13 +255,15 @@ export async function POST(req: NextRequest) {
         .eq('id', profileId);
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       message: 'Application approved successfully',
       profileId,
       isExistingProfile,
       needsPasswordSetup: !existingProfile || existingProfile.status === 'Pending Password Setup',
     });
+    attachRefresh(res, session);
+    return res;
   } catch (error: any) {
     console.error('Error approving application:', error);
     return NextResponse.json(

@@ -69,11 +69,33 @@ export default function MentorshipPage() {
     comments: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, this would submit to Tally.so or Google Forms
-    const formUrl = "https://tally.so/r/YOUR_FORM_ID";
-    window.open(formUrl, "_blank");
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/mentorship/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          teachingExperience: formData.teachingExperience,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit");
+      }
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to submit");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -104,6 +126,17 @@ export default function MentorshipPage() {
             If you share our mission of sovereignty, freedom, and open knowledge — we invite you to join us.
           </p>
         </section>
+
+        {submitted && (
+          <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-green-200">
+            Thank you! Your mentorship application has been received.
+          </div>
+        )}
+        {error && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-200">
+            {error}
+          </div>
+        )}
 
         {/* Roles */}
         <section className="space-y-6">
@@ -297,9 +330,10 @@ export default function MentorshipPage() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(34,211,238,0.4)] transition hover:brightness-110"
+              disabled={submitting || submitted}
+              className="w-full rounded-lg bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(34,211,238,0.4)] transition hover:brightness-110 disabled:opacity-60"
             >
-              Submit Application
+              {submitting ? "Submitting..." : submitted ? "Submitted" : "Submit Application"}
             </button>
           </form>
         </section>

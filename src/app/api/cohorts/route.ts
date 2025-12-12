@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin } from '@/lib/adminSession';
 
 export async function GET() {
   try {
@@ -55,6 +56,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { name, start_date, end_date, seats_total, level, status, sessions } = await req.json();
 
     if (!name) {

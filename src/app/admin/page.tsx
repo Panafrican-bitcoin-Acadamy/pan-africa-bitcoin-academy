@@ -58,6 +58,22 @@ interface ProgressItem {
   unlockedChapters: number;
 }
 
+interface AdminSession {
+  email: string;
+  role: string | null;
+}
+
+interface MentorshipApp {
+  id: string;
+  name: string;
+  email: string;
+  country: string | null;
+  whatsapp: string | null;
+  role: string | null;
+  status: string;
+  created_at: string;
+}
+
 const statusClasses: Record<string, string> = {
   approved: 'text-green-400 bg-green-500/10 border-green-500/30',
   rejected: 'text-red-400 bg-red-500/10 border-red-500/30',
@@ -66,11 +82,17 @@ const statusClasses: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
+  const [admin, setAdmin] = useState<AdminSession | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+
   const [applications, setApplications] = useState<Application[]>([]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [overview, setOverview] = useState<OverviewSummary | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [progress, setProgress] = useState<ProgressItem[]>([]);
+  const [mentorships, setMentorships] = useState<MentorshipApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
@@ -99,63 +121,130 @@ export default function AdminDashboardPage() {
   });
 
   useEffect(() => {
-    const load = async () => {
+    const checkSession = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        await Promise.all([
-          fetchApplications(),
-          fetchCohorts(),
-          fetchOverview(),
-          fetchEvents(),
-          fetchProgress(),
-        ]);
+        setAuthLoading(true);
+        const res = await fetch('/api/admin/me');
+        if (!res.ok) {
+          setAdmin(null);
+          return;
+        }
+        const data = await res.json();
+        setAdmin({ email: data.admin.email, role: data.admin.role });
+        await loadData();
       } catch (err: any) {
-        setError(err.message || 'Failed to load admin data');
+        console.error(err);
+        setAdmin(null);
       } finally {
-        setLoading(false);
+        setAuthLoading(false);
       }
     };
-    load();
+    checkSession();
   }, []);
 
+  const fetchWithAuth = async (url: string, options?: RequestInit) => {
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+      setAdmin(null);
+      throw new Error('Unauthorized');
+    }
+    return res;
+  };
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await Promise.all([
+        fetchApplications(),
+        fetchCohorts(),
+        fetchOverview(),
+        fetchEvents(),
+        fetchProgress(),
+        fetchMentorships(),
+      ]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load admin data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchOverview = async () => {
-    const res = await fetch('/api/admin/overview');
+    const res = await fetchWithAuth('/api/admin/overview');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load overview');
     setOverview(data.summary);
   };
 
   const fetchApplications = async () => {
-    const res = await fetch('/api/admin/applications');
+    const res = await fetchWithAuth('/api/admin/applications');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch applications');
     setApplications(data.applications || []);
   };
 
   const fetchCohorts = async () => {
-    const res = await fetch('/api/cohorts');
+    const res = await fetchWithAuth('/api/cohorts');
     const data = await res.json();
     if (data.cohorts) setCohorts(data.cohorts);
   };
 
   const fetchEvents = async () => {
-    const res = await fetch('/api/events');
+    const res = await fetchWithAuth('/api/events');
     const data = await res.json();
     if (data.events) setEvents(data.events);
   };
 
   const fetchProgress = async () => {
-    const res = await fetch('/api/admin/students/progress');
+    const res = await fetchWithAuth('/api/admin/students/progress');
     const data = await res.json();
     if (data.progress) setProgress(data.progress);
+  };
+
+  const fetchMentorships = async () => {
+    const res = await fetchWithAuth('/api/admin/mentorships');
+    const data = await res.json();
+    if (data.applications) setMentorships(data.applications);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data.error || 'Login failed');
+        return;
+      }
+      setAdmin({ email: data.admin.email, role: data.admin.role });
+      await loadData();
+    } catch (err: any) {
+      setAuthError(err.message || 'Login failed');
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    setAdmin(null);
+    setApplications([]);
+    setOverview(null);
+    setEvents([]);
+    setCohorts([]);
+    setProgress([]);
+    setMentorships([]);
   };
 
   const handleApprove = async (applicationId: string, email: string) => {
     if (!confirm(`Approve application for ${email}?`)) return;
     setProcessing(applicationId);
     try {
-      const res = await fetch('/api/applications/approve', {
+      const res = await fetchWithAuth('/api/applications/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ applicationId }),
@@ -179,7 +268,7 @@ export default function AdminDashboardPage() {
     if (!reason) return;
     setProcessing(applicationId);
     try {
-      const res = await fetch('/api/applications/reject', {
+      const res = await fetchWithAuth('/api/applications/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ applicationId, rejectedReason: reason }),
@@ -210,7 +299,7 @@ export default function AdminDashboardPage() {
   const createEvent = async () => {
     setCreatingEvent(true);
     try {
-      const res = await fetch('/api/events/create', {
+      const res = await fetchWithAuth('/api/events/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -242,7 +331,7 @@ export default function AdminDashboardPage() {
   const createCohort = async () => {
     setCreatingCohort(true);
     try {
-      const res = await fetch('/api/cohorts', {
+      const res = await fetchWithAuth('/api/cohorts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -271,8 +360,77 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const updateMentorshipStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetchWithAuth('/api/admin/mentorships', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update status');
+      await fetchMentorships();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update mentorship status');
+    }
+  };
+
   const getStatusClass = (status: string) =>
     statusClasses[status?.toLowerCase()] || statusClasses.default;
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black p-8 text-center text-zinc-400">
+        Checking admin session...
+      </div>
+    );
+  }
+
+  if (!admin) {
+    return (
+      <div className="min-h-screen bg-black p-6 sm:p-8">
+        <div className="mx-auto max-w-md space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-50">Admin Login</h1>
+            <p className="text-sm text-zinc-400">Access is restricted to admin users.</p>
+          </div>
+          {authError && (
+            <div className="rounded border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+              {authError}
+            </div>
+          )}
+          <form className="space-y-4" onSubmit={handleLogin}>
+            <div className="space-y-2">
+              <label className="text-sm text-zinc-300">Email</label>
+              <input
+                type="email"
+                required
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-zinc-300">Password</label>
+              <input
+                type="password"
+                required
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110"
+            >
+              Sign in
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !overview) {
     return (
@@ -285,8 +443,17 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-black p-6 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-10">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-50">Admin Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-zinc-50">Admin Dashboard</h1>
+            <p className="text-sm text-zinc-500">Signed in as {admin.email}</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:border-red-400 hover:text-red-300"
+          >
+            Logout
+          </button>
         </div>
 
         {error && (
@@ -568,6 +735,61 @@ export default function AdminDashboardPage() {
           {events.length === 0 && (
             <p className="text-sm text-zinc-400">No events yet.</p>
           )}
+        </div>
+
+        {/* Mentorship applications */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Mentorship Applications</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-zinc-900 text-left text-zinc-300">
+                <tr>
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Email</th>
+                  <th className="px-3 py-2">Role</th>
+                  <th className="px-3 py-2">Country</th>
+                  <th className="px-3 py-2">Applied</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {mentorships.map((m) => (
+                  <tr key={m.id} className="border-b border-zinc-800">
+                    <td className="px-3 py-2 text-zinc-50">{m.name}</td>
+                    <td className="px-3 py-2 text-zinc-400">{m.email}</td>
+                    <td className="px-3 py-2 text-zinc-400">{m.role || '—'}</td>
+                    <td className="px-3 py-2 text-zinc-400">{m.country || '—'}</td>
+                    <td className="px-3 py-2 text-zinc-400">
+                      {new Date(m.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`rounded-full border px-2 py-1 text-xs ${getStatusClass(m.status)}`}>
+                        {m.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right space-x-2">
+                      <button
+                        onClick={() => updateMentorshipStatus(m.id, 'Approved')}
+                        className="rounded border border-green-500/40 px-2 py-1 text-xs text-green-300 hover:bg-green-500/10"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => updateMentorshipStatus(m.id, 'Rejected')}
+                        className="rounded border border-red-500/40 px-2 py-1 text-xs text-red-300 hover:bg-red-500/10"
+                      >
+                        Reject
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {mentorships.length === 0 && (
+              <p className="p-3 text-sm text-zinc-400">No mentorship applications yet.</p>
+            )}
+          </div>
         </div>
 
         {/* Student progress */}

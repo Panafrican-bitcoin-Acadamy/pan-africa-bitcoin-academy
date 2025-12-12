@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * Create a new event
@@ -9,6 +10,11 @@ import { supabaseAdmin } from '@/lib/supabase';
  */
 export async function POST(req: NextRequest) {
   try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { 
       name, 
       type, 

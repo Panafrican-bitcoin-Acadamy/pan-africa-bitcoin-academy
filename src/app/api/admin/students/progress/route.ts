@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { attachRefresh, requireAdmin } from '@/lib/adminSession';
 
 export async function GET(_req: NextRequest) {
   try {
+    const session = requireAdmin(_req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Fetch profiles with students and chapter_progress relationships
     const { data: profiles, error } = await supabaseAdmin
       .from('profiles')
@@ -37,7 +43,9 @@ export async function GET(_req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ progress }, { status: 200 });
+    const res = NextResponse.json({ progress }, { status: 200 });
+    attachRefresh(res, session);
+    return res;
   } catch (error: any) {
     console.error('Error in admin students progress API:', error);
     return NextResponse.json(
