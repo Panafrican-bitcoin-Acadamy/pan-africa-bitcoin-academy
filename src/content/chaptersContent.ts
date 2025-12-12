@@ -79,6 +79,7 @@ export const chaptersContent: ChapterContent[] = [
         heading: "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account",
         paragraphs: [
           "Money isn't just paper or numbers on a screen. It has three powerful functions that make it unique:",
+          "Together, these functions explain why money is far more than paper. It is the organizer of trade, savings, and planning in every society.",
         ],
         bullets: [
           "Medium of Exchange: Money removes the need for awkward bartering. Instead of finding someone who both wants your maize and has what you need, you can sell maize for money, then later buy anything else.",
@@ -94,9 +95,6 @@ export const chaptersContent: ChapterContent[] = [
             type: "warning",
             content: "Zimbabwe once experienced such extreme inflation that a loaf of bread cost billions of Zimbabwean dollars. People who saved in cash lost everything. Even in Uganda, the shilling has weakened against the US dollar, making imported goods more expensive year after year.",
           },
-        ],
-        paragraphs: [
-          "Together, these functions explain why money is far more than paper. It is the organizer of trade, savings, and planning in every society.",
         ],
       },
       {
