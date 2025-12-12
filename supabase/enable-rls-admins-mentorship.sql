@@ -32,3 +32,4 @@ CREATE POLICY "API only - no direct client update" ON mentorship_applications
 CREATE POLICY "API only - no direct client delete" ON mentorship_applications
   FOR DELETE USING (false);
 
+

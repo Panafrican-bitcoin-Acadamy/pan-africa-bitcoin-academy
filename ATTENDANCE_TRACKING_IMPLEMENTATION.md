@@ -187,3 +187,4 @@ Now includes attendance data in the response:
 - Attendance percentage is calculated based on total live-class events
 - Overall progress is a weighted combination (50% chapters, 50% attendance)
 
+

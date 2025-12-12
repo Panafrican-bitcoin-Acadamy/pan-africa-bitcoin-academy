@@ -62,8 +62,7 @@
 
 #### A. Apply Page (`src/app/apply/page.tsx`)
 - **Line 261**: `// TODO: Fetch cohorts from Supabase`
-- **Status**: ✅ **ALREADY IMPLEMENTED** - The code actually fetches cohorts from `/api/cohorts`
-- **Action**: Remove the outdated TODO comment
+- **Status**: ✅ **COMPLETED** - The TODO comment has been removed and replaced with descriptive comment. The code fetches cohorts from `/api/cohorts`
 
 #### B. Developer Hub (`src/app/developer-hub/page.tsx`)
 - **Line 31**: `// TODO: Fetch resources and events from Supabase`
@@ -145,9 +144,9 @@ All navigation links verified:
 ## 🔍 Recommended Actions
 
 ### High Priority
-1. **Run new migration**: `supabase/add-student-data-fields.sql`
-2. **Remove outdated TODO**: In `src/app/apply/page.tsx` line 261
-3. **Test approval flow**: Verify students database is source of truth
+1. **Run new migration**: `supabase/add-student-data-fields.sql` ⚠️ **ACTION REQUIRED**
+2. ✅ **Remove outdated TODO**: In `src/app/apply/page.tsx` line 261 - **COMPLETED**
+3. **Test approval flow**: Verify students database is source of truth (after migration)
 
 ### Medium Priority
 1. **Email integration**: For password reset (if needed)
@@ -173,7 +172,28 @@ All core features are implemented:
 - ✅ Dashboard with real-time updates
 
 The main items are:
-1. Run the new database migration (`add-student-data-fields.sql`)
-2. Remove outdated TODO comments
-3. Optional: Email service integration
+1. ⚠️ **Run the new database migration** (`add-student-data-fields.sql`) - **ACTION REQUIRED**
+2. ✅ Remove outdated TODO comments - **COMPLETED** (apply page TODO already removed)
+3. 📧 Optional: Email service integration (for password reset feature)
+4. 📝 Note: Developer Hub TODOs are acceptable - using placeholder data as intended
+
+---
+
+## 📋 Next Steps
+
+### Immediate Action Required:
+1. **Run Database Migration**: Execute `supabase/add-student-data-fields.sql` in Supabase SQL Editor
+   - This adds name, email, phone, country, city, cohort_id, and status fields to students table
+   - Makes students table the source of truth for student information
+
+### Optional Enhancements:
+1. **Email Service Integration**: 
+   - Integrate email service (Resend, SendGrid, etc.) for password reset functionality
+   - File: `src/app/api/profile/forgot-password/route.ts` (line 82)
+   
+2. **Developer Hub Data**:
+   - Consider fetching resources and events from Supabase if dynamic data is needed
+   - Currently using placeholder/static data (acceptable for now)
+   - Files: `src/app/developer-hub/page.tsx` (lines 31, 597, 677)
+
 

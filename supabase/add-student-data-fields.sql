@@ -25,3 +25,4 @@ COMMENT ON COLUMN students.city IS 'Student city (source of truth)';
 COMMENT ON COLUMN students.cohort_id IS 'Enrolled cohort (source of truth)';
 COMMENT ON COLUMN students.status IS 'Student enrollment status (source of truth)';
 
+

@@ -10,3 +10,4 @@ CREATE INDEX IF NOT EXISTS idx_events_chapter_number ON events(chapter_number);
 -- Add comment
 COMMENT ON COLUMN events.chapter_number IS 'Chapter number this live-class event is for (only relevant when type = live-class)';
 
+

@@ -30,3 +30,4 @@ CREATE POLICY "API only - no direct client access" ON attendance
 COMMENT ON TABLE attendance IS 'Student attendance records from Google Meet live lectures';
 COMMENT ON COLUMN attendance.email IS 'Email from Google Meet CSV - used to match with student profiles during import';
 
+

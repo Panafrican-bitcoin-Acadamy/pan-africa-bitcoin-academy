@@ -17,3 +17,4 @@ SET password_hash = EXCLUDED.password_hash,
 -- Verify the admin was created
 SELECT id, email, role, created_at FROM admins WHERE email = 'your-email@example.com';
 
+
