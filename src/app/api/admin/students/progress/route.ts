@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { attachRefresh, requireAdmin } from '@/lib/adminSession';
 
+/**
+ * Admin endpoint to fetch student progress data
+ * Returns progress information for all students including:
+ * - Chapter completion status
+ * - Attendance records
+ * - Cohort assignments
+ */
 export async function GET(_req: NextRequest) {
   try {
     const session = requireAdmin(_req);
@@ -98,6 +105,7 @@ export async function GET(_req: NextRequest) {
       // Continue without attendance data
     }
 
+    // Map profiles to progress data
     const progress = profiles.map((p: any) => {
       const chapterData = p.chapter_progress || [];
       const completed = chapterData.filter((c: any) => c.is_completed).length;
@@ -145,9 +153,7 @@ export async function GET(_req: NextRequest) {
         error: 'Internal server error',
         ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {})
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
-
-
