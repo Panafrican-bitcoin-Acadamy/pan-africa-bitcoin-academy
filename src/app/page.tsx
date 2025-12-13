@@ -167,19 +167,13 @@ export default function Home() {
             <div className="flex items-center justify-center">
               <div className="relative w-full max-w-4xl rounded-xl overflow-hidden border border-orange-500/25 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
                 {/* Image container */}
-                <div className="relative w-full aspect-video bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 flex items-center justify-center">
+                <div className="relative w-full bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 flex items-center justify-center">
                   {/* Image showing Bitcoin's origin story */}
                   <img 
                     src="/images/bailouts-to-blockchain.jpg" 
                     alt="From Bailouts to Blockchain - Bitcoin's origin story"
-                    className="w-full h-full object-cover"
+                    className="w-full h-auto object-contain"
                   />
-                  {/* Fallback content (shown if image doesn't load) */}
-                  <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 opacity-0 hover:opacity-100 transition-opacity">
-                    <div className="text-6xl mb-4">₿</div>
-                    <div className="text-xl font-semibold text-orange-200 mb-2">From Bailouts to Blockchain</div>
-                    <div className="text-sm text-zinc-400">Bitcoin's response to the 2008 financial crisis</div>
-                  </div>
                 </div>
               </div>
             </div>
