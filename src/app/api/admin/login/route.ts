@@ -2,9 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { requireAdmin, setAdminCookie, attachRefresh } from '@/lib/adminSession';
+import { validateAndNormalizeEmail, validatePassword } from '@/lib/validation';
+import { handleApiError } from '@/lib/api-error-handler';
+import { checkRateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`admin-login:${clientIP}`, RATE_LIMITS.AUTH);
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many login attempts. Please try again later.',
+          retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': RATE_LIMITS.AUTH.maxRequests.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     // If already logged in, refresh session
     const existing = requireAdmin(req);
     if (existing) {
@@ -14,12 +39,25 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, password } = await req.json();
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
-    }
 
-    // Trim and normalize email
-    const normalizedEmail = email.trim().toLowerCase();
+    // Validate email
+    const emailValidation = validateAndNormalizeEmail(email);
+    if (!emailValidation.valid) {
+      return NextResponse.json(
+        { error: emailValidation.error || 'Email is required' },
+        { status: 400 }
+      );
+    }
+    const normalizedEmail = emailValidation.normalized!;
+
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { error: passwordValidation.error || 'Password is required' },
+        { status: 400 }
+      );
+    }
 
     const { data: admin, error } = await supabaseAdmin
       .from('admins')
@@ -57,52 +95,18 @@ export async function POST(req: NextRequest) {
       lastActive: now,
     };
 
-    try {
-      const res = NextResponse.json({ success: true, admin: { email: admin.email, role: admin.role } });
-      setAdminCookie(res, session);
-      return res;
-    } catch (cookieError: any) {
-      console.error('Error setting admin cookie:', cookieError);
-      if (cookieError.message?.includes('SESSION_SECRET')) {
-        return NextResponse.json(
-          { 
-            error: 'Server configuration error',
-            ...(process.env.NODE_ENV === 'development' 
-              ? { details: 'Session secret is not configured. Check server logs.' }
-              : {})
-          },
-          { status: 500 }
-        );
-      }
-      throw cookieError; // Re-throw to be caught by outer catch
-    }
-  } catch (error: any) {
+    const res = NextResponse.json({ success: true, admin: { email: admin.email, role: admin.role } });
+    setAdminCookie(res, session);
+    return res;
+  } catch (error: unknown) {
     console.error('Admin login error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
-    
-    // Check if it's the SESSION_SECRET error
-    if (error.message?.includes('SESSION_SECRET')) {
-      return NextResponse.json(
-        { 
-          error: 'Server configuration error',
-          ...(process.env.NODE_ENV === 'development' 
-            ? { details: 'Session secret is not configured. Check server logs.' }
-            : {})
-        },
-        { status: 500 }
-      );
-    }
-    
+    const errorResponse = handleApiError(error);
     return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      {
+        error: errorResponse.message,
+        ...(errorResponse.details ? { details: errorResponse.details } : {}),
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }

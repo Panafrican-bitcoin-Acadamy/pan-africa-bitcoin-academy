@@ -2,21 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { setStudentCookie } from '@/lib/session';
+import { validateAndNormalizeEmail, validatePassword } from '@/lib/validation';
+import { handleApiError } from '@/lib/api-error-handler';
+import { checkRateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  // Rate limiting
+  const clientIP = getClientIP(req);
+  const rateLimit = checkRateLimit(`login:${clientIP}`, RATE_LIMITS.AUTH);
+  
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: 'Too many login attempts. Please try again later.',
+        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+      },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': RATE_LIMITS.AUTH.maxRequests.toString(),
+          'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+          'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+          'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
   try {
     const { email, password } = await req.json();
 
-    if (!email) {
+    // Validate email
+    const emailValidation = validateAndNormalizeEmail(email);
+    if (!emailValidation.valid) {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: emailValidation.error || 'Email is required' },
         { status: 400 }
       );
     }
+    const normalizedEmail = emailValidation.normalized!;
 
-    if (!password) {
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
       return NextResponse.json(
-        { error: 'Password is required' },
+        { error: passwordValidation.error || 'Password is required' },
         { status: 400 }
       );
     }
@@ -25,7 +54,7 @@ export async function POST(req: NextRequest) {
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('email', email.toLowerCase().trim())
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
     if (error) {
@@ -130,14 +159,15 @@ export async function POST(req: NextRequest) {
     setStudentCookie(res, session);
 
     return res;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in profile login API:', error);
+    const errorResponse = handleApiError(error);
     return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {})
+      {
+        error: errorResponse.message,
+        ...(errorResponse.details ? { details: errorResponse.details } : {}),
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }

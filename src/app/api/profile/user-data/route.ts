@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { validateAndNormalizeEmail } from '@/lib/validation';
+import { handleApiError } from '@/lib/api-error-handler';
 
 /**
  * Get comprehensive user data including:
@@ -12,18 +14,21 @@ export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
 
-    if (!email) {
+    // Validate email
+    const emailValidation = validateAndNormalizeEmail(email);
+    if (!emailValidation.valid) {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: emailValidation.error || 'Email is required' },
         { status: 400 }
       );
     }
+    const normalizedEmail = emailValidation.normalized!;
 
     // Get profile
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
-      .eq('email', email.toLowerCase().trim())
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
     if (profileError || !profile) {
@@ -199,14 +204,15 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in user-data API:', error);
+    const errorResponse = handleApiError(error);
     return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {})
+      {
+        error: errorResponse.message,
+        ...(errorResponse.details ? { details: errorResponse.details } : {}),
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }
