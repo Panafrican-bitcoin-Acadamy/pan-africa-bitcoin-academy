@@ -408,30 +408,3 @@ export default function MentorshipPage() {
   );
 }
 
-
-                <p className="mt-3 text-sm text-zinc-300">{mentor.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <h2 className="text-xl font-semibold text-orange-200">Want to join our mentorship team?</h2>
-          <p className="mt-4 text-sm text-zinc-300 sm:text-base">
-            Help empower the next generation of African Bitcoin talent.
-          </p>
-          <a
-            href="#application"
-            className="mt-6 inline-block rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110"
-          >
-            Apply to be a Mentor or Volunteer
-          </a>
-        </section>
-      </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-

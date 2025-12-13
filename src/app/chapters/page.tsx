@@ -1030,48 +1030,6 @@ export default function ChaptersPage() {
     </div>
   );
 }
-
-                              {chapter.title}
-                            </h3>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Time & Type Badge */}
-                      <div className="mb-4 flex items-center gap-2 text-xs text-zinc-400">
-                        <span>⏱ {chapter.time}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <span className="text-cyan-400">{getTypeIcon(chapter.type)}</span> {chapter.type}
-                        </span>
-                      </div>
-
-                      {/* What You Will Learn */}
-                      <div className="mb-4">
-                        <p className="mb-2 text-xs font-medium text-zinc-400">You will learn:</p>
-                        <ul className="space-y-1 text-xs text-zinc-300">
-                          {chapter.learnPoints.slice(0, 3).map((point, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-orange-400">•</span>
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                          {chapter.learnPoints.length > 3 && (
-                            <li className="text-cyan-400">+ {chapter.learnPoints.length - 3} more</li>
-                          )}
-                        </ul>
-                      </div>
-
-                      {/* Activities Badge */}
-                      {chapter.activities.length > 0 && (
-                        <div className="mb-4">
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300">
-                            <ToolIcon className="w-3 h-3" /> {chapter.activities.length} {chapter.activities.length === 1 ? "Activity" : "Activities"}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* What's Inside Toggle */}
                       <button
                         onClick={() =>
                           setExpandedChapter(expandedChapter === chapter.id ? null : chapter.id)
