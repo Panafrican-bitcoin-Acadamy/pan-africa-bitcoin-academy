@@ -58,8 +58,8 @@ const testimonials = [
 // Custom hook for animated counter
 function useAnimatedCounter(target: number, duration: number = 1500, startAnimation: boolean = true) {
   const [count, setCount] = useState(0);
-  const requestRef = useRef<number>();
-  const startTimeRef = useRef<number>();
+  const requestRef = useRef<number | undefined>(undefined);
+  const startTimeRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!startAnimation || target === 0) {
