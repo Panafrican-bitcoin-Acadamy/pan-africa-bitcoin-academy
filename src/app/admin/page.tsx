@@ -650,7 +650,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
               <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
               <div className="mt-3 space-y-3">
