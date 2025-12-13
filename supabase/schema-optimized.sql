@@ -59,7 +59,10 @@ FOR UPDATE USING (
 -- ============================================
 
 CREATE OR REPLACE FUNCTION is_student(profile_uuid UUID)
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
 DECLARE
   student_exists BOOLEAN;
 BEGIN
@@ -69,7 +72,7 @@ BEGIN
   
   RETURN student_exists;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- ============================================
 -- 5. UPDATE COMMENTS

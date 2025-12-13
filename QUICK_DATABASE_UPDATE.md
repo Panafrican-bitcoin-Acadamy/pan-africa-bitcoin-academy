@@ -39,14 +39,17 @@ CREATE INDEX IF NOT EXISTS idx_chapter_progress_chapter ON chapter_progress(chap
 
 -- Function to auto-unlock Chapter 1 for new students
 CREATE OR REPLACE FUNCTION unlock_chapter_one_for_student()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
   INSERT INTO chapter_progress (student_id, chapter_number, chapter_slug, is_unlocked, unlocked_at)
   VALUES (NEW.profile_id, 1, 'the-nature-of-money', TRUE, NOW())
   ON CONFLICT (student_id, chapter_number) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Trigger to run function when student is created
 DROP TRIGGER IF EXISTS trigger_unlock_chapter_one ON students;

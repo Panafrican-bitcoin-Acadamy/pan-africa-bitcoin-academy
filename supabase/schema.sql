@@ -146,12 +146,15 @@ CREATE INDEX IF NOT EXISTS idx_achievements_student ON achievements(student_id);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$;
 
 -- Triggers to auto-update updated_at
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles

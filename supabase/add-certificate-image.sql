@@ -8,3 +8,4 @@ ADD COLUMN IF NOT EXISTS certificate_image_url TEXT;
 -- Add comment
 COMMENT ON COLUMN students.certificate_image_url IS 'Optional URL to student photo for certificate purposes. Can also be used as profile picture.';
 
+

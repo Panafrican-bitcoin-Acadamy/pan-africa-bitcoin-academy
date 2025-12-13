@@ -13,3 +13,5 @@ COMMENT ON COLUMN events.chapter_number IS 'Chapter number this live-class event
 
 
 
+
+

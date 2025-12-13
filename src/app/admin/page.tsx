@@ -191,9 +191,9 @@ export default function AdminDashboardPage() {
 
   const fetchCohorts = async () => {
     try {
-      const res = await fetchWithAuth('/api/cohorts');
-      const data = await res.json();
-      if (data.cohorts) setCohorts(data.cohorts);
+    const res = await fetchWithAuth('/api/cohorts');
+    const data = await res.json();
+    if (data.cohorts) setCohorts(data.cohorts);
       // Don't throw if cohorts missing - it's not critical
     } catch (err) {
       // Silently fail for cohorts - not critical
@@ -203,9 +203,9 @@ export default function AdminDashboardPage() {
 
   const fetchEvents = async () => {
     try {
-      const res = await fetchWithAuth('/api/events');
-      const data = await res.json();
-      if (data.events) setEvents(data.events);
+    const res = await fetchWithAuth('/api/events');
+    const data = await res.json();
+    if (data.events) setEvents(data.events);
       // Don't throw if events missing - it's not critical
     } catch (err) {
       // Silently fail for events - not critical
@@ -567,100 +567,100 @@ export default function AdminDashboardPage() {
 
         {/* Applications */}
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                  filter === f
-                    ? 'bg-cyan-400 text-black'
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                }`}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)} (
-                {applications.filter((a) => (f === 'all' ? true : a.status.toLowerCase() === f)).length})
-              </button>
-            ))}
-          </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                    filter === f
+                      ? 'bg-cyan-400 text-black'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  }`}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)} (
+                  {applications.filter((a) => (f === 'all' ? true : a.status.toLowerCase() === f)).length})
+                </button>
+              ))}
+            </div>
 
-          <div className="space-y-3">
-            {filteredApplications.length === 0 && (
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center text-zinc-400">
-                No {filter !== 'all' ? filter : ''} applications found.
-              </div>
-            )}
-            {filteredApplications.map((app) => (
-              <div
-                key={app.id}
-                className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-zinc-50">
-                      {app.first_name} {app.last_name}
-                    </h3>
-                    <p className="text-sm text-zinc-400">{app.email}</p>
-                    {app.phone && <p className="text-sm text-zinc-500">{app.phone}</p>}
-                  </div>
-                  <span
-                    className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClass(app.status)}`}
-                  >
-                    {app.status}
-                  </span>
+            <div className="space-y-3">
+              {filteredApplications.length === 0 && (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center text-zinc-400">
+                  No {filter !== 'all' ? filter : ''} applications found.
                 </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  {app.country && (
+              )}
+              {filteredApplications.map((app) => (
+                <div
+                  key={app.id}
+                  className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <span className="text-zinc-500">Country:</span>{' '}
-                      <span className="text-zinc-200">{app.country}</span>
+                      <h3 className="text-lg font-semibold text-zinc-50">
+                        {app.first_name} {app.last_name}
+                      </h3>
+                      <p className="text-sm text-zinc-400">{app.email}</p>
+                      {app.phone && <p className="text-sm text-zinc-500">{app.phone}</p>}
                     </div>
-                  )}
-                  {app.city && (
-                    <div>
-                      <span className="text-zinc-500">City:</span>{' '}
-                      <span className="text-zinc-200">{app.city}</span>
-                    </div>
-                  )}
-                  {app.preferred_cohort_id && (
-                    <div>
-                      <span className="text-zinc-500">Cohort:</span>{' '}
-                      <span className="text-zinc-200">
-                        {cohorts.find((c) => c.id === app.preferred_cohort_id)?.name || 'N/A'}
-                      </span>
-                    </div>
-                  )}
-                  <div>
-                    <span className="text-zinc-500">Applied:</span>{' '}
-                    <span className="text-zinc-200">
-                      {new Date(app.created_at).toLocaleDateString()}
+                    <span
+                      className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClass(app.status)}`}
+                    >
+                      {app.status}
                     </span>
                   </div>
-                </div>
 
-                {app.status.toLowerCase() === 'pending' && (
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => handleApprove(app.id, app.email)}
-                      disabled={processing === app.id}
-                      className="rounded-lg bg-green-500/20 px-4 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
-                    >
-                      {processing === app.id ? 'Processing...' : 'Approve'}
-                    </button>
-                    <button
-                      onClick={() => handleReject(app.id)}
-                      disabled={processing === app.id}
-                      className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
-                    >
-                      Reject
-                    </button>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    {app.country && (
+                      <div>
+                        <span className="text-zinc-500">Country:</span>{' '}
+                        <span className="text-zinc-200">{app.country}</span>
+                      </div>
+                    )}
+                    {app.city && (
+                      <div>
+                        <span className="text-zinc-500">City:</span>{' '}
+                        <span className="text-zinc-200">{app.city}</span>
+                      </div>
+                    )}
+                    {app.preferred_cohort_id && (
+                      <div>
+                        <span className="text-zinc-500">Cohort:</span>{' '}
+                        <span className="text-zinc-200">
+                          {cohorts.find((c) => c.id === app.preferred_cohort_id)?.name || 'N/A'}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-zinc-500">Applied:</span>{' '}
+                      <span className="text-zinc-200">
+                        {new Date(app.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {app.status.toLowerCase() === 'pending' && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => handleApprove(app.id, app.email)}
+                        disabled={processing === app.id}
+                        className="rounded-lg bg-green-500/20 px-4 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                      >
+                        {processing === app.id ? 'Processing...' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => handleReject(app.id)}
+                        disabled={processing === app.id}
+                        className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
         {/* Create Cohort and Create Event - Side by Side */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -801,9 +801,9 @@ export default function AdminDashboardPage() {
                 >
                   {creatingEvent ? 'Saving...' : 'Create Event'}
                 </button>
-              </div>
             </div>
           </div>
+        </div>
 
         {/* Calendar - Events, Cohorts & Activities */}
         <div className="max-w-md">
@@ -965,15 +965,15 @@ export default function AdminDashboardPage() {
 
       {/* Session Expired Modal - only show when session expired and admin is logged out */}
       {showSessionExpired && !admin && (
-        <SessionExpiredModal
+      <SessionExpiredModal
           isOpen={showSessionExpired && !admin}
           onClose={async () => {
             // Logout and show login form
             await handleLogout();
-            setShowSessionExpired(false);
-          }}
-          userType="admin"
-        />
+          setShowSessionExpired(false);
+        }}
+        userType="admin"
+      />
       )}
     </div>
   );

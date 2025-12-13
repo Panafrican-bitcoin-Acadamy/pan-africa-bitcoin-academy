@@ -1,34 +1,31 @@
 'use client';
 
+import { useEffect, useState, useRef } from 'react';
 
-const metrics = [
-  { label: "Total Students Trained", value: "32", icon: "👥" },
-  { label: "Cohorts Completed", value: "1", icon: "📚" },
-  { label: "Countries Reached", value: "5", icon: "🌍" },
-  { label: "Lightning Transactions", value: "280+", icon: "⚡" },
-  { label: "Assignments Submitted", value: "120+", icon: "📝" },
-  { label: "Sats Distributed", value: "150,000+", icon: "₿" },
-  { label: "Teaching Hours", value: "12", icon: "⏰" },
-];
+interface ImpactMetrics {
+  totalStudentsTrained: number;
+  cohortsCompleted: number;
+  countriesReached: number;
+  assignmentsSubmitted: number;
+  teachingHours: number;
+}
 
-const cohorts = [
-  {
-    id: 1,
-    name: "Cohort 1 – Jan 2025",
-    students: 12,
-    completionRate: 91,
-    finalProject: "Lightning Payments",
-    mentor: "Aisha",
-  },
-  {
-    id: 2,
-    name: "Cohort 2 – March 2025",
-    students: 20,
-    completionRate: 85,
-    finalProject: "Node Setup & Management",
-    mentor: "Sarah",
-  },
-];
+interface CohortData {
+  id: string;
+  name: string;
+  students: number;
+  completionRate: number;
+  startDate: string | null;
+  endDate: string | null;
+  mentor: string | null;
+  level: string;
+}
+
+interface ProgressMetrics {
+  completionRate: number;
+  attendanceRate: number;
+  avgAssignmentScore: number;
+}
 
 const outcomes = [
   "50% now using Bitcoin daily",
@@ -58,7 +55,122 @@ const testimonials = [
   },
 ];
 
+// Custom hook for animated counter
+function useAnimatedCounter(target: number, duration: number = 1500, startAnimation: boolean = true) {
+  const [count, setCount] = useState(0);
+  const requestRef = useRef<number>();
+  const startTimeRef = useRef<number>();
+
+  useEffect(() => {
+    if (!startAnimation || target === 0) {
+      setCount(target);
+      return;
+    }
+
+    const animate = (currentTime: number) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = currentTime;
+      }
+
+      const elapsed = currentTime - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentCount = Math.round(target * easeOutQuart);
+      
+      setCount(currentCount);
+
+      if (progress < 1) {
+        requestRef.current = requestAnimationFrame(animate);
+      } else {
+        setCount(target);
+      }
+    };
+
+    requestRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, [target, duration, startAnimation]);
+
+  return count;
+}
+
 export default function ImpactPage() {
+  const [metrics, setMetrics] = useState<ImpactMetrics | null>(null);
+  const [cohorts, setCohorts] = useState<CohortData[]>([]);
+  const [progressMetrics, setProgressMetrics] = useState<ProgressMetrics | null>(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  // Animated values for progress metrics
+  const animatedCompletionRate = useAnimatedCounter(
+    progressMetrics?.completionRate || 0,
+    1500,
+    shouldAnimate
+  );
+  const animatedAttendanceRate = useAnimatedCounter(
+    progressMetrics?.attendanceRate || 0,
+    1500,
+    shouldAnimate
+  );
+  const animatedAssignmentScore = useAnimatedCounter(
+    progressMetrics?.avgAssignmentScore || 0,
+    1500,
+    shouldAnimate
+  );
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch all data in parallel
+        const [metricsResponse, cohortsResponse, progressResponse] = await Promise.all([
+          fetch('/api/impact/metrics'),
+          fetch('/api/impact/cohorts'),
+          fetch('/api/impact/progress'),
+        ]);
+
+        if (metricsResponse.ok) {
+          const metricsData = await metricsResponse.json();
+          setMetrics(metricsData);
+        }
+
+        if (cohortsResponse.ok) {
+          const cohortsData = await cohortsResponse.json();
+          setCohorts(cohortsData.cohorts || []);
+        }
+
+        if (progressResponse.ok) {
+          const progressData = await progressResponse.json();
+          setProgressMetrics(progressData);
+        }
+      } catch (error) {
+        console.error('Error fetching impact data:', error);
+      } finally {
+        // Start animation after data is loaded
+        setTimeout(() => setShouldAnimate(true), 100);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Format metrics for display
+  const displayMetrics = metrics
+    ? [
+        { label: "Total Students Trained", value: metrics.totalStudentsTrained.toString(), icon: "👥" },
+        { label: "Cohorts Completed", value: metrics.cohortsCompleted.toString(), icon: "📚" },
+        { label: "Countries Reached", value: metrics.countriesReached.toString(), icon: "🌍" },
+        // Lightning Transactions - paused
+        { label: "Assignments Submitted", value: metrics.assignmentsSubmitted.toString(), icon: "📝" },
+        // Sats Distributed - paused
+        { label: "Teaching Hours", value: metrics.teachingHours.toString(), icon: "⏰" },
+      ]
+    : [];
+
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       <div className="relative z-10 w-full bg-black/95">
@@ -78,73 +190,133 @@ export default function ImpactPage() {
         <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Key Metrics</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {metrics.map((metric, index) => (
-              <div
-                key={index}
-                className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-              >
-                <div className="mb-3 text-4xl">{metric.icon}</div>
-                <div className="text-3xl font-bold text-cyan-300">{metric.value}</div>
-                <div className="mt-2 text-xs text-zinc-400 sm:text-sm">{metric.label}</div>
-              </div>
-            ))}
+            {displayMetrics.length > 0 ? (
+              displayMetrics.map((metric, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                >
+                  <div className="mb-3 text-4xl">{metric.icon}</div>
+                  <div className="text-3xl font-bold text-cyan-300">{metric.value}</div>
+                  <div className="mt-2 text-xs text-zinc-400 sm:text-sm">{metric.label}</div>
+                </div>
+              ))
+            ) : (
+              // Show placeholder with 0 values while loading
+              [
+                { label: "Total Students Trained", icon: "👥", value: "0" },
+                { label: "Cohorts Completed", icon: "📚", value: "0" },
+                { label: "Countries Reached", icon: "🌍", value: "0" },
+                { label: "Assignments Submitted", icon: "📝", value: "0" },
+                { label: "Teaching Hours", icon: "⏰", value: "0" },
+              ].map((metric, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                >
+                  <div className="mb-3 text-4xl">{metric.icon}</div>
+                  <div className="text-3xl font-bold text-cyan-300">{metric.value}</div>
+                  <div className="mt-2 text-xs text-zinc-400 sm:text-sm">{metric.label}</div>
+                </div>
+              ))
+            )}
           </div>
         </section>
 
         {/* Student Progress Charts */}
         <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Student Progress</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
-              <h3 className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</h3>
-              <div className="text-3xl font-bold text-orange-400">88%</div>
-              <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
-                <div className="h-2 rounded-full bg-orange-400" style={{ width: "88%" }}></div>
+          {progressMetrics ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+                <h3 className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</h3>
+                <div className="text-3xl font-bold text-orange-400">{animatedCompletionRate}%</div>
+                <div className="mt-2 h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
+                  <div 
+                    className="h-2 rounded-full bg-orange-400 transition-all duration-1500 ease-out" 
+                    style={{ width: `${animatedCompletionRate}%` }}
+                  ></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+                <h3 className="mb-2 text-sm font-medium text-zinc-400">Attendance Rate</h3>
+                <div className="text-3xl font-bold text-cyan-400">{animatedAttendanceRate}%</div>
+                <div className="mt-2 h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
+                  <div 
+                    className="h-2 rounded-full bg-cyan-400 transition-all duration-1500 ease-out" 
+                    style={{ width: `${animatedAttendanceRate}%` }}
+                  ></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                <h3 className="mb-2 text-sm font-medium text-zinc-400">Avg Assignment Score</h3>
+                <div className="text-3xl font-bold text-purple-400">{animatedAssignmentScore}%</div>
+                <div className="mt-2 h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
+                  <div 
+                    className="h-2 rounded-full bg-purple-400 transition-all duration-1500 ease-out" 
+                    style={{ width: `${animatedAssignmentScore}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
-            <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
-              <h3 className="mb-2 text-sm font-medium text-zinc-400">Attendance Rate</h3>
-              <div className="text-3xl font-bold text-cyan-400">92%</div>
-              <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
-                <div className="h-2 rounded-full bg-cyan-400" style={{ width: "92%" }}></div>
+          ) : (
+            // Show placeholder with 0 values while loading
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+                <h3 className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</h3>
+                <div className="text-3xl font-bold text-orange-400">0%</div>
+                <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
+                  <div className="h-2 rounded-full bg-orange-400" style={{ width: '0%' }}></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+                <h3 className="mb-2 text-sm font-medium text-zinc-400">Attendance Rate</h3>
+                <div className="text-3xl font-bold text-cyan-400">0%</div>
+                <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
+                  <div className="h-2 rounded-full bg-cyan-400" style={{ width: '0%' }}></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                <h3 className="mb-2 text-sm font-medium text-zinc-400">Avg Assignment Score</h3>
+                <div className="text-3xl font-bold text-purple-400">0%</div>
+                <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
+                  <div className="h-2 rounded-full bg-purple-400" style={{ width: '0%' }}></div>
+                </div>
               </div>
             </div>
-            <div className="rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-              <h3 className="mb-2 text-sm font-medium text-zinc-400">Avg Assignment Score</h3>
-              <div className="text-3xl font-bold text-purple-400">87%</div>
-              <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
-                <div className="h-2 rounded-full bg-purple-400" style={{ width: "87%" }}></div>
-              </div>
-            </div>
-            <div className="rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
-              <h3 className="mb-2 text-sm font-medium text-zinc-400">Lightning Adoption</h3>
-              <div className="text-3xl font-bold text-orange-400">75%</div>
-              <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
-                <div className="h-2 rounded-full bg-orange-400" style={{ width: "75%" }}></div>
-              </div>
-            </div>
-          </div>
+          )}
         </section>
 
         {/* Cohort History */}
         <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Cohort History</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {cohorts.map((cohort) => (
-              <div
-                key={cohort.id}
-                className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-              >
-                <h3 className="mb-4 text-lg font-semibold text-cyan-200">{cohort.name}</h3>
-                <div className="space-y-2 text-sm text-zinc-300">
-                  <p><span className="font-medium text-zinc-400">Students:</span> {cohort.students}</p>
-                  <p><span className="font-medium text-zinc-400">Completion Rate:</span> {cohort.completionRate}%</p>
-                  <p><span className="font-medium text-zinc-400">Final Project Theme:</span> {cohort.finalProject}</p>
-                  <p><span className="font-medium text-zinc-400">Mentor:</span> {cohort.mentor}</p>
+          {cohorts.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {cohorts.map((cohort) => (
+                <div
+                  key={cohort.id}
+                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                >
+                  <h3 className="mb-4 text-lg font-semibold text-cyan-200">{cohort.name}</h3>
+                  <div className="space-y-2 text-sm text-zinc-300">
+                    <p><span className="font-medium text-zinc-400">Students:</span> {cohort.students}</p>
+                    <p><span className="font-medium text-zinc-400">Completion Rate:</span> {cohort.completionRate}%</p>
+                    {cohort.startDate && cohort.endDate && (
+                      <p><span className="font-medium text-zinc-400">Duration:</span> {cohort.startDate} - {cohort.endDate}</p>
+                    )}
+                    <p><span className="font-medium text-zinc-400">Level:</span> {cohort.level}</p>
+                    {cohort.mentor && (
+                      <p><span className="font-medium text-zinc-400">Mentor:</span> {cohort.mentor}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+              <p className="text-zinc-400">No completed cohorts yet.</p>
+            </div>
+          )}
         </section>
 
         {/* Graduate Outcomes */}
