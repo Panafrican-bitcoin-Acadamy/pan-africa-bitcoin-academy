@@ -133,8 +133,8 @@ export default function AdminDashboardPage() {
     sessions: '',
   });
 
-  // Session inactivity tracking (30 minutes)
-  const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
+  // Session inactivity tracking (15 minutes)
+  const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
   const ACTIVITY_KEY = 'adminLastActivityAt';
 
   useEffect(() => {
@@ -184,9 +184,17 @@ export default function AdminDashboardPage() {
         const res = await fetch('/api/admin/me');
         if (!res.ok) {
           if (res.status === 401) {
-            // Session expired
+            // Session expired on server - don't show modal on initial page load
+            // Only show modal if we had an active session stored
+            const hadActiveSession = localStorage.getItem(ACTIVITY_KEY) !== null;
             localStorage.removeItem(ACTIVITY_KEY);
-            setShowSessionExpired(true);
+            // Only show modal if admin was previously logged in (had activity timestamp)
+            if (hadActiveSession) {
+              // Set admin to null first, then show modal
+              setAdmin(null);
+              setShowSessionExpired(true);
+              return;
+            }
           }
           setAdmin(null);
           return;
@@ -207,21 +215,27 @@ export default function AdminDashboardPage() {
 
     checkSession();
 
-    // Activity listeners to refresh last activity timestamp
-    const activityEvents: (keyof DocumentEventMap)[] = ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'];
-    activityEvents.forEach((evt) => document.addEventListener(evt, markActivity, { passive: true }));
+    // Activity listeners to refresh last activity timestamp (only when logged in)
+    let activityCleanup: (() => void) | null = null;
+    if (admin) {
+      const activityEvents: (keyof DocumentEventMap)[] = ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'];
+      activityEvents.forEach((evt) => document.addEventListener(evt, markActivity, { passive: true }));
+      activityCleanup = () => {
+        activityEvents.forEach((evt) => document.removeEventListener(evt, markActivity));
+      };
+    }
 
     // Inactivity interval check (only when admin is logged in)
-    const intervalId = window.setInterval(() => {
+    const intervalId = admin ? window.setInterval(() => {
       if (!admin) return;
       if (hasExpired()) {
         forceLogoutForInactivity();
       }
-    }, 60 * 1000); // Check every minute
+    }, 60 * 1000) : null; // Check every minute
 
     return () => {
-      activityEvents.forEach((evt) => document.removeEventListener(evt, markActivity));
-      window.clearInterval(intervalId);
+      if (activityCleanup) activityCleanup();
+      if (intervalId) window.clearInterval(intervalId);
     };
   }, [admin]);
 
@@ -369,6 +383,7 @@ export default function AdminDashboardPage() {
       }
       setAdmin({ email: data.admin.email, role: data.admin.role });
       setLoginForm({ email: '', password: '' }); // Clear form
+      setShowSessionExpired(false); // Ensure modal is closed after successful login
       await loadData();
     } catch (err: any) {
       setAuthError(err.message || 'Login failed');
@@ -1031,16 +1046,17 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Session Expired Modal */}
-      <SessionExpiredModal
-        isOpen={showSessionExpired}
-        onClose={async () => {
-          // Logout admin and show login form
-          await handleLogout();
-          setShowSessionExpired(false);
-        }}
-        userType="admin"
-      />
+      {/* Session Expired Modal - only show when session expired and admin is logged out */}
+      {showSessionExpired && !admin && (
+        <SessionExpiredModal
+          isOpen={showSessionExpired}
+          onClose={() => {
+            // Just close modal and show login form (admin is already logged out)
+            setShowSessionExpired(false);
+          }}
+          userType="admin"
+        />
+      )}
     </div>
   );
 }
