@@ -155,7 +155,8 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      await Promise.all([
+      // Use Promise.allSettled to prevent one failure from blocking others
+      const results = await Promise.allSettled([
         fetchApplications(),
         fetchCohorts(),
         fetchOverview(),
@@ -164,8 +165,21 @@ export default function AdminDashboardPage() {
         fetchLiveClassEvents(),
         fetchMentorships(),
       ]);
+      
+      // Check if any critical operations failed
+      const failures = results.filter(r => r.status === 'rejected');
+      if (failures.length > 0) {
+        const errorMessages = failures
+          .map((f: any) => f.reason?.message || 'Unknown error')
+          .filter((msg, idx, arr) => arr.indexOf(msg) === idx); // Unique messages
+        // Only show error if all or most requests failed
+        if (failures.length >= results.length / 2) {
+          setError(`Some data could not be loaded: ${errorMessages.join(', ')}`);
+        }
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to load admin data');
+      // Only show error for unexpected errors
+      setError('Unable to load admin data. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -186,15 +200,27 @@ export default function AdminDashboardPage() {
   };
 
   const fetchCohorts = async () => {
-    const res = await fetchWithAuth('/api/cohorts');
-    const data = await res.json();
-    if (data.cohorts) setCohorts(data.cohorts);
+    try {
+      const res = await fetchWithAuth('/api/cohorts');
+      const data = await res.json();
+      if (data.cohorts) setCohorts(data.cohorts);
+      // Don't throw if cohorts missing - it's not critical
+    } catch (err) {
+      // Silently fail for cohorts - not critical
+      setCohorts([]);
+    }
   };
 
   const fetchEvents = async () => {
-    const res = await fetchWithAuth('/api/events');
-    const data = await res.json();
-    if (data.events) setEvents(data.events);
+    try {
+      const res = await fetchWithAuth('/api/events');
+      const data = await res.json();
+      if (data.events) setEvents(data.events);
+      // Don't throw if events missing - it's not critical
+    } catch (err) {
+      // Silently fail for events - not critical
+      setEvents([]);
+    }
   };
 
   const fetchProgress = async () => {

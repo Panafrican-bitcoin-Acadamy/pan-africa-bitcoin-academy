@@ -120,10 +120,29 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     const fetchStudent = async () => {
       try {
         const emailToUse = storedProfileEmail || profileEmail;
-        const url = emailToUse ? `/api/students?email=${encodeURIComponent(emailToUse)}` : '/api/students';
+        if (!emailToUse) {
+          // No email available - clear error and data
+          if (mounted) {
+            setStudentData(null);
+            setError(null);
+          }
+          return;
+        }
+        
+        const url = `/api/students?email=${encodeURIComponent(emailToUse)}`;
         const res = await fetch(url);
         if (!res.ok) {
-          throw new Error(`Failed to load students (${res.status})`);
+          // Only show error for server errors (500+), not client errors
+          if (res.status >= 500 && mounted) {
+            setError('Unable to load student data. Please try again later.');
+          } else {
+            // 404 or other client errors - user might not be enrolled yet, that's okay
+            if (mounted) {
+              setStudentData(null);
+              setError(null);
+            }
+          }
+          return;
         }
         const data = await res.json();
         const students: any[] = data.students || [];
@@ -131,7 +150,6 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         if (students.length === 0) {
           if (mounted) {
             setStudentData(null);
-            // Don't show error if user just isn't a student yet
             setError(null);
           }
           return;
@@ -142,8 +160,13 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           setError(null);
         }
       } catch (err: any) {
+        // Network errors or other exceptions - only show for actual failures
         if (mounted) {
-          setError(err.message || 'Failed to load student data');
+          if (err.message && !err.message.includes('404')) {
+            setError('Unable to load student data. Please check your connection.');
+          } else {
+            setError(null);
+          }
         }
       }
     };
@@ -169,15 +192,29 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     const fetchLeaderboard = async () => {
       try {
         const res = await fetch('/api/leaderboard');
-        if (!res.ok) throw new Error(`Failed to load leaderboard (${res.status})`);
+        if (!res.ok) {
+          // Only show error for server errors, not client errors
+          if (res.status >= 500 && mounted) {
+            setLeaderboardError('Unable to load leaderboard. Please try again later.');
+          } else {
+            // Client error - just clear data, don't show error (not critical)
+            if (mounted) {
+              setLeaderboardData([]);
+              setLeaderboardError(null);
+            }
+          }
+          return;
+        }
         const data = await res.json();
         if (mounted && Array.isArray(data.leaderboard)) {
           setLeaderboardData(data.leaderboard);
           setLeaderboardError(null);
         }
       } catch (err) {
+        // Network errors - don't show error for leaderboard, it's not critical
         if (mounted) {
-          setLeaderboardError('Could not load leaderboard data.');
+          setLeaderboardData([]);
+          setLeaderboardError(null);
         }
       }
     };
@@ -222,7 +259,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       mounted = false;
       window.removeEventListener('openProfileModal', handleOpenProfileModal);
     };
-  }, [storedProfileEmail, profileEmail]);
+  }, [userData]); // Only re-run when userData changes, not profileEmail/storedProfileEmail
 
   // Fetch chapter status (same as chapters page) - refreshes automatically
   useEffect(() => {
