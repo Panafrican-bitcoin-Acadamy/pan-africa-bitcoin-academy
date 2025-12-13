@@ -170,7 +170,7 @@ export default function Home() {
                 <div className="relative w-full aspect-video bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 flex items-center justify-center">
                   {/* Image showing Bitcoin's origin story */}
                   <img 
-                    src="/images/bailouts-to-blockchain.jpeg" 
+                    src="/images/bailouts-to-blockchain.jpg" 
                     alt="From Bailouts to Blockchain - Bitcoin's origin story"
                     className="w-full h-full object-cover"
                   />
