@@ -168,9 +168,9 @@ export default function Home() {
               <div className="relative w-full max-w-4xl rounded-xl overflow-hidden border border-orange-500/25 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
                 {/* Image container */}
                 <div className="relative w-full aspect-video bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 flex items-center justify-center">
-                  {/* Placeholder for image - replace with actual image */}
+                  {/* Image showing Bitcoin's origin story */}
                   <img 
-                    src="/images/bailouts-to-blockchain.jpg" 
+                    src="/images/bailouts-to-blockchain.jpeg" 
                     alt="From Bailouts to Blockchain - Bitcoin's origin story"
                     className="w-full h-full object-cover"
                   />
