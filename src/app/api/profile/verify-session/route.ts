@@ -1,46 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireStudent, attachSessionRefresh } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
 /**
  * Session verification endpoint
- * Verifies that a user's email corresponds to an existing profile
- * Used for checking authentication state without requiring password
+ * Verifies the session token from cookie and returns profile data
+ * Replaces the old email-based verification with secure token-based
  */
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const { email } = await req.json();
-
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required', valid: false },
-        { status: 400 }
-      );
-    }
-
-    // Look up profile by email (without password verification)
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('id, name, email, phone, country, city, status, photo_url')
-      .eq('email', email.toLowerCase().trim())
-      .maybeSingle();
-
-    if (error) {
-      console.error('Database error:', error);
-      return NextResponse.json(
-        { error: 'Session verification failed', valid: false },
-        { status: 500 }
-      );
-    }
-
-    if (!profile) {
+    const session = requireStudent(req);
+    
+    if (!session) {
       return NextResponse.json(
         { valid: false, profile: null },
         { status: 200 }
       );
     }
 
-    // Profile exists - return profile data
-    return NextResponse.json(
+    // Fetch profile data
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, name, email, phone, country, city, status, photo_url')
+      .eq('id', session.userId)
+      .maybeSingle();
+
+    if (error || !profile) {
+      return NextResponse.json(
+        { valid: false, profile: null },
+        { status: 200 }
+      );
+    }
+
+    const res = NextResponse.json(
       {
         valid: true,
         profile: {
@@ -56,6 +48,17 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
+
+    // Refresh session
+    attachSessionRefresh(res, {
+      userId: session.userId,
+      email: session.email,
+      userType: 'student',
+      issuedAt: session.issuedAt,
+      lastActive: Date.now(),
+    });
+
+    return res;
   } catch (error: any) {
     console.error('Error in session verification API:', error);
     return NextResponse.json(

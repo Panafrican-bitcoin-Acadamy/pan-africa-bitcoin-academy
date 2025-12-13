@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
-import { attachRefresh, requireAdmin, setAdminCookie, clearAdminCookie } from '@/lib/adminSession';
+import { requireAdmin, setAdminCookie, attachRefresh } from '@/lib/adminSession';
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     };
 
     try {
-      const res = NextResponse.json({ success: true, admin: session });
+      const res = NextResponse.json({ success: true, admin: { email: admin.email, role: admin.role } });
       setAdminCookie(res, session);
       return res;
     } catch (cookieError: any) {

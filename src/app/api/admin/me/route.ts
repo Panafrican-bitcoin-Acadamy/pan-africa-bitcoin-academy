@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const res = NextResponse.json({ admin: session });
+  const res = NextResponse.json({ admin: { email: session.email, role: session.role } });
   attachRefresh(res, session);
   return res;
 }

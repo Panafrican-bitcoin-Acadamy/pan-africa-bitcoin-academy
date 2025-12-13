@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { setStudentCookie } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -98,7 +99,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Password is valid - set cookie for cross-tab session sync
+    // Password is valid - create secure session
+    const now = Date.now();
+    const session = {
+      userId: profile.id,
+      email: profile.email.toLowerCase().trim(),
+      issuedAt: now,
+      lastActive: now,
+    };
+
     const res = NextResponse.json(
       {
         found: true,
@@ -117,15 +126,8 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
 
-    // Set cookie with email for cross-tab session detection (30 days expiry)
-    // This allows new tabs to detect existing session
-    res.cookies.set('studentEmail', profile.email.toLowerCase().trim(), {
-      httpOnly: false, // Allow client-side access for localStorage sync
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: '/',
-    });
+    // Set secure HTTP-only session cookie
+    setStudentCookie(res, session);
 
     return res;
   } catch (error: any) {
@@ -136,4 +138,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

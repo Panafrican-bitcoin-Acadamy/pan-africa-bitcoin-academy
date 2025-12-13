@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SessionExpiredModal } from '@/components/SessionExpiredModal';
 import { Calendar } from '@/components/Calendar';
+import { useSession } from '@/hooks/useSession';
 
 interface Application {
   id: string;
@@ -90,10 +91,11 @@ const statusClasses: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const [admin, setAdmin] = useState<AdminSession | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { isAuthenticated, email, role, loading: authLoading, showSessionExpired, setShowSessionExpired, logout, checkSession } = useSession('admin');
   const [authError, setAuthError] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  
+  const admin: AdminSession | null = isAuthenticated && email ? { email, role: role || null } : null;
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -110,7 +112,6 @@ export default function AdminDashboardPage() {
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
-  const [showSessionExpired, setShowSessionExpired] = useState(false);
 
   const [eventForm, setEventForm] = useState({
     name: '',
@@ -133,117 +134,17 @@ export default function AdminDashboardPage() {
     sessions: '',
   });
 
-  // Session inactivity tracking (15 minutes)
-  const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
-  const ACTIVITY_KEY = 'adminLastActivityAt';
-
+  // Load data when authenticated
   useEffect(() => {
-    const markActivity = () => {
-      try {
-        localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-      } catch (e) {
-        // Ignore storage errors
-      }
-    };
-
-    const hasExpired = () => {
-      try {
-        const last = localStorage.getItem(ACTIVITY_KEY);
-        if (!last) return false;
-        const lastTs = Number(last);
-        if (Number.isNaN(lastTs)) return false;
-        return Date.now() - lastTs > INACTIVITY_LIMIT_MS;
-      } catch (e) {
-        return false;
-      }
-    };
-
-    const forceLogoutForInactivity = async () => {
-      try {
-        // Clear admin session
-        await fetch('/api/admin/logout', { method: 'POST' });
-        localStorage.removeItem(ACTIVITY_KEY);
-        setAdmin(null);
-        setApplications([]);
-        setOverview(null);
-        setEvents([]);
-        setCohorts([]);
-        setProgress([]);
-        setMentorships([]);
-        setShowSessionExpired(true);
-      } catch (e) {
-        // Ignore errors
-        setAdmin(null);
-        setShowSessionExpired(true);
-      }
-    };
-
-    const checkSession = async () => {
-      try {
-        setAuthLoading(true);
-        const res = await fetch('/api/admin/me');
-        if (!res.ok) {
-          if (res.status === 401) {
-            // Session expired on server - don't show modal on initial page load
-            // Only show modal if we had an active session stored
-            const hadActiveSession = localStorage.getItem(ACTIVITY_KEY) !== null;
-            localStorage.removeItem(ACTIVITY_KEY);
-            // Only show modal if admin was previously logged in (had activity timestamp)
-            if (hadActiveSession) {
-              // Set admin to null first, then show modal
-              setAdmin(null);
-              setShowSessionExpired(true);
-              return;
-            }
-          }
-          setAdmin(null);
-          return;
-        }
-        const data = await res.json();
-        setAdmin({ email: data.admin.email, role: data.admin.role });
-        
-        // Initialize activity timestamp
-        markActivity();
-        await loadData();
-      } catch (err: any) {
-        console.error(err);
-        setAdmin(null);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // Activity listeners to refresh last activity timestamp (only when logged in)
-    let activityCleanup: (() => void) | null = null;
-    if (admin) {
-      const activityEvents: (keyof DocumentEventMap)[] = ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'];
-      activityEvents.forEach((evt) => document.addEventListener(evt, markActivity, { passive: true }));
-      activityCleanup = () => {
-        activityEvents.forEach((evt) => document.removeEventListener(evt, markActivity));
-      };
+    if (isAuthenticated && admin) {
+      loadData();
     }
-
-    // Inactivity interval check (only when admin is logged in)
-    const intervalId = admin ? window.setInterval(() => {
-      if (!admin) return;
-      if (hasExpired()) {
-        forceLogoutForInactivity();
-      }
-    }, 60 * 1000) : null; // Check every minute
-
-    return () => {
-      if (activityCleanup) activityCleanup();
-      if (intervalId) window.clearInterval(intervalId);
-    };
-  }, [admin]);
+  }, [isAuthenticated, admin]);
 
   const fetchWithAuth = async (url: string, options?: RequestInit) => {
     const res = await fetch(url, options);
     if (res.status === 401) {
-      // Session expired
-      setAdmin(null);
+      // Session expired - handled by useSession hook
       setShowSessionExpired(true);
       throw new Error('Unauthorized');
     }
@@ -375,16 +276,9 @@ export default function AdminDashboardPage() {
         console.error('Admin login error:', data);
         return;
       }
-      // Initialize activity timestamp on successful login
-      try {
-        localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-      } catch (e) {
-        // Ignore storage errors
-      }
-      setAdmin({ email: data.admin.email, role: data.admin.role });
       setLoginForm({ email: '', password: '' }); // Clear form
-      setShowSessionExpired(false); // Ensure modal is closed after successful login
-      await loadData();
+      // Session is managed by useSession hook - check session to mark activity
+      await checkSession();
     } catch (err: any) {
       setAuthError(err.message || 'Login failed');
     } finally {
@@ -393,8 +287,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
-    setAdmin(null);
+    await logout();
     setApplications([]);
     setOverview(null);
     setEvents([]);
@@ -1049,9 +942,10 @@ export default function AdminDashboardPage() {
       {/* Session Expired Modal - only show when session expired and admin is logged out */}
       {showSessionExpired && !admin && (
         <SessionExpiredModal
-          isOpen={showSessionExpired}
-          onClose={() => {
-            // Just close modal and show login form (admin is already logged out)
+          isOpen={showSessionExpired && !admin}
+          onClose={async () => {
+            // Logout and show login form
+            await handleLogout();
             setShowSessionExpired(false);
           }}
           userType="admin"

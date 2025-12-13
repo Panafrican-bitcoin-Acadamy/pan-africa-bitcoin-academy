@@ -30,14 +30,10 @@ export function Navbar() {
         setProfileLoading(true);
         setProfileError(null);
         try {
-          const res = await fetch('/api/profile/verify-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: profile.email }),
-          });
+          const res = await fetch('/api/profile/me');
           if (res.ok) {
             const data = await res.json();
-            if (data.valid && data.profile) {
+            if (data.profile) {
               setProfileData(data.profile);
               setProfileImage(data.profile.photoUrl || null);
             } else {

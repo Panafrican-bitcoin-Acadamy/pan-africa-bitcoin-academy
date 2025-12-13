@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireAdmin } from '@/lib/adminSession';
+import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 
 // CSV Upload endpoint for Google Meet attendance
 // Expected CSV format: Email, Name, Join Time, Leave Time, Duration (minutes)

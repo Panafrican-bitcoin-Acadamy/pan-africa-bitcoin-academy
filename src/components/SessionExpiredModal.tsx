@@ -16,21 +16,14 @@ export function SessionExpiredModal({ isOpen, onClose, userType = 'student' }: S
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
       
-      // Handle Escape key press
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          onClose();
-        }
-      };
-      
-      document.addEventListener('keydown', handleEscape);
-      
-      return () => {
-        document.body.style.overflow = 'unset';
-        document.removeEventListener('keydown', handleEscape);
-      };
+      // Block all interaction - modal cannot be dismissed except via OK button
+      // No Escape key, no backdrop clicks
     }
-  }, [isOpen, onClose]);
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -42,12 +35,7 @@ export function SessionExpiredModal({ isOpen, onClose, userType = 'student' }: S
   return (
     <div 
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      onClick={(e) => {
-        // Close modal when clicking on backdrop
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+      // Block backdrop clicks - modal can only be closed via OK button
     >
       <div className="relative mx-4 w-full max-w-md rounded-xl border border-orange-500/30 bg-zinc-900 p-6 shadow-2xl">
         <div className="mb-4 flex items-center gap-3">
