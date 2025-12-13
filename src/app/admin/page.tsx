@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SessionExpiredModal } from '@/components/SessionExpiredModal';
 import { Calendar } from '@/components/Calendar';
 import { useSession } from '@/hooks/useSession';
@@ -134,9 +134,11 @@ export default function AdminDashboardPage() {
     sessions: '',
   });
 
-  // Load data when authenticated
+  // Load data once when authenticated (no auto-refresh)
+  const hasLoadedRef = useRef(false);
   useEffect(() => {
-    if (isAuthenticated && admin) {
+    if (isAuthenticated && admin && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       loadData();
     }
   }, [isAuthenticated, admin]);
@@ -156,7 +158,8 @@ export default function AdminDashboardPage() {
     setError(null);
     try {
       // Use Promise.allSettled to prevent one failure from blocking others
-      const results = await Promise.allSettled([
+      // No error messages - if data doesn't load, user can refresh manually
+      await Promise.allSettled([
         fetchApplications(),
         fetchCohorts(),
         fetchOverview(),
@@ -165,21 +168,8 @@ export default function AdminDashboardPage() {
         fetchLiveClassEvents(),
         fetchMentorships(),
       ]);
-      
-      // Check if any critical operations failed
-      const failures = results.filter(r => r.status === 'rejected');
-      if (failures.length > 0) {
-        const errorMessages = failures
-          .map((f: any) => f.reason?.message || 'Unknown error')
-          .filter((msg, idx, arr) => arr.indexOf(msg) === idx); // Unique messages
-        // Only show error if all or most requests failed
-        if (failures.length >= results.length / 2) {
-          setError(`Some data could not be loaded: ${errorMessages.join(', ')}`);
-        }
-      }
     } catch (err: any) {
-      // Only show error for unexpected errors
-      setError('Unable to load admin data. Please refresh the page.');
+      // Silently fail - user can refresh page if needed
     } finally {
       setLoading(false);
     }

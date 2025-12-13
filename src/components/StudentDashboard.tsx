@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Calendar } from './Calendar';
 import { chaptersContent } from '@/content/chaptersContent';
@@ -103,7 +103,6 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
             photoUrl: userData.profile.photoUrl,
           });
         }
-        setError(null);
       }
     }
 
@@ -121,10 +120,9 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       try {
         const emailToUse = storedProfileEmail || profileEmail;
         if (!emailToUse) {
-          // No email available - clear error and data
+          // No email available - clear data
           if (mounted) {
             setStudentData(null);
-            setError(null);
           }
           return;
         }
@@ -132,15 +130,9 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         const url = `/api/students?email=${encodeURIComponent(emailToUse)}`;
         const res = await fetch(url);
         if (!res.ok) {
-          // Only show error for server errors (500+), not client errors
-          if (res.status >= 500 && mounted) {
-            setError('Unable to load student data. Please try again later.');
-          } else {
-            // 404 or other client errors - user might not be enrolled yet, that's okay
-            if (mounted) {
-              setStudentData(null);
-              setError(null);
-            }
+          // Silently fail - user can refresh page if needed
+          if (mounted) {
+            setStudentData(null);
           }
           return;
         }
@@ -150,23 +142,17 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         if (students.length === 0) {
           if (mounted) {
             setStudentData(null);
-            setError(null);
           }
           return;
         }
         const first = students.find((s) => s?.name) || students[0];
         if (mounted) {
           setStudentData(first || null);
-          setError(null);
         }
       } catch (err: any) {
-        // Network errors or other exceptions - only show for actual failures
+        // Silently fail - user can refresh page if needed
         if (mounted) {
-          if (err.message && !err.message.includes('404')) {
-            setError('Unable to load student data. Please check your connection.');
-          } else {
-            setError(null);
-          }
+          setStudentData(null);
         }
       }
     };
@@ -193,28 +179,20 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       try {
         const res = await fetch('/api/leaderboard');
         if (!res.ok) {
-          // Only show error for server errors, not client errors
-          if (res.status >= 500 && mounted) {
-            setLeaderboardError('Unable to load leaderboard. Please try again later.');
-          } else {
-            // Client error - just clear data, don't show error (not critical)
-            if (mounted) {
-              setLeaderboardData([]);
-              setLeaderboardError(null);
-            }
+          // Silently fail - user can refresh page if needed
+          if (mounted) {
+            setLeaderboardData([]);
           }
           return;
         }
         const data = await res.json();
         if (mounted && Array.isArray(data.leaderboard)) {
           setLeaderboardData(data.leaderboard);
-          setLeaderboardError(null);
         }
       } catch (err) {
-        // Network errors - don't show error for leaderboard, it's not critical
+        // Silently fail - user can refresh page if needed
         if (mounted) {
           setLeaderboardData([]);
-          setLeaderboardError(null);
         }
       }
     };
@@ -261,7 +239,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     };
   }, [userData]); // Only re-run when userData changes, not profileEmail/storedProfileEmail
 
-  // Fetch chapter status (same as chapters page) - refreshes automatically
+  // Fetch chapter status once when email changes - no auto-refresh (user can refresh page if needed)
   useEffect(() => {
     const fetchChapterStatus = async () => {
       const email = userData?.profile?.email || storedProfileEmail || profileEmail;
@@ -279,34 +257,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           setChapterStatus(data.chapters);
         }
       } catch (error) {
-        console.error('Error fetching chapter status:', error);
+        // Silently fail - user can refresh page if needed
       }
     };
 
     fetchChapterStatus();
-    
-    // Refresh chapter status every 10 seconds to catch completed chapters
-    const interval = setInterval(fetchChapterStatus, 10000);
-    
-    // Also refresh when page becomes visible (user returns from chapter page)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchChapterStatus();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Refresh when window gains focus
-    const handleFocus = () => {
-      fetchChapterStatus();
-    };
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
   }, [userData, storedProfileEmail, profileEmail]);
 
   const fetchProfileByEmail = async (lookupEmail: string) => {
@@ -478,18 +433,6 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         {loading && (
           <div className="mb-4 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-cyan-100">
             Loading student data...
-          </div>
-        )}
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-red-200 relative z-0 flex items-center justify-between gap-4">
-            <span>{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-300 hover:text-red-100 transition-colors"
-              aria-label="Dismiss error"
-            >
-              ×
-            </button>
           </div>
         )}
 
@@ -936,12 +879,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
             {loading && (
               <div className="mb-3 text-sm text-zinc-400">Loading leaderboard...</div>
             )}
-            {leaderboardError && (
-              <div className="mb-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-200">
-                {leaderboardError}
-              </div>
-            )}
-            {!loading && !leaderboardError && leaderboard.length === 0 && (
+            {!loading && leaderboard.length === 0 && (
               <div className="mb-3 text-sm text-zinc-400">No leaderboard data yet.</div>
             )}
             <div className="overflow-x-auto">
