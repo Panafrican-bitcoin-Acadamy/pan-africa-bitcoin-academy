@@ -160,3 +160,23 @@ export function setStudentCookie(res: NextResponse, payload: { userId: string; e
 export function clearStudentCookie(res: NextResponse) {
   clearSessionCookie(res, 'student');
 }
+
+    email: session.email,
+    issuedAt: session.issuedAt,
+    lastActive: session.lastActive,
+  };
+}
+
+export function setStudentCookie(res: NextResponse, payload: { userId: string; email: string; issuedAt: number; lastActive: number }) {
+  setSessionCookie(res, {
+    userId: payload.userId,
+    email: payload.email,
+    userType: 'student',
+    issuedAt: payload.issuedAt,
+    lastActive: payload.lastActive,
+  });
+}
+
+export function clearStudentCookie(res: NextResponse) {
+  clearSessionCookie(res, 'student');
+}

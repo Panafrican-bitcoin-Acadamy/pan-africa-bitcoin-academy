@@ -1,4 +1,9 @@
 
+'use client';
+
+import { StructuredData } from "@/components/StructuredData";
+import { generateFAQStructuredData } from "@/lib/structured-data";
+
 const faqs = [
   {
     category: "Time Zones & Schedule",
@@ -96,17 +101,26 @@ const faqs = [
 ];
 
 export default function FAQPage() {
+  // Flatten FAQs for structured data
+  const allFAQs = faqs.flatMap(category => 
+    category.questions.map(faq => ({
+      question: faq.q,
+      answer: faq.a,
+    }))
+  );
+
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
+      <StructuredData data={generateFAQStructuredData(allFAQs)} />
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <div className="mb-16 text-center">
             <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Frequently Asked Questions
+              Bitcoin Education FAQ - PanAfrican Bitcoin Academy
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Everything you need to know about joining our Pan-Africa Bitcoin Academy.
+              Everything you need to know about joining PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy.
             </p>
           </div>
 

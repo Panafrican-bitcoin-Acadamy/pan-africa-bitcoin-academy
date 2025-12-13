@@ -43,3 +43,11 @@ export async function GET(req: NextRequest) {
   
   return res;
 }
+
+    userType: 'student',
+    issuedAt: session.issuedAt,
+    lastActive: Date.now(),
+  });
+  
+  return res;
+}

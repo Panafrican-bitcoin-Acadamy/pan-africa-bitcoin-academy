@@ -179,3 +179,12 @@ export default function DonatePage() {
   );
 }
 
+
+        </section>
+      </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

@@ -25,20 +25,44 @@ export function Footer() {
           </div>
           <div className="flex flex-wrap items-center gap-3 text-[11px] sm:gap-4 sm:text-xs">
             <Link
-              href="/faq"
+              href="/chapters"
               className="text-zinc-400 transition hover:text-cyan-300"
+              title="Bitcoin tutorials for beginners"
             >
-              FAQ
+              Learn Bitcoin
             </Link>
             <Link
               href="/about"
               className="text-zinc-400 transition hover:text-cyan-300"
+              title="About PanAfrican Bitcoin Academy"
             >
               About
             </Link>
             <Link
+              href="/blog"
+              className="text-zinc-400 transition hover:text-cyan-300"
+              title="Bitcoin blog and articles"
+            >
+              Blog
+            </Link>
+            <Link
+              href="/developer-hub"
+              className="text-zinc-400 transition hover:text-cyan-300"
+              title="Bitcoin developer resources"
+            >
+              Developer Hub
+            </Link>
+            <Link
+              href="/faq"
+              className="text-zinc-400 transition hover:text-cyan-300"
+              title="Frequently asked questions"
+            >
+              FAQ
+            </Link>
+            <Link
               href="/donate"
               className="text-zinc-400 transition hover:text-orange-300"
+              title="Support Bitcoin education"
             >
               Donate
             </Link>

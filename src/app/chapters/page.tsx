@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { BitcoinIcon, WalletIcon, LightningIcon, BookIcon, ToolIcon, BlockchainIcon, KeysIcon, UTXOIcon, TransactionIcon, MiningIcon } from "@/components/BitcoinIcons";
 import { useAuth } from "@/hooks/useAuth";
 import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
+import type { Metadata } from "next";
+
+// Note: Metadata cannot be exported from client components
+// Metadata is handled via layout or server components
 
 // Helper function to generate slug from title
 const generateSlug = (title: string): string => {
@@ -846,6 +850,187 @@ export default function ChaptersPage() {
                               </span>
                             </div>
                             <h3 className="mt-1 text-lg font-semibold text-zinc-50 group-hover:text-cyan-100">
+                              {chapter.title}
+                            </h3>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Time & Type Badge */}
+                      <div className="mb-4 flex items-center gap-2 text-xs text-zinc-400">
+                        <span>⏱ {chapter.time}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <span className="text-cyan-400">{getTypeIcon(chapter.type)}</span> {chapter.type}
+                        </span>
+                      </div>
+
+                      {/* What You Will Learn */}
+                      <div className="mb-4">
+                        <p className="mb-2 text-xs font-medium text-zinc-400">You will learn:</p>
+                        <ul className="space-y-1 text-xs text-zinc-300">
+                          {chapter.learnPoints.slice(0, 3).map((point, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="text-orange-400">•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                          {chapter.learnPoints.length > 3 && (
+                            <li className="text-cyan-400">+ {chapter.learnPoints.length - 3} more</li>
+                          )}
+                        </ul>
+                      </div>
+
+                      {/* Activities Badge */}
+                      {chapter.activities.length > 0 && (
+                        <div className="mb-4">
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300">
+                            <ToolIcon className="w-3 h-3" /> {chapter.activities.length} {chapter.activities.length === 1 ? "Activity" : "Activities"}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* What's Inside Toggle */}
+                      <button
+                        onClick={() =>
+                          setExpandedChapter(expandedChapter === chapter.id ? null : chapter.id)
+                        }
+                        className="mb-4 w-full rounded-lg border border-cyan-400/20 bg-cyan-400/5 px-3 py-2 text-xs font-medium text-cyan-300 transition hover:bg-cyan-400/10"
+                      >
+                        {expandedChapter === chapter.id ? "Hide" : "Show"} What's Inside ↓
+                      </button>
+
+                      {/* What's Inside Content */}
+                      {expandedChapter === chapter.id && (
+                        <div className="mb-4 space-y-3 rounded-lg border border-cyan-400/20 bg-zinc-900/50 p-4 text-xs">
+                          <div>
+                            <p className="mb-1 font-medium text-cyan-200">📘 Theory:</p>
+                            <ul className="ml-4 list-disc space-y-1 text-zinc-400">
+                              {chapter.theory.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="mb-1 font-medium text-orange-200">🛠 Practice:</p>
+                            <ul className="ml-4 list-disc space-y-1 text-zinc-400">
+                              {chapter.practice.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="mb-1 font-medium text-purple-200">🎥 Video:</p>
+                            <p className="ml-4 text-zinc-400">{chapter.video}</p>
+                          </div>
+                          <div>
+                            <p className="mb-1 font-medium text-cyan-200">🧪 Quiz:</p>
+                            <p className="ml-4 text-zinc-400">{chapter.quiz}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Chapter Status Badge */}
+                      {isAuthenticated && profile && (
+                        <div className="mb-3">
+                          {isChapterCompleted(chapter.number) ? (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-green-500/20 px-2 py-1 text-[10px] font-medium text-green-300">
+                              ✓ Completed
+                            </span>
+                          ) : isChapterUnlocked(chapter.number) ? (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-orange-500/20 px-2 py-1 text-[10px] font-medium text-orange-300">
+                              🔓 Unlocked
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-zinc-500/20 px-2 py-1 text-[10px] font-medium text-zinc-400">
+                              🔒 Locked
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* View Chapter Button */}
+                      {isAuthenticated && profile && isChapterUnlocked(chapter.number) ? (
+                        <Link
+                          href={`/chapters/${generateSlug(chapter.title)}`}
+                          className="block w-full rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-4 py-2 text-center text-sm font-semibold text-black transition hover:brightness-110"
+                        >
+                          {isChapterCompleted(chapter.number) ? 'Review Chapter →' : 'View Chapter →'}
+                        </Link>
+                      ) : isAuthenticated && profile ? (
+                        <button
+                          onClick={() => handleChapterClick(chapter.number, chapter.title)}
+                          className="block w-full rounded-lg bg-zinc-700/50 px-4 py-2 text-center text-sm font-semibold text-zinc-400 cursor-not-allowed"
+                          disabled
+                        >
+                          🔒 Locked
+                        </button>
+                      ) : (
+                        <Link
+                          href="/apply?redirect=/chapters"
+                          className="block w-full rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-4 py-2 text-center text-sm font-semibold text-black transition hover:brightness-110"
+                        >
+                          Register to Access →
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Coming Soon Section */}
+          <div className="mb-16 rounded-xl border border-purple-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+            <h2 className="mb-6 text-2xl font-semibold text-purple-200">Coming Soon</h2>
+            <p className="mb-4 text-sm text-zinc-300">
+              We're constantly expanding our curriculum. Here's what's coming next:
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {comingSoon.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 rounded-lg border border-purple-400/20 bg-purple-500/10 px-4 py-2"
+                >
+                  <span className="text-purple-300">✨</span>
+                  <span className="text-sm text-zinc-300">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer CTA */}
+          <div className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+            <h2 className="mb-4 text-2xl font-semibold text-orange-200">Ready to start learning?</h2>
+            <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/apply"
+                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
+              >
+                🔸 Join Cohort 1
+              </Link>
+              <Link
+                href="/about"
+                className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+              >
+                🔸 Download the Syllabus
+              </Link>
+              <a
+                href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border border-green-400/30 bg-green-400/10 px-6 py-3 text-base font-semibold text-green-300 transition hover:bg-green-400/20"
+              >
+                🔸 Join WhatsApp Community
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
                               {chapter.title}
                             </h3>
                           </div>

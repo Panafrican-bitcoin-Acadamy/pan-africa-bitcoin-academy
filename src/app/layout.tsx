@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
 import { ResourceHints } from "@/components/ResourceHints";
+import { StructuredData } from "@/components/StructuredData";
+import { organizationStructuredData, websiteStructuredData } from "@/lib/structured-data";
 
 // Lazy load Navbar and Footer to reduce initial bundle size
 const Navbar = dynamic(() => import("@/components/Navbar").then(mod => ({ default: mod.Navbar })), {
@@ -25,22 +27,27 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Pan-African Bitcoin Academy",
-    template: "%s | Pan-African Bitcoin Academy",
+    default: "PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy",
+    template: "%s | PanAfrican Bitcoin Academy",
   },
   description:
-    "Learn Bitcoin the right way with clear, technical guidance. Pan-African Bitcoin Academy offers comprehensive Bitcoin education, developer resources, and community support across Africa.",
+    "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways. Learn Bitcoin the right way with comprehensive education across Africa.",
   keywords: [
-    "Bitcoin education",
+    "Bitcoin education Africa",
+    "Learn Bitcoin",
     "Bitcoin academy",
+    "Bitcoin tutorials for beginners",
+    "PanAfrican Bitcoin Academy",
+    "Eritrea Bitcoin academy",
+    "Bitcoin education",
     "Bitcoin learning",
-    "Bitcoin Africa",
     "Bitcoin developer",
     "Lightning Network",
     "Bitcoin course",
     "cryptocurrency education",
     "blockchain education",
     "Bitcoin training",
+    "Bitcoin Africa",
   ],
   authors: [{ name: "Pan-African Bitcoin Academy" }],
   creator: "Pan-African Bitcoin Academy",
@@ -53,9 +60,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    siteName: 'Pan-African Bitcoin Academy',
-    title: 'Pan-African Bitcoin Academy - Learn Bitcoin the Right Way',
-    description: 'Learn Bitcoin the right way with clear, technical guidance. Comprehensive Bitcoin education, developer resources, and community support across Africa.',
+    siteName: 'PanAfrican Bitcoin Academy',
+    title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
+    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.',
     images: [
       {
         url: '/og-image.png',
@@ -67,8 +74,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pan-African Bitcoin Academy - Learn Bitcoin the Right Way',
-    description: 'Learn Bitcoin the right way with clear, technical guidance. Comprehensive Bitcoin education and developer resources.',
+    title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
+    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -105,12 +112,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Resource hints for critical origins */}
         <ResourceHints />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-zinc-950 text-zinc-50 antialiased`}
         suppressHydrationWarning
       >
+        {/* Structured Data for SEO */}
+        <StructuredData data={organizationStructuredData} />
+        <StructuredData data={websiteStructuredData} />
+        
         {/* Bitcoin Background Elements */}
         <div className="bitcoin-keys-bg" />
         <div className="flex min-h-screen flex-col">

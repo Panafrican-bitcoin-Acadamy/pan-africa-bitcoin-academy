@@ -1,11 +1,19 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About Us',
-  description: 'Learn about Pan-African Bitcoin Academy - our mission, target audience, developer support, and community involvement. We provide comprehensive Bitcoin education across Africa.',
+  title: 'About PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
+  description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Learn about our mission to provide clear Bitcoin education, real security, and developer pathways across Africa.',
+  keywords: [
+    "Bitcoin education Africa",
+    "Learn Bitcoin",
+    "Bitcoin academy",
+    "PanAfrican Bitcoin Academy",
+    "Eritrea Bitcoin academy",
+    "Bitcoin education mission",
+  ],
   openGraph: {
-    title: 'About Us | Pan-African Bitcoin Academy',
-    description: 'Learn about Pan-African Bitcoin Academy - our mission, target audience, developer support, and community involvement.',
+    title: 'About PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
+    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Learn about our mission to provide clear Bitcoin education across Africa.',
     url: '/about',
   },
 };

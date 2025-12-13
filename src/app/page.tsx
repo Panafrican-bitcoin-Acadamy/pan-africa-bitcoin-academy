@@ -1,6 +1,24 @@
 import Link from "next/link";
 import { Facebook, Twitter, Instagram, Music2 } from "lucide-react";
 import { StructuredData } from "@/components/StructuredData";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Learn Bitcoin - First Eritrea Based Bitcoin Academy",
+  description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways. Learn Bitcoin education in Africa with hands-on training.",
+  keywords: [
+    "Bitcoin education Africa",
+    "Learn Bitcoin",
+    "Bitcoin academy",
+    "Bitcoin tutorials for beginners",
+    "PanAfrican Bitcoin Academy",
+    "Eritrea Bitcoin academy",
+  ],
+  openGraph: {
+    title: "Learn Bitcoin - First Eritrea Based Bitcoin Academy",
+    description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.",
+  },
+};
 
 const curriculumCards = [
   {
