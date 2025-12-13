@@ -630,14 +630,21 @@ export default function ApplyPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => setSelectedCohort(cohort.id)}
+                      onClick={() => {
+                        setSelectedCohort(cohort.id);
+                        setFormData((prev) => ({
+                          ...prev,
+                          preferredCohort: cohort.id,
+                          experienceLevel: cohort.level?.toLowerCase() || '',
+                        }));
+                      }}
                       className={`mt-4 w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
                         selectedCohort === cohort.id
                           ? "bg-orange-400 text-black"
                           : "bg-cyan-400/20 text-cyan-300 hover:bg-cyan-400/30"
                       }`}
                     >
-                      {selectedCohort === cohort.id ? "Selected" : "Select This Cohort"}
+                      {selectedCohort === cohort.id ? "Selected" : "Select Cohort"}
                     </button>
                   </div>
                 ))}
