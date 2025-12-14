@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Learn Bitcoin - First Eritrea Based Bitcoin Academy",
-  description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways. Learn Bitcoin education in Africa with hands-on training.",
+  description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners community. Clear lessons, real security, and developer pathways.",
   keywords: [
     "Bitcoin education Africa",
     "Learn Bitcoin",
@@ -13,13 +13,25 @@ export const metadata: Metadata = {
     "Bitcoin tutorials for beginners",
     "PanAfrican Bitcoin Academy",
     "Eritrea Bitcoin academy",
+    "Eritrea Bitcoin",
+    "Eritrean Bitcoiners",
+    "first Eritrean Bitcoin education",
+    "Asmara Bitcoin education",
+    "Bitcoin education Asmara",
+    "Eritrea investment",
+    "Bitcoin Nakfa",
+    "convert Bitcoin to Nakfa",
+    "Habesha Bitcoin",
+    "Uganda Bitcoin education",
+    "Bitcoin in Eritrea",
+    "Eritrean cryptocurrency",
   ],
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: "Learn Bitcoin - First Eritrea Based Bitcoin Academy",
-    description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.",
+    description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education, convert Bitcoin to Nakfa, join Eritrean Bitcoiners. Clear lessons, real security, and developer pathways.",
   },
 };
 

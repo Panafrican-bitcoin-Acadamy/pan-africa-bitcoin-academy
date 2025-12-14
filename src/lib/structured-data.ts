@@ -11,10 +11,12 @@ export const organizationStructuredData = {
   alternateName: 'Pan-African Bitcoin Academy',
   url: baseUrl,
   logo: `${baseUrl}/icon.svg`,
-  description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.',
+  description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners community.',
   address: {
     '@type': 'PostalAddress',
     addressCountry: 'ER', // Eritrea
+    addressLocality: 'Asmara',
+    addressRegion: 'Maekel',
   },
   sameAs: [
     // Add social media links when available
@@ -33,7 +35,7 @@ export const websiteStructuredData = {
   '@type': 'WebSite',
   name: 'PanAfrican Bitcoin Academy',
   url: baseUrl,
-  description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.',
+  description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners community.',
   potentialAction: {
     '@type': 'SearchAction',
     target: {

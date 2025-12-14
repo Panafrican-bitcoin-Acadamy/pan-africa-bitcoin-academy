@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | PanAfrican Bitcoin Academy",
   },
   description:
-    "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways. Learn Bitcoin the right way with comprehensive education across Africa.",
+    "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners community. Clear lessons, real security, and developer pathways.",
   keywords: [
     "Bitcoin education Africa",
     "Learn Bitcoin",
@@ -39,6 +39,16 @@ export const metadata: Metadata = {
     "Bitcoin tutorials for beginners",
     "PanAfrican Bitcoin Academy",
     "Eritrea Bitcoin academy",
+    "Eritrea Bitcoin",
+    "Eritrean Bitcoiners",
+    "first Eritrean Bitcoin education",
+    "Asmara Bitcoin education",
+    "Bitcoin education Asmara",
+    "Eritrea investment",
+    "Bitcoin Nakfa",
+    "convert Bitcoin to Nakfa",
+    "Habesha Bitcoin",
+    "Uganda Bitcoin education",
     "Bitcoin education",
     "Bitcoin learning",
     "Bitcoin developer",
@@ -48,6 +58,9 @@ export const metadata: Metadata = {
     "blockchain education",
     "Bitcoin training",
     "Bitcoin Africa",
+    "African Bitcoin education",
+    "Bitcoin in Eritrea",
+    "Eritrean cryptocurrency",
   ],
   authors: [{ name: "Pan-African Bitcoin Academy" }],
   creator: "Pan-African Bitcoin Academy",
@@ -62,7 +75,7 @@ export const metadata: Metadata = {
     url: '/',
     siteName: 'PanAfrican Bitcoin Academy',
     title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
-    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.',
+    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education, convert Bitcoin to Nakfa, join Eritrean Bitcoiners. Clear lessons, real security, and developer pathways.',
     images: [
       {
         url: '/og-image.png',
@@ -75,7 +88,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
-    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy. Clear lessons, real security, and developer pathways.',
+    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education, convert Bitcoin to Nakfa, join Eritrean Bitcoiners. Clear lessons, real security, and developer pathways.',
     images: ['/og-image.png'],
   },
   robots: {
