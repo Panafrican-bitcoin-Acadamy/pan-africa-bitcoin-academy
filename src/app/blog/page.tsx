@@ -456,7 +456,8 @@ export default function BlogPage() {
                 </ul>
               </div>
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
         </div>
       </div>
     </div>

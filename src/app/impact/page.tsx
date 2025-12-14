@@ -338,10 +338,12 @@ export default function ImpactPage() {
               </li>
             ))}
           </ul>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Sats Reward Economy */}
-        <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+        <AnimatedSection animation="slideLeft">
+          <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
           <h2 className="text-xl font-semibold text-purple-200">Sats Reward Economy</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="text-center">
@@ -360,10 +362,12 @@ export default function ImpactPage() {
           <p className="mt-4 text-xs text-zinc-400">
             This proves our academy is Bitcoin-native, not just "talking about Bitcoin."
           </p>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Testimonials */}
-        <section className="space-y-6">
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Student Testimonials</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {testimonials.map((testimonial, index) => (
@@ -384,10 +388,12 @@ export default function ImpactPage() {
               </div>
             ))}
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Download Report */}
-        <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+        <AnimatedSection animation="slideUp">
+          <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_40px_rgba(34,211,238,0.2)]">
           <h2 className="text-xl font-semibold text-cyan-200">Download Impact Report</h2>
           <p className="mt-2 text-sm text-zinc-300 sm:text-base">
             Get our comprehensive 1–2 page PDF report with mission, results, charts, stats, photos, and quotes.
@@ -398,10 +404,12 @@ export default function ImpactPage() {
           <button className="mt-6 rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110">
             Download PDF Report
           </button>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Support Section */}
-        <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+        <AnimatedSection animation="slideLeft">
+          <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
           <h2 className="text-xl font-semibold text-orange-200">Want to help us expand our impact?</h2>
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
@@ -423,7 +431,8 @@ export default function ImpactPage() {
               Apply to Mentor
             </a>
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
       </div>
         </div>
       </div>

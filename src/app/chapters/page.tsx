@@ -985,12 +985,14 @@ export default function ChaptersPage() {
                     </div>
                   ))}
                 </div>
-              </div>
+                </div>
+              </AnimatedSection>
             );
           })}
 
           {/* Coming Soon Section */}
-          <div className="mb-16 rounded-xl border border-purple-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 rounded-xl border border-purple-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
             <h2 className="mb-6 text-2xl font-semibold text-purple-200">Coming Soon</h2>
             <p className="mb-4 text-sm text-zinc-300">
               We're constantly expanding our curriculum. Here's what's coming next:

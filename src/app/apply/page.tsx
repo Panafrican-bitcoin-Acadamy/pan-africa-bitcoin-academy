@@ -713,7 +713,8 @@ export default function ApplyPage() {
             </div>
           </div>
           )}
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Registration Form */}
         <AnimatedSection animation="slideRight">
@@ -962,7 +963,8 @@ export default function ApplyPage() {
               </button>
             </div>
           </form>
-        </section>
+          </section>
+        </AnimatedSection>
       </div>
         </div>
       </div>

@@ -337,10 +337,12 @@ export default function MentorshipPage() {
               {submitting ? "Submitting..." : submitted ? "Submitted" : "Submit Application"}
             </button>
           </form>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Vetting Steps */}
-        <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
           <h2 className="text-xl font-semibold text-purple-200">Our Vetting Process</h2>
           <div className="space-y-3 text-sm text-zinc-300 sm:text-base">
             <div className="flex items-start gap-2">
@@ -364,10 +366,12 @@ export default function MentorshipPage() {
               <span><strong className="text-purple-200">Public Welcome</strong> — Introduce you to the community (WhatsApp + X/Nostr).</span>
             </div>
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Appreciation Section */}
-        <section className="space-y-6">
+        <AnimatedSection animation="slideLeft">
+          <section className="space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-semibold text-zinc-50">Our Mentors & Contributors</h2>
             <p className="mt-2 text-sm text-zinc-400">
@@ -394,21 +398,24 @@ export default function MentorshipPage() {
               </div>
             ))}
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* CTA */}
-        <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <h2 className="text-xl font-semibold text-orange-200">Want to join our mentorship team?</h2>
-          <p className="mt-4 text-sm text-zinc-300 sm:text-base">
-            Help empower the next generation of African Bitcoin talent.
-          </p>
-          <a
-            href="#application"
-            className="mt-6 inline-block rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110"
-          >
-            Apply to be a Mentor or Volunteer
-          </a>
-        </section>
+        <AnimatedSection animation="slideUp">
+          <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+            <h2 className="text-xl font-semibold text-orange-200">Want to join our mentorship team?</h2>
+            <p className="mt-4 text-sm text-zinc-300 sm:text-base">
+              Help empower the next generation of African Bitcoin talent.
+            </p>
+            <a
+              href="#application"
+              className="mt-6 inline-block rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110"
+            >
+              Apply to be a Mentor or Volunteer
+            </a>
+          </section>
+        </AnimatedSection>
       </div>
         </div>
       </div>

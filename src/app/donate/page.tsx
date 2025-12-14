@@ -134,10 +134,12 @@ export default function DonatePage() {
               </div>
             </div>
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Transparency Plan */}
-        <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
           <h2 className="text-xl font-semibold text-purple-200">Transparency Plan</h2>
           <p className="text-sm text-zinc-300 sm:text-base">
             We believe in transparency and accountability. Here's how we handle donations:
@@ -165,20 +167,23 @@ export default function DonatePage() {
               View our <a href="/impact" className="font-semibold text-purple-300 hover:text-purple-200">Impact Dashboard</a> for real-time metrics and detailed reports.
             </p>
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Thank You */}
-        <section className="text-center">
-          <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-            <h2 className="text-2xl font-semibold text-cyan-200">Thank You</h2>
-            <p className="mt-4 text-sm text-zinc-300 sm:text-base">
-              Your support helps build Bitcoin sovereignty and education in Africa. Every contribution, no matter how small, makes a difference.
-            </p>
-            <p className="mt-2 text-xs text-zinc-400">
-              Questions? Contact us at <a href="mailto:support@panafricanbitcoin.com" className="text-cyan-300 hover:text-cyan-200">support@panafricanbitcoin.com</a>
-            </p>
-          </div>
-        </section>
+        <AnimatedSection animation="slideUp">
+          <section className="text-center">
+            <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+              <h2 className="text-2xl font-semibold text-cyan-200">Thank You</h2>
+              <p className="mt-4 text-sm text-zinc-300 sm:text-base">
+                Your support helps build Bitcoin sovereignty and education in Africa. Every contribution, no matter how small, makes a difference.
+              </p>
+              <p className="mt-2 text-xs text-zinc-400">
+                Questions? Contact us at <a href="mailto:support@panafricanbitcoin.com" className="text-cyan-300 hover:text-cyan-200">support@panafricanbitcoin.com</a>
+              </p>
+            </div>
+          </section>
+        </AnimatedSection>
       </div>
         </div>
       </div>
