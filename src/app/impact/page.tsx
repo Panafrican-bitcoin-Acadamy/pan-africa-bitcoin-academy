@@ -322,10 +322,12 @@ export default function ImpactPage() {
               <p className="text-zinc-400">No completed cohorts yet.</p>
             </div>
           )}
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Graduate Outcomes */}
-        <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
           <h2 className="text-xl font-semibold text-orange-200">Graduate Outcomes</h2>
           <p className="text-sm text-zinc-300 sm:text-base">What our students have achieved:</p>
           <ul className="mt-4 space-y-2">

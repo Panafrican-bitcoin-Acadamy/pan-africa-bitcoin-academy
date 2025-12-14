@@ -344,10 +344,12 @@ export default function BlogPage() {
                 </Link>
               ))}
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
 
           {/* Write for Us CTA */}
-          <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <div className="text-center">
               <h2 className="mb-4 text-2xl font-semibold text-cyan-200">Write for Us</h2>
               <p className="mb-2 text-base text-zinc-300">
