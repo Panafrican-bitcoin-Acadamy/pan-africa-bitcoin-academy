@@ -261,17 +261,16 @@ export default function Home() {
                   </div>
                 ))}
               </AnimatedList>
+              <div className="text-center">
+                <Link
+                  href="/chapters"
+                  className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+                >
+                  👉 View Full Curriculum
+                </Link>
+              </div>
             </section>
           </AnimatedSection>
-            <div className="text-center">
-              <Link
-                href="/chapters"
-                className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
-              >
-                👉 View Full Curriculum
-              </Link>
-            </div>
-          </section>
 
           {/* 5. How It Works Preview */}
           <AnimatedSection animation="slideUp">
