@@ -824,7 +824,8 @@ export default function ChaptersPage() {
           {/* Chapters by Level */}
           {levels.map((level, levelIndex) => {
             const levelChapters = getLevelChapters(level.id);
-            const animationType = levelIndex % 3 === 0 ? 'slideUp' : levelIndex % 3 === 1 ? 'slideLeft' : 'slideRight';
+            // Level I (index 0) slides from left, Level II (index 1) from right, Level III (index 2) from left
+            const animationType = levelIndex === 0 ? 'slideLeft' : levelIndex === 1 ? 'slideRight' : 'slideLeft';
             return (
               <AnimatedSection key={level.id} animation={animationType}>
                 <div className="mb-16">
@@ -833,7 +834,7 @@ export default function ChaptersPage() {
                   <p className="mt-2 text-base text-zinc-400">{level.description}</p>
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <AnimatedList animation="slideUp" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {levelChapters.map((chapter) => (
                     <div
                       key={chapter.id}
@@ -984,7 +985,7 @@ export default function ChaptersPage() {
                       )}
                     </div>
                   ))}
-                </div>
+                </AnimatedList>
                 </div>
               </AnimatedSection>
             );
