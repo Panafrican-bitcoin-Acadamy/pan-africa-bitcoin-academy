@@ -49,22 +49,25 @@ export default function DeveloperHubPage() {
       <div className="relative z-10 w-full">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="mb-16 text-center">
-            <div className="mb-6 flex justify-center">
-              <div className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 p-4">
-                <Code className="h-16 w-16 text-orange-400" />
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <div className="mb-6 flex justify-center">
+                <div className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 p-4">
+                  <Code className="h-16 w-16 text-orange-400" />
+                </div>
               </div>
+              <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
+                Developer Hub
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                Your roadmap to becoming a Bitcoin developer. Connect, learn, and contribute to the global Bitcoin ecosystem.
+              </p>
             </div>
-            <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
-              Developer Hub
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Your roadmap to becoming a Bitcoin developer. Connect, learn, and contribute to the global Bitcoin ecosystem.
-            </p>
-          </div>
+          </AnimatedSection>
 
           {/* SECTION 1 — Developer Path Overview */}
-          <section className="mb-20 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+          <AnimatedSection animation="slideLeft">
+            <section className="mb-20 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-cyan-500/20 p-2">
                 <Rocket className="h-6 w-6 text-cyan-400" />
@@ -111,10 +114,12 @@ export default function DeveloperHubPage() {
                 </div>
               </div>
             </div>
-          </section>
+            </section>
+          </AnimatedSection>
 
           {/* SECTION 2 — Beginner Developer Starter Guide */}
-          <section className="mb-20 rounded-xl border border-orange-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+          <AnimatedSection animation="slideRight">
+            <section className="mb-20 rounded-xl border border-orange-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-orange-500/20 p-2">
                 <BookOpen className="h-6 w-6 text-orange-400" />
@@ -426,9 +431,11 @@ export default function DeveloperHubPage() {
               </div>
             </div>
           </section>
+          </AnimatedSection>
 
           {/* SECTION 3 — Global Bitcoin Developer Communities */}
-          <section className="mb-20 rounded-xl border border-purple-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+          <AnimatedSection animation="slideLeft">
+            <section className="mb-20 rounded-xl border border-purple-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-purple-500/20 p-2">
                 <Users className="h-6 w-6 text-purple-400" />
@@ -670,9 +677,11 @@ export default function DeveloperHubPage() {
               </p>
             </div>
           </section>
+          </AnimatedSection>
 
           {/* SECTION 5 — Developer Meetings, Workshops & Meetups */}
-          <section className="mb-20 rounded-xl border border-orange-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+          <AnimatedSection animation="slideRight">
+            <section className="mb-20 rounded-xl border border-orange-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-orange-500/20 p-2">
                 <Calendar className="h-6 w-6 text-orange-400" />
@@ -697,9 +706,11 @@ export default function DeveloperHubPage() {
               </div>
             </div>
           </section>
+          </AnimatedSection>
 
           {/* SECTION 6 — Developer Opportunities for Africans */}
-          <section className="mb-20 rounded-xl border border-green-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
+          <AnimatedSection animation="slideLeft">
+            <section className="mb-20 rounded-xl border border-green-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-green-500/20 p-2">
                 <Award className="h-6 w-6 text-green-400" />
@@ -731,9 +742,11 @@ export default function DeveloperHubPage() {
               ))}
             </div>
           </section>
+          </AnimatedSection>
 
           {/* SECTION 7 — Build Your First Portfolio Project */}
-          <section className="mb-20 rounded-xl border border-purple-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+          <AnimatedSection animation="slideUp">
+            <section className="mb-20 rounded-xl border border-purple-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-purple-500/20 p-2">
                 <Rocket className="h-6 w-6 text-purple-400" />
@@ -763,9 +776,11 @@ export default function DeveloperHubPage() {
               ))}
             </div>
           </section>
+          </AnimatedSection>
 
           {/* SECTION 8 — Certification Path */}
-          <section className="mb-20 rounded-xl border border-yellow-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(234,179,8,0.2)]">
+          <AnimatedSection animation="slideRight">
+            <section className="mb-20 rounded-xl border border-yellow-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(234,179,8,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-yellow-500/20 p-2">
                 <Award className="h-6 w-6 text-yellow-400" />
@@ -844,9 +859,11 @@ export default function DeveloperHubPage() {
               ))}
             </div>
           </section>
+          </AnimatedSection>
 
           {/* CTA Section */}
-          <section className="rounded-xl border border-orange-400/25 bg-gradient-to-r from-orange-500/10 to-cyan-500/10 p-8 text-center">
+          <AnimatedSection animation="slideUp">
+            <section className="rounded-xl border border-orange-400/25 bg-gradient-to-r from-orange-500/10 to-cyan-500/10 p-8 text-center">
             <h2 className="mb-4 text-2xl font-semibold text-zinc-50">Ready to Start Your Developer Journey?</h2>
             <p className="mb-6 text-zinc-400">
               Join our community and connect with other Bitcoin developers in Africa.
@@ -868,6 +885,7 @@ export default function DeveloperHubPage() {
               </Link>
             </div>
           </section>
+          </AnimatedSection>
         </div>
       </div>
     </div>

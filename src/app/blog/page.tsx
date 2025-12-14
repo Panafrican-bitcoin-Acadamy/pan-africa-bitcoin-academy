@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AnimatedSection } from "@/components/AnimatedSection";
 
 const categories = [
   { id: "all", name: "All", icon: "📚" },
@@ -172,17 +173,20 @@ export default function BlogPage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Header Title + Mission */}
-          <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Bitcoin Stories, Ideas & Experiences
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              A community-driven publication featuring essays, insights, and experiences from graduates of the Pan-Africa Bitcoin Academy — exploring the future of Bitcoin in Africa and beyond.
-            </p>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Bitcoin Stories, Ideas & Experiences
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                A community-driven publication featuring essays, insights, and experiences from graduates of the Pan-Africa Bitcoin Academy — exploring the future of Bitcoin in Africa and beyond.
+              </p>
+            </div>
+          </AnimatedSection>
 
           {/* Blog of the Month */}
-          <div className="mb-16 rounded-xl border-2 border-orange-400/50 bg-gradient-to-br from-orange-500/10 to-cyan-500/10 p-8 shadow-[0_0_50px_rgba(249,115,22,0.3)]">
+          <AnimatedSection animation="slideRight">
+            <div className="mb-16 rounded-xl border-2 border-orange-400/50 bg-gradient-to-br from-orange-500/10 to-cyan-500/10 p-8 shadow-[0_0_50px_rgba(249,115,22,0.3)]">
             <div className="mb-4 flex items-center gap-2">
               <span className="text-2xl">⭐</span>
               <span className="rounded-full border border-orange-400/30 bg-orange-500/20 px-3 py-1 text-xs font-bold text-orange-300">
@@ -210,10 +214,12 @@ export default function BlogPage() {
                 Read Article →
               </Link>
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
 
           {/* Featured Articles */}
-          <div className="mb-16">
+          <AnimatedSection animation="slideLeft">
+            <div className="mb-16">
             <h2 className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">Featured Articles</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredPosts.map((post) => (
@@ -256,10 +262,12 @@ export default function BlogPage() {
                 </Link>
               ))}
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
 
           {/* Categories Filter */}
-          <div className="mb-12">
+          <AnimatedSection animation="slideRight">
+            <div className="mb-12">
             <h2 className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">Browse by Category</h2>
             <div className="flex flex-wrap gap-3">
               {categories.map((category) => (
@@ -282,10 +290,12 @@ export default function BlogPage() {
                 </button>
               ))}
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
 
           {/* All Posts Grid */}
-          <div className="mb-16">
+          <AnimatedSection animation="slideLeft">
+            <div className="mb-16">
             <h2 className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">
               {selectedCategory === "all" ? "All Articles" : categories.find(c => c.id === selectedCategory)?.name}
             </h2>

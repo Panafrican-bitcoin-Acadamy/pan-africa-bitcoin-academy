@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { AnimatedSection } from '@/components/AnimatedSection';
 
 export const metadata: Metadata = {
   title: 'About PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
@@ -33,18 +34,21 @@ export default function AboutPage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero */}
-          <div className="mb-14 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">
-              Pan-African Bitcoin Academy
-            </p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Understand Bitcoin the right way — through precise explanations, transparent guidance, and meaningful technical depth
-            </h1>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-14 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">
+                Pan-African Bitcoin Academy
+              </p>
+              <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Understand Bitcoin the right way — through precise explanations, transparent guidance, and meaningful technical depth
+              </h1>
+            </div>
+          </AnimatedSection>
 
           <div className="space-y-10 text-base text-zinc-100 sm:text-lg">
             {/* Mission */}
-            <section className="space-y-3">
+            <AnimatedSection animation="slideRight">
+              <section className="space-y-3">
               <p className="text-zinc-200">
                 Pan-African Bitcoin Academy exists to help people across Africa learn Bitcoin the right way —
                 with clarity, honesty, and technical depth. Our mission is to create a trusted learning
@@ -61,10 +65,12 @@ export default function AboutPage() {
                 <p>This is not a hype platform. This is not a trading academy.</p>
                 <p className="mt-1 font-semibold">This is a place for real knowledge, real skills, and real empowerment.</p>
               </div>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* Who it's for */}
-            <section className="rounded-xl border border-orange-500/25 bg-zinc-950/70 p-5 sm:p-6">
+            <AnimatedSection animation="slideLeft">
+              <section className="rounded-xl border border-orange-500/25 bg-zinc-950/70 p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-orange-200 sm:text-xl">Who this academy is for</h2>
               <div className="mt-4 space-y-6 text-zinc-200">
                 <div>
@@ -89,10 +95,12 @@ export default function AboutPage() {
                   </p>
                 </div>
               </div>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* Support for developers */}
-            <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-5 sm:p-6 shadow-[0_0_40px_rgba(34,211,238,0.18)]">
+            <AnimatedSection animation="slideRight">
+              <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-5 sm:p-6 shadow-[0_0_40px_rgba(34,211,238,0.18)]">
               <h2 className="text-lg font-semibold text-cyan-200 sm:text-xl">How we support new developers</h2>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-zinc-200 sm:text-base">
                 <li>Curated library of Bitcoin, wallet, and Lightning development resources</li>
@@ -101,30 +109,36 @@ export default function AboutPage() {
                 <li>Introductions to open-source projects, events, and hackathons</li>
                 <li>Guidance on contributing to wallets, tools, and Bitcoin OSS projects</li>
               </ul>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* Community */}
-            <section className="rounded-xl border border-green-400/25 bg-green-500/5 p-5 sm:p-6">
+            <AnimatedSection animation="slideLeft">
+              <section className="rounded-xl border border-green-400/25 bg-green-500/5 p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-green-200 sm:text-xl">A growing community — open to all</h2>
               <p className="mt-3 text-zinc-200">
                 Built in Uganda and connected to the Pan-African and global Bitcoin ecosystem. We welcome mentors,
                 guest lecturers, Bitcoin developers, educators, open-source contributors, builders, wallet creators,
                 Lightning enthusiasts, and anyone who wants to support African learners.
               </p>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* Students as contributors */}
-            <section className="rounded-xl border border-purple-400/25 bg-purple-500/10 p-5 sm:p-6">
+            <AnimatedSection animation="slideUp">
+              <section className="rounded-xl border border-purple-400/25 bg-purple-500/10 p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-purple-100 sm:text-xl">Our students become contributors</h2>
               <p className="mt-3 text-zinc-200">
                 Graduates are encouraged to write about their learning journey, share safety lessons, explain the
                 challenges they faced, and teach future cohorts. Many go on to mentor, lecture, or contribute to the
                 curriculum and community resources.
               </p>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* What we do not do */}
-            <section className="rounded-xl border border-red-400/25 bg-red-500/10 p-5 sm:p-6">
+            <AnimatedSection animation="slideRight">
+              <section className="rounded-xl border border-red-400/25 bg-red-500/10 p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-red-100 sm:text-xl">What we do NOT do</h2>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-zinc-200 sm:text-base">
                 <li>We do NOT teach trading.</li>
@@ -134,17 +148,20 @@ export default function AboutPage() {
                   you can protect yourself.
                 </li>
               </ul>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* Evolving project */}
-            <section className="space-y-3">
+            <AnimatedSection animation="slideLeft">
+              <section className="space-y-3">
               <h2 className="text-lg font-semibold text-zinc-100 sm:text-xl">An evolving project</h2>
               <p className="text-zinc-300">
                 The academy keeps growing as more students join, mentors participate, developers contribute, and
                 communities share resources. Together, we can build a movement of informed, empowered, and technically
                 skilled African Bitcoin developers and builders.
               </p>
-            </section>
+              </section>
+            </AnimatedSection>
           </div>
         </div>
       </div>

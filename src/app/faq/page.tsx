@@ -3,6 +3,7 @@
 
 import { StructuredData } from "@/components/StructuredData";
 import { generateFAQStructuredData } from "@/lib/structured-data";
+import { AnimatedSection } from "@/components/AnimatedSection";
 
 const faqs = [
   {
@@ -115,18 +116,23 @@ export default function FAQPage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Bitcoin Education FAQ - PanAfrican Bitcoin Academy
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Everything you need to know about joining PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy.
-            </p>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Bitcoin Education FAQ - PanAfrican Bitcoin Academy
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                Everything you need to know about joining PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy.
+              </p>
+            </div>
+          </AnimatedSection>
 
       <div className="space-y-12">
-        {faqs.map((category, categoryIndex) => (
-          <section key={categoryIndex} className="space-y-4">
+        {faqs.map((category, categoryIndex) => {
+          const animationType = categoryIndex % 3 === 0 ? 'slideUp' : categoryIndex % 3 === 1 ? 'slideLeft' : 'slideRight';
+          return (
+          <AnimatedSection key={categoryIndex} animation={animationType}>
+            <section className="space-y-4">
             <h2 className="text-xl font-semibold text-cyan-200">{category.category}</h2>
             <div className="space-y-4">
               {category.questions.map((faq, faqIndex) => (
@@ -139,11 +145,14 @@ export default function FAQPage() {
                 </div>
               ))}
             </div>
-          </section>
-        ))}
+            </section>
+          </AnimatedSection>
+          );
+        })}
 
         {/* Still Have Questions */}
-        <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+        <AnimatedSection animation="slideUp">
+          <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
           <h2 className="text-xl font-semibold text-orange-200">Still Have Questions?</h2>
           <p className="mt-4 text-sm text-zinc-300 sm:text-base">
             Can't find what you're looking for? We're here to help!
@@ -162,7 +171,8 @@ export default function FAQPage() {
               Contact Page
             </a>
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
       </div>
         </div>
       </div>

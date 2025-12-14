@@ -5,7 +5,7 @@ import { AnimatedSection } from './AnimatedSection';
 
 interface AnimatedListProps {
   children: ReactNode[];
-  animation?: 'slideUp' | 'slideLeft' | 'fadeIn';
+  animation?: 'slideUp' | 'slideLeft' | 'slideRight' | 'fadeIn';
   staggerDelay?: number;
   className?: string;
 }

@@ -176,18 +176,21 @@ export default function ImpactPage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Our Impact in Building Bitcoin Education & Sovereignty in Africa
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Tracking our progress openly. Updated after every cohort.
-            </p>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Our Impact in Building Bitcoin Education & Sovereignty in Africa
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                Tracking our progress openly. Updated after every cohort.
+              </p>
+            </div>
+          </AnimatedSection>
 
       <div className="space-y-12">
         {/* Key Metrics */}
-        <section className="space-y-6">
+        <AnimatedSection animation="slideLeft">
+          <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Key Metrics</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {displayMetrics.length > 0 ? (
@@ -221,10 +224,12 @@ export default function ImpactPage() {
               ))
             )}
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Student Progress Charts */}
-        <section className="space-y-6">
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Student Progress</h2>
           {progressMetrics ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

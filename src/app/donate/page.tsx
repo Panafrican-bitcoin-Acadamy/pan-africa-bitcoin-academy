@@ -1,5 +1,7 @@
 'use client';
 
+import { AnimatedSection } from "@/components/AnimatedSection";
+
 const ONCHAIN_ADDRESS = 'bc1q4pg073ws86qdnxac3y8zhk4t8vtkg2vx529jrj';
 const ONCHAIN_QR_SRC = '/images/onchain-btc-qr.jpeg'; // Using provided JPEG QR image
 const LIGHTNING_ADDRESS = 'panafricanbitcoin@blink.sv';
@@ -11,18 +13,21 @@ export default function DonatePage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Support Bitcoin Education
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Help us build Bitcoin sovereignty and education in Africa. Every sat counts.
-            </p>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Support Bitcoin Education
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                Help us build Bitcoin sovereignty and education in Africa. Every sat counts.
+              </p>
+            </div>
+          </AnimatedSection>
 
       <div className="space-y-12">
         {/* Why Donations Matter */}
-        <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
           <h2 className="text-xl font-semibold text-orange-200">Why Donations Matter</h2>
           <p className="text-sm text-zinc-300 sm:text-base">
             Many Bitcoin projects survive on donations. Your support helps us:
@@ -49,10 +54,12 @@ export default function DonatePage() {
               <span>Support mentors and guest lecturers</span>
             </li>
           </ul>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Payment Methods */}
-        <section className="space-y-6">
+        <AnimatedSection animation="slideLeft">
+          <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Bitcoin-Only Support</h2>
           <p className="text-sm text-zinc-400">
             We accept Bitcoin payments via Lightning Network and on-chain. Choose your preferred method:

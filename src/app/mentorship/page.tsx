@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { AnimatedSection } from "@/components/AnimatedSection";
 
 const roles = [
   {
@@ -96,18 +97,21 @@ export default function MentorshipPage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Mentorship & Volunteer
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Join us in building Bitcoin education and sovereignty in Africa.
-            </p>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Mentorship & Volunteer
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                Join us in building Bitcoin education and sovereignty in Africa.
+              </p>
+            </div>
+          </AnimatedSection>
 
       <div className="space-y-12">
         {/* Why Mentors Matter */}
-        <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
           <h2 className="text-xl font-semibold text-orange-200">Why Mentors & Volunteers Matter</h2>
           <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
             Bitcoin education grows through community, not classrooms.
@@ -118,7 +122,8 @@ export default function MentorshipPage() {
           <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
             If you share our mission of sovereignty, freedom, and open knowledge — we invite you to join us.
           </p>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {submitted && (
           <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-green-200">
@@ -132,7 +137,8 @@ export default function MentorshipPage() {
         )}
 
         {/* Roles */}
-        <section className="space-y-6">
+        <AnimatedSection animation="slideLeft">
+          <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Roles You Can Apply For</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {roles.map((role) => (
@@ -168,10 +174,12 @@ export default function MentorshipPage() {
               </div>
             ))}
           </div>
-        </section>
+          </section>
+        </AnimatedSection>
 
         {/* Application Form */}
-        <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+        <AnimatedSection animation="slideUp">
+          <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
           <h2 className="mb-6 text-xl font-semibold text-cyan-200">Application Form</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">

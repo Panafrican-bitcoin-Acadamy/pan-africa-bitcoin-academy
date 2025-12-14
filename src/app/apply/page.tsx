@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from '@/hooks/useAuth';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { AnimatedSection } from '@/components/AnimatedSection';
 
 interface Cohort {
   id: string;
@@ -543,18 +544,21 @@ export default function ApplyPage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Apply to PanAfrican Bitcoin Academy - Join Bitcoin Education Program
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Apply to join the Pan-Africa Bitcoin Academy and start your journey toward financial sovereignty.
-            </p>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Apply to PanAfrican Bitcoin Academy - Join Bitcoin Education Program
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                Apply to join the Pan-Africa Bitcoin Academy and start your journey toward financial sovereignty.
+              </p>
+            </div>
+          </AnimatedSection>
 
       <div className="space-y-12">
         {/* Cohort Details */}
-        <section className="space-y-6">
+        <AnimatedSection animation="slideLeft">
+          <section className="space-y-6">
           <h2 className="text-xl font-semibold text-zinc-50">Upcoming Cohorts</h2>
           {cohortsLoading ? (
             <div className="text-center py-8 text-cyan-400">Loading cohorts...</div>
@@ -712,7 +716,8 @@ export default function ApplyPage() {
         </section>
 
         {/* Registration Form */}
-        <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+        <AnimatedSection animation="slideRight">
+          <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
           <h2 className="mb-6 text-xl font-semibold text-cyan-200">Application Form</h2>
           {submitSuccess && (
             <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200">

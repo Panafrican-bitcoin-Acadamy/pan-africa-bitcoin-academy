@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, ReactNode } from 'react';
 
-type AnimationType = 'slideUp' | 'slideLeft' | 'fadeIn';
+type AnimationType = 'slideUp' | 'slideLeft' | 'slideRight' | 'fadeIn';
 
 interface AnimatedSectionProps {
   children: ReactNode;
@@ -55,6 +55,9 @@ export function AnimatedSection({
     slideLeft: isVisible
       ? 'opacity-100 translate-x-0'
       : 'opacity-0 -translate-x-10',
+    slideRight: isVisible
+      ? 'opacity-100 translate-x-0'
+      : 'opacity-0 translate-x-10',
     fadeIn: isVisible ? 'opacity-100' : 'opacity-0',
   };
 

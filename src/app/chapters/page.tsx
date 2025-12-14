@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { BitcoinIcon, WalletIcon, LightningIcon, BookIcon, ToolIcon, BlockchainIcon, KeysIcon, UTXOIcon, TransactionIcon, MiningIcon } from "@/components/BitcoinIcons";
 import { useAuth } from "@/hooks/useAuth";
 import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
+import { AnimatedSection } from "@/components/AnimatedSection";
 import type { Metadata } from "next";
 
 // Note: Metadata cannot be exported from client components
@@ -576,20 +577,23 @@ export default function ChaptersPage() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-              Learning Path: Bitcoin Foundations → Lightning → Sovereignty
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-              Follow the lessons step-by-step or jump to any topic you want to explore.
-            </p>
-            <p className="mx-auto mt-2 max-w-3xl text-base text-zinc-400">
-              Each chapter includes diagrams, real examples, assignments, and a quick quiz.
-            </p>
-          </div>
+          <AnimatedSection animation="slideUp">
+            <div className="mb-16 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+                Learning Path: Bitcoin Foundations → Lightning → Sovereignty
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+                Follow the lessons step-by-step or jump to any topic you want to explore.
+              </p>
+              <p className="mx-auto mt-2 max-w-3xl text-base text-zinc-400">
+                Each chapter includes diagrams, real examples, assignments, and a quick quiz.
+              </p>
+            </div>
+          </AnimatedSection>
 
           {/* Learning Path Progress Bar */}
-          <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+          <AnimatedSection animation="slideRight">
+            <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <h2 className="mb-6 text-center text-xl font-semibold text-cyan-200">Learning Path Progress</h2>
             <div className="flex items-center justify-between">
               <div className="flex flex-1 items-center">
@@ -611,10 +615,12 @@ export default function ChaptersPage() {
               <span>Difficulty-Adjustment</span>
               <span>Advanced Sovereignty</span>
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
 
           {/* Study Materials */}
-          <div className="mb-16">
+          <AnimatedSection animation="slideLeft">
+            <div className="mb-16">
             <h2 className="mb-3 text-2xl font-semibold text-orange-300 sm:text-3xl">Study Materials</h2>
             <p className="mb-8 text-base text-zinc-300 sm:text-lg">
               Download essential Bitcoin resources and books to deepen your understanding:
@@ -812,13 +818,16 @@ export default function ChaptersPage() {
                 </div>
               </a>
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
 
           {/* Chapters by Level */}
-          {levels.map((level) => {
+          {levels.map((level, levelIndex) => {
             const levelChapters = getLevelChapters(level.id);
+            const animationType = levelIndex % 3 === 0 ? 'slideUp' : levelIndex % 3 === 1 ? 'slideLeft' : 'slideRight';
             return (
-              <div key={level.id} className="mb-16">
+              <AnimatedSection key={level.id} animation={animationType}>
+                <div className="mb-16">
                 <div className="mb-8">
                   <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl">{level.name}</h2>
                   <p className="mt-2 text-base text-zinc-400">{level.description}</p>
@@ -997,10 +1006,12 @@ export default function ChaptersPage() {
                 </div>
               ))}
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
 
           {/* Footer CTA */}
-          <div className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+          <AnimatedSection animation="slideRight">
+            <div className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
             <h2 className="mb-4 text-2xl font-semibold text-orange-200">Ready to start learning?</h2>
             <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
@@ -1024,7 +1035,8 @@ export default function ChaptersPage() {
                 🔸 Join WhatsApp Community
               </a>
             </div>
-          </div>
+            </div>
+          </AnimatedSection>
         </div>
       </div>
     </div>
