@@ -163,13 +163,13 @@ export async function GET(_req: NextRequest) {
       // First, check profile.cohort_id
       if (p.cohort_id) {
         cohortId = p.cohort_id;
-        cohortName = cohortsMap.get(cohortId) || null;
+        cohortName = cohortsMap.get(p.cohort_id) || null;
       }
       
       // If not found, check students.cohort_id
       if (!cohortId && student?.cohort_id) {
         cohortId = student.cohort_id;
-        cohortName = cohortsMap.get(cohortId) || null;
+        cohortName = cohortsMap.get(student.cohort_id) || null;
       }
       
       // If still not found, check cohort_enrollment from query
@@ -181,7 +181,7 @@ export async function GET(_req: NextRequest) {
           if (enrollment.cohorts && enrollment.cohorts.name) {
             cohortName = enrollment.cohorts.name;
           } else {
-            cohortName = cohortsMap.get(cohortId) || null;
+            cohortName = cohortsMap.get(enrollment.cohort_id) || null;
           }
         }
       }
@@ -191,7 +191,7 @@ export async function GET(_req: NextRequest) {
         const fallbackCohortId = enrollmentMap.get(p.id);
         if (fallbackCohortId) {
           cohortId = fallbackCohortId;
-          cohortName = cohortsMap.get(cohortId) || null;
+          cohortName = cohortsMap.get(fallbackCohortId) || null;
         }
       }
 
