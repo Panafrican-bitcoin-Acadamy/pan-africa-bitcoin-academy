@@ -585,6 +585,7 @@ export default function DeveloperHubPage() {
                 </div>
               </div>
             </div>
+            </div>
           </section>
 
           {/* SECTION 4 — Mentors & Guest Developers */}
