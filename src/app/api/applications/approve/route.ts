@@ -408,13 +408,13 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (error: any) {
     console.error('Error approving application:', error);
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {})
-      },
-      { status: 500 }
-    );
+    const errorResponse: any = {
+      error: 'Internal server error',
+    };
+    if (process.env.NODE_ENV === 'development' && error?.message) {
+      errorResponse.details = error.message;
+    }
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
 
