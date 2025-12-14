@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Facebook, Twitter, Instagram, Music2 } from "lucide-react";
 import { StructuredData } from "@/components/StructuredData";
+import { AnimatedSection } from "@/components/AnimatedSection";
+import { AnimatedList } from "@/components/AnimatedList";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -170,90 +172,97 @@ export default function Home() {
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* 2. How It Started Section */}
-          <section className="mb-32 space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold text-orange-200 sm:text-4xl lg:text-5xl">
-                How It Started: From Bailouts to Blockchain
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg max-w-3xl mx-auto">
-                In 2008, the global financial crisis exposed the fragility of traditional banking. While governments bailed out the banks, ordinary people lost homes, jobs, and savings. Bitcoin was born from this crisis — a decentralized alternative that doesn't require trust in banks or governments.
-              </p>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="relative w-full max-w-4xl rounded-xl overflow-hidden border border-orange-500/25 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-                {/* Image container */}
-                <div className="relative w-full bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 flex items-center justify-center">
-                  {/* Image showing Bitcoin's origin story */}
-                  <img 
-                    src="/images/bailouts-to-blockchain.jpg" 
-                    alt="From Bailouts to Blockchain - Bitcoin's origin story"
-                    className="w-full h-auto object-contain"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* 3. About Preview */}
-          <section className="mb-32 rounded-xl border border-orange-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)] sm:p-12">
-            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-              <div className="space-y-6">
-                <h2 className="text-3xl font-semibold text-orange-200 sm:text-4xl">Our Mission</h2>
-                <p className="text-base leading-relaxed text-zinc-300 sm:text-lg">
-                  Bitcoin is a tool for financial freedom — especially in Africa.
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-orange-200 sm:text-4xl lg:text-5xl">
+                  How It Started: From Bailouts to Blockchain
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg max-w-3xl mx-auto">
+                  In 2008, the global financial crisis exposed the fragility of traditional banking. While governments bailed out the banks, ordinary people lost homes, jobs, and savings. Bitcoin was born from this crisis — a decentralized alternative that doesn't require trust in banks or governments.
                 </p>
-                <p className="text-base leading-relaxed text-zinc-300 sm:text-lg">
-                  Our academy helps people understand, use, and build with Bitcoin through hands-on learning and community support.
-                </p>
-                <Link
-                  href="/about"
-                  className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
-                >
-                  👉 Read Our Mission
-                </Link>
               </div>
               <div className="flex items-center justify-center">
-                <div className="relative flex h-64 w-64 items-center justify-center">
-                  {/* Outer glow rings */}
-                  <div className="absolute inset-0 rounded-full bg-orange-400/20 blur-2xl animate-pulse" />
-                  <div className="absolute inset-0 rounded-full bg-orange-400/10 blur-3xl" />
-                  
-                  {/* Geometric borders */}
-                  <div className="absolute inset-4 rounded-2xl border-4 border-orange-400/50 rotate-45" />
-                  <div className="absolute inset-6 rounded-2xl border-2 border-orange-300/30 -rotate-45" />
-                  
-                  {/* Main B container */}
-                  <div className="relative z-10 flex h-48 w-48 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-orange-400 to-orange-600 shadow-[0_0_60px_rgba(249,115,22,0.8)]">
-                    <span className="text-8xl font-black text-black tracking-tight">B</span>
+                <div className="relative w-full max-w-4xl rounded-xl overflow-hidden border border-orange-500/25 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+                  {/* Image container */}
+                  <div className="relative w-full bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 flex items-center justify-center">
+                    {/* Image showing Bitcoin's origin story */}
+                    <img 
+                      src="/images/bailouts-to-blockchain.jpg" 
+                      alt="From Bailouts to Blockchain - Bitcoin's origin story"
+                      className="w-full h-auto object-contain"
+                    />
                   </div>
-                  
-                  {/* Corner accents */}
-                  <div className="absolute top-8 left-8 h-4 w-4 rounded-full bg-orange-400/60 blur-sm" />
-                  <div className="absolute bottom-8 right-8 h-4 w-4 rounded-full bg-orange-400/60 blur-sm" />
-                  <div className="absolute top-8 right-8 h-3 w-3 rounded-full bg-cyan-400/40 blur-sm" />
-                  <div className="absolute bottom-8 left-8 h-3 w-3 rounded-full bg-cyan-400/40 blur-sm" />
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </AnimatedSection>
+
+          {/* 3. About Preview */}
+          <AnimatedSection animation="slideLeft">
+            <section className="mb-32 rounded-xl border border-orange-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)] sm:p-12">
+              <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+                <div className="space-y-6">
+                  <h2 className="text-3xl font-semibold text-orange-200 sm:text-4xl">Our Mission</h2>
+                  <p className="text-base leading-relaxed text-zinc-300 sm:text-lg">
+                    Bitcoin is a tool for financial freedom — especially in Africa.
+                  </p>
+                  <p className="text-base leading-relaxed text-zinc-300 sm:text-lg">
+                    Our academy helps people understand, use, and build with Bitcoin through hands-on learning and community support.
+                  </p>
+                  <Link
+                    href="/about"
+                    className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
+                  >
+                    👉 Read Our Mission
+                  </Link>
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="relative flex h-64 w-64 items-center justify-center">
+                    {/* Outer glow rings */}
+                    <div className="absolute inset-0 rounded-full bg-orange-400/20 blur-2xl animate-pulse" />
+                    <div className="absolute inset-0 rounded-full bg-orange-400/10 blur-3xl" />
+                    
+                    {/* Geometric borders */}
+                    <div className="absolute inset-4 rounded-2xl border-4 border-orange-400/50 rotate-45" />
+                    <div className="absolute inset-6 rounded-2xl border-2 border-orange-300/30 -rotate-45" />
+                    
+                    {/* Main B container */}
+                    <div className="relative z-10 flex h-48 w-48 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-orange-400 to-orange-600 shadow-[0_0_60px_rgba(249,115,22,0.8)]">
+                      <span className="text-8xl font-black text-black tracking-tight">B</span>
+                    </div>
+                    
+                    {/* Corner accents */}
+                    <div className="absolute top-8 left-8 h-4 w-4 rounded-full bg-orange-400/60 blur-sm" />
+                    <div className="absolute bottom-8 right-8 h-4 w-4 rounded-full bg-orange-400/60 blur-sm" />
+                    <div className="absolute top-8 right-8 h-3 w-3 rounded-full bg-cyan-400/40 blur-sm" />
+                    <div className="absolute bottom-8 left-8 h-3 w-3 rounded-full bg-cyan-400/40 blur-sm" />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </AnimatedSection>
 
           {/* 4. Curriculum Preview */}
-          <section className="mb-32 space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">What You Will Learn</h2>
-            </div>
-            <div className="grid gap-6 sm:grid-cols-3">
-              {curriculumCards.map((card, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]"
-                >
-                  <div className="mb-6 text-5xl">{card.icon}</div>
-                  <h3 className="mb-3 text-xl font-semibold text-cyan-200">{card.title}</h3>
-                  <p className="text-base text-zinc-400">{card.description}</p>
-                </div>
-              ))}
-            </div>
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">What You Will Learn</h2>
+              </div>
+              <AnimatedList animation="slideUp" className="grid gap-6 sm:grid-cols-3">
+                {curriculumCards.map((card, index) => (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                  >
+                    <div className="mb-6 text-5xl">{card.icon}</div>
+                    <h3 className="mb-3 text-xl font-semibold text-cyan-200">{card.title}</h3>
+                    <p className="text-base text-zinc-400">{card.description}</p>
+                  </div>
+                ))}
+              </AnimatedList>
+            </section>
+          </AnimatedSection>
             <div className="text-center">
               <Link
                 href="/chapters"
@@ -265,77 +274,82 @@ export default function Home() {
           </section>
 
           {/* 5. How It Works Preview */}
-          <section className="mb-32 space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">How It Works</h2>
-              <p className="mt-4 text-base text-zinc-400 sm:text-lg">A simple roadmap to your Bitcoin learning journey</p>
-            </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {howItWorksSteps.map((item, index) => (
-                <div
-                  key={index}
-                  className="relative rounded-xl border border-purple-500/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(168,85,247,0.1)]"
-                >
-                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 text-3xl font-bold text-purple-300">
-                    {item.step}
-                  </div>
-                  <h3 className="mb-3 text-lg font-semibold text-zinc-50">{item.title}</h3>
-                  <p className="text-sm text-zinc-400">{item.description}</p>
-                  {index < howItWorksSteps.length - 1 && (
-                    <div className="absolute -right-3 top-1/2 hidden -translate-y-1/2 translate-x-full text-2xl text-purple-400 lg:block">
-                      →
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="text-center">
-              <Link
-                href="/chapters"
-                className="inline-flex items-center justify-center rounded-lg border border-purple-400/30 bg-purple-400/10 px-6 py-3 text-base font-semibold text-purple-300 transition hover:bg-purple-400/20"
-              >
-                👉 See How the Academy Works
-              </Link>
-            </div>
-          </section>
-
-          {/* 6. Impact Preview */}
-          <section className="mb-32 rounded-xl border border-orange-500/25 bg-black/80 p-12 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-            <div className="text-center">
-              <h2 className="mb-12 text-3xl font-semibold text-orange-200 sm:text-4xl">Our Impact</h2>
-              <div className="grid gap-8 sm:grid-cols-3">
-                <div>
-                  <div className="text-5xl font-bold text-orange-400 sm:text-6xl">12</div>
-                  <div className="mt-4 text-base text-zinc-400">Students trained</div>
-                </div>
-                <div>
-                  <div className="text-5xl font-bold text-orange-400 sm:text-6xl">80,000+</div>
-                  <div className="mt-4 text-base text-zinc-400">Sats rewarded</div>
-                </div>
-                <div>
-                  <div className="text-5xl font-bold text-orange-400 sm:text-6xl">3</div>
-                  <div className="mt-4 text-base text-zinc-400">Countries represented</div>
-                </div>
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">How It Works</h2>
+                <p className="mt-4 text-base text-zinc-400 sm:text-lg">A simple roadmap to your Bitcoin learning journey</p>
               </div>
-              <div className="mt-10">
+              <AnimatedList animation="slideLeft" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {howItWorksSteps.map((item, index) => (
+                  <div
+                    key={index}
+                    className="relative rounded-xl border border-purple-500/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(168,85,247,0.1)]"
+                  >
+                    <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 text-3xl font-bold text-purple-300">
+                      {item.step}
+                    </div>
+                    <h3 className="mb-3 text-lg font-semibold text-zinc-50">{item.title}</h3>
+                    <p className="text-sm text-zinc-400">{item.description}</p>
+                    {index < howItWorksSteps.length - 1 && (
+                      <div className="absolute -right-3 top-1/2 hidden -translate-y-1/2 translate-x-full text-2xl text-purple-400 lg:block">
+                        →
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </AnimatedList>
+              <div className="text-center">
                 <Link
-                  href="/impact"
-                  className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
+                  href="/chapters"
+                  className="inline-flex items-center justify-center rounded-lg border border-purple-400/30 bg-purple-400/10 px-6 py-3 text-base font-semibold text-purple-300 transition hover:bg-purple-400/20"
                 >
-                  👉 See Our Impact Dashboard
+                  👉 See How the Academy Works
                 </Link>
               </div>
-            </div>
-          </section>
+            </section>
+          </AnimatedSection>
+
+          {/* 6. Impact Preview */}
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 rounded-xl border border-orange-500/25 bg-black/80 p-12 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+              <div className="text-center">
+                <h2 className="mb-12 text-3xl font-semibold text-orange-200 sm:text-4xl">Our Impact</h2>
+                <AnimatedList animation="slideUp" className="grid gap-8 sm:grid-cols-3">
+                  <div>
+                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">12</div>
+                    <div className="mt-4 text-base text-zinc-400">Students trained</div>
+                  </div>
+                  <div>
+                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">80,000+</div>
+                    <div className="mt-4 text-base text-zinc-400">Sats rewarded</div>
+                  </div>
+                  <div>
+                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">3</div>
+                    <div className="mt-4 text-base text-zinc-400">Countries represented</div>
+                  </div>
+                </AnimatedList>
+                <div className="mt-10">
+                  <Link
+                    href="/impact"
+                    className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
+                  >
+                    👉 See Our Impact Dashboard
+                  </Link>
+                </div>
+              </div>
+            </section>
+          </AnimatedSection>
 
           {/* 7. Community Preview */}
-          <section className="mb-32 space-y-8 text-center">
-            <div>
-              <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Join Our Community</h2>
-              <p className="mt-4 text-base text-zinc-400 sm:text-lg">
-                Join a growing network of learners, builders, and Bitcoin educators.
-              </p>
-            </div>
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 space-y-8 text-center">
+              <div>
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Join Our Community</h2>
+                <p className="mt-4 text-base text-zinc-400 sm:text-lg">
+                  Join a growing network of learners, builders, and Bitcoin educators.
+                </p>
+              </div>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a
                 href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji"
@@ -364,143 +378,151 @@ export default function Home() {
                 💬 Join Discord
               </a>
             </div>
-          </section>
+            </section>
+          </AnimatedSection>
 
           {/* 8. Mentors Preview */}
-          <section className="mb-32 space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">
-                Guided by Mentors & Community Leaders
-              </h2>
-            </div>
-            <div className="grid gap-6 sm:grid-cols-3">
-              {mentors.map((mentor, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-                >
-                  <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20">
-                    <span className="text-3xl">👤</span>
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">
+                  Guided by Mentors & Community Leaders
+                </h2>
+              </div>
+              <AnimatedList animation="slideLeft" className="grid gap-6 sm:grid-cols-3">
+                {mentors.map((mentor, index) => (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                  >
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20">
+                      <span className="text-3xl">👤</span>
+                    </div>
+                    <h3 className="mb-2 text-xl font-semibold text-zinc-50">{mentor.name}</h3>
+                    <p className="mb-4 text-base font-medium text-cyan-300">{mentor.role}</p>
+                    <p className="text-sm text-zinc-400">"{mentor.description}"</p>
                   </div>
-                  <h3 className="mb-2 text-xl font-semibold text-zinc-50">{mentor.name}</h3>
-                  <p className="mb-4 text-base font-medium text-cyan-300">{mentor.role}</p>
-                  <p className="text-sm text-zinc-400">"{mentor.description}"</p>
-                </div>
-              ))}
-            </div>
-            <div className="text-center">
-              <Link
-                href="/mentorship"
-                className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
-              >
-                👉 Meet All Mentors & Volunteers
-              </Link>
-            </div>
-          </section>
+                ))}
+              </AnimatedList>
+              <div className="text-center">
+                <Link
+                  href="/mentorship"
+                  className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+                >
+                  👉 Meet All Mentors & Volunteers
+                </Link>
+              </div>
+            </section>
+          </AnimatedSection>
 
           {/* 9. Blog Preview */}
-          <section className="mb-32 space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Student Stories</h2>
-              <p className="mt-4 text-base text-zinc-400 sm:text-lg">
-                Read how our graduates are using Bitcoin, building the future, and contributing to the community.
-              </p>
-            </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  title: "How I'm Using Bitcoin to Build Financial Sovereignty",
-                  author: "Amina K.",
-                  category: "Use Cases",
-                  excerpt: "After completing the academy, I've started using Lightning Network for daily transactions...",
-                },
-                {
-                  title: "The Future of Bitcoin Development: What Africa Needs",
-                  author: "David M.",
-                  category: "Development",
-                  excerpt: "As a developer, I see huge potential for Bitcoin in Africa. Here's what we need to build...",
-                },
-                {
-                  title: "Building a Bitcoin Community in My City",
-                  author: "Fatima A.",
-                  category: "Community",
-                  excerpt: "Starting a local Bitcoin meetup has changed how I see community building...",
-                },
-              ].map((post, index) => (
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Student Stories</h2>
+                <p className="mt-4 text-base text-zinc-400 sm:text-lg">
+                  Read how our graduates are using Bitcoin, building the future, and contributing to the community.
+                </p>
+              </div>
+              <AnimatedList animation="slideUp" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  {
+                    title: "How I'm Using Bitcoin to Build Financial Sovereignty",
+                    author: "Amina K.",
+                    category: "Use Cases",
+                    excerpt: "After completing the academy, I've started using Lightning Network for daily transactions...",
+                  },
+                  {
+                    title: "The Future of Bitcoin Development: What Africa Needs",
+                    author: "David M.",
+                    category: "Development",
+                    excerpt: "As a developer, I see huge potential for Bitcoin in Africa. Here's what we need to build...",
+                  },
+                  {
+                    title: "Building a Bitcoin Community in My City",
+                    author: "Fatima A.",
+                    category: "Community",
+                    excerpt: "Starting a local Bitcoin meetup has changed how I see community building...",
+                  },
+                ].map((post, index) => (
+                  <Link
+                    key={index}
+                    href="/blog"
+                    className="group rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300">
+                        {post.category}
+                      </span>
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
+                      {post.title}
+                    </h3>
+                    <p className="mb-4 text-sm text-zinc-400">{post.excerpt}</p>
+                    <div className="flex items-center gap-2 text-xs text-zinc-500">
+                      <span>By {post.author}</span>
+                      <span>•</span>
+                      <span className="text-cyan-300">Read more →</span>
+                    </div>
+                  </Link>
+                ))}
+              </AnimatedList>
+              <div className="text-center">
                 <Link
-                  key={index}
                   href="/blog"
-                  className="group rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                  className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
                 >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300">
-                      {post.category}
-                    </span>
-                  </div>
-                  <h3 className="mb-2 text-lg font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
-                    {post.title}
-                  </h3>
-                  <p className="mb-4 text-sm text-zinc-400">{post.excerpt}</p>
-                  <div className="flex items-center gap-2 text-xs text-zinc-500">
-                    <span>By {post.author}</span>
-                    <span>•</span>
-                    <span className="text-cyan-300">Read more →</span>
-                  </div>
+                  👉 View All Blog Posts
                 </Link>
-              ))}
-            </div>
-            <div className="text-center">
-              <Link
-                href="/blog"
-                className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
-              >
-                👉 View All Blog Posts
-              </Link>
-            </div>
-          </section>
+              </div>
+            </section>
+          </AnimatedSection>
 
           {/* 10. Partners & Funders Section */}
-          <section className="mb-32">
-            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-              {[
-                {
-                  name: "Partner 1",
-                  logo: "🏢",
-                },
-                {
-                  name: "Partner 2",
-                  logo: "🏢",
-                },
-                {
-                  name: "Partner 3",
-                  logo: "🏢",
-                },
-                {
-                  name: "Partner 4",
-                  logo: "🏢",
-                },
-              ].map((partner, index) => (
-                <div
-                  key={index}
-                  className="group flex h-32 w-full items-center justify-center rounded-lg border border-cyan-400/25 bg-black/60 p-6 transition hover:border-cyan-400/50 hover:bg-black/80 hover:shadow-[0_0_30px_rgba(34,211,238,0.3)]"
-                >
-                  <div className="w-full h-full flex items-center justify-center text-6xl opacity-70 transition group-hover:opacity-100">
-                    {partner.logo}
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32">
+              <AnimatedList animation="fadeIn" className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+                {[
+                  {
+                    name: "Partner 1",
+                    logo: "🏢",
+                  },
+                  {
+                    name: "Partner 2",
+                    logo: "🏢",
+                  },
+                  {
+                    name: "Partner 3",
+                    logo: "🏢",
+                  },
+                  {
+                    name: "Partner 4",
+                    logo: "🏢",
+                  },
+                ].map((partner, index) => (
+                  <div
+                    key={index}
+                    className="group flex h-32 w-full items-center justify-center rounded-lg border border-cyan-400/25 bg-black/60 p-6 transition hover:border-cyan-400/50 hover:bg-black/80 hover:shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+                  >
+                    <div className="w-full h-full flex items-center justify-center text-6xl opacity-70 transition group-hover:opacity-100">
+                      {partner.logo}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </AnimatedList>
+            </section>
+          </AnimatedSection>
 
           {/* 11. Social Media Section */}
-          <section className="mb-32 space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Connect With Us</h2>
-              <p className="mt-4 text-base text-zinc-400 sm:text-lg">
-                Follow us on social media to stay updated with the latest news, events, and Bitcoin education content.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <AnimatedSection animation="slideUp">
+            <section className="mb-32 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Connect With Us</h2>
+                <p className="mt-4 text-base text-zinc-400 sm:text-lg">
+                  Follow us on social media to stay updated with the latest news, events, and Bitcoin education content.
+                </p>
+              </div>
+              <AnimatedList animation="slideLeft" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   name: "Facebook",
@@ -546,22 +568,25 @@ export default function Home() {
                   </a>
                 );
               })}
-            </div>
-          </section>
+              </AnimatedList>
+            </section>
+          </AnimatedSection>
 
           {/* 12. Donate Preview */}
-          <section className="mb-20 rounded-xl border border-orange-500/25 bg-black/80 p-12 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-            <h2 className="mb-6 text-3xl font-semibold text-orange-200 sm:text-4xl">Support Our Mission</h2>
-            <p className="mb-8 text-base text-zinc-300 sm:text-lg">
-              Support our mission to expand Bitcoin education across Africa.
-            </p>
-            <Link
-              href="/donate"
-              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-8 py-4 text-base font-semibold text-black transition hover:brightness-110"
-            >
-              👉 Support the Academy
-            </Link>
-          </section>
+          <AnimatedSection animation="slideUp">
+            <section className="mb-20 rounded-xl border border-orange-500/25 bg-black/80 p-12 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+              <h2 className="mb-6 text-3xl font-semibold text-orange-200 sm:text-4xl">Support Our Mission</h2>
+              <p className="mb-8 text-base text-zinc-300 sm:text-lg">
+                Support our mission to expand Bitcoin education across Africa.
+              </p>
+              <Link
+                href="/donate"
+                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-8 py-4 text-base font-semibold text-black transition hover:brightness-110"
+              >
+                👉 Support the Academy
+              </Link>
+            </section>
+          </AnimatedSection>
         </div>
       </div>
       <StructuredData
