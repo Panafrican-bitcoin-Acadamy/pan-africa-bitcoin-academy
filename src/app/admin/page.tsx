@@ -348,7 +348,13 @@ export default function AdminDashboardPage() {
         await fetchApplications();
         await fetchOverview();
       } else {
-        alert(`Error: ${data.error || 'Failed to approve application'}`);
+        // Show detailed error message
+        const errorMsg = data.error || 'Failed to approve application';
+        const details = data.details ? `\n\nDetails: ${data.details}` : '';
+        const hint = data.hint ? `\n\nHint: ${data.hint}` : '';
+        const code = data.code ? `\n\nError Code: ${data.code}` : '';
+        alert(`Error: ${errorMsg}${details}${hint}${code}`);
+        console.error('Approval error:', data);
       }
     } catch (err: any) {
       alert(err.message || 'Failed to approve application');

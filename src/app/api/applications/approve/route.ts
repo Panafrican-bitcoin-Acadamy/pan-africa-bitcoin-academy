@@ -108,81 +108,128 @@ export async function POST(req: NextRequest) {
       isExistingProfile = true;
       // Profile will be updated from students data after students record is created/updated
     } else {
-      // Create new profile (without password - they'll set it later)
-      // Check if student_id already exists (if we're generating one)
-      if (generatedStudentId) {
-        const { data: existingStudentId } = await supabaseAdmin
-          .from('profiles')
-          .select('id, email')
-          .eq('student_id', generatedStudentId)
-          .maybeSingle();
-        
-        if (existingStudentId) {
-          console.error('Student ID already exists:', generatedStudentId, 'for profile:', existingStudentId.email);
-          // Generate a new one or use roll number + 1
-          const rollNumber = parseInt(generatedStudentId.split('/')[1]) + 1;
-          const year = new Date().getFullYear();
-          const cohortNumber = generatedStudentId.split('/')[0];
-          generatedStudentId = `${cohortNumber}/${rollNumber}/${year}`;
-        }
-      }
-
-      const profileData: any = {
-        name: fullName,
-        email: emailLower,
-        phone: application.phone || null,
-        country: application.country || null,
-        city: application.city || null,
-        status: 'Pending Password Setup', // Special status until password is set
-      };
-
-      // Only add student_id if it's not null
-      if (generatedStudentId) {
-        profileData.student_id = generatedStudentId;
-      }
-
-      // Only add cohort_id if it exists and is valid
-      if (application.preferred_cohort_id) {
-        const { data: cohortCheck } = await supabaseAdmin
-          .from('cohorts')
-          .select('id')
-          .eq('id', application.preferred_cohort_id)
-          .maybeSingle();
-        
-        if (cohortCheck) {
-          profileData.cohort_id = application.preferred_cohort_id;
-        }
-      }
-
-      const { data: newProfile, error: profileError } = await supabaseAdmin
+      // Double-check if profile exists (race condition protection)
+      const { data: doubleCheckProfile } = await supabaseAdmin
         .from('profiles')
-        .insert(profileData)
-        .select()
-        .single();
+        .select('id, email')
+        .eq('email', emailLower)
+        .maybeSingle();
+      
+      if (doubleCheckProfile) {
+        // Profile was created between checks - use it
+        profileId = doubleCheckProfile.id;
+        isExistingProfile = true;
+      } else {
+        // Create new profile (without password - they'll set it later)
+        // Check if student_id already exists (if we're generating one)
+        if (generatedStudentId) {
+          const { data: existingStudentId } = await supabaseAdmin
+            .from('profiles')
+            .select('id, email')
+            .eq('student_id', generatedStudentId)
+            .maybeSingle();
+          
+          if (existingStudentId) {
+            console.error('Student ID already exists:', generatedStudentId, 'for profile:', existingStudentId.email);
+            // Generate a new one or use roll number + 1
+            const rollNumber = parseInt(generatedStudentId.split('/')[1]) + 1;
+            const year = new Date().getFullYear();
+            const cohortNumber = generatedStudentId.split('/')[0];
+            generatedStudentId = `${cohortNumber}/${rollNumber}/${year}`;
+          }
+        }
 
-      if (profileError || !newProfile) {
-        console.error('Error creating profile:', profileError);
-        console.error('Profile creation details:', {
+        const profileData: any = {
           name: fullName,
           email: emailLower,
-          phone: application.phone,
-          country: application.country,
-          city: application.city,
-          student_id: generatedStudentId,
-          cohort_id: application.preferred_cohort_id,
-        });
-        return NextResponse.json(
-          { 
-            error: 'Failed to create profile', 
-            details: profileError?.message || 'Unknown error',
-            code: profileError?.code,
-            hint: profileError?.hint,
-          },
-          { status: 500 }
-        );
-      }
+          phone: application.phone || null,
+          country: application.country || null,
+          city: application.city || null,
+          status: 'Pending Password Setup', // Special status until password is set
+        };
 
-      profileId = newProfile.id;
+        // Only add student_id if it's not null
+        if (generatedStudentId) {
+          profileData.student_id = generatedStudentId;
+        }
+
+        // Only add cohort_id if it exists and is valid
+        if (application.preferred_cohort_id) {
+          const { data: cohortCheck } = await supabaseAdmin
+            .from('cohorts')
+            .select('id')
+            .eq('id', application.preferred_cohort_id)
+            .maybeSingle();
+          
+          if (cohortCheck) {
+            profileData.cohort_id = application.preferred_cohort_id;
+          }
+        }
+
+        // Validate required fields before insert
+        if (!profileData.name || !profileData.email) {
+          return NextResponse.json(
+            { 
+              error: 'Failed to create profile', 
+              details: 'Missing required fields: name and email are required',
+            },
+            { status: 400 }
+          );
+        }
+
+        const { data: newProfile, error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .insert(profileData)
+          .select()
+          .single();
+
+        if (profileError || !newProfile) {
+          console.error('Error creating profile:', profileError);
+          console.error('Profile creation details:', {
+            name: fullName,
+            email: emailLower,
+            phone: application.phone,
+            country: application.country,
+            city: application.city,
+            student_id: generatedStudentId,
+            cohort_id: application.preferred_cohort_id,
+          });
+          console.error('Full profileError object:', JSON.stringify(profileError, null, 2));
+          console.error('Profile data being inserted:', JSON.stringify(profileData, null, 2));
+          
+          // Check for common errors
+          let errorMessage = profileError?.message || 'Unknown error';
+          if (profileError?.code === '23505') {
+            // Unique constraint violation
+            if (profileError?.message?.includes('email')) {
+              errorMessage = 'An account with this email already exists. The profile may have been created between checks.';
+            } else if (profileError?.message?.includes('student_id')) {
+              errorMessage = 'A student with this ID already exists';
+            } else {
+              errorMessage = 'Duplicate entry: ' + (profileError?.message || 'Unique constraint violation');
+            }
+          } else if (profileError?.code === '23502') {
+            // Not null constraint violation
+            errorMessage = 'Required field is missing: ' + (profileError?.message || 'Not null constraint violation');
+          } else if (profileError?.code === '23503') {
+            // Foreign key constraint violation
+            errorMessage = 'Invalid reference: ' + (profileError?.message || 'Foreign key constraint violation');
+          }
+          
+          return NextResponse.json(
+            { 
+              error: 'Failed to create profile', 
+              details: errorMessage,
+              code: profileError?.code,
+              hint: profileError?.hint,
+              fullError: process.env.NODE_ENV === 'development' ? profileError : undefined,
+            },
+            { status: 500 }
+          );
+        }
+
+        profileId = newProfile.id;
+      }
     }
 
     // STEP 2: Create/Update Students Record (SOURCE OF TRUTH)
