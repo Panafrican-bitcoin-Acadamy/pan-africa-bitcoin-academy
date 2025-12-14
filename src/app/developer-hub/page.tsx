@@ -481,9 +481,11 @@ export default function DeveloperHubPage() {
               </div>
 
               {/* Other Communities */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-                  <h4 className="mb-3 font-semibold text-cyan-300">Chaincode Labs</h4>
+              <div>
+                <h3 className="mb-4 text-xl font-semibold text-purple-300">Other Communities</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
+                    <h4 className="mb-3 font-semibold text-cyan-300">Chaincode Labs</h4>
                   <a
                     href="https://learning.chaincode.com"
                     target="_blank"
@@ -722,7 +724,7 @@ export default function DeveloperHubPage() {
                   rel="noopener noreferrer"
                   className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4 transition hover:border-green-500/50 hover:bg-zinc-900"
                 >
-                  <h4 className="mb-2 font-semibold text-green-300">{opp.name}</h4>
+                  <h3 className="mb-2 font-semibold text-green-300">{opp.name}</h3>
                   <p className="text-sm text-zinc-400">{opp.desc}</p>
                 </a>
               ))}
@@ -755,7 +757,7 @@ export default function DeveloperHubPage() {
                   key={idx}
                   className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4 transition hover:border-purple-500/50"
                 >
-                  <h4 className="font-semibold text-purple-300">{project}</h4>
+                  <h3 className="font-semibold text-purple-300">{project}</h3>
                 </div>
               ))}
             </div>
