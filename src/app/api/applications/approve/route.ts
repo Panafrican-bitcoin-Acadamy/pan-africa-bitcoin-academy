@@ -296,15 +296,49 @@ export async function POST(req: NextRequest) {
       studentRecord = newStudent;
     }
 
+    // Ensure studentRecord exists
+    if (!studentRecord) {
+      console.error('Student record was not created/updated');
+      return NextResponse.json(
+        { 
+          error: 'Failed to create or update student record', 
+          details: 'Student record is missing after creation/update',
+        },
+        { status: 500 }
+      );
+    }
+
     // STEP 3: Update Profile from Students Data (Profile is for display)
     // Profile gets updated from students database (students is source of truth)
     
     // Get current profile to check password_hash
-    const { data: currentProfile } = await supabaseAdmin
+    const { data: currentProfile, error: currentProfileError } = await supabaseAdmin
       .from('profiles')
       .select('password_hash, status')
       .eq('id', profileId)
-      .single();
+      .maybeSingle();
+
+    if (currentProfileError) {
+      console.error('Error fetching current profile:', currentProfileError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch profile for update', 
+          details: currentProfileError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!currentProfile) {
+      console.error('Profile not found for update:', profileId);
+      return NextResponse.json(
+        { 
+          error: 'Profile not found', 
+          details: `Profile with ID ${profileId} does not exist`,
+        },
+        { status: 404 }
+      );
+    }
 
     const profileUpdateData: any = {
       name: studentRecord.name,
@@ -439,17 +473,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify both profile and student records were updated
-    const { data: finalProfile } = await supabaseAdmin
+    const { data: finalProfile, error: finalProfileError } = await supabaseAdmin
       .from('profiles')
       .select('id, name, email, cohort_id, status, student_id')
       .eq('id', profileId)
-      .single();
+      .maybeSingle();
 
-    const { data: finalStudent } = await supabaseAdmin
+    const { data: finalStudent, error: finalStudentError } = await supabaseAdmin
       .from('students')
       .select('id, name, email, cohort_id, status')
       .eq('profile_id', profileId)
-      .single();
+      .maybeSingle();
+
+    // Log any verification errors (non-critical)
+    if (finalProfileError) {
+      console.warn('Error verifying profile after update:', finalProfileError);
+    }
+    if (finalStudentError) {
+      console.warn('Error verifying student after update:', finalStudentError);
+    }
 
     console.log('Approval completed - Verification:', {
       profile: finalProfile ? {
