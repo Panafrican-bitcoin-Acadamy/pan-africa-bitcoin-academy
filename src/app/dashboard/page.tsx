@@ -36,9 +36,10 @@ export default function DashboardPage() {
           const meRes = await fetch('/api/profile/me', { credentials: 'include' });
           if (meRes.ok) {
             const meData = await meRes.json();
-            if (meData.profile?.email) {
-              storedEmail = meData.profile.email;
-              localStorage.setItem('profileEmail', storedEmail);
+            const email = meData.profile?.email;
+            if (email) {
+              storedEmail = email;
+              localStorage.setItem('profileEmail', email);
             }
           }
         }
