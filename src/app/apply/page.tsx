@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from '@/hooks/useAuth';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
@@ -127,7 +128,8 @@ const phoneRules: Record<string, { min: number; max: number }> = {
 };
 
 export default function ApplyPage() {
-  const { isAuthenticated, profile, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const { isAuthenticated, profile, isRegistered, loading: authLoading } = useAuth();
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [cohortsLoading, setCohortsLoading] = useState(true);
   const [cohortsError, setCohortsError] = useState<string | null>(null);
@@ -195,6 +197,13 @@ export default function ApplyPage() {
     setTouchStart(null);
     setTouchEnd(null);
   };
+
+  // Redirect enrolled students away from the apply flow
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && isRegistered) {
+      router.replace('/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isRegistered, router]);
 
   // Mouse drag handlers for desktop
   const onMouseDown = (e: React.MouseEvent) => {

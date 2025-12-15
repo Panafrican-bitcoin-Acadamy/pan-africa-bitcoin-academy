@@ -24,7 +24,7 @@ export function Navbar() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const desktopDropdownRef = useRef<HTMLDivElement>(null);
   const tabletDropdownRef = useRef<HTMLDivElement>(null);
-  const { isAuthenticated, profile, loading, logout, showSessionExpired, setShowSessionExpired } = useAuth();
+  const { isAuthenticated, profile, isRegistered, loading, logout, showSessionExpired, setShowSessionExpired } = useAuth();
 
   // Fetch profile data when modal opens
   useEffect(() => {
@@ -120,12 +120,14 @@ export function Navbar() {
           >
             Developer Hub
           </Link>
-          <Link
-            href="/apply"
-            className="rounded-full px-3 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
-          >
-            Apply
-          </Link>
+          {!isRegistered && (
+            <Link
+              href="/apply"
+              className="rounded-full px-3 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
+            >
+              Apply
+            </Link>
+          )}
           <Link
             href="/mentorship"
             className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
@@ -255,12 +257,14 @@ export function Navbar() {
           >
             Dev Hub
           </Link>
-          <Link
-            href="/apply"
-            className="rounded-full px-3 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
-          >
-            Apply
-          </Link>
+          {!isRegistered && (
+            <Link
+              href="/apply"
+              className="rounded-full px-3 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
+            >
+              Apply
+            </Link>
+          )}
           <Link
             href="/impact"
             className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
@@ -412,13 +416,15 @@ export function Navbar() {
             >
               Developer Hub
             </Link>
-            <Link
-              href="/apply"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
-            >
-              Apply
-            </Link>
+            {!isRegistered && (
+              <Link
+                href="/apply"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block rounded-lg px-4 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
+              >
+                Apply
+              </Link>
+            )}
             <Link
               href="/mentorship"
               onClick={() => setMobileMenuOpen(false)}
