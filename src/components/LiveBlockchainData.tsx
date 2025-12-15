@@ -1,40 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-
-// Mempool block (unconfirmed) interface
-interface MempoolBlock {
-  blockSize: number;
-  nTx: number;
-  totalFees: number;
-  medianFee: number;
-  minFee: number;
-  maxFee: number;
-  feeRange: number[];
-  virtualSize: number;
-}
-
-// Confirmed block interface
-interface ConfirmedBlock {
-  height: number;
-  id: string;
-  timestamp: number;
-  tx_count: number;
-  size: number;
-  weight: number;
-  pool?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  extras?: {
-    feeRange: number[];
-    avgFee: number;
-    totalFees: number;
-  };
-  fee?: number;
-  fees?: number;
-}
+import useMempoolWebsocket, { MempoolBlock, ConfirmedBlock } from '@/hooks/useMempoolWebsocket';
 
 interface LiveBlockchainDataProps {
   className?: string;
@@ -73,107 +39,11 @@ function formatFeeRange(minFee: number, maxFee: number): string {
 }
 
 export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) {
-  const [mempoolBlocks, setMempoolBlocks] = useState<MempoolBlock[]>([]);
-  const [confirmedBlocks, setConfirmedBlocks] = useState<ConfirmedBlock[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const lastBlockHeightRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    let pollInterval: NodeJS.Timeout;
-
-    const fetchBlockData = async (isInitial = false) => {
-      try {
-        if (isInitial) {
-          setLoading(true);
-        }
-        setError(null);
-
-        // Fetch both endpoints in parallel
-        const [mempoolResponse, blocksResponse] = await Promise.all([
-          fetch('https://mempool.space/api/v1/fees/mempool-blocks'),
-          fetch('https://mempool.space/api/blocks'),
-        ]);
-
-        if (!mempoolResponse.ok || !blocksResponse.ok) {
-          throw new Error('Failed to fetch blockchain data');
-        }
-
-        const mempoolData: MempoolBlock[] = await mempoolResponse.json();
-        const blocksData: ConfirmedBlock[] = await blocksResponse.json();
-
-        if (!isMounted) return;
-
-        // Check if a new block was mined
-        const currentBlockHeight = blocksData[0]?.height;
-        const hasNewBlock = lastBlockHeightRef.current !== null && 
-                           currentBlockHeight !== null && 
-                           currentBlockHeight > lastBlockHeightRef.current;
-        
-        if (currentBlockHeight !== null) {
-          lastBlockHeightRef.current = currentBlockHeight;
-        }
-
-        // Fetch detailed block info including pool data for each block
-        const blocksWithPoolData = await Promise.all(
-          blocksData.slice(0, 4).map(async (block) => {
-            try {
-              const blockDetailResponse = await fetch(`https://mempool.space/api/block/${block.id}`);
-              if (blockDetailResponse.ok) {
-                const blockDetail = await blockDetailResponse.json();
-                return {
-                  ...block,
-                  pool: blockDetail.pool || block.pool,
-                  extras: blockDetail.extras || block.extras || {
-                    feeRange: blockDetail.feeRange || [],
-                    avgFee: blockDetail.avgFee || block.fee || 0,
-                    totalFees: blockDetail.fees || block.fees || 0,
-                  },
-                };
-              }
-            } catch (err) {
-              console.error('Error fetching block detail:', err);
-            }
-            return block;
-          })
-        );
-
-        // Take first 4 mempool blocks and first 4 confirmed blocks
-        setMempoolBlocks(mempoolData.slice(0, 4));
-        setConfirmedBlocks(blocksWithPoolData);
-
-        if (isInitial) {
-          setLoading(false);
-        }
-
-        // If new block detected, briefly show a visual indicator (optional)
-        if (hasNewBlock) {
-          console.log('New block detected!', currentBlockHeight);
-        }
-      } catch (err) {
-        if (!isMounted) return;
-        setError(err instanceof Error ? err.message : 'Failed to load blockchain data');
-        console.error('Error fetching blockchain data:', err);
-        if (isInitial) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Initial fetch
-    fetchBlockData(true);
-
-    // Refresh every 15 seconds
-    pollInterval = setInterval(() => {
-      fetchBlockData(false);
-    }, 15000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(pollInterval);
-    };
-  }, []);
+  // Use WebSocket hook for real-time data
+  const { mempoolBlocks, recentBlocks, loading, error } = useMempoolWebsocket();
+  
+  // Use recentBlocks as confirmedBlocks
+  const confirmedBlocks = recentBlocks;
 
   if (loading) {
     return (
@@ -413,7 +283,7 @@ export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) 
       </div>
 
       <p className="text-xs text-orange-400/70 italic text-center mt-6">
-        Data from mempool.space • Updates every 15 seconds
+        Data from mempool.space • Live updates via WebSocket
       </p>
     </div>
   );
