@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Facebook, Twitter, Instagram, Music2 } from "lucide-react";
 import { StructuredData } from "@/components/StructuredData";
 import { AnimatedSection } from "@/components/AnimatedSection";
@@ -219,24 +220,19 @@ export default function Home() {
                 </div>
                 <div className="flex items-center justify-center">
                   <div className="relative flex h-64 w-64 items-center justify-center">
-                    {/* Outer glow rings */}
-                    <div className="absolute inset-0 rounded-full bg-orange-400/20 blur-2xl animate-pulse" />
-                    <div className="absolute inset-0 rounded-full bg-orange-400/10 blur-3xl" />
-                    
-                    {/* Geometric borders */}
-                    <div className="absolute inset-4 rounded-2xl border-4 border-orange-400/50 rotate-45" />
-                    <div className="absolute inset-6 rounded-2xl border-2 border-orange-300/30 -rotate-45" />
-                    
-                    {/* Main B container */}
-                    <div className="relative z-10 flex h-48 w-48 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-orange-400 to-orange-600 shadow-[0_0_60px_rgba(249,115,22,0.8)]">
-                      <span className="text-8xl font-black text-black tracking-tight">B</span>
-                    </div>
-                    
-                    {/* Corner accents */}
-                    <div className="absolute top-8 left-8 h-4 w-4 rounded-full bg-orange-400/60 blur-sm" />
-                    <div className="absolute bottom-8 right-8 h-4 w-4 rounded-full bg-orange-400/60 blur-sm" />
-                    <div className="absolute top-8 right-8 h-3 w-3 rounded-full bg-cyan-400/40 blur-sm" />
-                    <div className="absolute bottom-8 left-8 h-3 w-3 rounded-full bg-cyan-400/40 blur-sm" />
+                    {/* Logo image with SEO optimization */}
+                    <Image
+                      src="/images/logo_3.png"
+                      alt="Pan-African Bitcoin Academy Logo - First Eritrea Based Bitcoin Academy"
+                      width={256}
+                      height={256}
+                      priority
+                      loading="eager"
+                      className="object-contain brightness-110 contrast-125 saturate-120"
+                      quality={95}
+                      sizes="(max-width: 768px) 192px, 256px"
+                      fetchPriority="high"
+                    />
                   </div>
                 </div>
               </div>

@@ -88,11 +88,8 @@ export function Navbar() {
           aria-label="Pan-African Bitcoin Academy - Home"
           title="Pan-African Bitcoin Academy - First Eritrea Based Bitcoin Academy"
         >
-          <div className="relative flex h-16 w-16 items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:brightness-125">
-            {/* Outer glow effect for visibility */}
-            <div className="absolute inset-0 rounded-lg bg-cyan-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            
-            {/* Logo image with SEO optimization */}
+          <div className="relative flex h-16 w-16 items-center justify-center transition-transform duration-300 group-hover:scale-105">
+            {/* Logo image with SEO optimization - bold and visible */}
             <Image
               src="/images/logo_3.png"
               alt="Pan-African Bitcoin Academy - First Eritrea Based Bitcoin Academy Logo. Learn Bitcoin education in Eritrea, Uganda, and across Africa."
@@ -100,7 +97,7 @@ export function Navbar() {
               height={64}
               priority
               loading="eager"
-              className="relative z-10 object-contain drop-shadow-[0_0_12px_rgba(34,211,238,0.6)] brightness-110 contrast-115 saturate-110"
+              className="object-contain brightness-110 contrast-125 saturate-120"
               quality={95}
               sizes="(max-width: 768px) 48px, 64px"
               fetchPriority="high"
