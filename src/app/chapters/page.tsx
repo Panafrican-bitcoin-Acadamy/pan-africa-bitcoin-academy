@@ -581,7 +581,8 @@ export default function ChaptersPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Learning Path: Bitcoin Foundations → Lightning → Sovereignty
+                Learning Path<br />
+                Bitcoin Foundations → Lightning → Sovereignty
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Follow the lessons step-by-step or jump to any topic you want to explore.

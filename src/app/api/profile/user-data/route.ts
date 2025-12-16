@@ -161,6 +161,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Calculate attendance percentage
+    let attendancePercent = 0;
+    if (student) {
+      try {
+        // Get total live-class events
+        const { data: liveEvents } = await supabaseAdmin
+          .from('events')
+          .select('id')
+          .eq('type', 'live-class');
+        
+        const totalLiveLectures = liveEvents?.length || 0;
+        
+        if (totalLiveLectures > 0) {
+          // Get attendance records for this student
+          const { data: attendanceRecords } = await supabaseAdmin
+            .from('attendance')
+            .select('event_id')
+            .eq('student_id', profile.id);
+          
+          const lecturesAttended = attendanceRecords?.length || 0;
+          attendancePercent = Math.round((lecturesAttended / totalLiveLectures) * 100);
+        }
+      } catch (err) {
+        console.error('Error calculating attendance:', err);
+        // Keep default 0 if calculation fails
+      }
+    }
+
     // Get student progress data if student exists
     const studentData = student ? {
       progressPercent: chapterProgress.completedChapters > 0 
@@ -169,6 +197,7 @@ export async function POST(req: NextRequest) {
       assignmentsCompleted: student.assignments_completed || 0,
       projectsCompleted: student.projects_completed || 0,
       liveSessionsAttended: student.live_sessions_attended || 0,
+      attendancePercent: attendancePercent,
       chaptersCompleted: chapterProgress.completedChapters,
       totalChapters: chapterProgress.totalChapters,
       completedChapterNumbers: chapterProgress.completedChapterNumbers,

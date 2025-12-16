@@ -305,6 +305,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     totalAssignments: 4,
     satsEarned: 0,
     attendanceRate: 0,
+    attendancePercent: 0,
   };
 
   const student = studentData || fallbackStudent;
@@ -373,17 +374,47 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const leaderboard = leaderboardData;
   
   // Calculate chapters completed from chapterStatus (dynamic, updates in real-time)
-  const chaptersCompleted = Object.values(chapterStatus).filter(
-    (status) => status.isCompleted === true
-  ).length;
+  // Use userData if available, otherwise fallback to chapterStatus
+  const chaptersCompleted = userData?.student?.chaptersCompleted ?? 
+    Object.values(chapterStatus).filter((status) => status.isCompleted === true).length;
   
   // Calculate course progress from completed chapters (dynamic)
   const courseProgress = Math.round((chaptersCompleted / 20) * 100);
   
-  const attendance = student.attendancePercent ?? student.attendanceRate ?? 0;
-  const satsEarned = student.satsEarned ?? satsTotals.paid ?? 0;
+  // Get attendance from userData if available, otherwise from student data
+  const attendance = userData?.student?.attendancePercent ?? student.attendancePercent ?? student.attendanceRate ?? 0;
+  
+  // Get assignments completed from userData if available
+  const assignmentsCompleted = userData?.student?.assignmentsCompleted ?? student.assignmentsCompleted ?? 0;
+  
+  // Get sats earned - prefer userData, then student, then satsTotals
+  const satsEarned = userData?.student?.satsEarned ?? student.satsEarned ?? satsTotals.paid ?? 0;
   const satsPending = student.satsPending ?? satsTotals.pending ?? 0;
-  const assignmentsCompleted = student.assignmentsCompleted ?? 0;
+  
+  // Certification requirements
+  const totalChapters = 20;
+  const totalAssignments = 4;
+  const requiredAttendance = 80; // 80%
+  const requiredSats = 500;
+  
+  // Check each requirement
+  const hasCompletedAllChapters = chaptersCompleted >= totalChapters;
+  const hasCompletedAllAssignments = assignmentsCompleted >= totalAssignments;
+  const hasMetAttendance = attendance >= requiredAttendance;
+  const hasEarnedEnoughSats = satsEarned >= requiredSats;
+  // TODO: Add final assessment status when implemented
+  const hasPassedFinalAssessment = false; // Placeholder - update when final assessment is implemented
+  
+  // Calculate certification progress (20% per requirement)
+  const certificationRequirements = [
+    hasCompletedAllChapters,
+    hasCompletedAllAssignments,
+    hasMetAttendance,
+    hasEarnedEnoughSats,
+    hasPassedFinalAssessment,
+  ];
+  const completedRequirements = certificationRequirements.filter(Boolean).length;
+  const certificationProgress = Math.round((completedRequirements / 5) * 100);
 
   return (
     <div className="min-h-screen bg-black/95">
@@ -842,35 +873,110 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
             <h2 className="mb-4 text-2xl font-semibold text-zinc-50">Certification Progress</h2>
             <div className="space-y-6">
               <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-6">
-                <div className="mb-4">
+                <div className="mb-6">
                   <div className="mb-2 flex items-center justify-between text-sm">
                     <span className="text-zinc-300">Certification Progress</span>
-                    <span className="font-semibold text-orange-400">33%</span>
+                    <span className="font-semibold text-orange-400">{certificationProgress}%</span>
                   </div>
                   <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
                     <div
-                      className="h-full bg-gradient-to-r from-orange-500 to-cyan-500"
-                      style={{ width: '33%' }}
+                      className="h-full bg-gradient-to-r from-orange-500 to-cyan-500 transition-all duration-500"
+                      style={{ width: `${certificationProgress}%` }}
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="font-medium text-zinc-100">Requirements Remaining:</h3>
-                  <ul className="space-y-1 text-sm text-zinc-400">
-                    <li>✓ Complete all 20 chapters</li>
-                    <li>✓ Complete all 4 assignments</li>
-                    <li>✗ Attend at least 80% of live sessions</li>
-                    <li>✗ Earn at least 500 sats</li>
-                    <li>✗ Pass final assessment</li>
+                <div className="space-y-3">
+                  <h3 className="font-medium text-zinc-100 mb-3">Certification Requirements:</h3>
+                  <ul className="space-y-3 text-sm">
+                    {/* Complete all 20 chapters */}
+                    <li className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-lg ${hasCompletedAllChapters ? 'text-green-400' : 'text-red-400'}`}>
+                          {hasCompletedAllChapters ? '✓' : '✗'}
+                        </span>
+                        <span className={hasCompletedAllChapters ? 'text-green-300' : 'text-zinc-400'}>
+                          Complete all 20 chapters
+                        </span>
+                      </div>
+                      <span className="text-zinc-500">
+                        {chaptersCompleted}/{totalChapters}
+                      </span>
+                    </li>
+                    
+                    {/* Complete all 4 assignments */}
+                    <li className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-lg ${hasCompletedAllAssignments ? 'text-green-400' : 'text-red-400'}`}>
+                          {hasCompletedAllAssignments ? '✓' : '✗'}
+                        </span>
+                        <span className={hasCompletedAllAssignments ? 'text-green-300' : 'text-zinc-400'}>
+                          Complete all 4 assignments
+                        </span>
+                      </div>
+                      <span className="text-zinc-500">
+                        {assignmentsCompleted}/{totalAssignments}
+                      </span>
+                    </li>
+                    
+                    {/* Attend at least 80% of live sessions */}
+                    <li className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-lg ${hasMetAttendance ? 'text-green-400' : 'text-red-400'}`}>
+                          {hasMetAttendance ? '✓' : '✗'}
+                        </span>
+                        <span className={hasMetAttendance ? 'text-green-300' : 'text-zinc-400'}>
+                          Attend at least 80% of live sessions
+                        </span>
+                      </div>
+                      <span className="text-zinc-500">
+                        {attendance}%
+                      </span>
+                    </li>
+                    
+                    {/* Earn at least 500 sats */}
+                    <li className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-lg ${hasEarnedEnoughSats ? 'text-green-400' : 'text-red-400'}`}>
+                          {hasEarnedEnoughSats ? '✓' : '✗'}
+                        </span>
+                        <span className={hasEarnedEnoughSats ? 'text-green-300' : 'text-zinc-400'}>
+                          Earn at least 500 sats
+                        </span>
+                      </div>
+                      <span className="text-zinc-500">
+                        {satsEarned} sats
+                      </span>
+                    </li>
+                    
+                    {/* Pass final assessment */}
+                    <li className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-lg ${hasPassedFinalAssessment ? 'text-green-400' : 'text-red-400'}`}>
+                          {hasPassedFinalAssessment ? '✓' : '✗'}
+                        </span>
+                        <span className={hasPassedFinalAssessment ? 'text-green-300' : 'text-zinc-400'}>
+                          Pass final assessment
+                        </span>
+                      </div>
+                      <span className="text-zinc-500">
+                        {hasPassedFinalAssessment ? 'Passed' : 'Not completed'}
+                      </span>
+                    </li>
                   </ul>
                 </div>
               </div>
               <div className="text-center">
                 <button
-                  disabled
-                  className="rounded-lg border border-zinc-700 bg-zinc-800/50 px-6 py-3 font-semibold text-zinc-500"
+                  disabled={certificationProgress < 100}
+                  className={`rounded-lg px-6 py-3 font-semibold transition ${
+                    certificationProgress >= 100
+                      ? 'bg-gradient-to-r from-orange-500 to-cyan-500 text-black hover:brightness-110'
+                      : 'border border-zinc-700 bg-zinc-800/50 text-zinc-500 cursor-not-allowed'
+                  }`}
                 >
-                  Download Certificate (Available upon completion)
+                  {certificationProgress >= 100
+                    ? 'Download Certificate'
+                    : `Download Certificate (${certificationProgress}% Complete)`}
                 </button>
               </div>
             </div>
