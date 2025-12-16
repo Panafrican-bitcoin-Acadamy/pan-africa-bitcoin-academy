@@ -27,6 +27,7 @@ interface UserData {
     assignmentsCompleted: number;
     projectsCompleted: number;
     liveSessionsAttended: number;
+    attendancePercent?: number;
     chaptersCompleted?: number;
     totalChapters?: number;
     completedChapterNumbers?: number[];
@@ -716,6 +717,29 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                     <span>Download / Read</span>
                   </div>
                 </a>
+
+                {/* The Little Book of Bitcoin in Tigrigna */}
+                <Link
+                  href="/chapters"
+                  className="group rounded-lg border border-green-500/30 bg-green-500/10 p-4 transition hover:border-green-500/50 hover:bg-green-500/20 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="rounded-lg bg-green-500/20 p-2">
+                      <Book className="h-5 w-5 text-green-300" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-zinc-100">The Little Book of Bitcoin in Tigrigna</h3>
+                      <p className="text-xs text-zinc-400">ትግርኛ ትርጉም</p>
+                    </div>
+                  </div>
+                  <p className="mb-3 text-sm text-zinc-300">
+                    A simple, beginner-friendly introduction to Bitcoin translated into Tigrigna, explaining why it matters for financial freedom.
+                  </p>
+                  <div className="flex items-center gap-2 text-sm font-medium text-green-300 group-hover:text-green-200">
+                    <Download className="h-4 w-4" />
+                    <span>PDF (Tigrigna) - Download in the chapters page</span>
+                  </div>
+                </Link>
 
                 {/* Mastering Bitcoin */}
                 <a
