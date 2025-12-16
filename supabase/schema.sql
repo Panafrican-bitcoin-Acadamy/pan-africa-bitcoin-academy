@@ -80,9 +80,24 @@ CREATE TABLE IF NOT EXISTS sats_rewards (
   amount_paid INTEGER DEFAULT 0, -- Amount in sats
   amount_pending INTEGER DEFAULT 0, -- Amount in sats
   reason TEXT,
+  -- Option 1: Minimal tracking fields
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'paid', 'failed')),
+  payment_date TIMESTAMP WITH TIME ZONE,
+  awarded_by UUID REFERENCES profiles(id),
+  reward_type TEXT CHECK (reward_type IN ('assignment', 'chapter', 'discussion', 'peer_help', 'project', 'attendance', 'other')),
+  -- Option 3: Link to related entities
+  related_entity_type TEXT CHECK (related_entity_type IN ('assignment', 'chapter', 'event', 'discussion', 'project', 'other')),
+  related_entity_id UUID,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Create indexes for sats_rewards
+CREATE INDEX IF NOT EXISTS idx_sats_rewards_student_status ON sats_rewards(student_id, status);
+CREATE INDEX IF NOT EXISTS idx_sats_rewards_type ON sats_rewards(reward_type);
+CREATE INDEX IF NOT EXISTS idx_sats_rewards_created ON sats_rewards(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sats_rewards_related_entity ON sats_rewards(related_entity_type, related_entity_id);
+CREATE INDEX IF NOT EXISTS idx_sats_rewards_awarded_by ON sats_rewards(awarded_by);
 
 -- Achievements table
 CREATE TABLE IF NOT EXISTS achievements (
@@ -156,19 +171,68 @@ BEGIN
 END;
 $$;
 
--- Triggers to auto-update updated_at
+-- Function to automatically create sats_rewards record when student is created
+CREATE OR REPLACE FUNCTION create_sats_rewards_for_student()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
+BEGIN
+  -- Check if sats_rewards record already exists for this student
+  -- Only create initial record if none exists
+  IF NOT EXISTS (
+    SELECT 1 FROM sats_rewards WHERE student_id = NEW.profile_id
+  ) THEN
+    -- Create initial sats_rewards record with zeros/defaults
+    INSERT INTO sats_rewards (
+      student_id,
+      amount_paid,
+      amount_pending,
+      status,
+      reward_type,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      NEW.profile_id,
+      0,  -- amount_paid starts at 0
+      0,  -- amount_pending starts at 0
+      'pending',  -- default status
+      'other',  -- default reward_type
+      NOW(),
+      NOW()
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+-- Trigger to auto-create sats_rewards record when student is created
+DROP TRIGGER IF EXISTS trigger_create_sats_rewards_on_student ON students;
+CREATE TRIGGER trigger_create_sats_rewards_on_student
+  AFTER INSERT ON students
+  FOR EACH ROW
+  EXECUTE FUNCTION create_sats_rewards_for_student();
+
+-- Triggers to auto-update updated_at (DROP IF EXISTS to avoid errors)
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_cohorts_updated_at ON cohorts;
 CREATE TRIGGER update_cohorts_updated_at BEFORE UPDATE ON cohorts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_students_updated_at ON students;
 CREATE TRIGGER update_students_updated_at BEFORE UPDATE ON students
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_events_updated_at ON events;
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_sats_rewards_updated_at ON sats_rewards;
 CREATE TRIGGER update_sats_rewards_updated_at BEFORE UPDATE ON sats_rewards
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
