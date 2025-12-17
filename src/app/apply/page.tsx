@@ -431,18 +431,24 @@ export default function ApplyPage() {
     fetchCohorts();
   }, []);
 
-  // Auto-fill preferred cohort when a cohort is selected
+  // Auto-fill preferred cohort and experience level when a cohort is selected
   useEffect(() => {
     if (selectedCohort !== null) {
       const cohort = cohorts.find((c) => c.id === selectedCohort);
       if (cohort) {
-        // Update preferredCohort to match the selected cohort ID (dropdown uses ID as value)
+        // Update preferredCohort and experienceLevel to match the selected cohort
         setFormData((prev) => ({
           ...prev,
           preferredCohort: cohort.id,
           experienceLevel: cohort.level?.toLowerCase() || '',
         }));
       }
+    } else {
+      // If no cohort is selected, clear the experience level
+      setFormData((prev) => ({
+        ...prev,
+        experienceLevel: '',
+      }));
     }
   }, [selectedCohort, cohorts]);
 
