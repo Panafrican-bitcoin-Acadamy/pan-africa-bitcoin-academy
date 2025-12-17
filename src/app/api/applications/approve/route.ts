@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
+import { sendApprovalEmail } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -352,12 +353,56 @@ export async function POST(req: NextRequest) {
     // Profile status is already updated from students data above
     // No need for additional update here
 
+    // Send approval email to student
+    let emailSent = false;
+    let emailError = null;
+    if (studentRecord.cohort_id) {
+      // Get cohort name for email
+      const { data: cohortData } = await supabaseAdmin
+        .from('cohorts')
+        .select('name')
+        .eq('id', studentRecord.cohort_id)
+        .maybeSingle();
+
+      const emailResult = await sendApprovalEmail({
+        studentName: fullName,
+        studentEmail: emailLower,
+        cohortName: cohortData?.name || undefined,
+        needsPasswordSetup: !existingProfile || existingProfile.status === 'Pending Password Setup',
+      });
+
+      emailSent = emailResult.success;
+      emailError = emailResult.error || null;
+      
+      if (!emailSent) {
+        console.warn('Failed to send approval email:', emailError);
+        // Don't fail the approval if email fails - just log it
+      }
+    } else {
+      // Send email without cohort name if no cohort assigned
+      const emailResult = await sendApprovalEmail({
+        studentName: fullName,
+        studentEmail: emailLower,
+        cohortName: undefined,
+        needsPasswordSetup: !existingProfile || existingProfile.status === 'Pending Password Setup',
+      });
+
+      emailSent = emailResult.success;
+      emailError = emailResult.error || null;
+      
+      if (!emailSent) {
+        console.warn('Failed to send approval email:', emailError);
+      }
+    }
+
     const res = NextResponse.json({
       success: true,
       message: 'Application approved successfully',
       profileId,
       isExistingProfile,
       needsPasswordSetup: !existingProfile || existingProfile.status === 'Pending Password Setup',
+      emailSent,
+      emailError: emailError || undefined,
     });
     attachRefresh(res, session);
     return res;
