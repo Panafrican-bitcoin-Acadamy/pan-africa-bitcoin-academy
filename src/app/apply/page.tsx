@@ -932,7 +932,12 @@ export default function ApplyPage() {
                   value={formData.preferredCohort}
                   onChange={(e) => {
                     const cohortId = e.target.value;
-                    setFormData({ ...formData, preferredCohort: cohortId });
+                    const selectedCohortObj = cohorts.find((c) => c.id === cohortId);
+                    setFormData({ 
+                      ...formData, 
+                      preferredCohort: cohortId,
+                      experienceLevel: selectedCohortObj?.level?.toLowerCase() || ''
+                    });
                     setSelectedCohort(cohortId || null);
                   }}
                   className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer ${
