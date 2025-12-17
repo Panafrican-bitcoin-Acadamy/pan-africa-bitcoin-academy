@@ -447,10 +447,12 @@ export default function BlogPage() {
                     </div>
                   </div>
                 </Link>
-              ))}
-            </div>
-            </div>
-          </AnimatedSection>
+                  ))}
+                </div>
+              )}
+              </div>
+            </AnimatedSection>
+          )}
 
           {/* Write for Us CTA */}
           <AnimatedSection animation="slideUp">
