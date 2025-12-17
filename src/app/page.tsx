@@ -107,7 +107,7 @@ export default function Home() {
               href="/apply"
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-8 py-4 text-base font-semibold text-black shadow-[0_0_40px_rgba(249,115,22,0.8)] transition hover:brightness-110"
             >
-              👉 Join Cohort 1
+              👉 Join Cohort
             </Link>
             <Link
               href="/chapters"
