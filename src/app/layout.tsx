@@ -102,17 +102,14 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  // Icons are automatically handled by Next.js App Router via file-based icons:
+  // - src/app/icon.png (favicon)
+  // - src/app/apple-icon.png (Apple touch icon)
+  // - src/app/favicon.ico (fallback favicon)
   icons: {
-    icon: [
-      { url: '/images/logo_3.png', type: 'image/png', sizes: '32x32' },
-      { url: '/images/logo_3.png', type: 'image/png', sizes: '16x16' },
-    ],
-    apple: [
-      { url: '/images/logo_3.png', type: 'image/png', sizes: '180x180' },
-    ],
-    shortcut: [
-      { url: '/images/logo_3.png', type: 'image/png' },
-    ],
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+    shortcut: '/favicon.ico',
   },
   verification: {
     // Add your verification codes here when available
