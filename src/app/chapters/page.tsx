@@ -1442,7 +1442,7 @@ export default function ChaptersPage() {
                 href="/apply"
                 className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
               >
-                🔸 Join Cohort
+                🔸 Join Cohort 1
               </Link>
               <Link
                 href="/about"
