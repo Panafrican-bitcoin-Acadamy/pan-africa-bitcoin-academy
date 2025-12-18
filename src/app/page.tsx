@@ -369,7 +369,7 @@ export default function Home() {
                 👉 Join WhatsApp Community
               </a>
               <a
-                href="https://nostr.com"
+                href="https://jumble.social/users/npub1q659nzy6j3mn8nr8ljznzumplesd40276tefj6gjz72npmqqg5cqmh70vv"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-lg border border-purple-400/30 bg-purple-400/10 px-8 py-4 text-base font-semibold text-purple-300 transition hover:bg-purple-400/20"
@@ -650,7 +650,7 @@ export default function Home() {
           sameAs: [
             'https://github.com/Joie199/pan-africa-bitcoin-academy',
             'https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji',
-            'https://nostr.com',
+            'https://jumble.social/users/npub1q659nzy6j3mn8nr8ljznzumplesd40276tefj6gjz72npmqqg5cqmh70vv',
             'https://discord.gg/4G4TUAP7',
           ],
           address: {

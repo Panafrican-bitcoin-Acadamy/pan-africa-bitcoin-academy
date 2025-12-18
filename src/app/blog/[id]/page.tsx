@@ -212,7 +212,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 </p>
                 <div className="flex items-center gap-3">
                   <a
-                    href="https://nostr.com"
+                    href="https://jumble.social/users/npub1q659nzy6j3mn8nr8ljznzumplesd40276tefj6gjz72npmqqg5cqmh70vv"
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs text-cyan-300 transition hover:text-cyan-200"
