@@ -132,8 +132,71 @@ async function getMentors(): Promise<Mentor[]> {
   }
 }
 
+interface ImpactStats {
+  studentsTrained: number;
+  satsRewarded: number;
+  countriesRepresented: number;
+}
+
+async function getImpactStats(): Promise<ImpactStats> {
+  try {
+    // Fetch total students (all enrolled students, not just graduated)
+    const { count: totalStudents, error: studentsError } = await supabaseAdmin
+      .from('students')
+      .select('*', { count: 'exact', head: true });
+
+    if (studentsError) {
+      console.error('Error fetching students:', studentsError);
+    }
+
+    // Fetch distinct countries from students
+    const { data: studentsData, error: countriesError } = await supabaseAdmin
+      .from('students')
+      .select('country');
+
+    let countriesReached = 0;
+    if (!countriesError && studentsData) {
+      const distinctCountries = new Set(
+        studentsData
+          .map((s) => s.country)
+          .filter((c) => c && c.trim() !== '')
+      );
+      countriesReached = distinctCountries.size;
+    }
+
+    // Fetch sats rewards
+    const { data: rewards, error: satsError } = await supabaseAdmin
+      .from('sats_rewards')
+      .select('amount_paid, amount_pending');
+
+    let satsRewarded = 0;
+    if (!satsError && rewards) {
+      rewards.forEach((reward: any) => {
+        const paid = reward.amount_paid || 0;
+        const pending = reward.amount_pending || 0;
+        satsRewarded += paid + pending; // Total sats awarded
+      });
+    }
+
+    return {
+      studentsTrained: totalStudents || 0,
+      satsRewarded: satsRewarded || 0,
+      countriesRepresented: countriesReached || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching impact stats:', error);
+    // Return fallback values
+    return {
+      studentsTrained: 0,
+      satsRewarded: 0,
+      countriesRepresented: 0,
+    };
+  }
+}
+
 export default async function Home() {
   const mentors = await getMentors();
+  const impactStats = await getImpactStats();
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Full-page Hero Section */}
@@ -378,15 +441,23 @@ export default async function Home() {
                 <h2 className="mb-12 text-3xl font-semibold text-orange-200 sm:text-4xl">Our Impact</h2>
                 <AnimatedList animation="slideUp" className="grid gap-8 sm:grid-cols-3">
                   <div>
-                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">12</div>
+                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">
+                      {impactStats.studentsTrained > 0 ? impactStats.studentsTrained : '0'}
+                    </div>
                     <div className="mt-4 text-base text-zinc-400">Students trained</div>
                   </div>
                   <div>
-                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">80,000+</div>
+                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">
+                      {impactStats.satsRewarded > 0 
+                        ? `${(impactStats.satsRewarded / 1000).toFixed(0)}K+` 
+                        : '0'}
+                    </div>
                     <div className="mt-4 text-base text-zinc-400">Sats rewarded</div>
                   </div>
                   <div>
-                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">3</div>
+                    <div className="text-5xl font-bold text-orange-400 sm:text-6xl">
+                      {impactStats.countriesRepresented > 0 ? impactStats.countriesRepresented : '0'}
+                    </div>
                     <div className="mt-4 text-base text-zinc-400">Countries represented</div>
                   </div>
                 </AnimatedList>
