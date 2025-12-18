@@ -339,7 +339,9 @@ export default function ApplyPage() {
     });
   }, [authLoading, isAuthenticated, profile]); // Only depend on auth state, not form state
 
-  const getPhoneRule = (country: string) => phoneRules[country] || { min: 7, max: 12 };
+  const getPhoneRule = (country: string): { min: number; max: number; startsWith?: string } => {
+    return phoneRules[country] || { min: 7, max: 12, startsWith: undefined };
+  };
 
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const country = e.target.value;
@@ -469,9 +471,11 @@ export default function ApplyPage() {
     setSubmitting(true);
     setPhoneError(null);
 
-    // Validate phone length based on country rules
+    // Validate phone length and starting digit based on country rules
     const phoneDigits = phoneNumber.replace(/\D/g, '');
-    const { min, max } = getPhoneRule(selectedCountry);
+    const rule = getPhoneRule(selectedCountry);
+    const { min, max, startsWith } = rule;
+    
     if (!selectedCountry) {
       setSubmitError('Please select your country.');
       setPhoneError('Please select your country.');
@@ -486,6 +490,14 @@ export default function ApplyPage() {
     }
     if (phoneDigits.length < min || phoneDigits.length > max) {
       const msg = `Phone number should have ${min}${min !== max ? `-${max}` : ''} digits for ${selectedCountry}.`;
+      setSubmitError(msg);
+      setPhoneError(msg);
+      setSubmitting(false);
+      return;
+    }
+    // Validate starting digit if required
+    if (startsWith && !phoneDigits.startsWith(startsWith)) {
+      const msg = `Phone number for ${selectedCountry} must start with ${startsWith} after the country code.`;
       setSubmitError(msg);
       setPhoneError(msg);
       setSubmitting(false);
@@ -754,7 +766,7 @@ export default function ApplyPage() {
               {submitError}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
             {/* First Name and Last Name */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -777,7 +789,9 @@ export default function ApplyPage() {
                 </label>
                 <input
                   id="lastName"
+                  name="lastName"
                   type="text"
+                  autoComplete="family-name"
                   required
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -813,6 +827,8 @@ export default function ApplyPage() {
                   </label>
                   <select
                     id="countryCode"
+                    name="countryCode"
+                    autoComplete="tel-country-code"
                     value={selectedCountryCode}
                     onChange={handleCountryCodeChange}
                     aria-label="Country code"
@@ -848,7 +864,9 @@ export default function ApplyPage() {
                 </label>
                 <input
                   id="birthDate"
+                  name="birthDate"
                   type="date"
+                  autoComplete="bday"
                   required
                   value={birthDate}
                   onChange={(e) => {
@@ -901,7 +919,9 @@ export default function ApplyPage() {
                 <label htmlFor="city" className="mb-2 block text-sm font-medium text-zinc-300">City</label>
                 <input
                   id="city"
+                  name="city"
                   type="text"
+                  autoComplete="address-level2"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
