@@ -34,10 +34,10 @@ export function SessionExpiredModal({ isOpen, onClose, userType = 'student' }: S
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex min-h-screen items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       // Block backdrop clicks - modal can only be closed via OK button
     >
-      <div className="relative mx-4 w-full max-w-md rounded-xl border border-orange-500/30 bg-zinc-900 p-6 shadow-2xl">
+      <div className="relative mx-auto w-full max-w-md rounded-xl border border-orange-500/30 bg-zinc-900 p-6 shadow-2xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/20">
             <AlertCircle className="h-6 w-6 text-orange-400" />
