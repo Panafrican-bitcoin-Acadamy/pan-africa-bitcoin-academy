@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/useAuth';
+import { AdminModeBadge } from '@/components/AdminModeBadge';
 
 // Lazy load heavy dashboard components
 const StudentDashboard = dynamic(() => import("@/components/StudentDashboard").then(mod => ({ default: mod.StudentDashboard })), {
@@ -117,6 +118,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <AdminModeBadge />
       <StudentDashboard userData={userData} />
       <SessionExpiredModal
         isOpen={showSessionExpired}

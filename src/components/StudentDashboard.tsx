@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
 import { Download, Book, FileText } from 'lucide-react';
+import { AdminModeBadge } from './AdminModeBadge';
 
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
@@ -426,8 +427,60 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const hasCompletedAllAssignments = assignmentsCompleted >= totalAssignments;
   const hasMetAttendance = attendance >= requiredAttendance;
   const hasEarnedEnoughSats = satsEarned >= requiredSats;
-  // TODO: Add final assessment status when implemented
-  const hasPassedFinalAssessment = false; // Placeholder - update when final assessment is implemented
+  const [examResult, setExamResult] = useState<{ score: number; totalQuestions: number; percentage: number; submittedAt: string } | null>(null);
+  const [examAccess, setExamAccess] = useState<{ hasAccess: boolean; chapter21Completed: boolean; hasAdminAccess: boolean; examCompleted: boolean } | null>(null);
+  const [loadingExam, setLoadingExam] = useState(false);
+
+  // Fetch exam results and access
+  useEffect(() => {
+    if (userData?.profile?.email) {
+      fetchExamData();
+    }
+  }, [userData?.profile?.email]);
+
+  const fetchExamData = async () => {
+    if (!userData?.profile?.email) return;
+    setLoadingExam(true);
+    try {
+      const [accessRes, resultsRes] = await Promise.all([
+        fetch('/api/exam/check-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userData.profile.email }),
+        }),
+        fetch('/api/exam/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userData.profile.email }),
+        }),
+      ]);
+
+      const accessData = await accessRes.json();
+      const resultsData = await resultsRes.json();
+
+      setExamAccess({
+        hasAccess: accessData.hasAccess || false,
+        chapter21Completed: accessData.chapter21Completed || false,
+        hasAdminAccess: accessData.hasAdminAccess || false,
+        examCompleted: accessData.examCompleted || false,
+      });
+
+      if (resultsData.completed) {
+        setExamResult({
+          score: resultsData.score,
+          totalQuestions: resultsData.totalQuestions,
+          percentage: resultsData.percentage,
+          submittedAt: resultsData.submittedAt,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching exam data:', error);
+    } finally {
+      setLoadingExam(false);
+    }
+  };
+
+  const hasPassedFinalAssessment = examResult ? examResult.score >= 35 : false; // 70% passing score (35/50)
   
   // Calculate certification progress (20% per requirement)
   const certificationRequirements = [
@@ -441,7 +494,9 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const certificationProgress = Math.round((completedRequirements / 5) * 100);
 
   return (
-    <div className="min-h-screen bg-black/95">
+    <>
+      <AdminModeBadge />
+      <div className="min-h-screen bg-black/95">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ProfileModal
           open={profileModalOpen}
@@ -1002,12 +1057,27 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           {hasPassedFinalAssessment ? '✓' : '✗'}
                         </span>
                         <span className={hasPassedFinalAssessment ? 'text-green-300' : 'text-zinc-400'}>
-                          Pass final assessment
+                          Pass final exam (70% required)
                         </span>
                       </div>
-                      <span className="text-zinc-500">
-                        {hasPassedFinalAssessment ? 'Passed' : 'Not completed'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {examResult ? (
+                          <span className={hasPassedFinalAssessment ? 'text-green-300 font-semibold' : 'text-red-400'}>
+                            {examResult.score}/{examResult.totalQuestions} ({examResult.percentage}%)
+                          </span>
+                        ) : examAccess?.hasAccess ? (
+                          <Link
+                            href="/exam"
+                            className="text-orange-400 hover:text-orange-300 underline text-sm"
+                          >
+                            Take Exam →
+                          </Link>
+                        ) : examAccess?.chapter21Completed ? (
+                          <span className="text-zinc-500 text-sm">Waiting for access</span>
+                        ) : (
+                          <span className="text-zinc-500 text-sm">Complete Chapter 21 first</span>
+                        )}
+                      </div>
                     </li>
                   </ul>
                 </div>
@@ -1086,6 +1156,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         )}
       </div>
     </div>
+    </>
   );
 }
 

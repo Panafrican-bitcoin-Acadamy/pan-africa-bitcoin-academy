@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
+import { AdminModeBadge } from "@/components/AdminModeBadge";
 import type { Metadata } from "next";
 
 // Note: Metadata cannot be exported from client components
@@ -574,9 +575,11 @@ export default function ChaptersPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden">
-      <div className="relative z-10 w-full bg-black/95">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+    <>
+      <AdminModeBadge />
+      <div className="relative min-h-screen w-full overflow-x-hidden">
+        <div className="relative z-10 w-full bg-black/95">
+          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
@@ -1464,5 +1467,6 @@ export default function ChaptersPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

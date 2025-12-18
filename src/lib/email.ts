@@ -25,7 +25,7 @@ interface ApprovalEmailData {
 /**
  * Send approval email to student when their application is approved
  */
-export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ success: boolean; error?: string }> {
+export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ success: boolean; error?: string; errorDetails?: string }> {
   try {
     // Check if Resend API key is configured
     const resend = getResendClient();
@@ -238,24 +238,55 @@ Visit: ${SITE_URL}
     });
 
     if (error) {
-      console.error('Error sending approval email:', {
+      console.error('❌ Error sending approval email:', {
         error: error.message,
-        code: error.name,
+        errorName: error.name,
+        errorCode: (error as any).code,
+        errorDetails: JSON.stringify(error, null, 2),
+        to: normalizedEmail,
+        from: FROM_EMAIL,
+        apiKeyPresent: !!process.env.RESEND_API_KEY,
+        apiKeyLength: process.env.RESEND_API_KEY?.length || 0,
+      });
+      return { 
+        success: false, 
+        error: error.message || 'Failed to send email',
+        errorDetails: process.env.NODE_ENV === 'development' ? JSON.stringify(error, null, 2) : undefined
+      };
+    }
+
+    if (!emailResponse || !emailResponse.id) {
+      console.error('⚠️ Email sent but no response ID received:', {
+        emailResponse,
         to: normalizedEmail,
         from: FROM_EMAIL,
       });
-      return { success: false, error: error.message || 'Failed to send email' };
+      return { 
+        success: false, 
+        error: 'Email sent but no confirmation received from email service' 
+      };
     }
 
-    console.log('Approval email sent successfully:', {
-      emailId: emailResponse?.id,
+    console.log('✅ Approval email sent successfully:', {
+      emailId: emailResponse.id,
       to: normalizedEmail,
       from: FROM_EMAIL,
       studentName,
     });
     return { success: true };
   } catch (error: any) {
-    console.error('Error in sendApprovalEmail:', error);
-    return { success: false, error: error.message || 'Unknown error occurred' };
+    console.error('❌ Exception in sendApprovalEmail:', {
+      error: error.message,
+      errorName: error.name,
+      errorStack: error.stack,
+      errorDetails: JSON.stringify(error, null, 2),
+      studentEmail: data.studentEmail,
+      apiKeyPresent: !!process.env.RESEND_API_KEY,
+    });
+    return { 
+      success: false, 
+      error: error.message || 'Unknown error occurred',
+      errorDetails: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    };
   }
 }

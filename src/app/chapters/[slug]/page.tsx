@@ -5,6 +5,7 @@ import { getChapterBySlug, chaptersContent } from "@/content/chaptersContent";
 import { ChapterAccessCheck } from "./ChapterAccessCheck";
 import { ChapterCompletionTracker } from "./ChapterCompletionTracker";
 import { LiveBlockchainData } from "@/components/LiveBlockchainData";
+import { AdminModeWrapper } from "@/components/AdminModeWrapper";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -75,9 +76,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     : null;
 
   return (
-    <ChapterAccessCheck chapterNumber={chapter.number} chapterSlug={chapter.slug}>
-      <ChapterCompletionTracker chapterNumber={chapter.number} chapterSlug={chapter.slug} />
-      <PageContainer
+    <AdminModeWrapper>
+      <ChapterAccessCheck chapterNumber={chapter.number} chapterSlug={chapter.slug}>
+        <ChapterCompletionTracker chapterNumber={chapter.number} chapterSlug={chapter.slug} />
+        <PageContainer
       title={`${chapter.number < 10 ? `Chapter ${chapter.number}` : `Chapter ${chapter.number}`} · ${chapter.title}`}
       subtitle={`${chapter.level} · ${chapter.duration} · ${chapter.type}`}
     >
@@ -613,5 +615,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
       </div>
     </PageContainer>
     </ChapterAccessCheck>
+    </AdminModeWrapper>
   );
 }

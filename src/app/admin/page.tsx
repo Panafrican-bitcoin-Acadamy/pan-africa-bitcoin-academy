@@ -129,7 +129,9 @@ export default function AdminDashboardPage() {
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam'>('overview');
+  const [examAccessList, setExamAccessList] = useState<any[]>([]);
+  const [loadingExamAccess, setLoadingExamAccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
@@ -187,6 +189,7 @@ export default function AdminDashboardPage() {
         fetchProgress(),
         fetchLiveClassEvents(),
         fetchMentorships(),
+        fetchExamAccess(),
       ]);
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
@@ -243,6 +246,52 @@ export default function AdminDashboardPage() {
     const res = await fetchWithAuth('/api/admin/mentorships');
     const data = await res.json();
     if (data.applications) setMentorships(data.applications);
+  };
+
+  const fetchExamAccess = async () => {
+    try {
+      setLoadingExamAccess(true);
+      const res = await fetchWithAuth('/api/admin/exam/access-list');
+      const data = await res.json();
+      if (data.students) setExamAccessList(data.students);
+    } catch (err) {
+      console.error('Error fetching exam access:', err);
+    } finally {
+      setLoadingExamAccess(false);
+    }
+  };
+
+  const grantExamAccess = async (studentId: string) => {
+    try {
+      const res = await fetchWithAuth('/api/admin/exam/grant-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, adminId: admin?.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to grant access');
+      alert(data.message || 'Exam access granted');
+      await fetchExamAccess();
+    } catch (err: any) {
+      alert(err.message || 'Failed to grant exam access');
+    }
+  };
+
+  const revokeExamAccess = async (studentId: string) => {
+    if (!confirm('Are you sure you want to revoke exam access?')) return;
+    try {
+      const res = await fetchWithAuth('/api/admin/exam/revoke-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to revoke access');
+      alert(data.message || 'Exam access revoked');
+      await fetchExamAccess();
+    } catch (err: any) {
+      alert(err.message || 'Failed to revoke exam access');
+    }
   };
 
   const fetchLiveClassEvents = async () => {
@@ -1129,6 +1178,90 @@ export default function AdminDashboardPage() {
               <p className="p-3 text-sm text-zinc-400">No students found for the selected cohort filter.</p>
             )}
           </div>
+        </div>
+
+        {/* Exam Management Section */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <h2 className="text-xl font-semibold text-zinc-50 mb-4">Final Exam Management</h2>
+          <p className="text-sm text-zinc-400 mb-6">
+            Grant or revoke exam access for students who have completed Chapter 21.
+          </p>
+
+          {loadingExamAccess ? (
+            <div className="text-center py-8 text-zinc-400">Loading exam access list...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-900 text-left text-zinc-300">
+                  <tr>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Email</th>
+                    <th className="px-3 py-2">Cohort</th>
+                    <th className="px-3 py-2">Chapter 21</th>
+                    <th className="px-3 py-2">Access</th>
+                    <th className="px-3 py-2">Exam Score</th>
+                    <th className="px-3 py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {examAccessList
+                    .filter((student) => student.chapter21Completed)
+                    .map((student) => (
+                      <tr key={student.id} className="border-b border-zinc-800">
+                        <td className="px-3 py-2 text-zinc-50">{student.name || '—'}</td>
+                        <td className="px-3 py-2 text-zinc-400">{student.email}</td>
+                        <td className="px-3 py-2 text-zinc-400">
+                          {student.cohortName || '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="text-green-500">✓ Completed</span>
+                        </td>
+                        <td className="px-3 py-2">
+                          {student.hasExamAccess ? (
+                            <span className="text-green-500">✓ Granted</span>
+                          ) : (
+                            <span className="text-zinc-500">Not granted</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          {student.examCompleted ? (
+                            <span className="font-semibold text-orange-500">
+                              {student.examScore}/50
+                            </span>
+                          ) : (
+                            <span className="text-zinc-500">Not taken</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          {student.examCompleted ? (
+                            <span className="text-zinc-500 text-xs">Completed</span>
+                          ) : student.hasExamAccess ? (
+                            <button
+                              onClick={() => revokeExamAccess(student.id)}
+                              className="text-red-400 hover:text-red-300 text-xs"
+                            >
+                              Revoke
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => grantExamAccess(student.id)}
+                              className="text-green-400 hover:text-green-300 text-xs"
+                            >
+                              Grant Access
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {examAccessList.filter((s) => s.chapter21Completed).length === 0 && (
+                <p className="p-3 text-sm text-zinc-400 text-center">
+                  No students have completed Chapter 21 yet.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

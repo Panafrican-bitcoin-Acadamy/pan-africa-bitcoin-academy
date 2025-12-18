@@ -179,164 +179,242 @@ export default function MentorshipPage() {
 
         {/* Application Form */}
         <AnimatedSection animation="slideUp">
-          <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-          <h2 className="mb-6 text-xl font-semibold text-cyan-200">Application Form</h2>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-zinc-300">
-                  Full Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                />
+          <section id="application" className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-cyan-200 mb-2">Application Form</h2>
+              <p className="text-sm text-zinc-400">Fill out the form below to apply for a mentorship or volunteer role</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Personal Information Section */}
+              <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/20">
+                    <span className="text-xl">👤</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-cyan-200">Personal Information</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        Full Name <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        Email <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                        placeholder="john@example.com"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        Country <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.country}
+                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                        className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                        placeholder="e.g., Nigeria, Kenya, Ghana"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        WhatsApp / X / Nostr
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.whatsapp}
+                        onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                        className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                        placeholder="Phone number or @username"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-zinc-300">
-                  Email <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                />
+
+              {/* Role Selection Section */}
+              <div className="rounded-xl border border-orange-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
+                    <span className="text-xl">🎯</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-orange-200">Role Selection</h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Which role are you applying for? <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      required
+                      value={formData.role}
+                      onChange={(e) => {
+                        setFormData({ ...formData, role: e.target.value });
+                        setSelectedRole(e.target.value);
+                      }}
+                      className="w-full rounded-lg border border-orange-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition"
+                    >
+                      <option value="">Select a role</option>
+                      {roles.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.title} - {role.time}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedRole && (
+                      <p className="mt-2 text-xs text-zinc-400">
+                        {roles.find(r => r.id === selectedRole)?.description}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      How many hours per week can you contribute? <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.hours}
+                      onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                      className="w-full rounded-lg border border-orange-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition"
+                      placeholder="e.g., 2-3 hours"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-zinc-300">
-                  Country <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                />
+              {/* Experience Section */}
+              <div className="rounded-xl border border-purple-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
+                    <span className="text-xl">💼</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-purple-200">Experience & Background</h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      What experience do you have with Bitcoin / Lightning? <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      required
+                      value={formData.experience}
+                      onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                      rows={4}
+                      className="w-full rounded-lg border border-purple-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-400/20 transition resize-none"
+                      placeholder="Describe your experience with Bitcoin, Lightning, nodes, mining, development, etc."
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Have you taught or mentored before?
+                    </label>
+                    <textarea
+                      value={formData.teachingExperience}
+                      onChange={(e) => setFormData({ ...formData, teachingExperience: e.target.value })}
+                      rows={3}
+                      className="w-full rounded-lg border border-purple-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-400/20 transition resize-none"
+                      placeholder="Any teaching, mentoring, or community leadership experience?"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-zinc-300">WhatsApp / X / Nostr</label>
-                <input
-                  type="text"
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                  placeholder="Phone number or @username"
-                />
+
+              {/* Motivation Section */}
+              <div className="rounded-xl border border-green-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
+                    <span className="text-xl">💚</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-green-200">Motivation & Vision</h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Why do you want to support this academy? <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      required
+                      value={formData.motivation}
+                      onChange={(e) => setFormData({ ...formData, motivation: e.target.value })}
+                      rows={4}
+                      className="w-full rounded-lg border border-green-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-green-400/50 focus:outline-none focus:ring-2 focus:ring-green-400/20 transition resize-none"
+                      placeholder="Share your motivation, vision, and what drives you to contribute..."
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Additional comments
+                    </label>
+                    <textarea
+                      value={formData.comments}
+                      onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                      rows={3}
+                      className="w-full rounded-lg border border-green-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-green-400/50 focus:outline-none focus:ring-2 focus:ring-green-400/20 transition resize-none"
+                      placeholder="Anything else you'd like to share?"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Which role are you applying for? <span className="text-red-400">*</span>
-              </label>
-              <select
-                required
-                value={formData.role}
-                onChange={(e) => {
-                  setFormData({ ...formData, role: e.target.value });
-                  setSelectedRole(e.target.value);
-                }}
-                className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              >
-                <option value="">Select a role</option>
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {/* Additional Options */}
+              <div className="rounded-xl border border-zinc-700/50 bg-black/80 p-6">
+                <div className="flex items-start gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="onboarding" 
+                    className="mt-1 h-4 w-4 rounded border-zinc-600 bg-zinc-900/50 text-cyan-400 focus:ring-2 focus:ring-cyan-400/20" 
+                  />
+                  <label htmlFor="onboarding" className="text-sm text-zinc-300">
+                    Are you open to participating in a short onboarding call?
+                  </label>
+                </div>
+              </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                What experience do you have with Bitcoin / Lightning? <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                required
-                value={formData.experience}
-                onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                rows={3}
-                className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Describe your experience with Bitcoin, Lightning, nodes, etc."
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Have you taught or mentored before?
-              </label>
-              <textarea
-                value={formData.teachingExperience}
-                onChange={(e) => setFormData({ ...formData, teachingExperience: e.target.value })}
-                rows={2}
-                className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Any teaching, mentoring, or community leadership experience?"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Why do you want to support this academy? <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                required
-                value={formData.motivation}
-                onChange={(e) => setFormData({ ...formData, motivation: e.target.value })}
-                rows={3}
-                className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Share your motivation and vision..."
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                How many hours per week can you contribute? <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.hours}
-                onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-                className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="e.g., 2-3 hours"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">Additional comments</label>
-              <textarea
-                value={formData.comments}
-                onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-                rows={2}
-                className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Anything else you'd like to share?"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="onboarding" className="rounded border-cyan-400/20" />
-              <label htmlFor="onboarding" className="text-sm text-zinc-300">
-                Are you open to participating in a short onboarding call?
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting || submitted}
-              className="w-full rounded-lg bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(34,211,238,0.4)] transition hover:brightness-110 disabled:opacity-60"
-            >
-              {submitting ? "Submitting..." : submitted ? "Submitted" : "Submit Application"}
-            </button>
-          </form>
+              {/* Submit Button */}
+              <div className="flex flex-col items-center gap-4">
+                <button
+                  type="submit"
+                  disabled={submitting || submitted}
+                  className="w-full max-w-md rounded-lg bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-8 py-4 text-base font-semibold text-black shadow-[0_0_40px_rgba(34,211,238,0.4)] transition hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent"></span>
+                      Submitting...
+                    </span>
+                  ) : submitted ? (
+                    "✓ Application Submitted"
+                  ) : (
+                    "Submit Application"
+                  )}
+                </button>
+                <p className="text-xs text-zinc-500">
+                  Fields marked with <span className="text-red-400">*</span> are required
+                </p>
+              </div>
+            </form>
           </section>
         </AnimatedSection>
 
