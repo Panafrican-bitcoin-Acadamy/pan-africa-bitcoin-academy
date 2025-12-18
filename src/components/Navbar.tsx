@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense, useTransition } from "react";
 import { Menu, X, User, LogOut, LayoutDashboard, Key, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,7 @@ const SessionExpiredModal = lazy(() => import("./SessionExpiredModal").then(mod 
 
 export function Navbar() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -547,6 +548,7 @@ export function Navbar() {
               <ChangePasswordModal
                 isOpen={changePasswordOpen}
                 onClose={() => {
+                  // Immediate state update for modal visibility
                   setChangePasswordOpen(false);
                 }}
                 userEmail={profile.email}
@@ -558,10 +560,14 @@ export function Navbar() {
               <ProfileModal
                 isOpen={profileModalOpen}
                 onClose={() => {
+                  // Immediate update for modal visibility (critical)
                   setProfileModalOpen(false);
-                  setProfileData(null);
-                  setProfileError(null);
-                  setProfileImage(null);
+                  // Defer non-critical cleanup using startTransition
+                  startTransition(() => {
+                    setProfileData(null);
+                    setProfileError(null);
+                    setProfileImage(null);
+                  });
                 }}
                 userEmail={profile.email}
                 profileData={profileData}

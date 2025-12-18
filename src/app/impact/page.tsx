@@ -428,44 +428,8 @@ export default function ImpactPage() {
               ))}
             </div>
           ) : (
-            // Fallback testimonials if database is empty
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                {
-                  name: "Amina K.",
-                  city: "Lagos, Nigeria",
-                  quote: "This academy changed my understanding of Bitcoin. I now run a Lightning node and help others in my community.",
-                  photo: "👤",
-                },
-                {
-                  name: "David M.",
-                  city: "Nairobi, Kenya",
-                  quote: "The hands-on approach and sats rewards made learning engaging. I've completed all assignments and earned 5,000 sats!",
-                  photo: "👤",
-                },
-                {
-                  name: "Fatima A.",
-                  city: "Accra, Ghana",
-                  quote: "Best Bitcoin education I've received. The mentors are knowledgeable and the community is supportive.",
-                  photo: "👤",
-                },
-              ].map((testimonial, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-                >
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20">
-                      <span className="text-xl">{testimonial.photo}</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-zinc-50">{testimonial.name}</div>
-                      <div className="text-xs text-zinc-400">{testimonial.city}</div>
-                    </div>
-                  </div>
-                  <p className="text-sm italic text-zinc-300">"{testimonial.quote}"</p>
-                </div>
-              ))}
+            <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+              <p className="text-zinc-400">No testimonials available at this time.</p>
             </div>
           )}
           </section>
@@ -496,7 +460,7 @@ export default function ImpactPage() {
               Lightning Donate
             </a>
             <a
-              href="/apply"
+              href="/sponsor"
               className="rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
             >
               Sponsor a Student

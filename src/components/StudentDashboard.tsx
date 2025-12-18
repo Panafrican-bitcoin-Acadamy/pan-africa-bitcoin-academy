@@ -501,8 +501,12 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         <ProfileModal
           open={profileModalOpen}
           onClose={() => {
+            // Immediate update for modal visibility (critical)
             setProfileModalOpen(false);
-            setIsEditingProfile(false);
+            // Defer non-critical state update to avoid blocking UI
+            setTimeout(() => {
+              setIsEditingProfile(false);
+            }, 0);
           }}
           loading={profileLoading}
           error={profileError}
