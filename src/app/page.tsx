@@ -63,8 +63,19 @@ const howItWorksSteps = [
   { step: "4", title: "Earn sats + certificate", description: "Get rewarded with Bitcoin and earn your certificate" },
 ];
 
+// Mentor type definition
+type Mentor = {
+  name: string;
+  role: string;
+  description: string;
+  image: string | null;
+  github: string | null;
+  twitter: string | null;
+  type: string | null;
+};
+
 // Fallback mentors (for initial display or if database fetch fails)
-const fallbackMentors = [
+const fallbackMentors: Mentor[] = [
   {
     name: "Yohannes Amanuel",
     role: "Bitcoin Educator & Development Mentor",
@@ -72,7 +83,7 @@ const fallbackMentors = [
     image: "/images/mentors/yohannes-amanuel.jpg",
     github: "https://github.com/Joie199",
     twitter: "https://twitter.com/joieama",
-    type: null as string | null,
+    type: null,
   },
   {
     name: "Semir Omer",
@@ -81,11 +92,11 @@ const fallbackMentors = [
     image: "/images/mentors/semir-omer.jpg",
     github: "https://github.com/samiromer2",
     twitter: "https://twitter.com/samiromer",
-    type: null as string | null,
+    type: null,
   },
 ];
 
-async function getMentors() {
+async function getMentors(): Promise<Mentor[]> {
   try {
     const { data: mentors, error } = await supabaseAdmin
       .from('mentors')
@@ -99,7 +110,7 @@ async function getMentors() {
     }
 
     // Transform database mentors to match the expected format
-    const transformedMentors = (mentors || []).map((mentor) => ({
+    const transformedMentors: Mentor[] = (mentors || []).map((mentor) => ({
       name: mentor.name,
       role: mentor.role,
       description: mentor.description || '',
