@@ -17,9 +17,7 @@ INSERT INTO assignments (
 ) VALUES (
   'Explorer Scavenger Hunt',
   'Practice using block explorers to find information about Bitcoin transactions',
-  'Search for what this address belongs to: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d
-
-Use a block explorer to find this transaction and determine what historical event it is associated with.',
+  'Search for what this address belongs to: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d',
   'a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d',
   'Bitcoin Pizza day',
   13,
