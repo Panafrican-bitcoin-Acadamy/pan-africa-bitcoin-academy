@@ -9,7 +9,7 @@ import Link from 'next/link';
 export default function AssignmentPage() {
   const params = useParams();
   const router = useRouter();
-  const { email } = useAuth();
+  const { isAuthenticated, profile, loading: authLoading } = useAuth();
   const assignmentId = params.id as string;
 
   const [assignment, setAssignment] = useState<any>(null);
@@ -19,14 +19,19 @@ export default function AssignmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Get email from profile or localStorage
+  const email = profile?.email || (typeof window !== 'undefined' ? localStorage.getItem('profileEmail') : null);
+
   useEffect(() => {
-    if (!email) {
+    if (!authLoading && !isAuthenticated) {
       router.push('/');
       return;
     }
 
-    fetchAssignment();
-  }, [email, assignmentId]);
+    if (email) {
+      fetchAssignment();
+    }
+  }, [email, assignmentId, isAuthenticated, authLoading]);
 
   const fetchAssignment = async () => {
     try {
