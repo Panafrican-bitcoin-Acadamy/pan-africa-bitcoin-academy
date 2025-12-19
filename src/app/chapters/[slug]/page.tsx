@@ -274,6 +274,93 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       </div>
                     </div>
                   </div>
+                ) : section.heading === "14.2 Halving Schedule and Fixed Supply (Declining Inflation)" ? (
+                  // Special rendering for halving periods table
+                  <div className="mt-6">
+                    <div className="overflow-x-auto rounded-lg border border-purple-400/25 bg-zinc-950/70">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-purple-400/30 bg-purple-500/10">
+                            <th className="px-4 py-3 text-left font-semibold text-purple-200">Period Start Date</th>
+                            <th className="px-4 py-3 text-left font-semibold text-purple-200">Period End Date</th>
+                            <th className="px-4 py-3 text-left font-semibold text-purple-200">Block Height Range</th>
+                            <th className="px-4 py-3 text-left font-semibold text-purple-200">Subsidy per Block (BTC)</th>
+                            <th className="px-4 py-3 text-left font-semibold text-purple-200">BTC Created in Period</th>
+                            <th className="px-4 py-3 text-left font-semibold text-purple-200">Total BTC Issued at End</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-zinc-300">
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">2009-01-03</td>
+                            <td className="px-4 py-3">2012-11-28</td>
+                            <td className="px-4 py-3 font-mono text-xs">0 – 209,999</td>
+                            <td className="px-4 py-3 font-mono">50.00000000</td>
+                            <td className="px-4 py-3 font-mono">10,500,000.00000000</td>
+                            <td className="px-4 py-3 font-mono">10,500,000.00000000</td>
+                          </tr>
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">2012-11-28</td>
+                            <td className="px-4 py-3">2016-07-09</td>
+                            <td className="px-4 py-3 font-mono text-xs">210,000 – 419,999</td>
+                            <td className="px-4 py-3 font-mono">25.00000000</td>
+                            <td className="px-4 py-3 font-mono">5,250,000.00000000</td>
+                            <td className="px-4 py-3 font-mono">15,750,000.00000000</td>
+                          </tr>
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">2016-07-09</td>
+                            <td className="px-4 py-3">2020-05-11</td>
+                            <td className="px-4 py-3 font-mono text-xs">420,000 – 629,999</td>
+                            <td className="px-4 py-3 font-mono">12.50000000</td>
+                            <td className="px-4 py-3 font-mono">2,625,000.00000000</td>
+                            <td className="px-4 py-3 font-mono">18,375,000.00000000</td>
+                          </tr>
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">2020-05-11</td>
+                            <td className="px-4 py-3">2024-04-20</td>
+                            <td className="px-4 py-3 font-mono text-xs">630,000 – 839,999</td>
+                            <td className="px-4 py-3 font-mono">6.25000000</td>
+                            <td className="px-4 py-3 font-mono">1,312,500.00000000</td>
+                            <td className="px-4 py-3 font-mono">19,687,500.00000000</td>
+                          </tr>
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">2024-04-20</td>
+                            <td className="px-4 py-3">~2028-03</td>
+                            <td className="px-4 py-3 font-mono text-xs">840,000 – 1,049,999</td>
+                            <td className="px-4 py-3 font-mono">3.12500000</td>
+                            <td className="px-4 py-3 font-mono">656,250.00000000</td>
+                            <td className="px-4 py-3 font-mono">20,343,750.00000000</td>
+                          </tr>
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">~2028-03</td>
+                            <td className="px-4 py-3">~2032-02</td>
+                            <td className="px-4 py-3 font-mono text-xs">1,050,000 – 1,259,999</td>
+                            <td className="px-4 py-3 font-mono">1.56250000</td>
+                            <td className="px-4 py-3 font-mono">328,125.00000000</td>
+                            <td className="px-4 py-3 font-mono">20,671,875.00000000</td>
+                          </tr>
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">~2032-02</td>
+                            <td className="px-4 py-3">~2036-01</td>
+                            <td className="px-4 py-3 font-mono text-xs">1,260,000 – 1,469,999</td>
+                            <td className="px-4 py-3 font-mono">0.78125000</td>
+                            <td className="px-4 py-3 font-mono">164,062.50000000</td>
+                            <td className="px-4 py-3 font-mono">20,835,937.50000000</td>
+                          </tr>
+                          <tr className="border-b border-purple-400/10 hover:bg-purple-500/5">
+                            <td className="px-4 py-3">~2036-01</td>
+                            <td className="px-4 py-3">~2040-01</td>
+                            <td className="px-4 py-3 font-mono text-xs">1,470,000 – 1,679,999</td>
+                            <td className="px-4 py-3 font-mono">0.39062500</td>
+                            <td className="px-4 py-3 font-mono">82,031.25000000</td>
+                            <td className="px-4 py-3 font-mono">20,917,968.75000000</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="mt-4 text-xs text-zinc-400 italic">
+                      (Issuance continues with the same halving logic until the subsidy reaches 0 satoshis around the year 2140.)
+                    </p>
+                  </div>
                 ) : section.images && section.images.length > 0 && (
                   section.heading === "Introduction" && section.images.length === 5 ? (
                     // Circular layout for Introduction section with 5 images
