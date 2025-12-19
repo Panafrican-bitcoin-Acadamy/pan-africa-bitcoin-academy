@@ -115,6 +115,7 @@ export function Navbar() {
         
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 xl:flex">
+          <SearchBar />
           <Link
             href="/chapters"
             className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
@@ -165,7 +166,6 @@ export function Navbar() {
           >
             Donate
           </Link>
-          <SearchBar />
           {loading ? (
             <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
           ) : isAuthenticated && profile ? (
