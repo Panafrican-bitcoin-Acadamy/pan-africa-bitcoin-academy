@@ -75,6 +75,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: '', email: '', phone: '', country: '', city: '' });
   const [chapterStatus, setChapterStatus] = useState<Record<number, { isUnlocked: boolean; isCompleted: boolean }>>({});
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -394,7 +396,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     };
   });
   
-  const assignments = student.assignments || [];
+  // Use assignments from API state, fallback to empty array
   const resources = student.resources || [];
   const leaderboard = leaderboardData;
   
