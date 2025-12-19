@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ExternalLink, Code, GitBranch, Users, Calendar, Award, BookOpen, Rocket, HelpCircle, Github, Mail, Zap, Database, TrendingUp, FlaskConical } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import { AnimatedList } from '@/components/AnimatedList';
 
 interface DeveloperResource {
   id: string;
@@ -27,6 +29,8 @@ export default function DeveloperHubPage() {
   const [resources, setResources] = useState<DeveloperResource[]>([]);
   const [events, setEvents] = useState<DeveloperEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mentors, setMentors] = useState<any[]>([]);
+  const [loadingMentors, setLoadingMentors] = useState(true);
 
   useEffect(() => {
     // TODO: Fetch resources and events from Supabase
@@ -43,6 +47,24 @@ export default function DeveloperHubPage() {
     ]);
     setEvents([]);
     setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const fetchMentors = async () => {
+      try {
+        const response = await fetch('/api/mentors');
+        if (response.ok) {
+          const data = await response.json();
+          setMentors(data.mentors || []);
+        }
+      } catch (error) {
+        console.error('Error fetching mentors:', error);
+      } finally {
+        setLoadingMentors(false);
+      }
+    };
+
+    fetchMentors();
   }, []);
 
   return (
@@ -592,6 +614,7 @@ export default function DeveloperHubPage() {
             </div>
             </div>
           </section>
+          </AnimatedSection>
 
           {/* SECTION 4 — Bitcoin Mining Resources */}
           <AnimatedSection animation="slideRight">
@@ -1019,6 +1042,7 @@ export default function DeveloperHubPage() {
           </AnimatedSection>
 
           {/* SECTION 5 — Mentors & Guest Developers */}
+          <AnimatedSection animation="slideLeft">
           <section className="mb-20 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-cyan-500/20 p-2">
@@ -1029,68 +1053,93 @@ export default function DeveloperHubPage() {
             <p className="mb-6 text-zinc-400">
               Meet the experienced Bitcoin developers who have been willing to work with us as mentors and guest developers, sharing their knowledge and guiding your journey.
             </p>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* TODO: Mentor cards - can be populated from Supabase or static for now */}
-              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
-                <div className="mb-4 flex items-center gap-4">
-                  <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-cyan-500 flex items-center justify-center text-xl font-bold text-black">
-                    JD
+            
+            {loadingMentors ? (
+              <div className="text-center py-8 text-zinc-400">Loading mentors...</div>
+            ) : mentors.length > 0 ? (
+              <AnimatedList animation="slideLeft" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {mentors.map((mentor, index) => (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                  >
+                    <div className="mb-4 flex items-center gap-4">
+                      <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20 overflow-hidden flex items-center justify-center">
+                        {mentor.image_url ? (
+                          <Image
+                            src={mentor.image_url}
+                            alt={mentor.name}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xl font-bold text-zinc-300">
+                            {mentor.name?.charAt(0)?.toUpperCase() || '👤'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-zinc-100">{mentor.name}</h3>
+                        <p className="text-sm text-cyan-300">{mentor.role}</p>
+                        {mentor.type && (
+                          <p className="text-xs text-orange-300">{mentor.type}</p>
+                        )}
+                      </div>
+                    </div>
+                    {mentor.description && (
+                      <p className="mb-4 text-sm text-zinc-300">
+                        {mentor.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {mentor.type && (
+                        <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs text-orange-300">{mentor.type}</span>
+                      )}
+                      <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">Mentor</span>
+                    </div>
+                    {(mentor.github || mentor.twitter) && (
+                      <div className="flex items-center gap-3 pt-4 border-t border-zinc-700">
+                        {mentor.github && (
+                          <a
+                            href={mentor.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-zinc-400 hover:text-cyan-400 transition-colors"
+                            aria-label={`${mentor.name}'s GitHub`}
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                            </svg>
+                          </a>
+                        )}
+                        {mentor.twitter && (
+                          <a
+                            href={mentor.twitter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-zinc-400 hover:text-cyan-400 transition-colors"
+                            aria-label={`${mentor.name}'s Twitter`}
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-zinc-100">John Doe</h3>
-                    <p className="text-sm text-zinc-400">Bitcoin Core Contributor</p>
-                    <p className="text-xs text-zinc-500">@johndoe</p>
-                  </div>
-                </div>
-                <p className="mb-4 text-sm text-zinc-300">
-                  Core developer with 5+ years contributing to Bitcoin Core. Specializes in consensus layer and network protocols.
+                ))}
+              </AnimatedList>
+            ) : (
+              <div className="text-center py-8 text-zinc-400">
+                <p>No mentors available at this time.</p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Approved mentors will appear here automatically from our mentorship database.
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs text-orange-300">Bitcoin Core</span>
-                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">Mentor</span>
-                </div>
               </div>
-
-              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
-                <div className="mb-4 flex items-center gap-4">
-                  <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-black">
-                    JS
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-zinc-100">Jane Smith</h3>
-                    <p className="text-sm text-zinc-400">Lightning Network Developer</p>
-                    <p className="text-xs text-zinc-500">@janesmith</p>
-                  </div>
-                </div>
-                <p className="mb-4 text-sm text-zinc-300">
-                  Building Lightning applications and infrastructure. Expert in payment channels and routing optimization.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs text-purple-300">Lightning</span>
-                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">Guest Developer</span>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
-                <div className="mb-4 flex items-center gap-4">
-                  <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-xl font-bold text-black">
-                    AB
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-zinc-100">Alex Brown</h3>
-                    <p className="text-sm text-zinc-400">Wallet Developer</p>
-                    <p className="text-xs text-zinc-500">@alexbrown</p>
-                  </div>
-                </div>
-                <p className="mb-4 text-sm text-zinc-300">
-                  Creator of popular Bitcoin wallet software. Focuses on security, UX, and privacy features.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs text-green-300">Wallet Dev</span>
-                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">Mentor</span>
-                </div>
-              </div>
-            </div>
+            )}
+            
             <div className="mt-8 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-center">
               <p className="text-sm text-cyan-200">
                 💡 <strong>Interested in becoming a mentor?</strong> Check out our{' '}
@@ -1226,8 +1275,10 @@ export default function DeveloperHubPage() {
               ))}
             </div>
           </section>
+          </AnimatedSection>
 
           {/* SECTION 9 — Developer FAQs */}
+          <AnimatedSection animation="slideLeft">
           <section className="mb-20 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-cyan-500/20 p-2">
