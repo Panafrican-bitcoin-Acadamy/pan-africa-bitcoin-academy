@@ -72,6 +72,7 @@ export function SearchResults({ query }: { query: string }) {
 
   // Group results by type
   const chapters = results.filter(r => r.type === 'Chapter');
+  const pages = results.filter(r => r.type === 'Page');
   const blogPosts = results.filter(r => r.type === 'Blog');
 
   return (
@@ -101,6 +102,43 @@ export function SearchResults({ query }: { query: string }) {
                           Chapter {result.chapterNumber}
                         </span>
                       )}
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold text-zinc-100">
+                      {result.title}
+                    </h3>
+                    {result.excerpt && (
+                      <p className="text-sm text-zinc-400 line-clamp-2">
+                        {result.excerpt}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pages */}
+      {pages.length > 0 && (
+        <div>
+          <h2 className="mb-4 text-lg font-semibold text-zinc-200">
+            Pages ({pages.length})
+          </h2>
+          <div className="space-y-3">
+            {pages.map((result, index) => (
+              <Link
+                key={index}
+                href={result.url}
+                className="block rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 transition hover:border-cyan-400/30 hover:bg-zinc-900"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">{result.icon}</span>
+                  <div className="flex-1">
+                    <div className="mb-2">
+                      <span className="text-xs font-medium text-green-400 uppercase">
+                        {result.type}
+                      </span>
                     </div>
                     <h3 className="mb-2 text-lg font-semibold text-zinc-100">
                       {result.title}

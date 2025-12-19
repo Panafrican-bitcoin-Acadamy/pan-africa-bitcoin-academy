@@ -19,21 +19,24 @@ export function SearchBar() {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setIsExpanded(false);
         setQuery('');
         setResults([]);
       }
     };
 
-    if (isOpen) {
+    if (isExpanded || isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Focus input when opened
-      setTimeout(() => inputRef.current?.focus(), 100);
+      // Focus input when expanded
+      if (isExpanded) {
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isExpanded, isOpen]);
 
   // Search as user types
   useEffect(() => {
@@ -93,7 +96,7 @@ export function SearchBar() {
               setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
-            placeholder="Search chapters, blog posts..."
+            placeholder="Search all pages..."
             className="w-64 rounded-full border border-zinc-700 bg-zinc-900/50 py-2 pl-10 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
           />
           {query && (
