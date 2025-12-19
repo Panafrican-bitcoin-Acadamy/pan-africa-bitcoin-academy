@@ -6,6 +6,7 @@ import { Search, X } from 'lucide-react';
 
 export function SearchBar() {
   const [query, setQuery] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -112,8 +113,8 @@ export function SearchBar() {
       </form>
 
       {/* Search Results Dropdown */}
-      {isOpen && query.trim().length >= 2 && (
-        <div className="absolute top-full z-50 mt-2 w-full xl:w-96 max-h-96 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl">
+      {isExpanded && isOpen && query.trim().length >= 2 && (
+        <div className="absolute top-full right-0 z-50 mt-2 w-96 max-h-96 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl">
           {loading ? (
             <div className="p-4 text-center text-sm text-zinc-400">
               Searching...

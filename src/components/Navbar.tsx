@@ -115,7 +115,6 @@ export function Navbar() {
         
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 xl:flex">
-          <SearchBar />
           <Link
             href="/chapters"
             className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
