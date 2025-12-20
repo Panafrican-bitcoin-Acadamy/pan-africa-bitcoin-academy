@@ -29,24 +29,28 @@ export function generateCohortSessions(
   const end = new Date(endDate);
   end.setHours(23, 59, 59, 999);
   
-  // Track sessions per week
+  // Track sessions per week (Monday to Sunday)
   let sessionsThisWeek = 0;
-  let weekStart = new Date(currentDate);
+  let currentWeekStart: Date | null = null;
   
   while (currentDate <= end) {
     const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     
     // Skip Sundays (day 0)
     if (dayOfWeek !== 0) {
-      // Check if we need to start a new week
-      const daysSinceWeekStart = Math.floor(
-        (currentDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      // Determine the start of the current week (Monday)
+      // If it's Monday (day 1), that's the week start
+      // Otherwise, go back to the previous Monday
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const weekStart = new Date(currentDate);
+      weekStart.setDate(currentDate.getDate() - daysFromMonday);
+      weekStart.setHours(0, 0, 0, 0);
       
-      if (daysSinceWeekStart >= 7) {
+      // Check if we've moved to a new week
+      if (!currentWeekStart || weekStart.getTime() !== currentWeekStart.getTime()) {
         // New week started, reset counter
         sessionsThisWeek = 0;
-        weekStart = new Date(currentDate);
+        currentWeekStart = weekStart;
       }
       
       // Add session if we haven't reached 3 sessions this week

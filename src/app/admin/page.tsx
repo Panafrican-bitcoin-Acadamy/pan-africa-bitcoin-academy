@@ -128,6 +128,7 @@ export default function AdminDashboardPage() {
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
+  const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam'>('overview');
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
@@ -525,7 +526,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create cohort');
-      alert('Cohort created successfully!');
+      alert('Cohort created successfully! Sessions have been auto-generated.');
       await fetchCohorts();
       await fetchOverview();
       setCohortForm({
@@ -541,6 +542,29 @@ export default function AdminDashboardPage() {
       alert(err.message || 'Failed to create cohort');
     } finally {
       setCreatingCohort(false);
+    }
+  };
+
+  const regenerateSessions = async (cohortId: string) => {
+    if (!confirm('This will delete all existing sessions for this cohort and regenerate them based on the current start/end dates. Continue?')) {
+      return;
+    }
+    setRegeneratingSessions(cohortId);
+    try {
+      const res = await fetchWithAuth('/api/cohorts/generate-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cohortId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to regenerate sessions');
+      alert(`Sessions regenerated successfully! ${data.sessionsGenerated || 0} sessions created.`);
+      await fetchCohorts();
+      await fetchOverview();
+    } catch (err: any) {
+      alert(err.message || 'Failed to regenerate sessions');
+    } finally {
+      setRegeneratingSessions(null);
     }
   };
 
@@ -809,12 +833,9 @@ export default function AdminDashboardPage() {
                   value={cohortForm.seats_total}
                   onChange={(e) => setCohortForm({ ...cohortForm, seats_total: e.target.value })}
                 />
-                <input
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  placeholder="Sessions"
-                  value={cohortForm.sessions}
-                  onChange={(e) => setCohortForm({ ...cohortForm, sessions: e.target.value })}
-                />
+                <div className="text-xs text-zinc-400">
+                  Sessions are automatically generated (3 per week, excluding Sundays) when you provide start and end dates.
+                </div>
                 <select
                   className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
                   value={cohortForm.level}
