@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { checkAndUnlockAchievements } from '@/lib/achievements';
 
 export async function POST(req: NextRequest) {
   try {
@@ -168,10 +167,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Check and unlock achievements (only if not already completed to avoid duplicate checks)
+    let newlyUnlockedAchievements: Array<{ id: string; title: string; icon: string; satsReward: number }> = [];
+    if (!wasAlreadyCompleted) {
+      try {
+        newlyUnlockedAchievements = await checkAndUnlockAchievements(profile.id, supabaseAdmin);
+      } catch (achievementError) {
+        // Don't fail the request if achievement check fails
+        console.error('Error checking achievements:', achievementError);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Chapter marked as completed',
       chapterNumber,
+      newlyUnlockedAchievements: newlyUnlockedAchievements.length > 0 ? newlyUnlockedAchievements : undefined,
     });
   } catch (error: any) {
     console.error('Error marking chapter as completed:', error);

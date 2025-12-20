@@ -9,6 +9,7 @@ export interface Achievement {
   icon: string;
   title: string;
   description: string;
+  satsReward: number; // Sats awarded when achievement is unlocked
   unlockCondition: {
     type: 'chapter' | 'assignment_count' | 'assignment_specific' | 'manual';
     value?: number | string; // chapter number, assignment count, or assignment ID
@@ -22,6 +23,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🎖',
     title: 'Completed First Wallet',
     description: 'Successfully created your first Bitcoin wallet',
+    satsReward: 100, // 100 sats reward
     unlockCondition: {
       type: 'chapter',
       value: 8, // Chapter 8: Exchange & Software Wallet
@@ -33,6 +35,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🏆',
     title: 'Sent First Sats',
     description: 'Completed your first Bitcoin transaction',
+    satsReward: 150, // 150 sats reward
     unlockCondition: {
       type: 'chapter',
       value: 9, // Chapter 9: UTXOs, Fees & Coin Control (covers transactions)
@@ -44,6 +47,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🎯',
     title: '3 Assignments Done',
     description: 'Completed 3 assignments',
+    satsReward: 300, // 300 sats reward
     unlockCondition: {
       type: 'assignment_count',
       value: 3,
@@ -55,6 +59,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '⚡',
     title: 'Lightning User',
     description: 'Completed Lightning Network basics',
+    satsReward: 250, // 250 sats reward
     unlockCondition: {
       type: 'chapter',
       value: 12, // Chapter 12: Lightning Basics
@@ -66,11 +71,37 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🔐',
     title: 'Recovery Master',
     description: 'Mastered wallet backup and recovery',
+    satsReward: 200, // 200 sats reward
     unlockCondition: {
       type: 'chapter',
       value: 10, // Chapter 10: Backup & Recovery (or could be 11: Hardware Signers)
     },
   },
+  // Future achievements (not yet implemented):
+  // {
+  //   id: 'ten_chapters',
+  //   badgeName: 'ten_chapters',
+  //   icon: '📚',
+  //   title: '10 Chapters Done',
+  //   description: 'Completed 10 chapters',
+  //   satsReward: 500,
+  //   unlockCondition: {
+  //     type: 'chapter_count',
+  //     value: 10,
+  //   },
+  // },
+  // {
+  //   id: 'perfect_attendance',
+  //   badgeName: 'perfect_attendance',
+  //   icon: '⭐',
+  //   title: 'Perfect Attendance',
+  //   description: 'Attended all live sessions',
+  //   satsReward: 1000,
+  //   unlockCondition: {
+  //     type: 'attendance_percent',
+  //     value: 100,
+  //   },
+  // },
 ];
 
 /**
@@ -198,12 +229,13 @@ export async function unlockAchievement(
 
 /**
  * Check and unlock achievements for a student based on their progress
+ * Returns list of newly unlocked achievement IDs
  */
 export async function checkAndUnlockAchievements(
   studentId: string,
   supabaseAdmin: any
-): Promise<string[]> {
-  const unlockedAchievements: string[] = [];
+): Promise<Array<{ id: string; title: string; icon: string; satsReward: number }>> {
+  const newlyUnlocked: Array<{ id: string; title: string; icon: string; satsReward: number }> = [];
 
   for (const achievement of ACHIEVEMENTS) {
     // Skip manual achievements
@@ -228,11 +260,16 @@ export async function checkAndUnlockAchievements(
 
     if (shouldUnlock) {
       const result = await unlockAchievement(studentId, achievement.badgeName, supabaseAdmin);
-      if (result.success) {
-        unlockedAchievements.push(achievement.id);
+      if (result.success && result.achievement) {
+        newlyUnlocked.push({
+          id: achievement.id,
+          title: achievement.title,
+          icon: achievement.icon,
+          satsReward: achievement.satsReward,
+        });
       }
     }
   }
 
-  return unlockedAchievements;
+  return newlyUnlocked;
 }

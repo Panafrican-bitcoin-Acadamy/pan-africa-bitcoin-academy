@@ -161,6 +161,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Get achievements
+    let achievements: any[] = [];
+    if (student) {
+      const { data: unlockedAchievements } = await supabaseAdmin
+        .from('achievements')
+        .select('badge_name, earned_at')
+        .eq('student_id', profile.id)
+        .order('earned_at', { ascending: false });
+
+      // Import achievements definitions
+      const { ACHIEVEMENTS } = await import('@/lib/achievements');
+      const unlockedBadgeNames = new Set(
+        (unlockedAchievements || []).map((a: any) => a.badge_name)
+      );
+
+      achievements = ACHIEVEMENTS.map((achievement) => {
+        const unlocked = unlockedBadgeNames.has(achievement.badgeName);
+        const unlockedData = unlockedAchievements?.find(
+          (a: any) => a.badge_name === achievement.badgeName
+        );
+
+        return {
+          id: achievement.id,
+          title: achievement.title,
+          icon: achievement.icon,
+          unlocked,
+          earnedAt: unlockedData?.earned_at || null,
+        };
+      });
+    }
+
     // Calculate attendance percentage
     let attendancePercent = 0;
     if (student) {
@@ -231,6 +262,7 @@ export async function POST(req: NextRequest) {
       certificateImageUrl: (student as any).certificate_image_url || null,
       satsPaid: satsPaid,
       satsPending: satsPending,
+      achievements: achievements,
     } : null;
 
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { checkAndUnlockAchievements } from '@/lib/achievements';
 
 /**
  * POST /api/assignments/submit
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
       }
       submission = created;
 
-      // Update student's assignments_completed count if correct
+        // Update student's assignments_completed count if correct
       if (isCorrect) {
         const { data: student } = await supabaseAdmin
           .from('students')
@@ -157,6 +158,28 @@ export async function POST(req: NextRequest) {
             status: 'pending',
           });
         }
+
+        // Check and unlock achievements (e.g., "3 Assignments Done")
+        let newlyUnlockedAchievements: Array<{ id: string; title: string; icon: string; satsReward: number }> = [];
+        try {
+          newlyUnlockedAchievements = await checkAndUnlockAchievements(profile.id, supabaseAdmin);
+        } catch (achievementError) {
+          // Don't fail the request if achievement check fails
+          console.error('Error checking achievements:', achievementError);
+        }
+
+        return NextResponse.json({
+          success: true,
+          submission: {
+            id: submission.id,
+            isCorrect,
+            pointsEarned,
+            message: isCorrect
+              ? 'Correct! You earned ' + pointsEarned + ' points.'
+              : 'Incorrect answer. Please try again.',
+          },
+          newlyUnlockedAchievements: newlyUnlockedAchievements.length > 0 ? newlyUnlockedAchievements : undefined,
+        });
       }
     }
 

@@ -367,12 +367,13 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   };
 
   const student = studentData || fallbackStudent;
+  // Default achievements fallback (will be replaced by API data)
   const defaultAchievements = [
-    { id: 'a1', title: 'Completed First Wallet', icon: '🎖', unlocked: false },
-    { id: 'a2', title: 'Sent First Sats', icon: '🏆', unlocked: false },
-    { id: 'a3', title: '3 Assignments Done', icon: '🎯', unlocked: false },
-    { id: 'a4', title: 'Lightning User', icon: '⚡', unlocked: false },
-    { id: 'a5', title: 'Recovery Master', icon: '🔐', unlocked: false },
+    { id: 'wallet_created', title: 'Completed First Wallet', icon: '🎖', unlocked: false },
+    { id: 'first_transaction', title: 'Sent First Sats', icon: '🏆', unlocked: false },
+    { id: 'three_assignments', title: '3 Assignments Done', icon: '🎯', unlocked: false },
+    { id: 'lightning_user', title: 'Lightning User', icon: '⚡', unlocked: false },
+    { id: 'recovery_master', title: 'Recovery Master', icon: '🔐', unlocked: false },
   ];
 
   const createFallbackLiveSessions = () => {
@@ -400,8 +401,9 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       },
     ];
   };
-  const achievements = (student.achievements && student.achievements.length > 0)
-    ? student.achievements
+  // Use achievements from userData if available, otherwise use defaults
+  const achievements = (userData?.student?.achievements && userData.student.achievements.length > 0)
+    ? userData.student.achievements
     : defaultAchievements;
   const liveSessions = (student.liveSessions && student.liveSessions.length > 0)
     ? student.liveSessions
