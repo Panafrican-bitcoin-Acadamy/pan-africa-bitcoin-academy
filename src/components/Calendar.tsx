@@ -135,14 +135,26 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
         }
         
         // Fetch cohort sessions
+        // For students: fetch sessions based on their enrolled cohorts (using email)
+        // For admins: fetch all sessions
         try {
-          const sessionsUrl = showCohorts
-            ? '/api/sessions?admin=true'
-            : email
-            ? `/api/sessions?email=${encodeURIComponent(email)}`
-            : null;
+          let sessionsUrl: string | null = null;
+          
+          if (showCohorts) {
+            // Admin mode: fetch all sessions
+            sessionsUrl = '/api/sessions?admin=true';
+          } else if (email) {
+            // Student mode: fetch sessions for enrolled cohorts using email
+            sessionsUrl = `/api/sessions?email=${encodeURIComponent(email)}`;
+            console.log('📅 Calendar: Fetching sessions for student:', email);
+          } else if (cohortId) {
+            // Fallback: if cohortId is provided but no email, try to fetch sessions for that cohort
+            // Note: This requires a cohort-specific sessions endpoint or we can use email-based approach
+            console.log('📅 Calendar: cohortId provided but no email - sessions will be fetched via email when available');
+          }
 
           if (sessionsUrl) {
+            console.log('📅 Calendar: Fetching sessions from:', sessionsUrl);
             const sessionsResponse = await fetch(sessionsUrl);
             if (sessionsResponse.ok) {
               const sessionsData = await sessionsResponse.json();
@@ -166,15 +178,21 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
                       time: session.duration_minutes ? `${session.duration_minutes} min` : '',
                       link: session.link || '#',
                       description: session.topic || `Cohort session ${session.session_number}`,
+                      duration: session.duration_minutes || 90,
                     };
                   });
                 
                 transformedEvents = [...transformedEvents, ...sessionEvents];
-                console.log(`📅 Calendar: Added ${sessionEvents.length} session events`);
+                console.log(`📅 Calendar: Added ${sessionEvents.length} session events from cohort_sessions table`);
+              } else {
+                console.log('📅 Calendar: No sessions found in response');
               }
             } else {
-              console.warn('⚠️ Calendar: Failed to fetch sessions:', sessionsResponse.status);
+              const errorText = await sessionsResponse.text();
+              console.warn('⚠️ Calendar: Failed to fetch sessions:', sessionsResponse.status, errorText);
             }
+          } else {
+            console.log('📅 Calendar: No sessions URL - email or admin mode required');
           }
         } catch (sessionsErr) {
           console.warn('⚠️ Calendar: Error fetching sessions:', sessionsErr);
