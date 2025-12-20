@@ -229,7 +229,7 @@ export default function ApplyPage() {
     const country = e.target.value;
     setSelectedCountry(country);
     setPhoneError(null);
-    const countryData = africanCountries.find((c) => c.name === country);
+    const countryData = sortedCountries.find((c) => c.name === country);
     // Auto-fill country code if country is selected
     if (countryData) {
       setSelectedCountryCode(countryData.code);
