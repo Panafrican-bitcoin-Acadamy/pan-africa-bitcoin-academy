@@ -144,14 +144,17 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
             // Admin mode: fetch all sessions
             sessionsUrl = '/api/sessions?admin=true';
             console.log('📅 Calendar: Admin mode - fetching all sessions');
-          } else if (email) {
-            // Student mode: fetch sessions for enrolled cohorts using email
-            sessionsUrl = `/api/sessions?email=${encodeURIComponent(email)}`;
-            console.log('📅 Calendar: Fetching sessions for student email:', email);
           } else if (cohortId) {
-            // Fallback: fetch sessions directly by cohortId
+            // Priority: Use cohortId if available (more direct)
             sessionsUrl = `/api/sessions?cohortId=${encodeURIComponent(cohortId)}`;
             console.log('📅 Calendar: Fetching sessions for cohortId:', cohortId);
+            if (email) {
+              console.log('📅 Calendar: Email also available:', email, '- using cohortId for direct lookup');
+            }
+          } else if (email) {
+            // Fallback: fetch sessions for enrolled cohorts using email
+            sessionsUrl = `/api/sessions?email=${encodeURIComponent(email)}`;
+            console.log('📅 Calendar: Fetching sessions for student email:', email);
           } else {
             console.log('📅 Calendar: No email or cohortId provided - skipping session fetch');
           }
