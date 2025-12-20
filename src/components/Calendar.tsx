@@ -153,6 +153,8 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
                   .map((session: any) => {
                     const cohortName = session.cohorts?.name || 'Cohort';
                     const sessionDate = new Date(session.session_date);
+                    // Format date to ensure proper timezone handling
+                    sessionDate.setHours(0, 0, 0, 0);
                     return {
                       id: `session-${session.id}`,
                       title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
@@ -165,7 +167,10 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
                   });
                 
                 transformedEvents = [...transformedEvents, ...sessionEvents];
+                console.log(`📅 Calendar: Added ${sessionEvents.length} session events`);
               }
+            } else {
+              console.warn('⚠️ Calendar: Failed to fetch sessions:', sessionsResponse.status);
             }
           }
         } catch (sessionsErr) {
