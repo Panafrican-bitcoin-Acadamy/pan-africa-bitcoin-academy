@@ -668,7 +668,7 @@ export default function ApplyPage() {
                   required
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
                   placeholder="John"
                 />
               </div>
@@ -684,14 +684,14 @@ export default function ApplyPage() {
                   required
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
                   placeholder="Doe"
                 />
               </div>
             </div>
 
             {/* Email, Phone, Birth Date, Language */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="email" className="mb-2 block text-sm font-medium text-zinc-300">
                   Email <span className="text-red-400">*</span>
@@ -702,7 +702,7 @@ export default function ApplyPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
                   placeholder="john@example.com"
                 />
               </div>
@@ -710,7 +710,7 @@ export default function ApplyPage() {
                 <label htmlFor="phone" className="mb-2 block text-sm font-medium text-zinc-300">
                   Phone <span className="text-red-400">*</span>
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full">
                   <label htmlFor="countryCode" className="sr-only">
                     Country Code
                   </label>
@@ -721,8 +721,8 @@ export default function ApplyPage() {
                     value={selectedCountryCode}
                     onChange={handleCountryCodeChange}
                     aria-label="Country code"
-                    className="flex-shrink-0 rounded-lg border border-cyan-400/30 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
-                    style={{ minWidth: '90px' }}
+                    className="flex-shrink-0 rounded-lg border border-cyan-400/30 bg-zinc-950 px-2 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                    style={{ minWidth: '80px', maxWidth: '100px' }}
                     title={selectedCountryCode ? sortedCountries.find(c => c.code === selectedCountryCode)?.name : "Select country code"}
                   >
                     <option value="" className="bg-zinc-950 text-zinc-400">Code</option>
@@ -797,7 +797,7 @@ export default function ApplyPage() {
                   required
                   value={formData.preferredLanguage}
                   onChange={(e) => setFormData({ ...formData, preferredLanguage: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
                 >
                   <option value="" className="bg-zinc-950 text-zinc-400">Select</option>
                   <option value="english" className="bg-zinc-950 text-zinc-50">English</option>
@@ -819,7 +819,7 @@ export default function ApplyPage() {
                   required
                   value={selectedCountry}
                   onChange={handleCountryChange}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
                 >
                   <option value="" className="bg-zinc-950 text-zinc-400">Select your country</option>
                   {sortedCountries.map((country) => (
@@ -838,14 +838,14 @@ export default function ApplyPage() {
                   autoComplete="address-level2"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
                   placeholder="Lagos"
                 />
               </div>
             </div>
 
             {/* Experience Level and Preferred Cohort */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="experienceLevel" className="mb-2 block text-sm font-medium text-zinc-300">
                   Experience Level <span className="text-red-400">*</span>
@@ -855,7 +855,7 @@ export default function ApplyPage() {
                   required
                   value={formData.experienceLevel}
                   onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
-                  className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer ${
+                  className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer ${
                     formData.experienceLevel ? 'text-green-400' : 'text-zinc-50'
                   }`}
                 >
