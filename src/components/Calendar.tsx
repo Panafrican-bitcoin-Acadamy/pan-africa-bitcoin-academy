@@ -143,27 +143,49 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
           if (showCohorts) {
             // Admin mode: fetch all sessions
             sessionsUrl = '/api/sessions?admin=true';
+            console.log('📅 Calendar: Admin mode - fetching all sessions');
           } else if (email) {
             // Student mode: fetch sessions for enrolled cohorts using email
             sessionsUrl = `/api/sessions?email=${encodeURIComponent(email)}`;
-            console.log('📅 Calendar: Fetching sessions for student:', email);
+            console.log('📅 Calendar: Fetching sessions for student email:', email);
           } else if (cohortId) {
-            // Fallback: if cohortId is provided but no email, try to fetch sessions for that cohort
-            // Note: This requires a cohort-specific sessions endpoint or we can use email-based approach
-            console.log('📅 Calendar: cohortId provided but no email - sessions will be fetched via email when available');
+            // Fallback: if cohortId is provided but no email, we can't fetch sessions
+            // Sessions are tied to student enrollments, not just cohortId
+            console.warn('⚠️ Calendar: cohortId provided but no email - cannot fetch sessions without email');
+          } else {
+            console.log('📅 Calendar: No email or cohortId provided - skipping session fetch');
           }
 
           if (sessionsUrl) {
             console.log('📅 Calendar: Fetching sessions from:', sessionsUrl);
             const sessionsResponse = await fetch(sessionsUrl);
+            
             if (sessionsResponse.ok) {
               const sessionsData = await sessionsResponse.json();
+              console.log('📅 Calendar: Sessions API response:', {
+                hasSessions: !!sessionsData.sessions,
+                sessionsCount: sessionsData.sessions?.length || 0,
+                isArray: Array.isArray(sessionsData.sessions),
+                error: sessionsData.error
+              });
+              
+              if (sessionsData.error) {
+                console.warn('⚠️ Calendar: Sessions API returned error:', sessionsData.error);
+              }
+              
               if (sessionsData.sessions && Array.isArray(sessionsData.sessions)) {
                 const sessionEvents: CalendarEvent[] = sessionsData.sessions
                   .filter((session: any) => {
-                    if (!session.session_date) return false;
+                    if (!session.session_date) {
+                      console.warn('⚠️ Calendar: Session missing session_date:', session);
+                      return false;
+                    }
                     const sessionDate = new Date(session.session_date);
-                    return !isNaN(sessionDate.getTime());
+                    if (isNaN(sessionDate.getTime())) {
+                      console.warn('⚠️ Calendar: Session has invalid date:', session.session_date);
+                      return false;
+                    }
+                    return true;
                   })
                   .map((session: any) => {
                     const cohortName = session.cohorts?.name || 'Cohort';
@@ -183,19 +205,30 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
                   });
                 
                 transformedEvents = [...transformedEvents, ...sessionEvents];
-                console.log(`📅 Calendar: Added ${sessionEvents.length} session events from cohort_sessions table`);
+                console.log(`✅ Calendar: Added ${sessionEvents.length} session events from cohort_sessions table`);
+                
+                if (sessionEvents.length === 0 && sessionsData.sessions.length > 0) {
+                  console.warn('⚠️ Calendar: Sessions returned but none passed validation');
+                }
               } else {
-                console.log('📅 Calendar: No sessions found in response');
+                console.log('📅 Calendar: No sessions array in response or empty array');
               }
             } else {
-              const errorText = await sessionsResponse.text();
-              console.warn('⚠️ Calendar: Failed to fetch sessions:', sessionsResponse.status, errorText);
+              const errorText = await sessionsResponse.text().catch(() => 'Unable to read error');
+              console.error('❌ Calendar: Failed to fetch sessions:', {
+                status: sessionsResponse.status,
+                statusText: sessionsResponse.statusText,
+                error: errorText
+              });
             }
           } else {
             console.log('📅 Calendar: No sessions URL - email or admin mode required');
           }
-        } catch (sessionsErr) {
-          console.warn('⚠️ Calendar: Error fetching sessions:', sessionsErr);
+        } catch (sessionsErr: any) {
+          console.error('❌ Calendar: Error fetching sessions:', {
+            message: sessionsErr.message,
+            stack: sessionsErr.stack
+          });
           // Continue without session events
         }
 
