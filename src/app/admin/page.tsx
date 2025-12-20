@@ -442,10 +442,13 @@ export default function AdminDashboardPage() {
   const filteredApplications = useMemo(
     () =>
       applications.filter((app) => {
-        if (filter === 'all') return true;
-        return app.status?.toLowerCase() === filter;
+        // Filter by status
+        const statusMatch = filter === 'all' || app.status?.toLowerCase() === filter;
+        // Filter by cohort
+        const cohortMatch = !cohortFilter || app.preferred_cohort_id === cohortFilter;
+        return statusMatch && cohortMatch;
       }),
-    [applications, filter],
+    [applications, filter, cohortFilter],
   );
 
   // Filter and sort student progress data
@@ -671,82 +674,83 @@ export default function AdminDashboardPage() {
 
         {/* Applications */}
         <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                    filter === f
-                      ? 'bg-cyan-400 text-black'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)} (
-                  {applications.filter((a) => (f === 'all' ? true : a.status.toLowerCase() === f)).length})
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                      filter === f
+                        ? 'bg-cyan-400 text-black'
+                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)} (
+                    {applications.filter((a) => {
+                      const statusMatch = f === 'all' || a.status.toLowerCase() === f;
+                      const cohortMatch = !cohortFilter || a.preferred_cohort_id === cohortFilter;
+                      return statusMatch && cohortMatch;
+                    }).length})
+                  </button>
+                ))}
+              </div>
+              <select
+                value={cohortFilter || ''}
+                onChange={(e) => setCohortFilter(e.target.value || null)}
+                className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+              >
+                <option value="">All Cohorts</option>
+                {cohorts.map((cohort) => (
+                  <option key={cohort.id} value={cohort.id}>
+                    {cohort.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-3">
-              {filteredApplications.length === 0 && (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center text-zinc-400">
-                  No {filter !== 'all' ? filter : ''} applications found.
-                </div>
-              )}
+            {filteredApplications.length === 0 && (
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center text-zinc-400">
+                No {filter !== 'all' ? filter : ''} applications found{cohortFilter ? ` for selected cohort` : ''}.
+              </div>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {filteredApplications.map((app) => (
                 <div
                   key={app.id}
-                  className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4"
+                  className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-zinc-50">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-zinc-50 truncate">
                         {app.first_name} {app.last_name}
                       </h3>
-                      <p className="text-sm text-zinc-400">{app.email}</p>
-                      {app.phone && <p className="text-sm text-zinc-500">{app.phone}</p>}
+                      <p className="text-xs text-zinc-400 truncate">{app.email}</p>
                     </div>
                     <span
-                      className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClass(app.status)}`}
+                      className={`rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${getStatusClass(app.status)}`}
                     >
                       {app.status}
                     </span>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                    {app.country && (
-                      <div>
-                        <span className="text-zinc-500">Country:</span>{' '}
-                        <span className="text-zinc-200">{app.country}</span>
-                      </div>
-                    )}
-                    {app.city && (
-                      <div>
-                        <span className="text-zinc-500">City:</span>{' '}
-                        <span className="text-zinc-200">{app.city}</span>
-                      </div>
-                    )}
+                  <div className="space-y-1 text-xs mb-2">
                     {app.preferred_cohort_id && (
-                      <div>
-                        <span className="text-zinc-500">Cohort:</span>{' '}
-                        <span className="text-zinc-200">
+                      <div className="flex items-center gap-1">
+                        <span className="text-zinc-500">Cohort:</span>
+                        <span className="text-zinc-200 truncate">
                           {cohorts.find((c) => c.id === app.preferred_cohort_id)?.name || 'N/A'}
                         </span>
                       </div>
                     )}
-                    <div>
-                      <span className="text-zinc-500">Student ID:</span>{' '}
-                      <span className="text-zinc-200 font-mono text-xs">{app.id}</span>
-                    </div>
-                    {app.preferred_language && (
-                      <div>
-                        <span className="text-zinc-500">Language:</span>{' '}
-                        <span className="text-zinc-200 capitalize">{app.preferred_language}</span>
+                    {app.country && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-zinc-500">Country:</span>
+                        <span className="text-zinc-200">{app.country}</span>
                       </div>
                     )}
-                    <div>
-                      <span className="text-zinc-500">Applied:</span>{' '}
+                    <div className="flex items-center gap-1">
+                      <span className="text-zinc-500">Applied:</span>
                       <span className="text-zinc-200">
                         {new Date(app.created_at).toLocaleDateString()}
                       </span>
@@ -754,18 +758,18 @@ export default function AdminDashboardPage() {
                   </div>
 
                   {app.status.toLowerCase() === 'pending' && (
-                    <div className="mt-3 flex gap-2">
+                    <div className="flex gap-1.5 mt-2">
                       <button
                         onClick={() => handleApprove(app.id, app.email)}
                         disabled={processing === app.id}
-                        className="rounded-lg bg-green-500/20 px-4 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                        className="flex-1 rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
                       >
-                        {processing === app.id ? 'Processing...' : 'Approve'}
+                        {processing === app.id ? '...' : 'Approve'}
                       </button>
                       <button
                         onClick={() => handleReject(app.id)}
                         disabled={processing === app.id}
-                        className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                        className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
                       >
                         Reject
                       </button>
