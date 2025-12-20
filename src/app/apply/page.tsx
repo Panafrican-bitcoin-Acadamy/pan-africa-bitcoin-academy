@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
 import { sortedCountries, getPhoneRule, type Country } from '@/lib/countries';
+import { inputStyles, labelStyles, formStyles, buttonStyles, cardStyles, alertStyles, cn } from '@/lib/styles';
+import { FormGrid } from '@/components/ui';
 
 interface Cohort {
   id: string;
@@ -530,11 +532,10 @@ export default function ApplyPage() {
                 {cohorts.map((cohort) => (
                   <div
                     key={cohort.id}
-                    className={`min-w-0 flex-shrink-0 flex-[0_0_100%] sm:flex-[0_0_calc(50%-0.5rem)] lg:flex-[0_0_calc(33.333%-0.67rem)] rounded-xl border p-6 transition ${
-                      selectedCohort === cohort.id
-                        ? "border-orange-400/50 bg-orange-500/10 shadow-[0_0_30px_rgba(249,115,22,0.3)]"
-                        : "border-cyan-400/25 bg-black/80 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-                    }`}
+                    className={cn(
+                      "min-w-0 flex-shrink-0 flex-[0_0_100%] sm:flex-[0_0_calc(50%-0.5rem)] lg:flex-[0_0_calc(33.333%-0.67rem)] p-6 transition",
+                      selectedCohort === cohort.id ? cardStyles.selected : cardStyles.base
+                    )}
                   >
                     <div className="mb-4 flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-zinc-50">{cohort.name}</h3>
@@ -588,11 +589,10 @@ export default function ApplyPage() {
                       onMouseDown={(e) => {
                         e.stopPropagation();
                       }}
-                      className={`mt-4 w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                        selectedCohort === cohort.id
-                          ? "bg-orange-400 text-black"
-                          : "bg-cyan-400/20 text-cyan-300 hover:bg-cyan-400/30"
-                      }`}
+                      className={cn(
+                        "mt-4 w-full rounded-lg px-4 py-2 text-sm font-semibold transition",
+                        selectedCohort === cohort.id ? buttonStyles.selected : buttonStyles.outline
+                      )}
                     >
                       {selectedCohort === cohort.id ? "Selected" : "Select Cohort"}
                     </button>
@@ -707,10 +707,10 @@ export default function ApplyPage() {
             </div>
 
             {/* Email, Phone, Birth Date, Language */}
-            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            <FormGrid>
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-medium text-zinc-300">
-                  Email <span className="text-red-400">*</span>
+                <label htmlFor="email" className={labelStyles.required}>
+                  Email <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <input
                   id="email"
@@ -718,7 +718,7 @@ export default function ApplyPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  className={inputStyles.base}
                   placeholder="john@example.com"
                 />
               </div>
@@ -757,7 +757,7 @@ export default function ApplyPage() {
                     value={phoneNumber}
                     onChange={handlePhoneChange}
                     maxLength={selectedCountry ? getPhoneRule(selectedCountry).max : 13}
-                    className="flex-1 rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                    className={inputStyles.phone}
                     placeholder="1234567890"
                     aria-describedby={phoneError ? "phone-error" : selectedCountry ? "phone-help" : undefined}
                   />
@@ -805,15 +805,15 @@ export default function ApplyPage() {
                 </div>
               </div>
               <div>
-                <label htmlFor="preferredLanguage" className="mb-2 block text-sm font-medium text-zinc-300">
-                  Preferred Language <span className="text-red-400">*</span>
+                <label htmlFor="preferredLanguage" className={labelStyles.required}>
+                  Preferred Language <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <select
                   id="preferredLanguage"
                   required
                   value={formData.preferredLanguage}
                   onChange={(e) => setFormData({ ...formData, preferredLanguage: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                  className={inputStyles.select}
                 >
                   <option value="" className="bg-zinc-950 text-zinc-400">Select</option>
                   <option value="english" className="bg-zinc-950 text-zinc-50">English</option>
@@ -846,7 +846,7 @@ export default function ApplyPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="city" className="mb-2 block text-sm font-medium text-zinc-300">City</label>
+                <label htmlFor="city" className={labelStyles.base}>City</label>
                 <input
                   id="city"
                   name="city"
@@ -854,26 +854,24 @@ export default function ApplyPage() {
                   autoComplete="address-level2"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                  className={inputStyles.optional}
                   placeholder="Lagos"
                 />
               </div>
-            </div>
+            </FormGrid>
 
             {/* Experience Level and Preferred Cohort */}
-            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            <FormGrid>
               <div>
-                <label htmlFor="experienceLevel" className="mb-2 block text-sm font-medium text-zinc-300">
-                  Experience Level <span className="text-red-400">*</span>
+                <label htmlFor="experienceLevel" className={labelStyles.required}>
+                  Experience Level <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <select
                   id="experienceLevel"
                   required
                   value={formData.experienceLevel}
                   onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
-                  className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer ${
-                    formData.experienceLevel ? 'text-green-400' : 'text-zinc-50'
-                  }`}
+                  className={inputStyles.selectWithValue(!!formData.experienceLevel)}
                 >
                   <option value="" className="bg-zinc-950 text-zinc-400">Select your level</option>
                   <option 
@@ -903,8 +901,8 @@ export default function ApplyPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="preferredCohort" className="mb-2 block text-sm font-medium text-zinc-300">
-                  Preferred Cohort <span className="text-red-400">*</span>
+                <label htmlFor="preferredCohort" className={labelStyles.required}>
+                  Preferred Cohort <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <select
                   id="preferredCohort"
@@ -921,9 +919,7 @@ export default function ApplyPage() {
                     });
                     setSelectedCohort(cohortId || null);
                   }}
-                  className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer ${
-                    formData.preferredCohort ? 'text-green-400' : 'text-zinc-50'
-                  }`}
+                  className={cn(inputStyles.select, formData.preferredCohort ? 'text-green-400' : 'text-zinc-50')}
                 >
                   <option value="" className="bg-zinc-950 text-zinc-400">Select a cohort</option>
                   {cohorts.map((cohort) => (
