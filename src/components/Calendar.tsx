@@ -149,9 +149,9 @@ export function Calendar({ cohortId, showCohorts = false, email }: CalendarProps
             sessionsUrl = `/api/sessions?email=${encodeURIComponent(email)}`;
             console.log('📅 Calendar: Fetching sessions for student email:', email);
           } else if (cohortId) {
-            // Fallback: if cohortId is provided but no email, we can't fetch sessions
-            // Sessions are tied to student enrollments, not just cohortId
-            console.warn('⚠️ Calendar: cohortId provided but no email - cannot fetch sessions without email');
+            // Fallback: fetch sessions directly by cohortId
+            sessionsUrl = `/api/sessions?cohortId=${encodeURIComponent(cohortId)}`;
+            console.log('📅 Calendar: Fetching sessions for cohortId:', cohortId);
           } else {
             console.log('📅 Calendar: No email or cohortId provided - skipping session fetch');
           }

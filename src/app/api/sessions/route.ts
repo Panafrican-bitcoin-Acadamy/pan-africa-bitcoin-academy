@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const email = searchParams.get('email');
+    const cohortId = searchParams.get('cohortId');
     const isAdmin = searchParams.get('admin') === 'true';
 
     // Admin can see all sessions
