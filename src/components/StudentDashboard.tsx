@@ -937,7 +937,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
 
                 {/* Bitcoin Development Resources */}
                 <a
-                  href="https://bitcoin.org/en/developer-documentation"
+                  href="https://developer.bitcoin.org/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group rounded-lg border border-green-500/30 bg-green-500/10 p-4 transition hover:border-green-500/50 hover:bg-green-500/20 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
@@ -948,7 +948,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-zinc-100">Bitcoin Developer Docs</h3>
-                      <p className="text-xs text-zinc-400">Bitcoin.org</p>
+                      <p className="text-xs text-zinc-400">developer.bitcoin.org</p>
                     </div>
                   </div>
                   <p className="mb-3 text-sm text-zinc-300">
