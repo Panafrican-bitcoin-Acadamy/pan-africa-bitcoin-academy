@@ -568,32 +568,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const generateAllSessions = async () => {
-    if (!confirm('This will generate sessions for ALL cohorts that have start and end dates. This may take a moment. Continue?')) {
-      return;
-    }
-    setRegeneratingSessions('all');
-    try {
-      const res = await fetchWithAuth('/api/cohorts/generate-all-sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate sessions');
-      const message = `Sessions generated successfully!\n\n` +
-        `Total Cohorts: ${data.totalCohorts}\n` +
-        `Successful: ${data.successful}\n` +
-        `Failed: ${data.failed}\n` +
-        `Total Sessions Created: ${data.totalSessionsGenerated}`;
-      alert(message);
-      await fetchCohorts();
-      await fetchOverview();
-    } catch (err: any) {
-      alert(err.message || 'Failed to generate sessions');
-    } finally {
-      setRegeneratingSessions(null);
-    }
-  };
 
   const updateMentorshipStatus = async (id: string, status: string) => {
     try {
@@ -834,17 +808,7 @@ export default function AdminDashboardPage() {
         {/* Create Cohort and Create Event - Side by Side */}
         <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
-                <button
-                  onClick={generateAllSessions}
-                  disabled={regeneratingSessions === 'all'}
-                  className="rounded-lg bg-orange-500/20 px-3 py-1.5 text-xs font-medium text-orange-400 transition hover:bg-orange-500/30 disabled:opacity-50"
-                  title="Generate sessions for all existing cohorts"
-                >
-                  {regeneratingSessions === 'all' ? 'Generating...' : 'Generate All Sessions'}
-                </button>
-              </div>
+              <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
               <div className="mt-3 space-y-3">
                 <input
                   className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
