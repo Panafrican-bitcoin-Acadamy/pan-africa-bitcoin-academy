@@ -4,11 +4,13 @@ import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 
 /**
  * Get sessions for a student (filtered by their enrolled cohorts)
- * GET /api/sessions?email=student@example.com
+ * GET /api/sessions?studentId=uuid OR ?cohortId=uuid OR ?email=student@example.com OR ?admin=true
  */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const studentId = searchParams.get('studentId');
+    const cohortId = searchParams.get('cohortId');
     const email = searchParams.get('email');
     const isAdmin = searchParams.get('admin') === 'true';
 
@@ -120,14 +122,6 @@ export async function GET(request: NextRequest) {
       .from('cohort_enrollment')
       .select('cohort_id')
       .eq('student_id', profileIdToUse);
-
-    if (enrollmentError) {
-      console.error('Error fetching enrollments:', enrollmentError);
-      return NextResponse.json(
-        { error: 'Failed to fetch enrollments', details: enrollmentError.message },
-        { status: 500 }
-      );
-    }
 
     if (enrollmentError) {
       console.error('Error fetching enrollments:', enrollmentError);
