@@ -759,7 +759,11 @@ export default function ApplyPage() {
                     onClick={() => {
                       const input = document.getElementById('birthDate') as HTMLInputElement;
                       if (input) {
-                        input.showPicker?.() || input.focus();
+                        if (typeof input.showPicker === 'function') {
+                          input.showPicker();
+                        } else {
+                          input.focus();
+                        }
                       }
                     }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-zinc-400 transition hover:bg-cyan-400/10 hover:text-cyan-300"
