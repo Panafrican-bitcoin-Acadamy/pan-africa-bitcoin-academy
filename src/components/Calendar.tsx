@@ -329,6 +329,14 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
     );
   };
 
+  // Check if a date has a session (live-class event with session- prefix)
+  const hasSession = (date: Date) => {
+    const dateEvents = getEventsForDate(date);
+    return dateEvents.some(
+      (event) => event.type === 'live-class' && event.id.startsWith('session-')
+    );
+  };
+
   // Get upcoming events (all future, sorted by date/time)
   const getUpcomingEvents = () => {
     const today = new Date();
@@ -495,18 +503,33 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   date.getDate() === selectedDate.getDate() &&
                   date.getMonth() === selectedDate.getMonth() &&
                   date.getFullYear() === selectedDate.getFullYear();
+                const hasSessionOnDate = hasSession(date);
+
+                // Build className with priority: Today > Selected > Session > Default
+                let cellClassName = 'aspect-square rounded border p-0.5 text-[10px] transition ';
+                if (isToday) {
+                  // Today with session: combine orange (today) with blue (session) accent
+                  cellClassName += hasSessionOnDate
+                    ? 'border-orange-500 bg-blue-500/30 text-orange-300 font-semibold'
+                    : 'border-orange-500 bg-orange-500/20 text-orange-300 font-semibold';
+                } else if (isSelected) {
+                  // Selected with session: combine cyan (selected) with blue (session) accent
+                  cellClassName += hasSessionOnDate
+                    ? 'border-cyan-500 bg-blue-500/30 text-cyan-300'
+                    : 'border-cyan-500 bg-cyan-500/20 text-cyan-300';
+                } else if (hasSessionOnDate) {
+                  // Session date: blue background
+                  cellClassName += 'border-blue-500/50 bg-blue-500/25 text-blue-200 hover:border-blue-500 hover:bg-blue-500/35';
+                } else {
+                  // Default
+                  cellClassName += 'border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800';
+                }
 
                 return (
                   <button
                     key={day}
                     onClick={() => setSelectedDate(date)}
-                    className={`aspect-square rounded border p-0.5 text-[10px] transition ${
-                      isToday
-                        ? 'border-orange-500 bg-orange-500/20 text-orange-300 font-semibold'
-                        : isSelected
-                        ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                        : 'border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800'
-                    }`}
+                    className={cellClassName}
                   >
                     <div className="text-center leading-none">{day}</div>
                     {dayEvents.length > 0 && (
