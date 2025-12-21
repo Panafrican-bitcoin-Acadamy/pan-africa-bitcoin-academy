@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession } from '@/hooks/useSession';
+import EmailComposer from '@/components/EmailComposer';
 
 // Lazy load heavy admin components
 const SessionExpiredModal = dynamic(() => import('@/components/SessionExpiredModal').then(mod => ({ default: mod.SessionExpiredModal })), {
@@ -1026,9 +1027,26 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Calendar - Events, Cohorts & Activities */}
-        <div className="max-w-md">
-          <Calendar cohortId={null} showCohorts={true} />
+        {/* Email Composition and Calendar - Side by Side */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Email Composition Interface */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+            <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
+            <p className="text-xs text-zinc-400 mb-3">
+              Send professional emails to students, applicants, or other recipients.
+            </p>
+            <div className="rounded-lg">
+              <EmailComposer />
+            </div>
+          </div>
+
+          {/* Calendar - Events, Cohorts & Activities */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+            <h2 className="text-lg font-semibold text-zinc-50 mb-2">Calendar</h2>
+            <div className="rounded-lg">
+              <Calendar cohortId={null} showCohorts={true} />
+            </div>
+          </div>
         </div>
 
         {/* Mentorship applications */}
