@@ -187,6 +187,7 @@ export async function POST(req: NextRequest) {
           title: achievement.title,
           icon: achievement.icon,
           unlocked,
+          satsReward: achievement.satsReward,
           earnedAt: unlockedData?.earned_at || null,
         };
       });

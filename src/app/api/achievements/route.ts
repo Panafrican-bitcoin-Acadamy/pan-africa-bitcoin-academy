@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
         icon: achievement.icon,
         description: achievement.description,
         unlocked,
+        satsReward: achievement.satsReward,
         earnedAt: unlockedData?.earned_at || null,
       };
     });

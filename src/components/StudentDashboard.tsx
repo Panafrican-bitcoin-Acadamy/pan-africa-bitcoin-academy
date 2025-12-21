@@ -1033,6 +1033,38 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       )}
                     </div>
                   </div>
+                  {/* Achievements Section */}
+                  <div>
+                    <h3 className="mb-3 text-lg font-medium text-yellow-300">Achievements</h3>
+                    <div className="space-y-2">
+                      {achievements && achievements.length > 0 ? (
+                        achievements.map((achievement: any) => (
+                          <div
+                            key={achievement.id}
+                            className={`block rounded-lg border p-4 transition ${
+                              achievement.unlocked
+                                ? 'border-yellow-500/30 bg-yellow-500/10 hover:border-yellow-500/50'
+                                : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{achievement.icon}</span>
+                                <span className={`font-medium ${achievement.unlocked ? 'text-zinc-100' : 'text-zinc-500'}`}>
+                                  {achievement.title}
+                                </span>
+                              </div>
+                              {achievement.unlocked && achievement.satsReward && (
+                                <span className="text-sm font-medium text-yellow-300">+{achievement.satsReward} sats</span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-zinc-500">No achievements unlocked yet</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
