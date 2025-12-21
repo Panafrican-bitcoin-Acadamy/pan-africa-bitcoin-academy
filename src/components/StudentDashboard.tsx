@@ -649,15 +649,29 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                         // Determine next action based on student progress
                         const pendingAssignments = assignments.filter((a: any) => a.status === 'pending' || a.status === 'overdue');
                         const nextChapter = chapters.find((ch) => !ch.isCompleted && ch.isUnlocked);
+                        
+                        // Find upcoming sessions (handle both date strings and Date objects)
+                        const now = new Date();
+                        now.setHours(0, 0, 0, 0);
                         const upcomingSessions = liveSessions.filter((s: any) => {
-                          const sessionDate = new Date(s.date);
-                          return sessionDate >= new Date();
+                          if (!s.date) return false;
+                          try {
+                            const sessionDate = typeof s.date === 'string' ? new Date(s.date) : s.date;
+                            sessionDate.setHours(0, 0, 0, 0);
+                            return sessionDate >= now;
+                          } catch {
+                            return false;
+                          }
                         }).slice(0, 1);
 
+                        // Priority: Pending assignments > Next chapter > Upcoming session > Default
                         if (pendingAssignments.length > 0) {
+                          const count = pendingAssignments.length;
                           return (
                             <p className="mt-2 text-lg text-zinc-100">
-                              Complete pending assignments to earn sats rewards.
+                              {count === 1 
+                                ? 'Complete 1 pending assignment to earn 500 sats.'
+                                : `Complete ${count} pending assignments to earn sats rewards.`}
                             </p>
                           );
                         } else if (nextChapter) {
@@ -667,9 +681,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                             </p>
                           );
                         } else if (upcomingSessions.length > 0) {
+                          const session = upcomingSessions[0];
                           return (
                             <p className="mt-2 text-lg text-zinc-100">
-                              Upcoming session: {upcomingSessions[0].title}
+                              Upcoming session: {session.title}
+                              {session.time && ` • ${session.time}`}
                             </p>
                           );
                         } else {
