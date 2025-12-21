@@ -3,7 +3,7 @@ import { isValidEmail, validateAndNormalizeEmail } from './validation';
 
 // Email configuration
 // Default sender email (Resend's test domain)
-const DEFAULT_FROM_EMAIL = 'PanAfrican Bitcoin Academy <onboarding@resend.dev>';
+const DEFAULT_FROM_EMAIL = 'PanAfrican Bitcoin Academy <noreply@panafricanbitcoin.com>';
 
 // Get FROM_EMAIL from env, but validate it
 const getFromEmail = () => {
@@ -24,9 +24,22 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.
 const getResendClient = () => {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
+    console.error('❌ RESEND_API_KEY is not set in environment variables');
     return null;
   }
-  return new Resend(apiKey);
+  if (apiKey.trim() === '') {
+    console.error('❌ RESEND_API_KEY is empty');
+    return null;
+  }
+  if (!apiKey.startsWith('re_')) {
+    console.warn('⚠️ RESEND_API_KEY does not start with "re_" - may be invalid');
+  }
+  try {
+    return new Resend(apiKey);
+  } catch (error: any) {
+    console.error('❌ Failed to initialize Resend client:', error.message);
+    return null;
+  }
 };
 
 interface ApprovalEmailData {
@@ -334,13 +347,24 @@ export async function sendRejectionEmail(data: RejectionEmailData): Promise<{ su
     if (!apiKey) {
       console.error('❌ RESEND_API_KEY not configured. Email will not be sent.');
       console.error('Please set RESEND_API_KEY in your environment variables (.env.local for local development)');
-      return { success: false, error: 'Email service not configured' };
+      console.error('Current env vars:', {
+        hasApiKey: !!process.env.RESEND_API_KEY,
+        apiKeyLength: process.env.RESEND_API_KEY?.length || 0,
+        fromEmail: process.env.RESEND_FROM_EMAIL || 'Not set',
+      });
+      return { success: false, error: 'Email service not configured - RESEND_API_KEY is missing' };
     }
     
     const resend = getResendClient();
     if (!resend) {
-      console.error('❌ Failed to initialize Resend client even though API key exists.');
-      return { success: false, error: 'Email service not configured' };
+      console.error('❌ Failed to initialize Resend client.');
+      console.error('Debug info:', {
+        apiKeyPresent: !!apiKey,
+        apiKeyLength: apiKey.length,
+        apiKeyPrefix: apiKey.substring(0, 5) + '...',
+        fromEmail: FROM_EMAIL,
+      });
+      return { success: false, error: 'Email service not configured - Failed to initialize Resend client' };
     }
 
     const { studentName, studentEmail, rejectionReason } = data;

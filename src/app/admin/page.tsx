@@ -423,19 +423,25 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleReject = async (applicationId: string) => {
-    const reason = prompt('Enter rejection reason:');
-    if (!reason) return;
+  const handleReject = async (applicationId: string, email: string) => {
+    const reason = prompt('Enter rejection reason (optional):');
+    if (reason === null) return; // User cancelled
     setProcessing(applicationId);
     try {
       const res = await fetchWithAuth('/api/applications/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId, rejectedReason: reason }),
+        body: JSON.stringify({ applicationId, rejectedReason: reason || null }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Application rejected successfully!');
+        let message = `Application for ${email} rejected successfully!`;
+        if (data.emailSent) {
+          message += `\n\n✅ Rejection email sent to ${email}`;
+        } else if (data.emailError) {
+          message += `\n\n⚠️ Email not sent: ${data.emailError}`;
+        }
+        alert(message);
         await fetchApplications();
         await fetchOverview();
       } else {
@@ -937,7 +943,7 @@ export default function AdminDashboardPage() {
                         {processing === app.id ? '...' : 'Approve'}
                       </button>
                       <button
-                        onClick={() => handleReject(app.id)}
+                        onClick={() => handleReject(app.id, app.email)}
                         disabled={processing === app.id}
                         className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
                       >
