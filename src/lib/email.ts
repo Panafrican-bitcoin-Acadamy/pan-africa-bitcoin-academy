@@ -2,7 +2,21 @@ import { Resend } from 'resend';
 import { isValidEmail, validateAndNormalizeEmail } from './validation';
 
 // Email configuration
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'PanAfrican Bitcoin Academy <onboarding@resend.dev>';
+// Default sender email (Resend's test domain)
+const DEFAULT_FROM_EMAIL = 'PanAfrican Bitcoin Academy <onboarding@resend.dev>';
+
+// Get FROM_EMAIL from env, but validate it
+const getFromEmail = () => {
+  const envFromEmail = process.env.RESEND_FROM_EMAIL;
+  // If env var is set but empty or invalid, use default
+  if (!envFromEmail || envFromEmail.trim() === '' || !envFromEmail.includes('@')) {
+    console.warn('⚠️ RESEND_FROM_EMAIL is not set or invalid. Using default:', DEFAULT_FROM_EMAIL);
+    return DEFAULT_FROM_EMAIL;
+  }
+  return envFromEmail;
+};
+
+const FROM_EMAIL = getFromEmail();
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.com';
 
 // Initialize Resend client only if API key is available
@@ -59,10 +73,16 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
       return { success: false, error: 'Student name is required' };
     }
 
-    // Validate FROM_EMAIL format
+    // Validate FROM_EMAIL format (should never fail due to getFromEmail(), but double-check)
     if (!FROM_EMAIL || !FROM_EMAIL.includes('@')) {
-      console.error('Invalid FROM_EMAIL configuration:', FROM_EMAIL);
-      return { success: false, error: 'Invalid sender email configuration' };
+      console.error('❌ Invalid FROM_EMAIL configuration:', FROM_EMAIL);
+      console.error('RESEND_FROM_EMAIL env var:', process.env.RESEND_FROM_EMAIL);
+      console.error('Please set RESEND_FROM_EMAIL in .env.local with format: "Name <email@domain.com>"');
+      return { 
+        success: false, 
+        error: 'Invalid sender email configuration',
+        errorDetails: `FROM_EMAIL value: "${FROM_EMAIL}". Please set RESEND_FROM_EMAIL in .env.local with format: "Name <email@domain.com>" or use default: "${DEFAULT_FROM_EMAIL}"`
+      };
     }
 
     // Generate password setup URL if needed

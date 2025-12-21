@@ -454,12 +454,29 @@ export default function AdminDashboardPage() {
       const configRes = await fetchWithAuth('/api/test-email');
       const configData = await configRes.json();
       if (!configData.emailConfigured) {
-        alert(`⚠️ Email service not configured!\n\nPlease set RESEND_API_KEY in your environment variables.\n\nCurrent status: ${configData.message || 'Email service unavailable'}\n\nWithout email configuration, emails cannot be sent.`);
+        let errorMsg = `⚠️ Email service not configured!\n\nPlease set RESEND_API_KEY in your environment variables.\n\n`;
+        errorMsg += `Current status: ${configData.message || 'Email service unavailable'}\n\n`;
+        
+        // Add diagnostic info if available
+        if (configData.diagnostics) {
+          errorMsg += `Diagnostics:\n`;
+          errorMsg += `- API Key Present: ${configData.diagnostics.apiKeyPresent ? 'Yes' : 'No'}\n`;
+          errorMsg += `- API Key Length: ${configData.diagnostics.apiKeyLength}\n`;
+          errorMsg += `- Environment Keys Found: ${configData.diagnostics.allEnvKeys || 'None'}\n\n`;
+        }
+        
+        errorMsg += `Setup Instructions:\n`;
+        errorMsg += `1. Create/update .env.local file in project root\n`;
+        errorMsg += `2. Add: RESEND_API_KEY=re_your_api_key_here\n`;
+        errorMsg += `3. Get API key from: https://resend.com/api-keys\n`;
+        errorMsg += `4. Restart your development server (npm run dev)`;
+        
+        alert(errorMsg);
         return;
       }
-    } catch (err) {
-      console.error('Error checking email config:', err);
-      // Continue anyway - let the API handle the error
+    } catch (err: any) {
+      alert(`❌ Error checking email config: ${err.message || 'Unknown error'}\n\nPlease ensure RESEND_API_KEY is set in .env.local and restart the server.`);
+      return;
     }
 
     if (!confirm(`Send approval emails to ${approvedCount} approved student(s)?`)) {
