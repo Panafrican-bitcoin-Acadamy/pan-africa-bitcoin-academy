@@ -130,6 +130,8 @@ export default function AdminDashboardPage() {
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
+  const [sendingEmails, setSendingEmails] = useState(false);
+  const [emailResults, setEmailResults] = useState<{ sent: number; failed: number; total: number; results: any[] } | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam'>('overview');
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
   const [loadingExamAccess, setLoadingExamAccess] = useState(false);
@@ -440,6 +442,43 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleSendEmailsToApproved = async () => {
+    const approvedCount = applications.filter((a) => a.status === 'Approved').length;
+    if (approvedCount === 0) {
+      alert('No approved applications found.');
+      return;
+    }
+
+    if (!confirm(`Send approval emails to ${approvedCount} approved student(s)?`)) {
+      return;
+    }
+
+    setSendingEmails(true);
+    setEmailResults(null);
+    try {
+      const res = await fetchWithAuth('/api/admin/email/send-approved', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailResults({
+          sent: data.sent || 0,
+          failed: data.failed || 0,
+          total: data.total || 0,
+          results: data.results || [],
+        });
+        alert(`Email sending completed!\n✅ Sent: ${data.sent}\n❌ Failed: ${data.failed}`);
+      } else {
+        alert(`Error: ${data.error || 'Failed to send emails'}`);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to send emails');
+    } finally {
+      setSendingEmails(false);
+    }
+  };
+
   const filteredApplications = useMemo(
     () =>
       applications.filter((app) => {
@@ -732,7 +771,73 @@ export default function AdminDashboardPage() {
                   </option>
                 ))}
               </select>
+              <div className="ml-auto flex gap-2">
+                <button
+                  onClick={async () => {
+                    const testEmail = prompt('Enter test email address:');
+                    if (!testEmail) return;
+                    const testName = prompt('Enter test name (optional):') || 'Test Student';
+                    try {
+                      const res = await fetch('/api/test-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          studentEmail: testEmail,
+                          studentName: testName,
+                          cohortName: 'Test Cohort',
+                          needsPasswordSetup: true,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        alert(`✅ Test email sent successfully to ${testEmail}!`);
+                      } else {
+                        alert(`❌ Error: ${data.error || 'Failed to send test email'}`);
+                      }
+                    } catch (err: any) {
+                      alert(`❌ Error: ${err.message || 'Failed to send test email'}`);
+                    }
+                  }}
+                  className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-300 transition hover:bg-cyan-500/20"
+                  title="Send a test email to verify email configuration"
+                >
+                  🧪 Test Email
+                </button>
+                <button
+                  onClick={handleSendEmailsToApproved}
+                  disabled={sendingEmails || applications.filter((a) => a.status === 'Approved').length === 0}
+                  className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-1.5 text-xs font-medium text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={`Send approval emails to ${applications.filter((a) => a.status === 'Approved').length} approved student(s)`}
+                >
+                  {sendingEmails ? 'Sending...' : '📧 Send Emails to Approved'}
+                </button>
+              </div>
             </div>
+
+            {emailResults && (
+              <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
+                <h3 className="mb-2 text-sm font-semibold text-cyan-200">Email Sending Results</h3>
+                <div className="mb-2 text-xs text-zinc-300">
+                  ✅ Sent: {emailResults.sent} | ❌ Failed: {emailResults.failed} | Total: {emailResults.total}
+                </div>
+                {emailResults.failed > 0 && emailResults.results.filter((r: any) => !r.success).length > 0 && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-xs text-red-300 hover:text-red-200">
+                      Show failed emails ({emailResults.failed})
+                    </summary>
+                    <div className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs">
+                      {emailResults.results
+                        .filter((r: any) => !r.success)
+                        .map((r: any, idx: number) => (
+                          <div key={idx} className="text-red-300">
+                            {r.name} ({r.email}): {r.error || 'Unknown error'}
+                          </div>
+                        ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            )}
 
             {filteredApplications.length === 0 && (
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center text-zinc-400">
