@@ -108,9 +108,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const hasApiKey = !!process.env.RESEND_API_KEY;
+    const apiKey = process.env.RESEND_API_KEY;
+    const hasApiKey = !!apiKey;
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'PanAfrican Bitcoin Academy <onboarding@resend.dev>';
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.com';
+
+    // Diagnostic information (only show in development for security)
+    const diagnostics = process.env.NODE_ENV === 'development' ? {
+      apiKeyPresent: hasApiKey,
+      apiKeyLength: apiKey?.length || 0,
+      apiKeyPrefix: apiKey ? apiKey.substring(0, 3) + '...' : 'N/A',
+      allEnvKeys: Object.keys(process.env).filter(key => key.includes('RESEND')).join(', ') || 'None found',
+    } : undefined;
 
     return NextResponse.json({
       emailConfigured: hasApiKey,
@@ -120,6 +129,7 @@ export async function GET(req: NextRequest) {
       message: hasApiKey
         ? '✅ Email service is configured. Use POST to send a test email.'
         : '⚠️ RESEND_API_KEY is not configured. Email sending will not work.',
+      ...(diagnostics && { diagnostics }),
     });
   } catch (error: any) {
     console.error('Error in test email GET endpoint:', error);

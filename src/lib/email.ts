@@ -28,9 +28,16 @@ interface ApprovalEmailData {
 export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ success: boolean; error?: string; errorDetails?: string }> {
   try {
     // Check if Resend API key is configured
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('❌ RESEND_API_KEY not configured. Email will not be sent.');
+      console.error('Please set RESEND_API_KEY in your environment variables (.env.local for local development)');
+      return { success: false, error: 'Email service not configured' };
+    }
+    
     const resend = getResendClient();
     if (!resend) {
-      console.warn('RESEND_API_KEY not configured. Email will not be sent.');
+      console.error('❌ Failed to initialize Resend client even though API key exists.');
       return { success: false, error: 'Email service not configured' };
     }
 
