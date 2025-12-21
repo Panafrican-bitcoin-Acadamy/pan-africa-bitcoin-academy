@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
+import { sendRejectionEmail } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,9 +65,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Send rejection email to student
+    let emailSent = false;
+    let emailError = null;
+    
+    const emailLower = application.email?.toLowerCase().trim();
+    const fullName = `${application.first_name || ''} ${application.last_name || ''}`.trim();
+    
+    // Validate email before sending
+    if (!emailLower || !emailLower.includes('@')) {
+      console.warn('Invalid email address, skipping email send:', emailLower);
+      emailError = 'Invalid email address format';
+    } else if (!fullName || fullName.trim().length === 0) {
+      console.warn('Invalid student name, skipping email send:', fullName);
+      emailError = 'Student name is missing';
+    } else {
+      // Send rejection email
+      const emailResult = await sendRejectionEmail({
+        studentName: fullName,
+        studentEmail: emailLower,
+        rejectionReason: rejectedReason || undefined,
+      });
+
+      emailSent = emailResult.success;
+      emailError = emailResult.error || null;
+      
+      if (!emailSent) {
+        console.warn('Failed to send rejection email:', {
+          error: emailError,
+          studentEmail: emailLower,
+          studentName: fullName,
+        });
+        // Don't fail the rejection if email fails - just log it
+      } else {
+        console.log('Rejection email sent successfully to:', emailLower);
+      }
+    }
+
     const res = NextResponse.json({
       success: true,
       message: 'Application rejected successfully',
+      emailSent,
+      emailError: emailError || undefined,
     });
     attachRefresh(res, session);
     return res;

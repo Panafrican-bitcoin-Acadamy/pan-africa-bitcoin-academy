@@ -398,7 +398,13 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(`Application for ${email} approved successfully!`);
+        let message = `Application for ${email} approved successfully!`;
+        if (data.emailSent) {
+          message += `\n\n✅ Approval email sent to ${email}`;
+        } else if (data.emailError) {
+          message += `\n\n⚠️ Email not sent: ${data.emailError}`;
+        }
+        alert(message);
         await fetchApplications();
         await fetchOverview();
       } else {

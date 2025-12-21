@@ -130,14 +130,18 @@ export async function GET(req: NextRequest) {
       allEnvKeys: Object.keys(process.env).filter(key => key.includes('RESEND')).join(', ') || 'None found',
     } : undefined;
 
+    const emailConfigured = hasApiKey && fromEmailValid;
+
     return NextResponse.json({
-      emailConfigured: hasApiKey,
+      emailConfigured,
       fromEmail,
       siteUrl,
       environment: process.env.NODE_ENV,
-      message: hasApiKey
-        ? '✅ Email service is configured. Use POST to send a test email.'
-        : '⚠️ RESEND_API_KEY is not configured. Email sending will not work.',
+      message: !hasApiKey
+        ? '⚠️ RESEND_API_KEY is not configured. Email sending will not work.'
+        : !fromEmailValid
+        ? '⚠️ RESEND_FROM_EMAIL is invalid. Please check your configuration.'
+        : '✅ Email service is configured. Use POST to send a test email.',
       ...(diagnostics && { diagnostics }),
     });
   } catch (error: any) {
