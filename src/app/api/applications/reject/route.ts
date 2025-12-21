@@ -91,14 +91,17 @@ export async function POST(req: NextRequest) {
       emailError = emailResult.error || null;
       
       if (!emailSent) {
-        console.warn('Failed to send rejection email:', {
+        console.error('❌ Failed to send rejection email:', {
           error: emailError,
           studentEmail: emailLower,
-          studentName: fullName,
+          ...(process.env.NODE_ENV === 'development' && {
+            studentName: fullName,
+            errorDetails: emailResult.errorDetails,
+          }),
         });
         // Don't fail the rejection if email fails - just log it
-      } else {
-        console.log('Rejection email sent successfully to:', emailLower);
+      } else if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Rejection email sent successfully to:', emailLower);
       }
     }
 

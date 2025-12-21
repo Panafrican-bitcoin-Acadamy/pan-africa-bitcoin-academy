@@ -58,7 +58,9 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.error('❌ RESEND_API_KEY not configured. Email will not be sent.');
-      console.error('Please set RESEND_API_KEY in your environment variables (.env.local for local development)');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Please set RESEND_API_KEY in your environment variables (.env.local for local development)');
+      }
       return { success: false, error: 'Email service not configured' };
     }
     
@@ -261,13 +263,15 @@ Visit: ${SITE_URL}
     `.trim();
 
     // Send email via Resend
-    console.log('Sending approval email:', {
-      to: normalizedEmail,
-      from: FROM_EMAIL,
-      studentName,
-      cohortName: cohortName || 'None',
-      needsPasswordSetup,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Sending approval email:', {
+        to: normalizedEmail,
+        from: FROM_EMAIL,
+        studentName,
+        cohortName: cohortName || 'None',
+        needsPasswordSetup,
+      });
+    }
 
     const { data: emailResponse, error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -280,13 +284,13 @@ Visit: ${SITE_URL}
     if (error) {
       console.error('❌ Error sending approval email:', {
         error: error.message,
-        errorName: error.name,
-        errorCode: (error as any).code,
-        errorDetails: JSON.stringify(error, null, 2),
         to: normalizedEmail,
-        from: FROM_EMAIL,
-        apiKeyPresent: !!process.env.RESEND_API_KEY,
-        apiKeyLength: process.env.RESEND_API_KEY?.length || 0,
+        ...(process.env.NODE_ENV === 'development' && {
+          errorName: error.name,
+          errorCode: (error as any).code,
+          errorDetails: JSON.stringify(error, null, 2),
+          from: FROM_EMAIL,
+        }),
       });
       return { 
         success: false, 
@@ -296,32 +300,33 @@ Visit: ${SITE_URL}
     }
 
     if (!emailResponse || !emailResponse.id) {
-      console.error('⚠️ Email sent but no response ID received:', {
-        emailResponse,
-        to: normalizedEmail,
-        from: FROM_EMAIL,
-      });
+      console.error('⚠️ Email sent but no response ID received for:', normalizedEmail);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Response:', emailResponse);
+      }
       return { 
         success: false, 
         error: 'Email sent but no confirmation received from email service' 
       };
     }
 
-    console.log('✅ Approval email sent successfully:', {
-      emailId: emailResponse.id,
-      to: normalizedEmail,
-      from: FROM_EMAIL,
-      studentName,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Approval email sent successfully:', {
+        emailId: emailResponse.id,
+        to: normalizedEmail,
+      });
+    }
     return { success: true };
   } catch (error: any) {
     console.error('❌ Exception in sendApprovalEmail:', {
       error: error.message,
-      errorName: error.name,
-      errorStack: error.stack,
-      errorDetails: JSON.stringify(error, null, 2),
       studentEmail: data.studentEmail,
-      apiKeyPresent: !!process.env.RESEND_API_KEY,
+      ...(process.env.NODE_ENV === 'development' && {
+        errorName: error.name,
+        errorStack: error.stack,
+        errorDetails: JSON.stringify(error, null, 2),
+        apiKeyPresent: !!process.env.RESEND_API_KEY,
+      }),
     });
     return { 
       success: false, 
@@ -346,24 +351,22 @@ export async function sendRejectionEmail(data: RejectionEmailData): Promise<{ su
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.error('❌ RESEND_API_KEY not configured. Email will not be sent.');
-      console.error('Please set RESEND_API_KEY in your environment variables (.env.local for local development)');
-      console.error('Current env vars:', {
-        hasApiKey: !!process.env.RESEND_API_KEY,
-        apiKeyLength: process.env.RESEND_API_KEY?.length || 0,
-        fromEmail: process.env.RESEND_FROM_EMAIL || 'Not set',
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Please set RESEND_API_KEY in your environment variables (.env.local for local development)');
+      }
       return { success: false, error: 'Email service not configured - RESEND_API_KEY is missing' };
     }
     
     const resend = getResendClient();
     if (!resend) {
       console.error('❌ Failed to initialize Resend client.');
-      console.error('Debug info:', {
-        apiKeyPresent: !!apiKey,
-        apiKeyLength: apiKey.length,
-        apiKeyPrefix: apiKey.substring(0, 5) + '...',
-        fromEmail: FROM_EMAIL,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Debug info:', {
+          apiKeyPresent: !!apiKey,
+          apiKeyLength: apiKey.length,
+          apiKeyPrefix: apiKey.substring(0, 5) + '...',
+        });
+      }
       return { success: false, error: 'Email service not configured - Failed to initialize Resend client' };
     }
 
@@ -517,12 +520,13 @@ Visit: ${SITE_URL}
     `.trim();
 
     // Send email via Resend
-    console.log('Sending rejection email:', {
-      to: normalizedEmail,
-      from: FROM_EMAIL,
-      studentName,
-      hasReason: !!rejectionReason,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 Sending rejection email:', {
+        to: normalizedEmail,
+        studentName,
+        hasReason: !!rejectionReason,
+      });
+    }
 
     const { data: emailResponse, error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -535,11 +539,13 @@ Visit: ${SITE_URL}
     if (error) {
       console.error('❌ Error sending rejection email:', {
         error: error.message,
-        errorName: error.name,
-        errorCode: (error as any).code,
-        errorDetails: JSON.stringify(error, null, 2),
         to: normalizedEmail,
-        from: FROM_EMAIL,
+        ...(process.env.NODE_ENV === 'development' && {
+          errorName: error.name,
+          errorCode: (error as any).code,
+          errorDetails: JSON.stringify(error, null, 2),
+          from: FROM_EMAIL,
+        }),
       });
       return { 
         success: false, 
@@ -549,32 +555,33 @@ Visit: ${SITE_URL}
     }
 
     if (!emailResponse || !emailResponse.id) {
-      console.error('⚠️ Email sent but no response ID received:', {
-        emailResponse,
-        to: normalizedEmail,
-        from: FROM_EMAIL,
-      });
+      console.error('⚠️ Email sent but no response ID received for:', normalizedEmail);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Response:', emailResponse);
+      }
       return { 
         success: false, 
         error: 'Email sent but no confirmation received from email service' 
       };
     }
 
-    console.log('✅ Rejection email sent successfully:', {
-      emailId: emailResponse.id,
-      to: normalizedEmail,
-      from: FROM_EMAIL,
-      studentName,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Rejection email sent successfully:', {
+        emailId: emailResponse.id,
+        to: normalizedEmail,
+      });
+    }
     return { success: true };
   } catch (error: any) {
     console.error('❌ Exception in sendRejectionEmail:', {
       error: error.message,
-      errorName: error.name,
-      errorStack: error.stack,
-      errorDetails: JSON.stringify(error, null, 2),
       studentEmail: data.studentEmail,
-      apiKeyPresent: !!process.env.RESEND_API_KEY,
+      ...(process.env.NODE_ENV === 'development' && {
+        errorName: error.name,
+        errorStack: error.stack,
+        errorDetails: JSON.stringify(error, null, 2),
+        apiKeyPresent: !!process.env.RESEND_API_KEY,
+      }),
     });
     return { 
       success: false, 

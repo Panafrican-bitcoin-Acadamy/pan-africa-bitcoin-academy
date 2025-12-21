@@ -405,12 +405,9 @@ export async function POST(req: NextRequest) {
       }
 
       // Send approval email
-      console.log('📧 Attempting to send approval email:', {
-        studentEmail: emailLower,
-        studentName: fullName,
-        cohortName: cohortName || 'None',
-        needsPasswordSetup: !existingProfile || existingProfile.status === 'Pending Password Setup',
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 Attempting to send approval email to:', emailLower);
+      }
 
       const emailResult = await sendApprovalEmail({
         studentName: fullName,
@@ -425,13 +422,15 @@ export async function POST(req: NextRequest) {
       if (!emailSent) {
         console.error('❌ Failed to send approval email:', {
           error: emailError,
-          errorDetails: emailResult.errorDetails,
           studentEmail: emailLower,
-          studentName: fullName,
-          cohortName: cohortName || 'None',
+          ...(process.env.NODE_ENV === 'development' && {
+            errorDetails: emailResult.errorDetails,
+            studentName: fullName,
+            cohortName: cohortName || 'None',
+          }),
         });
         // Don't fail the approval if email fails - just log it
-      } else {
+      } else if (process.env.NODE_ENV === 'development') {
         console.log('✅ Approval email sent successfully to:', emailLower);
       }
     }

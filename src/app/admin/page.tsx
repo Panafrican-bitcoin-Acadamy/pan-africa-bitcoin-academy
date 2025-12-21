@@ -411,7 +411,9 @@ export default function AdminDashboardPage() {
           }
         }
         alert(message);
-        console.log('Approval response:', data); // Log full response for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Approval response:', data);
+        }
         await fetchApplications();
         await fetchOverview();
       } else {
