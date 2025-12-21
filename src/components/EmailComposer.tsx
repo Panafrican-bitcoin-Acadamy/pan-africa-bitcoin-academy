@@ -273,14 +273,21 @@ export default function EmailComposer({
   };
 
   // Check if we can send - body can be in state or contentEditable div
-  const getBodyContent = () => {
-    // First check the contentEditable div directly
+  const hasBodyContent = () => {
+    // First check the contentEditable div directly (most reliable)
     if (bodyRef.current) {
       const textContent = bodyRef.current.innerText || bodyRef.current.textContent || '';
-      const htmlContent = bodyRef.current.innerHTML || '';
-      // If there's text content or HTML content (not just empty tags), we have content
-      if (textContent.trim().length > 0 || (htmlContent.trim().length > 0 && htmlContent !== '<br>' && htmlContent !== '<div><br></div>')) {
+      if (textContent.trim().length > 0) {
         return true;
+      }
+      // Also check HTML content
+      const htmlContent = bodyRef.current.innerHTML || '';
+      if (htmlContent.trim().length > 0) {
+        // Check if it's not just empty tags
+        const textOnly = htmlContent.replace(/<[^>]*>/g, '').trim();
+        if (textOnly.length > 0) {
+          return true;
+        }
       }
     }
     // Fallback to state
@@ -292,7 +299,7 @@ export default function EmailComposer({
     return false;
   };
 
-  const canSend = toRecipients.length > 0 && subject.trim().length > 0 && getBodyContent();
+  const canSend = toRecipients.length > 0 && subject.trim().length > 0 && hasBodyContent();
 
   return (
     <div className={`${isFullscreen ? 'fixed inset-0 z-50' : 'relative'} bg-zinc-900 rounded-lg shadow-lg border border-zinc-700 flex flex-col`}>
