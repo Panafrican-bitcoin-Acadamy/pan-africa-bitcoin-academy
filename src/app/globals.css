@@ -71,7 +71,7 @@ body::after {
   transform: translateZ(0);
 }
 
-/* Dark overlay to make background darker while keeping text visible */
+/* Gradient overlay: darker on left (text area), brighter on right (image area) */
 body::before {
   content: '';
   position: fixed;
@@ -79,7 +79,13 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, rgba(2, 6, 23, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
+  background: linear-gradient(
+    to right,
+    rgba(2, 6, 23, 0.7) 0%,
+    rgba(2, 6, 23, 0.5) 30%,
+    rgba(0, 0, 0, 0.4) 60%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
   pointer-events: none;
   z-index: -1;
 }

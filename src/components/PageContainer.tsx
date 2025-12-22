@@ -10,7 +10,7 @@ export function PageContainer({ title, subtitle, children }: PageContainerProps)
   return (
     <div className="relative flex min-h-screen flex-col bg-transparent text-zinc-50 bitcoin-bg-pattern">
       <div className="bitcoin-network-lines" />
-      <main className="bg-grid relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8">
+      <main className="bg-grid relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden pl-8 pr-4 pb-12 pt-8 sm:pl-12 sm:pr-6 sm:pb-16 sm:pt-10 lg:pl-16 lg:pr-8">
         {/* Bitcoin-themed background elements */}
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-40 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
