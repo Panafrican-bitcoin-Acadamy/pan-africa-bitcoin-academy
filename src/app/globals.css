@@ -19,7 +19,7 @@
 body {
   background: 
     /* Bitcoin-themed background image */
-    url('/images/bitcoin-bg.png') center center / cover no-repeat fixed,
+    url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed,
     /* Fallback gradient */
     radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
   color: var(--foreground);
