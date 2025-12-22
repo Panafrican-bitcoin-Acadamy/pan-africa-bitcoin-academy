@@ -286,7 +286,7 @@ export default async function Home() {
 
       {/* Content Sections - Full Width */}
       <div className="relative z-10 w-full bg-black/60 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl pl-16 pr-4 py-20 sm:pl-20 sm:pr-6 lg:pl-24 lg:pr-8 xl:pl-28 2xl:pl-32">
+        <div className="mx-auto max-w-7xl pl-20 pr-4 py-20 sm:pl-24 sm:pr-6 lg:pl-28 lg:pr-8 xl:pl-32 2xl:pl-36">
           {/* 2. How It Started Section */}
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">
@@ -348,7 +348,7 @@ export default async function Home() {
                   </Link>
                 </div>
                 <div className="flex items-center justify-start">
-                  <div className="relative flex h-64 w-64 items-center justify-center -ml-8 sm:-ml-12 lg:-ml-16">
+                  <div className="relative flex h-64 w-64 items-center justify-center -ml-12 sm:-ml-16 lg:-ml-20 xl:-ml-24">
                     {/* Logo image with SEO optimization - positioned further left */}
                     <Image
                       src="/images/logo_3.png"
