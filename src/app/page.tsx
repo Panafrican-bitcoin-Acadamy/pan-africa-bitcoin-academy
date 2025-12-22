@@ -286,7 +286,7 @@ export default async function Home() {
 
       {/* Content Sections - Full Width */}
       <div className="relative z-10 w-full bg-black/60 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl pl-12 pr-4 py-20 sm:pl-16 sm:pr-6 lg:pl-20 lg:pr-8 xl:pl-24">
+        <div className="mx-auto max-w-7xl pl-16 pr-4 py-20 sm:pl-20 sm:pr-6 lg:pl-24 lg:pr-8 xl:pl-28 2xl:pl-32">
           {/* 2. How It Started Section */}
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">
