@@ -31,7 +31,7 @@ html::before {
   right: 0;
   bottom: 0;
   background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
-  filter: blur(5px);
+  filter: blur(1px);
   z-index: -2;
   pointer-events: none;
 }
@@ -54,7 +54,7 @@ body::after {
   right: 0;
   bottom: 0;
   background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
-  filter: blur(5px);
+  filter: blur(1px);
   z-index: -2;
   pointer-events: none;
 }
