@@ -200,7 +200,7 @@ export default async function Home() {
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Full-page Hero Section */}
-      <section className="relative flex min-h-screen flex-col items-start justify-center pl-8 sm:pl-12 lg:pl-16 xl:pl-20 2xl:pl-24 text-left">
+      <section className="relative flex min-h-screen flex-col items-start justify-center px-8 sm:px-12 lg:px-16 xl:px-20 text-left">
         {/* Background effects */}
         <div className="absolute inset-0 bitcoin-network-lines" />
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
@@ -217,7 +217,7 @@ export default async function Home() {
           <p className="max-w-2xl text-base text-zinc-400 sm:text-lg">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
           </p>
-          <div className="flex flex-col items-start justify-start gap-4 sm:flex-row">
+          <div className="flex flex-col items-start gap-4 sm:flex-row">
             <Link
               href="/apply"
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-8 py-4 text-base font-semibold text-black shadow-[0_0_40px_rgba(249,115,22,0.8)] transition hover:brightness-110"
@@ -286,7 +286,7 @@ export default async function Home() {
 
       {/* Content Sections - Full Width */}
       <div className="relative z-10 w-full bg-black/60 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl pl-28 pr-4 py-20 sm:pl-32 sm:pr-6 lg:pl-36 lg:pr-8 xl:pl-40 2xl:pl-44">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           {/* 2. How It Started Section */}
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">
@@ -347,9 +347,9 @@ export default async function Home() {
                     👉 Read Our Mission
                   </Link>
                 </div>
-                <div className="flex items-center justify-start">
-                  <div className="relative flex h-64 w-64 items-center justify-center -ml-12 sm:-ml-16 lg:-ml-20 xl:-ml-24">
-                    {/* Logo image with SEO optimization - positioned further left */}
+                <div className="flex items-center justify-center">
+                  <div className="relative flex h-64 w-64 items-center justify-center">
+                    {/* Logo image with SEO optimization */}
                     <Image
                       src="/images/logo_3.png"
                       alt="Pan-African Bitcoin Academy Logo - First Eritrea Based Bitcoin Academy"
