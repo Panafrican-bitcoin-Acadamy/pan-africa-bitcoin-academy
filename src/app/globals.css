@@ -24,6 +24,20 @@ html {
   min-height: 100vh;
 }
 
+/* Blurred background image layer */
+html::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
+  filter: blur(8px);
+  z-index: -2;
+  pointer-events: none;
+}
+
 body {
   background: 
     /* Bitcoin-themed background image */
@@ -35,6 +49,20 @@ body {
   position: relative;
   overflow-x: hidden;
   min-height: 100vh;
+}
+
+/* Blurred background image layer for body */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
+  filter: blur(8px);
+  z-index: -2;
+  pointer-events: none;
 }
 
 /* Overlay to ensure text readability - lighter overlay to show background */
@@ -56,8 +84,8 @@ body::before {
   z-index: 0;
 }
 
-/* Bitcoin B Logo Background */
-body::after {
+/* Bitcoin B Logo Background - moved to separate element since body::after is now used for blur */
+.bitcoin-logo-bg {
   content: '';
   position: fixed;
   top: 10%;
