@@ -8,7 +8,7 @@ type PageContainerProps = {
 
 export function PageContainer({ title, subtitle, children }: PageContainerProps) {
   return (
-    <div className="relative flex min-h-screen flex-col bg-black/80 text-zinc-50 bitcoin-bg-pattern">
+    <div className="relative flex min-h-screen flex-col bg-transparent text-zinc-50 bitcoin-bg-pattern">
       <div className="bitcoin-network-lines" />
       <main className="bg-grid relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8">
         {/* Bitcoin-themed background elements */}

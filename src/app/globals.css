@@ -17,12 +17,18 @@
 }
 
 body {
-  background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
+  background: 
+    /* Bitcoin-themed background image */
+    url('/images/bitcoin-bg.png') center center / cover no-repeat fixed,
+    /* Fallback gradient */
+    radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
   color: var(--foreground);
   position: relative;
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
+/* Overlay to ensure text readability */
 body::before {
   content: '';
   position: fixed;
@@ -31,9 +37,12 @@ body::before {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 20% 30%, rgba(249, 115, 22, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+    /* Dark overlay for readability */
+    linear-gradient(to bottom, rgba(2, 6, 23, 0.85) 0%, rgba(0, 0, 0, 0.9) 100%),
+    /* Subtle color overlays to enhance the Bitcoin theme */
+    radial-gradient(circle at 20% 30%, rgba(249, 115, 22, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
