@@ -213,10 +213,10 @@ export default async function Home() {
           <p className="text-2xl font-semibold text-orange-400 sm:text-3xl lg:text-4xl">
             Turning the Africa orange
           </p>
-          <p className="mx-auto max-w-2xl text-base text-zinc-400 sm:text-lg">
+          <p className="max-w-2xl text-base text-zinc-400 sm:text-lg">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
           </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-start">
             <Link
               href="/apply"
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-8 py-4 text-base font-semibold text-black shadow-[0_0_40px_rgba(249,115,22,0.8)] transition hover:brightness-110"
