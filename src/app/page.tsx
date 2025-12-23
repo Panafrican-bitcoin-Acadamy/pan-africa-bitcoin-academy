@@ -201,7 +201,11 @@ export default async function Home() {
     <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Full-page Hero Section */}
       <section className="relative flex min-h-screen flex-col items-center justify-center px-4">
-        {/* Hero Content - Positioned far right for visibility */}
+        {/* Background effects */}
+        <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
+        
+        {/* Hero Content - Positioned far right for visibility, away from background glow */}
         <div className="relative z-10 ml-auto mr-4 max-w-4xl space-y-8 pr-2 text-left sm:mr-8 sm:pr-4 lg:mr-16 lg:pr-6 xl:mr-24 xl:pr-8 2xl:mr-32 2xl:pr-10">
           <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
             Scaling Bitcoin adoption
@@ -225,6 +229,56 @@ export default async function Home() {
             >
               👉 Explore Learning Paths
             </Link>
+          </div>
+        </div>
+
+        {/* World Map Visual - Pixelated style */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 overflow-hidden">
+          <div className="relative h-full w-full">
+            {/* Pixelated world map effect - deterministic pattern */}
+            <div className="absolute inset-0 opacity-30" style={{ display: 'grid', gridTemplateColumns: 'repeat(40, 1fr)', gap: '2px' }}>
+              {Array.from({ length: 800 }).map((_, i) => {
+                // Deterministic pattern based on index
+                const x = i % 40;
+                const y = Math.floor(i / 40);
+                const seed = (x * 7 + y * 13) % 100;
+                const isLand = seed < 30; // 30% land
+                const isGlow = seed > 95; // 5% glow points
+                return (
+                  <div
+                    key={i}
+                    className={`h-2 w-2 ${
+                      isGlow
+                        ? "bg-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.8)]"
+                        : isLand
+                        ? "bg-orange-500/60"
+                        : "bg-transparent"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+            {/* Glowing points overlay */}
+            <div className="absolute inset-0">
+              {[
+                { x: "15%", y: "30%" },
+                { x: "35%", y: "25%" },
+                { x: "50%", y: "35%" },
+                { x: "70%", y: "40%" },
+                { x: "25%", y: "60%" },
+                { x: "60%", y: "65%" },
+              ].map((point, i) => (
+                <div
+                  key={i}
+                  className="absolute h-3 w-3 rounded-full bg-orange-400 shadow-[0_0_20px_rgba(249,115,22,1)]"
+                  style={{
+                    left: point.x,
+                    top: point.y,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -20,26 +20,6 @@ html {
   background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
   background-color: #020617;
   min-height: 100vh;
-  /* Optimize background image loading */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-}
-
-/* Blurred background image layer - optimized */
-html::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
-  filter: blur(1px);
-  z-index: -2;
-  pointer-events: none;
-  /* Optimize rendering */
-  will-change: transform;
-  transform: translateZ(0);
 }
 
 body {
@@ -49,12 +29,9 @@ body {
   position: relative;
   overflow-x: hidden;
   min-height: 100vh;
-  /* Optimize background image loading */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
 }
 
-/* Blurred background image layer for body - optimized */
+/* Blurred background image layer - optimized */
 body::after {
   content: '';
   position: fixed;
@@ -66,7 +43,6 @@ body::after {
   filter: blur(1px);
   z-index: -2;
   pointer-events: none;
-  /* Optimize rendering */
   will-change: transform;
   transform: translateZ(0);
 }
@@ -108,10 +84,6 @@ a {
   background-size: 32px 32px;
 }
 
-.bitcoin-bg-pattern {
-  position: relative;
-  overflow: hidden;
-}
 
 .grid-cols-40 {
   grid-template-columns: repeat(40, minmax(0, 1fr));
