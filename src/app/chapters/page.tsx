@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BitcoinIcon, WalletIcon, LightningIcon, BookIcon, ToolIcon, BlockchainIcon, KeysIcon, UTXOIcon, TransactionIcon, MiningIcon } from "@/components/BitcoinIcons";
 import { useAuth } from "@/hooks/useAuth";
+import { useSession } from "@/hooks/useSession";
 import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
@@ -481,14 +482,19 @@ export default function ChaptersPage() {
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
   const [chapterStatus, setChapterStatus] = useState<Record<number, { isUnlocked: boolean; isCompleted: boolean }>>({});
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { isAuthenticated, profile, loading } = useAuth();
+  const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
   const router = useRouter();
 
   useEffect(() => {
     const fetchChapterStatus = async () => {
-      if (loading) return;
+      if (loading || adminLoading) return;
       
-      if (!isAuthenticated || !profile) {
+      // If admin is logged in, use admin email; otherwise use profile email if authenticated
+      const emailToUse = isAdminAuth && adminEmail ? adminEmail : (isAuthenticated && profile ? profile.email : null);
+      
+      if (!emailToUse) {
         setLoadingStatus(false);
         return;
       }
@@ -497,10 +503,13 @@ export default function ChaptersPage() {
         const response = await fetch('/api/chapters/unlock-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: profile.email }),
+          body: JSON.stringify({ email: emailToUse }),
         });
 
         const data = await response.json();
+        if (data.isAdmin) {
+          setIsAdmin(true);
+        }
         if (data.chapters) {
           setChapterStatus(data.chapters);
         }
@@ -512,9 +521,11 @@ export default function ChaptersPage() {
     };
 
     fetchChapterStatus();
-  }, [isAuthenticated, profile, loading]);
+  }, [isAuthenticated, profile, loading, isAdminAuth, adminEmail, adminLoading]);
 
   const isChapterUnlocked = (chapterNumber: number): boolean => {
+    // Admins have access to all chapters
+    if (isAdmin || isAdminAuth) return true;
     if (!isAuthenticated || !profile) return false;
     // Chapter 1 is always unlocked for enrolled students
     if (chapterNumber === 1) return true;
@@ -527,6 +538,12 @@ export default function ChaptersPage() {
   };
 
   const handleChapterClick = (chapterNumber: number, chapterTitle: string) => {
+    // Admins can always access, so if admin is logged in and chapter is unlocked, navigate directly
+    if (isAdminAuth && isChapterUnlocked(chapterNumber)) {
+      router.push(`/chapters/${chapterTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`);
+      return;
+    }
+
     if (!isAuthenticated || !profile) {
       router.push('/apply?redirect=/chapters');
       return;
@@ -1384,14 +1401,14 @@ export default function ChaptersPage() {
                       )}
 
                       {/* View Chapter Button */}
-                      {isAuthenticated && profile && isChapterUnlocked(chapter.number) ? (
+                      {((isAuthenticated && profile && isChapterUnlocked(chapter.number)) || (isAdminAuth && isChapterUnlocked(chapter.number))) ? (
                         <Link
                           href={`/chapters/${generateSlug(chapter.title)}`}
                           className="block w-full rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-4 py-2 text-center text-sm font-semibold text-black transition hover:brightness-110"
                         >
                           {isChapterCompleted(chapter.number) ? 'Review Chapter →' : 'View Chapter →'}
                         </Link>
-                      ) : isAuthenticated && profile ? (
+                      ) : (isAuthenticated && profile) ? (
                         <button
                           onClick={() => handleChapterClick(chapter.number, chapter.title)}
                           className="block w-full rounded-lg bg-zinc-700/50 px-4 py-2 text-center text-sm font-semibold text-zinc-400 cursor-not-allowed"

@@ -11,7 +11,7 @@ const roles = [
     id: "mentor",
     title: "Mentor",
     description: "Support students during cohorts, lead Q&A sessions, help review assignments, and provide guidance on Bitcoin, Lightning, or sovereignty.",
-    time: "1–3 hours/week",
+    time: "1–3 hours/month",
     icon: "👥",
   },
   {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/hooks/useSession';
 
 interface ChapterAccessCheckProps {
   chapterNumber: number;
@@ -12,14 +13,46 @@ interface ChapterAccessCheckProps {
 
 export function ChapterAccessCheck({ chapterNumber, chapterSlug, children }: ChapterAccessCheckProps) {
   const { isAuthenticated, profile, loading } = useAuth();
+  const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
-      if (loading) return; // Wait for auth to load
+      if (loading || adminLoading) return; // Wait for auth to load
 
+      // If admin is logged in, grant immediate access
+      if (isAdminAuth && adminEmail) {
+        try {
+          const response = await fetch('/api/chapters/check-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: adminEmail,
+              chapterNumber,
+              chapterSlug,
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.isAdmin && data.hasAccess) {
+              setHasAccess(true);
+              setChecking(false);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Error checking admin access:', error);
+          // Even on error, if admin session exists, allow access
+          setHasAccess(true);
+          setChecking(false);
+          return;
+        }
+      }
+
+      // Regular user check
       if (!isAuthenticated || !profile) {
         // Not authenticated - redirect to apply
         router.replace('/apply?redirect=/chapters/' + chapterSlug);
@@ -78,7 +111,7 @@ export function ChapterAccessCheck({ chapterNumber, chapterSlug, children }: Cha
     };
 
     checkAccess();
-  }, [isAuthenticated, profile, loading, chapterNumber, chapterSlug, router]);
+  }, [isAuthenticated, profile, loading, isAdminAuth, adminEmail, adminLoading, chapterNumber, chapterSlug, router]);
 
   if (loading || checking) {
     return (
