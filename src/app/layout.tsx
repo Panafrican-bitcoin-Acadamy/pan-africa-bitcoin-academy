@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { ResourceHints } from "@/components/ResourceHints";
 import { StructuredData } from "@/components/StructuredData";
 import { organizationStructuredData, websiteStructuredData } from "@/lib/structured-data";
+import { AdminModeBadgeWrapper } from "@/components/AdminModeBadgeWrapper";
 
 // Lazy load Navbar and Footer to reduce initial bundle size
 const Navbar = dynamic(() => import("@/components/Navbar").then(mod => ({ default: mod.Navbar })), {
@@ -13,11 +14,6 @@ const Navbar = dynamic(() => import("@/components/Navbar").then(mod => ({ defaul
 
 const Footer = dynamic(() => import("@/components/Footer").then(mod => ({ default: mod.Footer })), {
   ssr: true,
-});
-
-// AdminModeBadge is client-side only (uses hooks) so no SSR
-const AdminModeBadge = dynamic(() => import("@/components/AdminModeBadge").then(mod => ({ default: mod.AdminModeBadge })), {
-  ssr: false,
 });
 
 const geistSans = Geist({
@@ -192,7 +188,7 @@ export default function RootLayout({
         <StructuredData data={websiteStructuredData} />
         
         {/* Admin Mode Badge - shows on all pages when admin is logged in */}
-        <AdminModeBadge />
+        <AdminModeBadgeWrapper />
         
         <div className="flex min-h-screen flex-col">
           <Navbar />
