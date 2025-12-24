@@ -136,6 +136,9 @@ export default function AdminDashboardPage() {
   const [loadingExamAccess, setLoadingExamAccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [expandedApplicationId, setExpandedApplicationId] = useState<string | null>(null);
+  const [applicationDetails, setApplicationDetails] = useState<Record<string, any>>({});
+  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   const [isPending, startTransition] = useTransition();
 
   const [eventForm, setEventForm] = useState({
@@ -465,6 +468,37 @@ export default function AdminDashboardPage() {
     } finally {
       // Clear processing state immediately
       setProcessing(null);
+    }
+  };
+
+  const fetchApplicationDetails = async (applicationId: string) => {
+    if (applicationDetails[applicationId]) {
+      // Already loaded, just toggle
+      return;
+    }
+
+    setLoadingDetails((prev) => ({ ...prev, [applicationId]: true }));
+    try {
+      const res = await fetchWithAuth(`/api/admin/applications/${applicationId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setApplicationDetails((prev) => ({ ...prev, [applicationId]: data }));
+      } else {
+        console.error('Failed to fetch application details:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching application details:', error);
+    } finally {
+      setLoadingDetails((prev) => ({ ...prev, [applicationId]: false }));
+    }
+  };
+
+  const toggleApplicationDetails = (applicationId: string) => {
+    if (expandedApplicationId === applicationId) {
+      setExpandedApplicationId(null);
+    } else {
+      setExpandedApplicationId(applicationId);
+      fetchApplicationDetails(applicationId);
     }
   };
 
@@ -864,22 +898,256 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {app.status.toLowerCase() === 'pending' && (
-                    <div className="flex gap-1.5 mt-2">
-                      <button
-                        onClick={() => handleApprove(app.id, app.email)}
-                        disabled={processing === app.id}
-                        className="flex-1 rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
-                      >
-                        {processing === app.id ? '...' : 'Approve'}
-                      </button>
-                      <button
-                        onClick={() => handleReject(app.id, app.email)}
-                        disabled={processing === app.id}
-                        className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
-                      >
-                        Reject
-                      </button>
+                  <div className="flex gap-1.5 mt-2">
+                    <button
+                      onClick={() => toggleApplicationDetails(app.id)}
+                      disabled={loadingDetails[app.id]}
+                      className="flex-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-400 transition hover:bg-blue-500/30 disabled:opacity-50"
+                    >
+                      {loadingDetails[app.id] ? 'Loading...' : expandedApplicationId === app.id ? 'Hide Details' : 'View Details'}
+                    </button>
+                    {app.status.toLowerCase() === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => handleApprove(app.id, app.email)}
+                          disabled={processing === app.id}
+                          className="flex-1 rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                        >
+                          {processing === app.id ? '...' : 'Approve'}
+                        </button>
+                        <button
+                          onClick={() => handleReject(app.id, app.email)}
+                          disabled={processing === app.id}
+                          className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Expanded Details Dropdown */}
+                  {expandedApplicationId === app.id && applicationDetails[app.id] && (
+                    <div className="mt-3 pt-3 border-t border-zinc-800 space-y-3 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-zinc-500">Application ID:</span>
+                          <p className="text-zinc-200 font-mono text-[10px] break-all">{app.id}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Status:</span>
+                          <p className="text-zinc-200">{app.status}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">First Name:</span>
+                          <p className="text-zinc-200">{app.first_name}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Last Name:</span>
+                          <p className="text-zinc-200">{app.last_name}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Email:</span>
+                          <p className="text-zinc-200 break-all">{app.email}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Phone:</span>
+                          <p className="text-zinc-200">{app.phone || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Country:</span>
+                          <p className="text-zinc-200">{app.country || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">City:</span>
+                          <p className="text-zinc-200">{app.city || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Experience Level:</span>
+                          <p className="text-zinc-200">{app.experience_level || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Preferred Language:</span>
+                          <p className="text-zinc-200">{app.preferred_language || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Birth Date:</span>
+                          <p className="text-zinc-200">{app.birth_date ? new Date(app.birth_date).toLocaleDateString() : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Created At:</span>
+                          <p className="text-zinc-200">{new Date(app.created_at).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      {/* Profile Data */}
+                      {applicationDetails[app.id].profile && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Profile Data</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-zinc-500">Profile ID:</span>
+                              <p className="text-zinc-200 font-mono text-[10px] break-all">{applicationDetails[app.id].profile.id}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Student ID:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].profile.student_id || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Name:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].profile.name}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Status:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].profile.status}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Phone:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].profile.phone || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Country:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].profile.country || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">City:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].profile.city || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Created At:</span>
+                              <p className="text-zinc-200">{new Date(applicationDetails[app.id].profile.created_at).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Student Data */}
+                      {applicationDetails[app.id].student && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Student Data</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-zinc-500">Student ID:</span>
+                              <p className="text-zinc-200 font-mono text-[10px] break-all">{applicationDetails[app.id].student.id}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Status:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].student.status || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Created At:</span>
+                              <p className="text-zinc-200">{new Date(applicationDetails[app.id].student.created_at).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Cohort Enrollments */}
+                      {applicationDetails[app.id].cohortEnrollments && applicationDetails[app.id].cohortEnrollments.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Cohort Enrollments</h4>
+                          {applicationDetails[app.id].cohortEnrollments.map((enrollment: any, idx: number) => (
+                            <div key={idx} className="mb-2 p-2 bg-zinc-800/50 rounded">
+                              <p className="text-zinc-200 font-medium">{enrollment.cohorts?.name || 'Unknown Cohort'}</p>
+                              <p className="text-zinc-400 text-[10px]">Enrolled: {new Date(enrollment.enrolled_at).toLocaleString()}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Chapter Progress */}
+                      {applicationDetails[app.id].chapterProgress && applicationDetails[app.id].chapterProgress.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Chapter Progress</h4>
+                          <div className="grid grid-cols-3 gap-1 text-[10px]">
+                            {applicationDetails[app.id].chapterProgress.map((progress: any) => (
+                              <div key={progress.chapter_number} className="p-1 bg-zinc-800/50 rounded">
+                                <span className="text-zinc-400">Ch {progress.chapter_number}:</span>
+                                <span className={progress.is_completed ? 'text-green-400' : progress.is_unlocked ? 'text-yellow-400' : 'text-zinc-500'}>
+                                  {progress.is_completed ? '✓' : progress.is_unlocked ? '○' : '✗'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Attendance */}
+                      {applicationDetails[app.id].attendance && applicationDetails[app.id].attendance.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Attendance ({applicationDetails[app.id].attendance.length} records)</h4>
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {applicationDetails[app.id].attendance.slice(0, 5).map((att: any, idx: number) => (
+                              <div key={idx} className="text-[10px] p-1 bg-zinc-800/50 rounded">
+                                <span className="text-zinc-200">{att.events?.name || 'Unknown Event'}</span>
+                                <span className="text-zinc-400 ml-2">{att.duration_minutes} min</span>
+                              </div>
+                            ))}
+                            {applicationDetails[app.id].attendance.length > 5 && (
+                              <p className="text-zinc-400 text-[10px]">+{applicationDetails[app.id].attendance.length - 5} more</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sats Rewards */}
+                      {applicationDetails[app.id].satsRewards && applicationDetails[app.id].satsRewards.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Sats Rewards ({applicationDetails[app.id].satsRewards.length} records)</h4>
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {applicationDetails[app.id].satsRewards.slice(0, 5).map((reward: any, idx: number) => (
+                              <div key={idx} className="text-[10px] p-1 bg-zinc-800/50 rounded">
+                                <span className="text-zinc-200">{reward.amount} sats</span>
+                                <span className="text-zinc-400 ml-2">{reward.reward_type}</span>
+                                <span className="text-zinc-500 ml-2">{new Date(reward.created_at).toLocaleDateString()}</span>
+                              </div>
+                            ))}
+                            {applicationDetails[app.id].satsRewards.length > 5 && (
+                              <p className="text-zinc-400 text-[10px]">+{applicationDetails[app.id].satsRewards.length - 5} more</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Achievements */}
+                      {applicationDetails[app.id].achievements && applicationDetails[app.id].achievements.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Achievements ({applicationDetails[app.id].achievements.length})</h4>
+                          <div className="space-y-1">
+                            {applicationDetails[app.id].achievements.map((achievement: any, idx: number) => (
+                              <div key={idx} className="text-[10px] p-1 bg-zinc-800/50 rounded">
+                                <span className="text-zinc-200 font-medium">{achievement.badge_name}</span>
+                                <span className="text-zinc-400 ml-2">{achievement.points} pts</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Preferred Cohort */}
+                      {applicationDetails[app.id].preferredCohort && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Preferred Cohort</h4>
+                          <div className="grid grid-cols-2 gap-2 text-[10px]">
+                            <div>
+                              <span className="text-zinc-500">Name:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.name}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Level:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.level || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Start Date:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.start_date ? new Date(applicationDetails[app.id].preferredCohort.start_date).toLocaleDateString() : 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Status:</span>
+                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.status || 'N/A'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
