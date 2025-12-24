@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     // Check cohort availability before applying - use admin client
     if (cohortId) {
-      const [{ data: cohort, error: cohortError }, { count }] = await Promise.all([
+      const [{ data: cohort, error: cohortError }, { count: enrolledCount }, { count: pendingCount }] = await Promise.all([
         supabaseAdmin
           .from('cohorts')
           .select('id, seats_total')
@@ -141,6 +141,11 @@ export async function POST(req: NextRequest) {
           .from('cohort_enrollment')
           .select('*', { count: 'exact', head: true })
           .eq('cohort_id', cohortId),
+        supabaseAdmin
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('preferred_cohort_id', cohortId)
+          .eq('status', 'Pending'),
       ]);
 
       if (cohortError) {
@@ -152,8 +157,11 @@ export async function POST(req: NextRequest) {
       }
 
       const seatsTotal = cohort?.seats_total || 0;
-      const enrolled = count || 0;
-      if (seatsTotal > 0 && enrolled >= seatsTotal) {
+      const enrolled = enrolledCount || 0;
+      const pending = pendingCount || 0;
+      
+      // Check if cohort is full: enrolled + pending applications >= total seats
+      if (seatsTotal > 0 && (enrolled + pending) >= seatsTotal) {
         return NextResponse.json(
           { error: 'This cohort is full. Please select another cohort.' },
           { status: 409 }
