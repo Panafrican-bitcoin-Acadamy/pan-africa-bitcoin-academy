@@ -283,6 +283,49 @@ export async function POST(req: NextRequest) {
 
     // STEP 4: Enroll in Cohort (if cohort_id exists in students record)
     if (studentRecord.cohort_id) {
+      // Check if cohort has available seats before enrolling
+      const [{ data: cohort, error: cohortError }, { count: enrolledCount }, { count: pendingCount }] = await Promise.all([
+        supabaseAdmin
+          .from('cohorts')
+          .select('id, name, seats_total')
+          .eq('id', studentRecord.cohort_id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from('cohort_enrollment')
+          .select('*', { count: 'exact', head: true })
+          .eq('cohort_id', studentRecord.cohort_id),
+        supabaseAdmin
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('preferred_cohort_id', studentRecord.cohort_id)
+          .eq('status', 'Pending'),
+      ]);
+
+      if (cohortError) {
+        console.error('Error checking cohort availability:', cohortError);
+        return NextResponse.json(
+          { error: 'Failed to validate cohort availability' },
+          { status: 500 }
+        );
+      }
+
+      const seatsTotal = cohort?.seats_total || 0;
+      const enrolled = enrolledCount || 0;
+      const pending = pendingCount || 0;
+
+      // Check if cohort is full before enrolling (exclude this application from pending count)
+      // Since we're about to approve it, we should check: enrolled + (pending - 1) >= seatsTotal
+      // But to be safe, we check enrolled + pending >= seatsTotal (this application is still pending)
+      if (seatsTotal > 0 && (enrolled + pending) >= seatsTotal) {
+        return NextResponse.json(
+          { 
+            error: `Cannot approve application: Cohort "${cohort?.name || 'Unknown'}" is full (${enrolled} enrolled + ${pending} pending = ${enrolled + pending} / ${seatsTotal} seats)`,
+            cohortFull: true,
+          },
+          { status: 409 }
+        );
+      }
+
       // Check if already enrolled
       // Use the same ID (studentIdentifier) - this is applications.id, profiles.id, and students.id
       const { data: existingEnrollment } = await supabaseAdmin
