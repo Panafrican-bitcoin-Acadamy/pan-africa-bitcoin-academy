@@ -8,7 +8,7 @@ import { attachRefresh, requireAdmin } from '@/lib/adminSession';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = requireAdmin(req);
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const applicationId = params.id;
+    const { id: applicationId } = await params;
 
     if (!applicationId) {
       return NextResponse.json(
