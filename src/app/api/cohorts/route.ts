@@ -30,21 +30,23 @@ export async function GET() {
 
         const enrolled = enrolledCount || 0;
 
-        // Count applications (Pending + Approved) for this cohort
-        const { count: applicationsCount, error: applicationsError } = await supabase
+        // Count only Pending applications (Approved applications are already counted as enrolled)
+        // When an application is approved, it creates a cohort_enrollment record, so we don't want to double count
+        const { count: pendingApplicationsCount, error: applicationsError } = await supabase
           .from('applications')
           .select('*', { count: 'exact', head: true })
           .eq('preferred_cohort_id', cohort.id)
-          .in('status', ['Pending', 'Approved']);
+          .eq('status', 'Pending');
 
         if (applicationsError) {
           console.error(`Error counting applications for cohort ${cohort.id}:`, applicationsError);
         }
 
-        const applications = applicationsCount || 0;
+        const pendingApplications = pendingApplicationsCount || 0;
 
-        // Calculate available seats: total - enrolled - applications (pending + approved)
-        const available = Math.max(0, (cohort.seats_total || 0) - enrolled - applications);
+        // Calculate available seats: total - enrolled - pending applications
+        // (Approved applications are already included in enrolled count)
+        const available = Math.max(0, (cohort.seats_total || 0) - enrolled - pendingApplications);
 
         // Get sessions count from cohorts.sessions column
         const sessions = cohort.sessions || 0;
