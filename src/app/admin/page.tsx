@@ -1261,11 +1261,12 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredAndSortedProgress.map((p) => (
+                {filteredAndSortedProgress.map((p, index) => (
                   <tr 
                     key={p.id} 
                     className={`border-b border-zinc-800 ${cohortFilter && p.cohortId === cohortFilter ? 'bg-zinc-800/30' : ''}`}
                   >
+                    <td className="px-3 py-2 text-zinc-400">{index + 1}</td>
                     <td className="px-3 py-2 text-zinc-50">{p.name}</td>
                     <td className="px-3 py-2 text-zinc-400">{p.email}</td>
                     <td className="px-3 py-2 text-zinc-400">
