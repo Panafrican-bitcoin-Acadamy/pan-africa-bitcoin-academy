@@ -678,6 +678,15 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               points={10}
               rewardSats={50}
             />
+          ) : chapter.slug === 'problems-with-traditional-fiat-money' ? (
+            <ChapterAssignment
+              assignmentId="33333333-3333-4333-8333-333333333333"
+              title="Assignment: Inflation Reality Check"
+              question="Compare the price of one everyday item (bread, sugar, fuel) today vs 10–20 years ago."
+              description="Research and compare prices to understand inflation's impact on purchasing power."
+              points={10}
+              rewardSats={75}
+            />
           ) : chapter.slug === 'verify-for-yourself-block-explorers-nodes' ? (
             <div className="mt-3">
               <Link
