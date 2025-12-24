@@ -309,22 +309,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const seatsTotal = cohort?.seats_total || 0;
-      const enrolled = enrolledCount || 0;
-      const pending = pendingCount || 0;
-
-      // Check if cohort is full before enrolling (exclude this application from pending count)
-      // Since we're about to approve it, we should check: enrolled + (pending - 1) >= seatsTotal
-      // But to be safe, we check enrolled + pending >= seatsTotal (this application is still pending)
-      if (seatsTotal > 0 && (enrolled + pending) >= seatsTotal) {
-        return NextResponse.json(
-          { 
-            error: `Cannot approve application: Cohort "${cohort?.name || 'Unknown'}" is full (${enrolled} enrolled + ${pending} pending = ${enrolled + pending} / ${seatsTotal} seats)`,
-            cohortFull: true,
-          },
-          { status: 409 }
-        );
-      }
+      // Seat availability check removed - admins can approve applications even if cohort is full
 
       // Check if already enrolled
       // Use the same ID (studentIdentifier) - this is applications.id, profiles.id, and students.id
