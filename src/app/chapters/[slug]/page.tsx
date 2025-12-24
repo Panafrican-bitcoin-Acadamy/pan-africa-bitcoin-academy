@@ -742,6 +742,15 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             <Chapter18Assignment
               assignmentId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
             />
+          ) : chapter.slug === 'why-bitcoin-philosophy-adoption' ? (
+            <ChapterAssignment
+              assignmentId="cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+              title="Assignment: Code or State"
+              question="What do you think of Bitcoin?"
+              description="Reflect on your perspective of Bitcoin after completing the course."
+              points={10}
+              rewardSats={100}
+            />
           ) : chapter.slug === 'verify-for-yourself-block-explorers-nodes' ? (
             <div className="mt-3">
               <Link
