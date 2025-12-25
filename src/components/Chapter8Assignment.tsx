@@ -32,8 +32,7 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
   const [seedPhrase, setSeedPhrase] = useState<string[]>([]);
   const [studentInputs, setStudentInputs] = useState<string[]>(Array(12).fill(''));
   const [reflection, setReflection] = useState('');
-  const [showSeed, setShowSeed] = useState(true);
-  const [revealedIndex, setRevealedIndex] = useState<number | null>(null);
+  const [seedSaved, setSeedSaved] = useState(false);
   
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -250,14 +249,17 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
               <h4 className="text-base font-semibold text-zinc-200">Step 1: Your Seed Phrase (Write this down securely!)</h4>
               <button
                 type="button"
-                onClick={generateNewSeed}
+                onClick={() => {
+                  generateNewSeed();
+                  setSeedSaved(false);
+                }}
                 className="text-xs text-cyan-400 hover:text-cyan-300 underline"
               >
                 Generate New Seed
               </button>
             </div>
             <p className="text-xs text-zinc-400">Write down these 12 words in order. You'll need to restore them in Step 2.</p>
-            {showSeed ? (
+            {!seedSaved ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-3 bg-zinc-950 rounded border border-zinc-700">
                 {seedPhrase.map((word, index) => (
                   <div key={index} className="flex items-center gap-2">
@@ -276,22 +278,27 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
                 ))}
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => setShowSeed(!showSeed)}
-              className="text-xs text-yellow-400 hover:text-yellow-300 underline"
-            >
-              {showSeed ? 'Hide Seed Phrase' : 'Show Seed Phrase'}
-            </button>
-            {!showSeed && (
-              <p className="text-xs text-red-400">⚠️ Seed phrase hidden. Make sure you wrote it down before proceeding!</p>
+            {!seedSaved && (
+              <button
+                type="button"
+                onClick={() => setSeedSaved(true)}
+                className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110"
+              >
+                Saved
+              </button>
+            )}
+            {seedSaved && (
+              <div className="p-3 bg-green-900/20 border border-green-800/50 rounded-lg">
+                <p className="text-xs text-green-300">✓ Seed phrase saved! Now proceed to Step 2.</p>
+              </div>
             )}
           </div>
 
-          {/* Step 2: Restore seed phrase */}
-          <div className="space-y-3 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
-            <h4 className="text-base font-semibold text-zinc-200">Step 2: Restore Your Seed Phrase</h4>
-            <p className="text-xs text-zinc-400">Enter the 12 words in order. Fields turn green if correct, red if incorrect.</p>
+          {/* Step 2: Restore seed phrase - only show if seed is saved */}
+          {seedSaved && (
+            <div className="space-y-3 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
+              <h4 className="text-base font-semibold text-zinc-200">Step 2: Restore Your Seed Phrase</h4>
+              <p className="text-xs text-zinc-400">Enter the 12 words in order. Fields turn green if correct, red if incorrect.</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Array.from({ length: 12 }).map((_, index) => (
                 <div key={index}>
@@ -324,8 +331,7 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
               onChange={(e) => setReflection(e.target.value)}
               rows={6}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition resize-none"
-              placeholder="Write your reflection about creating the wallet, backing up the seed, and restoring it..."
-              required
+              placeholder="Write your reflection about creating the wallet, backing up the seed, and restoring it... (optional)"
             />
           </div>
 
