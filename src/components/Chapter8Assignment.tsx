@@ -323,7 +323,7 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
                     value={studentInputs[index]}
                     onChange={(e) => handleInputChange(index, e.target.value)}
                     className={getInputClassName(index)}
-                    placeholder={`Word ${index + 1}`}
+                    placeholder="Enter word"
                     required
                   />
                 </div>
