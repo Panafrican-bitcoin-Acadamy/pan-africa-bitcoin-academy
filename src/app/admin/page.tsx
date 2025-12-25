@@ -139,6 +139,11 @@ export default function AdminDashboardPage() {
   const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'graded'>('submitted');
   const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
   const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
+  const [blogSubmissions, setBlogSubmissions] = useState<any[]>([]);
+  const [loadingBlogSubmissions, setLoadingBlogSubmissions] = useState(false);
+  const [blogFilter, setBlogFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [processingBlog, setProcessingBlog] = useState<string | null>(null);
+  const [expandedBlogId, setExpandedBlogId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [expandedApplicationId, setExpandedApplicationId] = useState<string | null>(null);
@@ -212,6 +217,7 @@ export default function AdminDashboardPage() {
         fetchMentorships(),
         fetchExamAccess(),
         fetchSubmissions(),
+        fetchBlogSubmissions(),
       ]);
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
@@ -324,6 +330,70 @@ export default function AdminDashboardPage() {
       alert(err.message || 'Failed to grade submission');
     } finally {
       setGradingSubmission(null);
+    }
+  };
+
+  const fetchBlogSubmissions = async () => {
+    if (!admin) return;
+    try {
+      setLoadingBlogSubmissions(true);
+      const res = await fetchWithAuth(`/api/admin/blog?type=submissions&status=${blogFilter === 'all' ? '' : blogFilter}`);
+      const data = await res.json();
+      if (data.submissions) setBlogSubmissions(data.submissions);
+    } catch (err) {
+      console.error('Error fetching blog submissions:', err);
+    } finally {
+      setLoadingBlogSubmissions(false);
+    }
+  };
+
+  const handleApproveBlog = async (submissionId: string) => {
+    if (!admin) return;
+    setProcessingBlog(submissionId);
+    try {
+      const res = await fetchWithAuth('/api/admin/blog/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId,
+          isFeatured: false,
+          isBlogOfMonth: false,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to approve blog');
+      alert(data.message || 'Blog approved and published!');
+      await fetchBlogSubmissions();
+    } catch (err: any) {
+      alert(err.message || 'Failed to approve blog');
+    } finally {
+      setProcessingBlog(null);
+    }
+  };
+
+  const handleRejectBlog = async (submissionId: string, reason?: string) => {
+    if (!admin) return;
+    const rejectionReason = reason || prompt('Reason for rejection (optional):');
+    if (rejectionReason === null) return; // User cancelled
+    
+    setProcessingBlog(submissionId);
+    try {
+      const res = await fetchWithAuth('/api/admin/blog/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId,
+          rejectionReason: rejectionReason || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reject blog');
+      alert(data.message || 'Blog rejected.');
+      await fetchBlogSubmissions();
+    } catch (err: any) {
+      alert(err.message || 'Failed to reject blog');
+    } finally {
+      setProcessingBlog(null);
     }
   };
 
@@ -1771,6 +1841,155 @@ export default function AdminDashboardPage() {
                     </div>
                   );
                 })}
+            </div>
+          )}
+        </div>
+
+        {/* Blog Submissions Section */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
+            <div className="flex gap-2">
+              {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => {
+                    setBlogFilter(f);
+                    setTimeout(() => fetchBlogSubmissions(), 0);
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    blogFilter === f
+                      ? 'bg-purple-400 text-black'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  }`}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)} (
+                  {blogSubmissions.filter((s) => {
+                    if (f === 'all') return true;
+                    return s.status === f;
+                  }).length})
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-sm text-zinc-400 mb-6">
+            Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
+          </p>
+
+          {loadingBlogSubmissions ? (
+            <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
+          ) : blogSubmissions.filter((s) => {
+              if (blogFilter === 'all') return true;
+              return s.status === blogFilter;
+            }).length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">No blog submissions found.</div>
+          ) : (
+            <div className="space-y-4">
+              {blogSubmissions
+                .filter((s) => {
+                  if (blogFilter === 'all') return true;
+                  return s.status === blogFilter;
+                })
+                .map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                  >
+                    <div className="mb-3 flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-zinc-50">
+                          {submission.title}
+                        </h3>
+                        <p className="text-xs text-zinc-400 mt-1">
+                          {submission.author_name} • {submission.author_email}
+                          {submission.cohort && ` • ${submission.cohort}`}
+                        </p>
+                        <p className="text-xs text-purple-400 mt-1">
+                          Category: {submission.category}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full border px-2 py-1 text-xs ${
+                          submission.status === 'approved'
+                            ? 'text-green-400 bg-green-500/10 border-green-500/30'
+                            : submission.status === 'rejected'
+                            ? 'text-red-400 bg-red-500/10 border-red-500/30'
+                            : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                        }`}
+                      >
+                        {submission.status === 'approved'
+                          ? 'Approved'
+                          : submission.status === 'rejected'
+                          ? 'Rejected'
+                          : 'Pending Review'}
+                      </span>
+                    </div>
+
+                    <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                      <p className="text-xs font-medium text-zinc-300 mb-1">Content Preview:</p>
+                      <p className="text-sm text-zinc-200 line-clamp-3">
+                        {submission.content.substring(0, 300)}...
+                      </p>
+                    </div>
+
+                    {expandedBlogId === submission.id && (
+                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                        <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
+                        <p className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
+                          {submission.content}
+                        </p>
+                      </div>
+                    )}
+
+                    {submission.rejection_reason && (
+                      <div className="mb-3 rounded bg-red-500/10 border border-red-500/30 p-3">
+                        <p className="text-xs font-medium text-red-300 mb-1">Rejection Reason:</p>
+                        <p className="text-sm text-red-200">{submission.rejection_reason}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+                      <span>Submitted: {new Date(submission.created_at).toLocaleString()}</span>
+                      {submission.reviewed_at && (
+                        <span>• Reviewed: {new Date(submission.reviewed_at).toLocaleString()}</span>
+                      )}
+                    </div>
+
+                    {submission.status === 'pending' && (
+                      <div className="mt-4 space-y-2">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setExpandedBlogId(expandedBlogId === submission.id ? null : submission.id)}
+                            className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30"
+                          >
+                            {expandedBlogId === submission.id ? 'Hide Full Content' : 'View Full Content'}
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleApproveBlog(submission.id)}
+                            disabled={processingBlog === submission.id}
+                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                          >
+                            {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              const reason = prompt('Rejection reason (optional):');
+                              if (reason !== null) {
+                                handleRejectBlog(submission.id, reason || undefined);
+                              }
+                            }}
+                            disabled={processingBlog === submission.id}
+                            className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                          >
+                            {processingBlog === submission.id ? 'Processing...' : '✗ Reject'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
             </div>
           )}
         </div>
