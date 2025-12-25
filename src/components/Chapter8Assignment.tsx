@@ -329,10 +329,11 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-zinc-500 mt-2">
-              {studentInputs.filter((input, index) => input && input === seedPhrase[index]).length} / 12 words correct
-            </p>
-          </div>
+              <p className="text-xs text-zinc-500 mt-2">
+                {studentInputs.filter((input, index) => input && input === seedPhrase[index]).length} / 12 words correct
+              </p>
+            </div>
+          )}
 
           {/* Reflection */}
           <div>
