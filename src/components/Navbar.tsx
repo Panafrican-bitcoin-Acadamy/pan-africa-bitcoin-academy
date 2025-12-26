@@ -160,12 +160,6 @@ export function Navbar() {
             About
           </Link>
           <Link
-            href="/contact"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Contact
-          </Link>
-          <Link
             href="/donate"
             className="rounded-full bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
           >
@@ -466,13 +460,6 @@ export function Navbar() {
               className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
             >
               About
-            </Link>
-            <Link
-              href="/contact"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-            >
-              Contact
             </Link>
             <Link
               href="/donate"

@@ -78,9 +78,9 @@ const contactMethods = [
     icon: Twitter,
     links: [
       {
-        label: 'Follow @joieama',
-        url: 'https://twitter.com/joieama',
-        value: '@joieama',
+        label: 'Follow @panafricanbtc',
+        url: 'https://x.com/panafricanbtc',
+        value: '@panafricanbtc',
       },
     ],
     color: 'text-cyan-400',
