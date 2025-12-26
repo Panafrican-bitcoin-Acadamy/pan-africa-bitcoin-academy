@@ -1216,9 +1216,9 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-semibold text-zinc-100">Bitcoin Dev Kampala Meetup</h3>
-                  <span className="text-sm text-zinc-400">March 28, 2025</span>
+                  <span className="text-sm text-zinc-400">{meetupDateString}</span>
                 </div>
-                <p className="text-sm text-zinc-400">Local meetup for Bitcoin developers in Uganda</p>
+                <p className="text-sm text-zinc-400">Local meetup for Bitcoin developers in Uganda (Last Friday of every month)</p>
               </div>
             </div>
           </section>
