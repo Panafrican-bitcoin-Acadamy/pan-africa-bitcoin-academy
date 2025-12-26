@@ -25,56 +25,12 @@ interface DeveloperEvent {
   recordingLink?: string;
 }
 
-// Function to get the last Friday of a given month
-function getLastFridayOfMonth(year: number, month: number): Date {
-  // month is 0-indexed in JavaScript Date (0 = January, 11 = December)
-  // Get the last day of the month
-  const lastDay = new Date(year, month + 1, 0);
-  const dayOfWeek = lastDay.getDay(); // 0 = Sunday, 5 = Friday
-  
-  // Calculate how many days to go back to reach Friday
-  // If last day is Friday (5), go back 0 days
-  // If last day is Saturday (6), go back 1 day
-  // If last day is Sunday (0), go back 2 days
-  // etc.
-  let daysToSubtract = (dayOfWeek + 2) % 7; // Formula to get days back to Friday
-  
-  const lastFriday = new Date(year, month + 1, 0);
-  lastFriday.setDate(lastFriday.getDate() - daysToSubtract);
-  
-  return lastFriday;
-}
-
-// Function to format date as "Month Day, Year"
-function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
-}
-
 export default function DeveloperHubPage() {
   const [resources, setResources] = useState<DeveloperResource[]>([]);
   const [events, setEvents] = useState<DeveloperEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [mentors, setMentors] = useState<any[]>([]);
   const [loadingMentors, setLoadingMentors] = useState(true);
-  
-  // Calculate the last Friday of the current month (or next month if we've passed it)
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  
-  // Get last Friday of current month
-  const lastFridayCurrentMonth = getLastFridayOfMonth(currentYear, currentMonth);
-  
-  // If we've passed the last Friday of this month, use next month
-  const meetupDate = lastFridayCurrentMonth < now 
-    ? getLastFridayOfMonth(currentYear, currentMonth + 1)
-    : lastFridayCurrentMonth;
-  
-  const meetupDateString = formatDate(meetupDate);
 
   useEffect(() => {
     // TODO: Fetch resources and events from Supabase
@@ -1216,9 +1172,9 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-semibold text-zinc-100">Bitcoin Dev Kampala Meetup</h3>
-                  <span className="text-sm text-zinc-400">{meetupDateString}</span>
+                  <span className="text-sm text-zinc-400">Last Friday of every month</span>
                 </div>
-                <p className="text-sm text-zinc-400">Local meetup for Bitcoin developers in Uganda (Last Friday of every month)</p>
+                <p className="text-sm text-zinc-400">Local meetup for Bitcoin developers in Uganda</p>
               </div>
             </div>
           </section>
