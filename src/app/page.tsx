@@ -214,18 +214,18 @@ export default async function Home() {
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
-        {/* Hero Content - Positioned far right, close to edge */}
-        <div className="relative z-10 ml-auto mr-4 max-w-4xl space-y-8 pr-2 text-center sm:mr-8 sm:pr-4 lg:mr-16 lg:pr-6 xl:mr-24 xl:pr-8 2xl:mr-32 2xl:pr-12">
+        {/* Hero Content - Positioned on the left, especially on desktop */}
+        <div className="relative z-10 mr-auto ml-4 max-w-4xl space-y-8 pl-2 text-center sm:ml-8 sm:pl-4 lg:ml-16 lg:pl-6 xl:ml-24 xl:pl-8 2xl:ml-32 2xl:pl-12 lg:text-left">
           <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
             Scaling Bitcoin adoption
           </h1>
           <p className="text-2xl font-semibold text-orange-400 sm:text-3xl lg:text-4xl">
             Turning the Africa orange
           </p>
-          <p className="mx-auto max-w-2xl text-base text-zinc-400 sm:text-lg">
+          <p className="mx-auto max-w-2xl text-base text-zinc-400 sm:text-lg lg:mx-0">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
           </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row lg:items-start lg:justify-start">
             <Link
               href="/apply"
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-8 py-4 text-base font-semibold text-black shadow-[0_0_40px_rgba(249,115,22,0.8)] transition hover:brightness-110"
