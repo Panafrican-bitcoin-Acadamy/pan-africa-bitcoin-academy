@@ -214,9 +214,9 @@ export default async function Home() {
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
-        {/* Hero Content - Aligned to left column */}
-        <div className="relative z-10 w-full max-w-7xl mx-auto">
-          <div className="max-w-4xl space-y-8 text-center lg:text-left">
+        {/* Hero Content - Aligned to the rightmost column */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="ml-auto max-w-4xl space-y-8 text-center">
           <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
             Scaling Bitcoin adoption
           </h1>
@@ -239,7 +239,6 @@ export default async function Home() {
             >
               👉 Explore Learning Paths
             </Link>
-          </div>
           </div>
         </div>
 
