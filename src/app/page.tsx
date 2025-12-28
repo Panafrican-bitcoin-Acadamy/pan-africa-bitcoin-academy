@@ -239,7 +239,6 @@ export default async function Home() {
               👉 Explore Learning Paths
             </Link>
           </div>
-          </div>
         </div>
 
         {/* World Map Visual - Pixelated style */}
