@@ -214,8 +214,9 @@ export default async function Home() {
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
-        {/* Hero Content - Positioned on the right, especially on desktop */}
-        <div className="relative z-10 ml-auto mr-4 max-w-4xl space-y-8 pr-2 text-center sm:mr-8 sm:pr-4 lg:mr-20 lg:pr-10 xl:mr-28 xl:pr-12 2xl:mr-36 2xl:pr-16">
+        {/* Hero Content - Aligned to left column */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto">
+          <div className="max-w-4xl space-y-8 text-center lg:text-left">
           <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
             Scaling Bitcoin adoption
           </h1>
