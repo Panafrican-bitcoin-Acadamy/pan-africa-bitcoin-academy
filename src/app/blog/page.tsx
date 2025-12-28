@@ -315,7 +315,6 @@ export default function BlogPage() {
             <AnimatedSection animation="slideRight">
               <div className="mb-16 rounded-xl border-2 border-orange-400/50 bg-gradient-to-br from-orange-500/10 to-cyan-500/10 p-8 shadow-[0_0_50px_rgba(249,115,22,0.3)]">
               <div className="mb-4 flex items-center gap-2">
-                <span className="text-2xl">⭐</span>
                 <span className="rounded-full border border-orange-400/30 bg-orange-500/20 px-3 py-1 text-xs font-bold text-orange-300">
                   BLOG OF THE MONTH
                 </span>

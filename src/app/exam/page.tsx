@@ -239,7 +239,7 @@ export default function ExamPage() {
             
             {!accessCheck.chapter21Completed && (
               <div className="bg-zinc-900/50 rounded-lg p-4 mb-4">
-                <p className="text-sm text-zinc-300 mb-2">📚 Complete Chapter 21 first</p>
+                <p className="text-sm text-zinc-300 mb-2">Complete Chapter 21 first</p>
                 <button
                   onClick={() => router.push('/chapters')}
                   className="text-orange-500 hover:text-orange-400 underline"

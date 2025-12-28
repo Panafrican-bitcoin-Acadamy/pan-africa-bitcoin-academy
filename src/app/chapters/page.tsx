@@ -604,17 +604,14 @@ export default function ChaptersPage() {
               <div className="mx-auto mt-8 max-w-4xl">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-xl sm:text-2xl lg:text-3xl font-semibold">
                   <div className="flex items-center gap-3 text-cyan-300">
-                    <span className="text-3xl">📚</span>
                     <span>Bitcoin Foundations</span>
                   </div>
                   <span className="text-orange-400 text-2xl sm:text-3xl">→</span>
                   <div className="flex items-center gap-3 text-orange-300">
-                    <span className="text-3xl">⚡</span>
                     <span>Lightning</span>
                   </div>
                   <span className="text-purple-400 text-2xl sm:text-3xl">→</span>
                   <div className="flex items-center gap-3 text-purple-300">
-                    <span className="text-3xl">👑</span>
                     <span>Sovereignty</span>
                   </div>
                 </div>
@@ -1390,7 +1387,7 @@ export default function ChaptersPage() {
                             <p className="ml-4 text-zinc-400">{chapter.video}</p>
                           </div>
                           <div>
-                            <p className="mb-1 font-medium text-cyan-200">🧪 Quiz:</p>
+                            <p className="mb-1 font-medium text-cyan-200">Quiz:</p>
                             <p className="ml-4 text-zinc-400">{chapter.quiz}</p>
                           </div>
                         </div>
@@ -1460,7 +1457,6 @@ export default function ChaptersPage() {
                   key={idx}
                   className="flex items-center gap-2 rounded-lg border border-purple-400/20 bg-purple-500/10 px-4 py-2"
                 >
-                  <span className="text-purple-300">✨</span>
                   <span className="text-sm text-zinc-300">{item}</span>
                 </div>
               ))}

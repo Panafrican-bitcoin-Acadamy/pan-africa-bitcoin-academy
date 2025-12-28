@@ -21,7 +21,7 @@ export function AdminModeBadge() {
 
   return (
     <div className="fixed top-4 right-4 z-[9999] bg-orange-500/20 border border-orange-500/50 rounded-lg px-4 py-2 shadow-lg backdrop-blur-sm">
-      <p className="text-orange-400 text-sm font-semibold">👑 Admin Mode</p>
+      <p className="text-orange-400 text-sm font-semibold">Admin Mode</p>
     </div>
   );
 }

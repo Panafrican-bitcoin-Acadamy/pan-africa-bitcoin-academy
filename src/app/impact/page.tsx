@@ -171,7 +171,7 @@ export default function ImpactPage() {
   const displayMetrics = metrics
     ? [
         { label: "Total Students Trained", value: metrics.totalStudentsTrained.toString(), icon: "👥" },
-        { label: "Cohorts Completed", value: metrics.cohortsCompleted.toString(), icon: "📚" },
+        { label: "Cohorts Completed", value: metrics.cohortsCompleted.toString(), icon: "" },
         { label: "Countries Reached", value: metrics.countriesReached.toString(), icon: "🌍" },
         // Lightning Transactions - paused
         { label: "Assignments Submitted", value: metrics.assignmentsSubmitted.toString(), icon: "📝" },
@@ -217,7 +217,7 @@ export default function ImpactPage() {
               // Show placeholder with 0 values while loading
               [
                 { label: "Total Students Trained", icon: "👥", value: "0" },
-                { label: "Cohorts Completed", icon: "📚", value: "0" },
+                { label: "Cohorts Completed", icon: "", value: "0" },
                 { label: "Countries Reached", icon: "🌍", value: "0" },
                 { label: "Assignments Submitted", icon: "📝", value: "0" },
                 { label: "Teaching Hours", icon: "⏰", value: "0" },
