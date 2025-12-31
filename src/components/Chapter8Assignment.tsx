@@ -59,31 +59,41 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
     try {
       setLoading(true);
       const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
-      if (!email) return;
+      if (!email) {
+        setLoading(false);
+        return;
+      }
       
       const response = await fetch(`/api/assignments?email=${encodeURIComponent(email)}`);
-      if (response.ok) {
-        const data = await response.json();
-        const thisAssignment = data.assignments?.find((a: any) => a.id === assignmentId);
-        if (thisAssignment?.submission) {
-          setSubmissionStatus(thisAssignment.submission);
-          setSubmitted(true);
-          if (thisAssignment.submission.answer) {
-            try {
-              const answerData = JSON.parse(thisAssignment.submission.answer);
-              if (answerData.seedPhrase) {
-                setSeedPhrase(answerData.seedPhrase);
-                setStudentInputs(answerData.studentInputs || Array(12).fill(''));
-              }
-              setReflection(answerData.reflection || '');
-            } catch (e) {
-              // Legacy format, ignore
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch assignments' }));
+        console.error('Error fetching assignments:', errorData);
+        setError(errorData.error || 'Failed to fetch assignments. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      const data = await response.json();
+      const thisAssignment = data.assignments?.find((a: any) => a.id === assignmentId);
+      if (thisAssignment?.submission) {
+        setSubmissionStatus(thisAssignment.submission);
+        setSubmitted(true);
+        if (thisAssignment.submission.answer) {
+          try {
+            const answerData = JSON.parse(thisAssignment.submission.answer);
+            if (answerData.seedPhrase) {
+              setSeedPhrase(answerData.seedPhrase);
+              setStudentInputs(answerData.studentInputs || Array(12).fill(''));
             }
+            setReflection(answerData.reflection || '');
+          } catch (e) {
+            // Legacy format, ignore
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error checking submission status:', err);
+      setError(err.message || 'Failed to fetch assignment status. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -146,15 +156,17 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit assignment');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to submit assignment' }));
+        throw new Error(errorData.error || 'Failed to submit assignment');
       }
+
+      const data = await response.json();
 
       setSubmitted(true);
       setSubmissionStatus(data.submission);
     } catch (err: any) {
+      console.error('Error submitting assignment:', err);
       setError(err.message || 'Failed to submit assignment. Please try again.');
     } finally {
       setSubmitting(false);

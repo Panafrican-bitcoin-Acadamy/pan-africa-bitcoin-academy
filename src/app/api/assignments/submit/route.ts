@@ -202,14 +202,31 @@ export async function POST(req: NextRequest) {
     // Update student's assignments_completed count and check achievements only if this submission is newly correct
     let newlyUnlockedAchievements: Array<{ id: string; title: string; icon: string; satsReward: number }> = [];
     if (isNewlyCorrect) {
-      // Update student's assignments_completed count
-      const { data: student } = await supabaseAdmin
+      // Get or create student record
+      let { data: student } = await supabaseAdmin
         .from('students')
-        .select('assignments_completed')
+        .select('id, assignments_completed')
         .eq('profile_id', profile.id)
-        .single();
+        .maybeSingle();
 
-      if (student) {
+      // Create student record if it doesn't exist
+      if (!student) {
+        const { data: newStudent, error: createError } = await supabaseAdmin
+          .from('students')
+          .insert({
+            profile_id: profile.id,
+            assignments_completed: 1,
+          })
+          .select('id, assignments_completed')
+          .single();
+
+        if (createError) {
+          console.error('Error creating student record:', createError);
+        } else {
+          student = newStudent;
+        }
+      } else {
+        // Update existing student record
         await supabaseAdmin
           .from('students')
           .update({

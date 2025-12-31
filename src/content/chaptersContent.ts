@@ -692,7 +692,10 @@ export const chaptersContent: ChapterContent[] = [
       {
         heading: "Seed Phrase Example",
         paragraphs: [
-          "Example of a 24-word seed phrase written on paper:\n1. address    7. action   13. abandon   19. ability\n2. act    8. alien    14. able   20. about\n3. addict    9. age    15. above   21. absent\n4. absorb    10. acquire    16. abstract   22. absurd\n5. aisle    11. absorb    17. access   23. account\n6. action    12. acquire    18. accuse   24. achieve",
+          "A seed phrase is the most important part of your Bitcoin wallet. It is a list of 12 or 24 simple words that create and control your bitcoin. These words are not a password and they are not stored on the internet. Whoever has the seed phrase can fully access and spend the bitcoin in that wallet. This is why a seed phrase must be written down offline, kept private, and never shared with anyone.",
+          "You should never take a screenshot of your seed phrase, store it in your phone, send it on WhatsApp, email, or cloud storage. Legitimate wallet apps, teachers, or support teams will never ask for your seed phrase. If you lose your phone but still have your seed phrase, you can recover your wallet on a new device. If someone else gets your seed phrase, they can take your bitcoin and there is no way to reverse it.",
+          "In Bitcoin, there is no \"forgot password\" button and no customer support that can help you recover lost funds. Your seed phrase is your money, and protecting it is your responsibility. Treat it like physical cash or gold—once it's gone, it's gone.",
+          "Example of a 24-word seed phrase:\n1. adult    7. absorb    13. adapt    19. address\n2. ahead    8. alert    14. airport    20. account\n3. alarm    9. absurd    15. acquire    21. accuse\n4. agent    10. achieve    16. ability    22. acid\n5. aisle    11. action    17. about    23. acoustic\n6. alien    12. age    18. absent    24. across",
         ],
         callouts: [
           {

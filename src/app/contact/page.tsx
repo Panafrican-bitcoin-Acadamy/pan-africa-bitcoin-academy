@@ -5,9 +5,36 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Contact Us - Pan-African Bitcoin Academy',
-  description: 'Get in touch with Pan-African Bitcoin Academy. Join our community on Discord, WhatsApp, Twitter, and more.',
+  description: 'Get in touch with Pan-African Bitcoin Academy. Join our community on Discord, WhatsApp, Twitter, and more. Connect with Bitcoin educators in Eritrea, Uganda, and across Africa.',
+  keywords: [
+    'Contact Bitcoin Academy',
+    'Bitcoin education contact',
+    'PanAfrican Bitcoin Academy contact',
+    'Eritrea Bitcoin community',
+    'Uganda Bitcoin community',
+    'Africa Bitcoin contact',
+  ],
   alternates: {
     canonical: '/contact',
+  },
+  openGraph: {
+    title: 'Contact Us - Pan-African Bitcoin Academy',
+    description: 'Get in touch with Pan-African Bitcoin Academy. Join our community on Discord, WhatsApp, Twitter, and more.',
+    url: '/contact',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Pan-African Bitcoin Academy - Contact Us',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Contact Us - Pan-African Bitcoin Academy',
+    description: 'Get in touch with Pan-African Bitcoin Academy. Join our community.',
   },
 };
 

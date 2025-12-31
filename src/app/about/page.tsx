@@ -25,6 +25,14 @@ export const metadata: Metadata = {
     title: 'About PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
     description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn about our mission to provide clear Bitcoin education in Eritrea, Uganda, and across Africa.',
     url: '/about',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Pan-African Bitcoin Academy - About Us',
+      },
+    ],
   },
 };
 
