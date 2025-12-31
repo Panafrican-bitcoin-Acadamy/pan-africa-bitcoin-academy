@@ -690,6 +690,23 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
+        heading: "Seed Phrase Example",
+        paragraphs: [
+          "Example of a 24-word seed phrase written on paper:\n1. address    7. action   13. abandon   19. ability\n2. act    8. alien    14. able   20. about\n3. addict    9. age    15. above   21. absent\n4. absorb    10. acquire    16. abstract   22. absurd\n5. aisle    11. absorb    17. access   23. account\n6. action    12. acquire    18. accuse   24. achieve",
+        ],
+        callouts: [
+          {
+            type: "warning",
+            content: "If someone gets your seed phrase, they can take your coins without asking. Never share it, photograph it, or store it digitally.",
+          },
+          {
+            type: "tip",
+            content: "Write your seed phrase on paper, check spelling twice, and store it in a safe place where fire, water, and curious eyes can't reach.",
+          },
+        ],
+        images: [],
+      },
+      {
         heading: "6.1 Public/Private Keys Explained Simply",
         paragraphs: [
           "Think of your Bitcoin wallet as a mailbox:",
@@ -928,26 +945,9 @@ export const chaptersContent: ChapterContent[] = [
         paragraphs: [
           "A Bitcoin 'wallet' is really two things: a signer and a notebook. The signer is the part that holds your secret—your private keys—and uses them to sign transactions. The notebook is the interface that helps you see balances and create payments. Many apps bundle both into one, so we simply refer to it as a wallet.",
           "Creating a wallet feels like opening a new lockbox. The app will generate a seed phrase—usually 12 or 24 simple words. Those words are the master key to every present and future address your wallet will create. Write them carefully on paper, check the spelling, and store the paper where fire, water, and curious eyes can't reach. Don't take photos, don't put the words in cloud storage, and don't paste them into chat apps. If someone gets that phrase, they can take your coins without asking. If you lose it and your phone dies, no company can help you recover—Bitcoin is a bearer asset.",
-          "Example of a 24-word seed phrase written on paper:\n1. toe    7. little   13. globe   19. cousin\n2. miss   8. Wink    14. Thank   20. vibrant\n3. arrive 9. any     15. clump   21. hockey\n4. bonus  10. knee   16. connect 22. wave\n5. gallery 11. exhaust 17. second 23. fragile\n6. fan     12. below  18. bicycle 24. cricket",
-          "Add a strong wallet PIN, and if your app supports it, learn about the optional 'passphrase' (sometimes called the 25th word). This adds a second layer of protection that safeguards you if someone discovers your written seed. It also means you must remember two things instead of one. Security is a trade-off; choose the level that fits your life. Before you receive any real value, practice a full recovery: wipe the app, restore from the seed you wrote down, and confirm that your addresses and test funds reappear. That ten-minute rehearsal is priceless.",
         ],
-        callouts: [
-          {
-            type: "warning",
-            content: "If someone gets your seed phrase, they can take your coins without asking. Never share it, photograph it, or store it digitally.",
-          },
-          {
-            type: "tip",
-            content: "Write your seed phrase on paper, check spelling twice, and store it in a safe place where fire, water, and curious eyes can't reach.",
-          },
-        ],
-        images: [
-          {
-            src: "/images/seed-phrase-example.png",
-            alt: "Example of a 24-word seed phrase written on paper",
-            caption: "Example seed phrase - write it down carefully on paper",
-          },
-        ],
+        callouts: [],
+        images: [],
       },
       {
         heading: "8.2 Complete a First Transaction (send/receive)",
@@ -1293,137 +1293,16 @@ export const chaptersContent: ChapterContent[] = [
       "Seed phrase",
       "Recovery",
     ],
-    nextSlug: "layer-2-sidechains-in-daily-life",
-  },
-  {
-    slug: "layer-2-sidechains-in-daily-life",
-    number: 12,
-    title: "Layer 2 & Sidechains",
-    level: "Intermediate",
-    duration: "50–60 min",
-    type: "Mixed",
-    hook: "Lightning and sidechains make Bitcoin faster and more flexible—with trade-offs.",
-    learn: [
-      "Lightning basics and settlement trade-offs",
-      "Custodial vs non-custodial Lightning",
-      "Sidechains (e.g., Liquid) and federated trust",
-      "Circular economies running on sats",
-    ],
-    sections: [
-      {
-        heading: "Introduction",
-        paragraphs: [
-          "Bitcoin's base layer is secure and decentralized, but it has limitations: transactions can take time to confirm, and fees can be high during busy periods. Layer 2 solutions and sidechains address these challenges by building additional layers on top of Bitcoin, enabling faster payments, lower fees, and new features. However, these solutions come with trade-offs, including different security models and trust assumptions. Understanding these options helps you choose the right tool for each situation.",
-        ],
-      },
-      {
-        heading: "12.0 Lightning Basics (Off-Chain Channels; Settlement Trade-Offs)",
-        paragraphs: [
-          "The Lightning Network is a Layer 2 solution that enables instant, low-fee payments by moving transactions off the main Bitcoin blockchain. Instead of broadcasting every payment to the entire network, Lightning uses payment channels — private connections between two parties that allow them to send and receive Bitcoin instantly, with fees often just a fraction of a cent.",
-          "To use Lightning, you first open a channel by locking some Bitcoin on the main chain. Once the channel is open, you can make unlimited payments through it without touching the blockchain. When you're done, you close the channel, and the final balance is settled back on Bitcoin's main chain. This design trades immediate speed and low fees for delayed final settlement — a trade-off that works well for everyday spending.",
-        ],
-        callouts: [
-          {
-            type: "note",
-            content: "Lightning channels require liquidity management. You need inbound capacity to receive and outbound capacity to send.",
-          },
-        ],
-        images: [
-          {
-            src: "/images/book_images/lightning_networ.png",
-            alt: "Diagram showing Lightning payment channel opening, payments, and closing",
-            caption: "Lightning channels enable instant off-chain payments",
-          },
-        ],
-      },
-      {
-        heading: "12.1 Receive and Spend on Lightning (Custodial vs Non-Custodial)",
-        paragraphs: [
-          "There are two main ways to use Lightning: custodial and non-custodial. Custodial Lightning wallets are like bank accounts — a company holds your funds and handles all the technical details. They're convenient and easy to use, but you're trusting that company with your money. If they disappear or get hacked, your funds could be at risk.",
-          "Non-custodial Lightning wallets give you full control. You manage your own channels, liquidity, and keys. This offers better privacy and sovereignty, but it requires more technical knowledge and active management. You need to understand channel capacity, routing, and how to keep channels healthy. For beginners, custodial options are a good starting point, but as you learn more, non-custodial solutions offer greater independence.",
-        ],
-        callouts: [
-          {
-            type: "tip",
-            content: "Start with a custodial Lightning wallet to learn, then graduate to non-custodial for full control and privacy.",
-          },
-          {
-            type: "warning",
-            content: "Custodial Lightning wallets require trust in the provider. Only keep small amounts in custodial wallets.",
-          },
-        ],
-      },
-      {
-        heading: "12.2 Sidechains (e.g., Liquid) and Federated Trust",
-        paragraphs: [
-          "Sidechains are separate blockchains that are pegged to Bitcoin, meaning you can move Bitcoin onto them and back. They often have their own consensus rules, enabling features like faster confirmations, confidential transactions, or smart contracts. However, sidechains typically use federated trust — a group of trusted entities (called a federation) that validate transactions and manage the peg.",
-          "This introduces a trust assumption that doesn't exist on Bitcoin's main chain. If the federation is compromised or acts maliciously, your funds could be at risk. That said, sidechains can be useful for specific use cases where speed or features matter more than absolute decentralization. Understanding the trade-offs helps you make informed decisions about when to use them.",
-        ],
-        callouts: [
-          {
-            type: "warning",
-            content: "Sidechains introduce trust in federations. Only use them if you understand and accept this trade-off.",
-          },
-        ],
-        images: [
-          {
-            src: "/images/sidechain-peg.png",
-            alt: "Diagram showing Bitcoin pegged to sidechain and back",
-            caption: "Sidechains are pegged to Bitcoin but use different consensus",
-          },
-        ],
-      },
-      {
-        heading: "12.3 Circular Economies Running on Sats",
-        paragraphs: [
-          "One of the most exciting developments in Bitcoin is the growth of circular economies — communities where people earn and spend Bitcoin entirely within their local network. These economies can run on Lightning for fast, cheap payments, or on sidechains for additional features. By keeping value circulating locally, these communities reduce dependence on traditional banking systems and build financial resilience.",
-          "Examples include local marketplaces, freelancer networks, and community currencies. These systems demonstrate how Bitcoin can enable economic activity that's both global (anyone can join) and local (value stays in the community). As more people adopt Bitcoin, these circular economies become more powerful and self-sustaining.",
-        ],
-        callouts: [
-          {
-            type: "example",
-            content: "A local marketplace where vendors accept Lightning payments, and customers can spend their earnings at other vendors in the same network, creating a circular economy.",
-          },
-        ],
-      },
-    ],
-    activities: [
-      "Activity: Live Lightning Payment Demo (Testnet or Small Real)",
-      "To experience Lightning firsthand, students can participate in a live payment demo. Using either a testnet Lightning wallet (free, no real value) or a small real Lightning wallet, students:",
-      "• Open a Lightning wallet (custodial or non-custodial)",
-      "• Receive a small amount of sats",
-      "• Make a payment to another student or a merchant",
-      "• Observe the instant confirmation and low fees",
-      "This hands-on experience makes the abstract concept of Layer 2 tangible and helps students understand when Lightning is the right tool for a payment.",
-    ],
-    summary: [
-      "Lightning Network enables instant, low-fee payments through off-chain channels.",
-      "Lightning trades immediate speed for delayed on-chain final settlement.",
-      "Custodial Lightning is convenient but requires trust; non-custodial offers control but needs more management.",
-      "Sidechains add features but introduce trust in federations.",
-      "Circular economies demonstrate how Bitcoin can enable local economic activity.",
-    ],
-    keyTerms: [
-      "Lightning Network",
-      "Lightning channel",
-      "Liquidity",
-      "Custodial",
-      "Non-custodial",
-      "Sidechain",
-      "Federation",
-      "Peg",
-      "Layer 2",
-    ],
     nextSlug: "verify-for-yourself-block-explorers-nodes",
   },
   {
     slug: "verify-for-yourself-block-explorers-nodes",
-    number: 13,
-    title: "Verify — Block Explorers & Nodes",
+    number: 12,
+    title: "Verify for Yourself — Block Explorers & Nodes",
     level: "Intermediate",
-    duration: "40–50 min",
+    duration: "60 min",
     type: "Practice",
-    hook: "Don’t trust—verify your own transactions and the network.",
+    hook: "Don't trust—verify your own transactions and the network.",
     learn: [
       "Use explorers for txids, confirmations, fees",
       "Merkle path inclusion (conceptual)",
@@ -1437,7 +1316,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "13.0 Using a Block Explorer (Txids, Confirmations, Fees, Mempool)",
+        heading: "12.0 Using a Block Explorer (Txids, Confirmations, Fees, Mempool)",
         paragraphs: [
           "A block explorer is like a search engine for the Bitcoin blockchain. You can paste in a transaction ID (txid) or address and see its history, status, and details. This is incredibly useful for checking if a payment you sent has been confirmed, how many confirmations it has, what fee was paid, and whether it's still waiting in the mempool (the pool of unconfirmed transactions).",
           "When you receive a payment, you can look up the txid on a block explorer to verify it independently of your wallet. This helps you catch errors, understand delays, and confirm that transactions are progressing as expected. Block explorers are also great for learning — you can browse recent transactions, see how fees fluctuate, and understand network activity.",
@@ -1457,7 +1336,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "13.1 Proving Inclusion (Merkle Path Concept)",
+        heading: "12.1 Proving Inclusion (Merkle Path Concept)",
         paragraphs: [
           "How can you prove that a transaction is included in a block without downloading the entire blockchain? Bitcoin uses something called a Merkle tree. Think of it like a family tree, but for transactions. Each transaction is hashed, then pairs of hashes are combined and hashed again, and this continues until you reach a single root hash at the top. This root is stored in the block header.",
           "A Merkle path (or Merkle proof) is a small set of hashes that proves your transaction is part of the tree without needing all the other transactions. By following the path from your transaction up to the root, you can mathematically prove inclusion. This is how lightweight wallets can verify transactions without storing the full blockchain — they just need the Merkle proof, not every single transaction.",
@@ -1477,7 +1356,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "13.2 Why Run a Node (Independent Validation; Mempool Visibility; Policy/Relay Basics)",
+        heading: "12.2 Why Run a Node (Independent Validation; Mempool Visibility; Policy/Relay Basics)",
         paragraphs: [
           "While block explorers are useful, they're run by third parties. If that third party is compromised, censored, or simply wrong, you might get incorrect information. Running your own Bitcoin node solves this problem by giving you complete independence. Your node downloads and validates the entire blockchain, checking every transaction and block according to Bitcoin's rules. No one can lie to you about what's on the blockchain because you're verifying it yourself.",
           "Your node also gives you direct access to the mempool — the pool of transactions waiting to be confirmed. This visibility helps you understand network congestion, estimate fees accurately, and see what's happening in real-time. Additionally, your node enforces your own policy rules about which transactions to relay, giving you control over what you participate in.",
@@ -1490,7 +1369,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "13.3 First-Time Node Sync (Full vs Pruned/Light; Storage/Bandwidth Planning)",
+        heading: "12.3 First-Time Node Sync (Full vs Pruned/Light; Storage/Bandwidth Planning)",
         paragraphs: [
           "When you first run a Bitcoin node, it needs to download and verify the entire blockchain — currently over 500 GB of data. This initial sync can take days or weeks depending on your internet connection and hardware. You have a few options:",
           "For most users, a pruned node offers the best balance — you get full validation with much less storage. Plan ahead for the initial sync time and bandwidth usage, and don't worry about advanced configurations until you're comfortable with the basics.",
@@ -1532,10 +1411,10 @@ export const chaptersContent: ChapterContent[] = [
   },
   {
     slug: "proof-of-work-and-block-rewards",
-    number: 14,
+    number: 13,
     title: "Proof of Work and Block Rewards",
     level: "Intermediate",
-    duration: "40–50 min",
+    duration: "55 min",
     type: "Theory",
     hook: "PoW makes blocks hard to forge but easy to verify.",
     learn: [
@@ -1552,7 +1431,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "14.0 Proof of Work (Asymmetry: Costly to Create, Trivial to Verify)",
+        heading: "13.0 Proof of Work (Asymmetry: Costly to Create, Trivial to Verify)",
         paragraphs: [
           "Proof of Work is like a cryptographic puzzle that miners must solve to create a new block. The puzzle requires finding a number (called a nonce) that, when combined with the block's data and hashed, produces a result below a certain target. This process requires enormous computational power — miners must try trillions of different numbers until they find one that works. The difficulty adjusts automatically so that, on average, a new block is found every 10 minutes.",
           "The genius of Proof of Work is its asymmetry: creating a valid block is extremely expensive (requiring massive amounts of electricity and specialized hardware), but verifying that a block is valid is trivial (any computer can check the hash in milliseconds). This makes it economically irrational to attack the network — the cost of creating a fraudulent block far exceeds any potential gain, and the network will reject invalid blocks instantly.",
@@ -1572,7 +1451,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "14.1 Miners and Block Rewards (New Coins + Fees)",
+        heading: "13.1 Miners and Block Rewards (New Coins + Fees)",
         paragraphs: [
           "Miners are rewarded for their work in two ways: block rewards (newly created Bitcoin) and transaction fees. The block reward is currently 3.125 BTC per block (as of the April 2024 halving). This reward is how new Bitcoin enters circulation — it's the only way new coins are created. In addition to the block reward, miners collect all the transaction fees from the transactions they include in their block.",
           "These rewards incentivize miners to act honestly. If a miner tries to include invalid transactions or create fraudulent blocks, the network will reject them, and the miner will have wasted expensive electricity for nothing. The economic incentive to follow the rules keeps the network secure and decentralized.",
@@ -1592,7 +1471,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "14.2 Halving Schedule and Fixed Supply (Declining Inflation)",
+        heading: "13.2 Halving Schedule and Fixed Supply (Declining Inflation)",
         paragraphs: [
           "Bitcoin's monetary policy is completely predictable and transparent. Approximately every four years (or every 210,000 blocks), the block reward is cut in half in an event called 'the halving.' This means the rate at which new Bitcoin is created decreases over time. The first halving occurred in 2012 (reward dropped from 50 to 25 BTC), the second in 2016 (25 to 12.5 BTC), the third in 2020 (12.5 to 6.25 BTC), and the fourth in 2024 (6.25 to 3.125 BTC).",
           "This predictable, declining inflation stands in stark contrast to fiat currencies, where central banks can print money at will. Bitcoin's total supply is fixed at 21 million coins, and the halving schedule ensures that the last Bitcoin will be mined around the year 2140. This fixed supply and predictable issuance schedule make Bitcoin a truly scarce digital asset.",
@@ -1606,7 +1485,7 @@ export const chaptersContent: ChapterContent[] = [
         images: [],
       },
       {
-        heading: "14.3 End of Subsidy (2140 Timeline; Fee Market)",
+        heading: "13.3 End of Subsidy (2140 Timeline; Fee Market)",
         paragraphs: [
           "Around the year 2140, the block reward will drop to zero, and miners will rely entirely on transaction fees for their income. This transition is already beginning — as block rewards decrease with each halving, fees become a larger percentage of miner revenue. For Bitcoin to remain secure after the subsidy ends, there must be a healthy fee market where users pay sufficient fees to incentivize miners to continue securing the network.",
           "This is one of Bitcoin's most important long-term questions: will transaction fees be high enough to maintain network security? The answer depends on Bitcoin's adoption and usage. If Bitcoin becomes widely used as a store of value and medium of exchange, transaction fees should naturally rise to support the network. Layer 2 solutions like Lightning can help by enabling low-fee payments while still generating on-chain fees for settlement.",
@@ -1652,10 +1531,10 @@ export const chaptersContent: ChapterContent[] = [
   },
   {
     slug: "mining-in-practice",
-    number: 15,
+    number: 14,
     title: "Mining in Practice",
     level: "Intermediate",
-    duration: "45–60 min",
+    duration: "60 min",
     type: "Theory",
     hook: "Mining economics—difficulty, pools, fees—shape network security.",
     learn: [
@@ -1672,7 +1551,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "15.0 Difficulty Adjustment (Every 2016 Blocks; Self-Regulation)",
+        heading: "14.0 Difficulty Adjustment (Every 2016 Blocks; Self-Regulation)",
         paragraphs: [
           "Bitcoin's difficulty adjustment is a brilliant self-regulating mechanism. Every 2016 blocks (approximately every two weeks), the network automatically adjusts the mining difficulty based on how quickly blocks were found. If blocks were found faster than 10 minutes on average, difficulty increases. If they were found slower, difficulty decreases. This keeps block times stable at around 10 minutes regardless of how much mining power joins or leaves the network.",
           "This automatic adjustment is crucial for Bitcoin's stability. It means the network can handle massive changes in mining power — whether from new miners joining, old miners leaving, or even attacks — without breaking. The difficulty adjustment ensures that Bitcoin's monetary policy (new blocks every 10 minutes) remains predictable and reliable.",
@@ -1692,7 +1571,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "15.1 Mining Pools and Centralization Risk (Stratum, Payout Models, Censorship)",
+        heading: "14.1 Mining Pools and Centralization Risk (Stratum, Payout Models, Censorship)",
         paragraphs: [
           "Mining Bitcoin solo is like playing the lottery — you might find a block and win the full reward, but the odds are extremely low. Most miners join mining pools, which combine their hashing power and share rewards proportionally. This gives miners more predictable income, but it also creates centralization risks.",
           "Large mining pools could potentially censor transactions, influence network upgrades, or even attempt attacks if they gain too much control. The Stratum protocol used by most pools gives pool operators significant power. Additionally, different payout models (like PPS, PPLNS, or FPPS) affect how rewards are distributed and can influence miner behavior.",
@@ -1713,7 +1592,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "15.2 Security Budget (Subsidy vs Fees; Long-Term Sustainability)",
+        heading: "14.2 Security Budget (Subsidy vs Fees; Long-Term Sustainability)",
         paragraphs: [
           "Bitcoin's security budget — the total value miners receive for securing the network — comes from two sources: block rewards (subsidy) and transaction fees. Currently, block rewards dominate, but as halvings continue, fees must grow to maintain security. This transition is already happening — fees now represent a larger percentage of miner revenue than in Bitcoin's early days.",
           "The question is whether fees will be sufficient to maintain network security after block rewards end around 2140. If Bitcoin adoption grows and transaction volume increases, fees should naturally rise. However, if fees remain too low, miners might leave the network, reducing security. This is one of Bitcoin's most important long-term challenges.",
@@ -1726,7 +1605,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "15.3 ASIC Supply Chains and Geopolitical Risks",
+        heading: "14.3 ASIC Supply Chains and Geopolitical Risks",
         paragraphs: [
           "Bitcoin mining requires specialized hardware called ASICs (Application-Specific Integrated Circuits). These devices are extremely efficient at mining Bitcoin but are expensive and have a concentrated supply chain. Most ASICs are manufactured in a few countries, creating potential geopolitical risks. If a major manufacturer is shut down or sanctioned, it could affect the global hash rate and network security.",
           "Additionally, mining itself has become concentrated in certain regions due to cheap electricity. While this concentration doesn't directly threaten Bitcoin's security (miners can't change the rules), it does create risks from regulatory changes, natural disasters, or political instability. Understanding these supply chain and geographic risks helps you appreciate the real-world challenges Bitcoin faces.",
@@ -1766,6 +1645,127 @@ export const chaptersContent: ChapterContent[] = [
       "Censorship risk",
       "Hash rate",
       "Payout model",
+    ],
+    nextSlug: "layer-2-sidechains-in-daily-life",
+  },
+  {
+    slug: "layer-2-sidechains-in-daily-life",
+    number: 15,
+    title: "Layer 2 & Sidechains in Daily Life",
+    level: "Intermediate",
+    duration: "70 min",
+    type: "Practice",
+    hook: "Lightning and sidechains make Bitcoin faster and more flexible—with trade-offs.",
+    learn: [
+      "Lightning basics and settlement trade-offs",
+      "Custodial vs non-custodial Lightning",
+      "Sidechains (e.g., Liquid) and federated trust",
+      "Circular economies running on sats",
+    ],
+    sections: [
+      {
+        heading: "Introduction",
+        paragraphs: [
+          "Bitcoin's base layer is secure and decentralized, but it has limitations: transactions can take time to confirm, and fees can be high during busy periods. Layer 2 solutions and sidechains address these challenges by building additional layers on top of Bitcoin, enabling faster payments, lower fees, and new features. However, these solutions come with trade-offs, including different security models and trust assumptions. Understanding these options helps you choose the right tool for each situation.",
+        ],
+      },
+      {
+        heading: "15.0 Lightning Basics (Off-Chain Channels; Settlement Trade-Offs)",
+        paragraphs: [
+          "The Lightning Network is a Layer 2 solution that enables instant, low-fee payments by moving transactions off the main Bitcoin blockchain. Instead of broadcasting every payment to the entire network, Lightning uses payment channels — private connections between two parties that allow them to send and receive Bitcoin instantly, with fees often just a fraction of a cent.",
+          "To use Lightning, you first open a channel by locking some Bitcoin on the main chain. Once the channel is open, you can make unlimited payments through it without touching the blockchain. When you're done, you close the channel, and the final balance is settled back on Bitcoin's main chain. This design trades immediate speed and low fees for delayed final settlement — a trade-off that works well for everyday spending.",
+        ],
+        callouts: [
+          {
+            type: "note",
+            content: "Lightning channels require liquidity management. You need inbound capacity to receive and outbound capacity to send.",
+          },
+        ],
+        images: [
+          {
+            src: "/images/book_images/lightning_networ.png",
+            alt: "Diagram showing Lightning payment channel opening, payments, and closing",
+            caption: "Lightning channels enable instant off-chain payments",
+          },
+        ],
+      },
+      {
+        heading: "15.1 Receive and Spend on Lightning (Custodial vs Non-Custodial)",
+        paragraphs: [
+          "There are two main ways to use Lightning: custodial and non-custodial. Custodial Lightning wallets are like bank accounts — a company holds your funds and handles all the technical details. They're convenient and easy to use, but you're trusting that company with your money. If they disappear or get hacked, your funds could be at risk.",
+          "Non-custodial Lightning wallets give you full control. You manage your own channels, liquidity, and keys. This offers better privacy and sovereignty, but it requires more technical knowledge and active management. You need to understand channel capacity, routing, and how to keep channels healthy. For beginners, custodial options are a good starting point, but as you learn more, non-custodial solutions offer greater independence.",
+        ],
+        callouts: [
+          {
+            type: "tip",
+            content: "Start with a custodial Lightning wallet to learn, then graduate to non-custodial for full control and privacy.",
+          },
+          {
+            type: "warning",
+            content: "Custodial Lightning wallets require trust in the provider. Only keep small amounts in custodial wallets.",
+          },
+        ],
+      },
+      {
+        heading: "15.2 Sidechains (e.g., Liquid) and Federated Trust",
+        paragraphs: [
+          "Sidechains are separate blockchains that are pegged to Bitcoin, meaning you can move Bitcoin onto them and back. They often have their own consensus rules, enabling features like faster confirmations, confidential transactions, or smart contracts. However, sidechains typically use federated trust — a group of trusted entities (called a federation) that validate transactions and manage the peg.",
+          "This introduces a trust assumption that doesn't exist on Bitcoin's main chain. If the federation is compromised or acts maliciously, your funds could be at risk. That said, sidechains can be useful for specific use cases where speed or features matter more than absolute decentralization. Understanding the trade-offs helps you make informed decisions about when to use them.",
+        ],
+        callouts: [
+          {
+            type: "warning",
+            content: "Sidechains introduce trust in federations. Only use them if you understand and accept this trade-off.",
+          },
+        ],
+        images: [
+          {
+            src: "/images/sidechain-peg.png",
+            alt: "Diagram showing Bitcoin pegged to sidechain and back",
+            caption: "Sidechains are pegged to Bitcoin but use different consensus",
+          },
+        ],
+      },
+      {
+        heading: "15.3 Circular Economies Running on Sats",
+        paragraphs: [
+          "One of the most exciting developments in Bitcoin is the growth of circular economies — communities where people earn and spend Bitcoin entirely within their local network. These economies can run on Lightning for fast, cheap payments, or on sidechains for additional features. By keeping value circulating locally, these communities reduce dependence on traditional banking systems and build financial resilience.",
+          "Examples include local marketplaces, freelancer networks, and community currencies. These systems demonstrate how Bitcoin can enable economic activity that's both global (anyone can join) and local (value stays in the community). As more people adopt Bitcoin, these circular economies become more powerful and self-sustaining.",
+        ],
+        callouts: [
+          {
+            type: "example",
+            content: "A local marketplace where vendors accept Lightning payments, and customers can spend their earnings at other vendors in the same network, creating a circular economy.",
+          },
+        ],
+      },
+    ],
+    activities: [
+      "Activity: Live Lightning Payment Demo (Testnet or Small Real)",
+      "To experience Lightning firsthand, students can participate in a live payment demo. Using either a testnet Lightning wallet (free, no real value) or a small real Lightning wallet, students:",
+      "• Open a Lightning wallet (custodial or non-custodial)",
+      "• Receive a small amount of sats",
+      "• Make a payment to another student or a merchant",
+      "• Observe the instant confirmation and low fees",
+      "This hands-on experience makes the abstract concept of Layer 2 tangible and helps students understand when Lightning is the right tool for a payment.",
+    ],
+    summary: [
+      "Lightning Network enables instant, low-fee payments through off-chain channels.",
+      "Lightning trades immediate speed for delayed on-chain final settlement.",
+      "Custodial Lightning is convenient but requires trust; non-custodial offers control but needs more management.",
+      "Sidechains add features but introduce trust in federations.",
+      "Circular economies demonstrate how Bitcoin can enable local economic activity.",
+    ],
+    keyTerms: [
+      "Lightning Network",
+      "Lightning channel",
+      "Liquidity",
+      "Custodial",
+      "Non-custodial",
+      "Sidechain",
+      "Federation",
+      "Peg",
+      "Layer 2",
     ],
     nextSlug: "full-node-opening-a-lightning-channel",
   },

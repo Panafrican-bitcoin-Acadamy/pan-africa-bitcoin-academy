@@ -112,11 +112,11 @@ INSERT INTO assignments (
   correct_answer, answer_type, points, reward_sats, status, cohort_id, created_at, updated_at
 ) VALUES (
   '66666666-6666-4666-8666-666666666666',
-  'Assignment: Create & Validate Bitcoin Addresses',
-  'Part A: Create one on-chain receive address and one Lightning receive request. Part B: Validate addresses by pasting correct and incorrect addresses in each field.',
+  'Assignment: First Wallet Proof',
+  'Hands-on practice with wallet creation, backup, and recovery. Create a wallet, back up seed securely, restore it (dry run). Reflection: What went wrong or surprised you?',
   6, 'keys-and-transactions',
-  'Part A: Create addresses. Part B: Validate addresses with correct and incorrect examples.',
-  NULL, 'INSTRUCTOR_REVIEW', 'text', 10, 100, 'active', NULL, NOW(), NOW()
+  'Create a wallet, back up seed securely, restore it (dry run). Reflection: What went wrong or surprised you?',
+  NULL, 'INSTRUCTOR_REVIEW', 'text', 10, 200, 'active', NULL, NOW(), NOW()
 ) ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
   description = EXCLUDED.description,
@@ -148,11 +148,11 @@ INSERT INTO assignments (
   correct_answer, answer_type, points, reward_sats, status, cohort_id, created_at, updated_at
 ) VALUES (
   '88888888-8888-4888-8888-888888888888',
-  'Assignment: First Wallet Proof',
-  'Hands-on practice with wallet creation, backup, and recovery. Create a wallet, back up seed securely, restore it (dry run). Reflection: What went wrong or surprised you?',
+  'Assignment: Create & Validate Bitcoin Addresses',
+  'Part A: Create one on-chain receive address and one Lightning receive request. Part B: Validate addresses by pasting correct and incorrect addresses in each field.',
   8, 'exchange-software-wallet',
-  'Create a wallet, back up seed securely, restore it (dry run). Reflection: What went wrong or surprised you?',
-  NULL, 'INSTRUCTOR_REVIEW', 'text', 10, 200, 'active', NULL, NOW(), NOW()
+  'Part A: Create addresses. Part B: Validate addresses with correct and incorrect examples.',
+  NULL, 'INSTRUCTOR_REVIEW', 'text', 10, 100, 'active', NULL, NOW(), NOW()
 ) ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
   description = EXCLUDED.description,

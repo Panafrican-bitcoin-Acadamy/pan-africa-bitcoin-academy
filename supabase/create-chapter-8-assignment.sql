@@ -1,4 +1,4 @@
--- Create Chapter 8 Assignment: "First Wallet Proof"
+-- Create Chapter 8 Assignment: "Create & Validate Bitcoin Addresses"
 -- This assignment requires instructor review (text submission)
 
 INSERT INTO assignments (
@@ -19,16 +19,16 @@ INSERT INTO assignments (
   updated_at
 ) VALUES (
   '88888888-8888-4888-8888-888888888888', -- Deterministic UUID for Chapter 8 assignment
-  'Assignment: First Wallet Proof',
-  'Hands-on practice with wallet creation, backup, and recovery. Create a wallet, back up seed securely, restore it (dry run). Reflection: What went wrong or surprised you?',
+  'Assignment: Create & Validate Bitcoin Addresses',
+  'Part A: Create one on-chain receive address and one Lightning receive request. Part B: Validate addresses by pasting correct and incorrect addresses in each field.',
   8,
   'exchange-software-wallet',
-  'Create a wallet, back up seed securely, restore it (dry run). Reflection: What went wrong or surprised you?',
+  'Part A: Create addresses. Part B: Validate addresses with correct and incorrect examples.',
   NULL,
   'INSTRUCTOR_REVIEW', -- Special value indicating this requires manual review
   'text',
   10,
-  200, -- 200 sats reward
+  100, -- 100 sats reward (TBD - instructor review)
   'active',
   NULL, -- Available to all cohorts
   NOW(),
@@ -39,11 +39,4 @@ INSERT INTO assignments (
   question = EXCLUDED.question,
   reward_sats = EXCLUDED.reward_sats,
   updated_at = NOW();
-
--- Note: When an instructor grades this assignment:
--- 1. Update assignment_submissions.status to 'graded'
--- 2. Set assignment_submissions.is_correct to true if approved
--- 3. Set assignment_submissions.points_earned to 10 (assignment.points)
--- 4. Award 200 sats reward via the sats rewards system
--- 5. Add feedback in assignment_submissions.feedback field
 

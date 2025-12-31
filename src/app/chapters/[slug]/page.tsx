@@ -301,7 +301,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       </p>
                     </div>
                   </div>
-                ) : section.heading === "14.2 Halving Schedule and Fixed Supply (Declining Inflation)" ? (
+                ) : section.heading === "13.2 Halving Schedule and Fixed Supply (Declining Inflation)" ? (
                   // Special rendering for halving periods table
                   <div className="mt-6">
                     <div className="overflow-x-auto rounded-lg border border-purple-400/25 bg-zinc-950/70">
@@ -718,7 +718,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               rewardSats={100}
             />
           ) : chapter.slug === 'keys-and-transactions' ? (
-            <Chapter6Assignment
+            <Chapter8Assignment
               assignmentId="66666666-6666-4666-8666-666666666666"
             />
           ) : chapter.slug === 'blockchain-basics' ? (
@@ -731,7 +731,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               rewardSats={100}
             />
           ) : chapter.slug === 'exchange-software-wallet' ? (
-            <Chapter8Assignment
+            <Chapter6Assignment
               assignmentId="88888888-8888-4888-8888-888888888888"
             />
           ) : chapter.slug === 'hardware-signers' ? (
