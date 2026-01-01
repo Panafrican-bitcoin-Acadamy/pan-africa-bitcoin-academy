@@ -52,9 +52,14 @@ export const organizationStructuredData = {
   ],
   keywords: 'Bitcoin education, Eritrea Bitcoin, Uganda Bitcoin, Africa Bitcoin, Bitcoin Nakfa, Bitcoin Asmara, Bitcoin Kampala, Eritrean Bitcoiners, African Bitcoin education, East Africa Bitcoin',
   sameAs: [
-    // Add social media links when available
-    // 'https://twitter.com/panafricanbitcoin',
-    // 'https://facebook.com/panafricanbitcoin',
+    'https://github.com/Joie199/pan-africa-bitcoin-academy',
+    'https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji',
+    'https://jumble.social/users/npub1q659nzy6j3mn8nr8ljznzumplesd40276tefj6gjz72npmqqg5cqmh70vv',
+    'https://discord.gg/4G4TUAP7',
+    'https://www.facebook.com/profile.php?id=61585070968194',
+    'https://x.com/panafricanbtc',
+    'https://www.instagram.com/panafricanbitcoin/',
+    'https://www.tiktok.com/@panafricanbitcoin',
   ],
   contactPoint: {
     '@type': 'ContactPoint',
