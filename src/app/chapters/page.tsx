@@ -5,11 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BitcoinIcon, WalletIcon, LightningIcon, BookIcon, ToolIcon, BlockchainIcon, KeysIcon, UTXOIcon, TransactionIcon, MiningIcon } from "@/components/BitcoinIcons";
 import { useAuth } from "@/hooks/useAuth";
-import { useSession } from "@/hooks/useSession";
 import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
-import { SyllabusModal } from "@/components/SyllabusModal";
+import { AdminModeBadge } from "@/components/AdminModeBadge";
 import type { Metadata } from "next";
 
 // Note: Metadata cannot be exported from client components
@@ -265,6 +264,27 @@ const chapters = [
     id: 12,
     level: 2,
     number: 12,
+    title: "Layer 2 & Sidechains in Daily Life",
+    difficulty: "Intermediate",
+    time: "70 min",
+    icon: "⚡",
+    type: "practice",
+    activities: ["Live Lightning Payment Demo"],
+    learnPoints: [
+      "Lightning Basics (fast payments; settlement trade-offs)",
+      "Receive and Spend via Lightning (custodial vs non-custodial)",
+      "Sidechains Overview (e.g., Liquid — federated trade-offs)",
+      "Circular Economies — markets that run on sats",
+    ],
+    theory: ["Lightning Network", "Layer 2 solutions", "Sidechains"],
+    practice: ["Lightning payment", "Activity: Live demo"],
+    video: "Lightning explained",
+    quiz: "5 questions on Lightning",
+  },
+  {
+    id: 13,
+    level: 2,
+    number: 13,
     title: "Verify for Yourself — Block Explorers & Nodes",
     difficulty: "Intermediate",
     time: "60 min",
@@ -283,9 +303,9 @@ const chapters = [
     quiz: "5 questions on verification",
   },
   {
-    id: 13,
+    id: 14,
     level: 2,
-    number: 13,
+    number: 14,
     title: "Proof of Work and Block Rewards",
     difficulty: "Intermediate",
     time: "55 min",
@@ -304,9 +324,9 @@ const chapters = [
     quiz: "5 questions on PoW",
   },
   {
-    id: 14,
+    id: 15,
     level: 2,
-    number: 14,
+    number: 15,
     title: "Mining in Practice",
     difficulty: "Intermediate",
     time: "60 min",
@@ -323,27 +343,6 @@ const chapters = [
     practice: ["Security analysis", "Activity: Chart impact"],
     video: "Mining in practice",
     quiz: "5 questions on mining",
-  },
-  {
-    id: 15,
-    level: 2,
-    number: 15,
-    title: "Layer 2 & Sidechains in Daily Life",
-    difficulty: "Intermediate",
-    time: "70 min",
-    icon: "⚡",
-    type: "practice",
-    activities: ["Live Lightning Payment Demo"],
-    learnPoints: [
-      "Lightning Basics (fast payments; settlement trade-offs)",
-      "Receive and Spend via Lightning (custodial vs non-custodial)",
-      "Sidechains Overview (e.g., Liquid — federated trade-offs)",
-      "Circular Economies — markets that run on sats",
-    ],
-    theory: ["Lightning Network", "Layer 2 solutions", "Sidechains"],
-    practice: ["Lightning payment", "Activity: Live demo"],
-    video: "Lightning explained",
-    quiz: "5 questions on Lightning",
   },
   // Level III
   {
@@ -482,20 +481,14 @@ export default function ChaptersPage() {
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
   const [chapterStatus, setChapterStatus] = useState<Record<number, { isUnlocked: boolean; isCompleted: boolean }>>({});
   const [loadingStatus, setLoadingStatus] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
   const { isAuthenticated, profile, loading } = useAuth();
-  const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
   const router = useRouter();
 
   useEffect(() => {
     const fetchChapterStatus = async () => {
-      if (loading || adminLoading) return;
+      if (loading) return;
       
-      // If admin is logged in, use admin email; otherwise use profile email if authenticated
-      const emailToUse = isAdminAuth && adminEmail ? adminEmail : (isAuthenticated && profile ? profile.email : null);
-      
-      if (!emailToUse) {
+      if (!isAuthenticated || !profile) {
         setLoadingStatus(false);
         return;
       }
@@ -504,13 +497,10 @@ export default function ChaptersPage() {
         const response = await fetch('/api/chapters/unlock-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: emailToUse }),
+          body: JSON.stringify({ email: profile.email }),
         });
 
         const data = await response.json();
-        if (data.isAdmin) {
-          setIsAdmin(true);
-        }
         if (data.chapters) {
           setChapterStatus(data.chapters);
         }
@@ -522,11 +512,9 @@ export default function ChaptersPage() {
     };
 
     fetchChapterStatus();
-  }, [isAuthenticated, profile, loading, isAdminAuth, adminEmail, adminLoading]);
+  }, [isAuthenticated, profile, loading]);
 
   const isChapterUnlocked = (chapterNumber: number): boolean => {
-    // Admins have access to all chapters
-    if (isAdmin || isAdminAuth) return true;
     if (!isAuthenticated || !profile) return false;
     // Chapter 1 is always unlocked for enrolled students
     if (chapterNumber === 1) return true;
@@ -539,12 +527,6 @@ export default function ChaptersPage() {
   };
 
   const handleChapterClick = (chapterNumber: number, chapterTitle: string) => {
-    // Admins can always access, so if admin is logged in and chapter is unlocked, navigate directly
-    if (isAdminAuth && isChapterUnlocked(chapterNumber)) {
-      router.push(`/chapters/${chapterTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`);
-      return;
-    }
-
     if (!isAuthenticated || !profile) {
       router.push('/apply?redirect=/chapters');
       return;
@@ -594,6 +576,7 @@ export default function ChaptersPage() {
 
   return (
     <>
+      <AdminModeBadge />
     <div className="relative min-h-screen w-full overflow-x-hidden">
       <div className="relative z-10 w-full bg-black/95">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
@@ -601,23 +584,9 @@ export default function ChaptersPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Learning Path
+                Learning Path<br />
+                Bitcoin Foundations → Lightning → Sovereignty
               </h1>
-              <div className="mx-auto mt-8 max-w-4xl">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-xl sm:text-2xl lg:text-3xl font-semibold">
-                  <div className="flex items-center gap-3 text-cyan-300">
-                    <span>Bitcoin Foundations</span>
-                  </div>
-                  <span className="text-orange-400 text-2xl sm:text-3xl">→</span>
-                  <div className="flex items-center gap-3 text-orange-300">
-                    <span>Lightning</span>
-                  </div>
-                  <span className="text-purple-400 text-2xl sm:text-3xl">→</span>
-                  <div className="flex items-center gap-3 text-purple-300">
-                    <span>Sovereignty</span>
-                  </div>
-                </div>
-              </div>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Follow the lessons step-by-step or jump to any topic you want to explore.
               </p>
@@ -630,7 +599,7 @@ export default function ChaptersPage() {
           {/* Learning Path Progress Bar */}
           <AnimatedSection animation="slideRight">
             <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-            <h2 className="mb-6 text-center text-xl font-semibold text-cyan-200">Your Progress Through the Levels</h2>
+            <h2 className="mb-6 text-center text-xl font-semibold text-cyan-200">Learning Path Progress</h2>
             <div className="relative flex items-center justify-between">
               <div className="relative flex flex-1 items-center">
                 {/* Level I */}
@@ -1272,38 +1241,6 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
-
-              {/* Bitcoin Development Philosophy */}
-              <a
-                href="http://bitcoindevphilosophy.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex flex-col rounded-xl border border-rose-400/30 bg-black/60 p-6 transition hover:border-rose-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(244,63,94,0.2)]"
-              >
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="rounded-lg bg-rose-500/20 p-3">
-                    <BookOpen className="h-6 w-6 text-rose-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-rose-300 transition group-hover:text-rose-200">
-                      Bitcoin Development Philosophy
-                    </h3>
-                    <p className="text-sm text-zinc-400">Kalle Rosenbaum & Linnéa Rosenbaum</p>
-                  </div>
-                </div>
-                <p className="mb-4 flex-1 text-sm text-zinc-300">
-                  A guide for Bitcoin developers covering decentralization, trustlessness, privacy, scaling, and the philosophy behind Bitcoin's design trade-offs.
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-medium text-rose-300">
-                    Free (Online)
-                  </span>
-                  <div className="flex items-center gap-2 text-sm text-rose-400">
-                    <span>Read Online</span>
-                    <ExternalLink className="h-4 w-4" />
-                  </div>
-                </div>
-              </a>
             </div>
             </div>
           </AnimatedSection>
@@ -1421,7 +1358,7 @@ export default function ChaptersPage() {
                             <p className="ml-4 text-zinc-400">{chapter.video}</p>
                           </div>
                           <div>
-                            <p className="mb-1 font-medium text-cyan-200">Quiz:</p>
+                            <p className="mb-1 font-medium text-cyan-200">🧪 Quiz:</p>
                             <p className="ml-4 text-zinc-400">{chapter.quiz}</p>
                           </div>
                         </div>
@@ -1447,14 +1384,14 @@ export default function ChaptersPage() {
                       )}
 
                       {/* View Chapter Button */}
-                      {((isAuthenticated && profile && isChapterUnlocked(chapter.number)) || (isAdminAuth && isChapterUnlocked(chapter.number))) ? (
+                      {isAuthenticated && profile && isChapterUnlocked(chapter.number) ? (
                         <Link
                           href={`/chapters/${generateSlug(chapter.title)}`}
                           className="block w-full rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-4 py-2 text-center text-sm font-semibold text-black transition hover:brightness-110"
                         >
                           {isChapterCompleted(chapter.number) ? 'Review Chapter →' : 'View Chapter →'}
                         </Link>
-                      ) : (isAuthenticated && profile) ? (
+                      ) : isAuthenticated && profile ? (
                         <button
                           onClick={() => handleChapterClick(chapter.number, chapter.title)}
                           className="block w-full rounded-lg bg-zinc-700/50 px-4 py-2 text-center text-sm font-semibold text-zinc-400 cursor-not-allowed"
@@ -1491,6 +1428,7 @@ export default function ChaptersPage() {
                   key={idx}
                   className="flex items-center gap-2 rounded-lg border border-purple-400/20 bg-purple-500/10 px-4 py-2"
                 >
+                  <span className="text-purple-300">✨</span>
                   <span className="text-sm text-zinc-300">{item}</span>
                 </div>
               ))}
@@ -1507,14 +1445,14 @@ export default function ChaptersPage() {
                 href="/apply"
                 className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
               >
-                🔸 Join our course
+                🔸 Join Cohort 1
               </Link>
-              <button
-                onClick={() => setIsSyllabusOpen(true)}
+              <Link
+                href="/about"
                 className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
               >
                 🔸 Download the Syllabus
-              </button>
+              </Link>
               <a
                 href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji"
                 target="_blank"
@@ -1528,14 +1466,6 @@ export default function ChaptersPage() {
           </AnimatedSection>
         </div>
       </div>
-      
-      {/* Syllabus Modal */}
-      <SyllabusModal
-        isOpen={isSyllabusOpen}
-        onClose={() => setIsSyllabusOpen(false)}
-        chapters={chapters}
-        levels={levels}
-      />
     </div>
     </>
   );

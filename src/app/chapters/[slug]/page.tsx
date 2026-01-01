@@ -7,11 +7,6 @@ import { ChapterCompletionTracker } from "./ChapterCompletionTracker";
 import { NextChapterButton } from "./NextChapterButton";
 import { LiveBlockchainData } from "@/components/LiveBlockchainData";
 import { AdminModeWrapper } from "@/components/AdminModeWrapper";
-import { ChapterAssignment } from "@/components/ChapterAssignment";
-import { Chapter6Assignment } from "@/components/Chapter6Assignment";
-import { Chapter8Assignment } from "@/components/Chapter8Assignment";
-import { Chapter18Assignment } from "@/components/Chapter18Assignment";
-import { ChapterUTXOAssignment } from "@/components/ChapterUTXOAssignment";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -61,8 +56,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         subtitle="This chapter is part of the Pan-Africa Bitcoin Academy curriculum. Full content coming soon."
       >
         <div className="space-y-8 text-sm text-zinc-100 sm:text-base">
-          <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-4 sm:p-5 shadow-inner">
-            <h2 className="text-sm font-semibold text-zinc-100 sm:text-base">
+          <section className="rounded-xl border border-orange-500/25 bg-zinc-950/80 p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-orange-200 sm:text-base">
               Chapter Content
             </h2>
             <p className="mt-2 text-sm text-zinc-200">
@@ -91,7 +86,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     >
       <div className="space-y-8 text-sm text-zinc-100 sm:text-base">
         {/* Hero */}
-        <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
+        <section className="rounded-xl border border-orange-500/25 bg-zinc-950/80 p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.12em] text-cyan-300/90">
@@ -105,7 +100,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                   {chapter.duration}
                 </span>
               </div>
-              <p className="text-lg font-semibold text-zinc-100 sm:text-xl">
+              <p className="text-lg font-semibold text-orange-100 sm:text-xl">
                 {chapter.hook}
               </p>
             </div>
@@ -132,8 +127,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         </section>
 
         {/* What you will learn */}
-        <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
-          <h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
+        <section className="rounded-xl border border-cyan-400/25 bg-black/70 p-5 sm:p-6">
+          <h2 className="text-base font-semibold text-cyan-200 sm:text-lg">
             What You Will Learn
           </h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-zinc-200">
@@ -144,25 +139,25 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         </section>
 
         {/* Main lesson content */}
-        <section className="space-y-4 rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
-          <h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
+        <section className="space-y-4 rounded-xl border border-orange-400/25 bg-zinc-950/70 p-5 sm:p-6">
+          <h2 className="text-base font-semibold text-orange-200 sm:text-lg">
             Main Lesson Content
           </h2>
           <div className="space-y-5">
             {chapter.sections.map((section, sectionIdx) => {
               const sectionId = `section-${sectionIdx}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
               return (
-              <div key={section.heading} id={sectionId} className="scroll-mt-20 rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner">
-                <h3 className="text-lg font-bold text-zinc-100 sm:text-xl mb-3 pb-2 border-b border-zinc-800/50">
+              <div key={section.heading} id={sectionId} className="scroll-mt-20 rounded-lg border-2 border-orange-400/30 bg-gradient-to-br from-black/60 to-zinc-900/40 p-5 shadow-[0_0_20px_rgba(249,115,22,0.1)] hover:border-orange-400/50 transition">
+                <h3 className="text-lg font-bold text-orange-200 sm:text-xl mb-3 pb-2 border-b border-orange-400/20">
                   {section.heading}
                 </h3>
                 {section.paragraphs?.map((p) => (
-                  <p key={p} className="mt-3 text-zinc-200 leading-relaxed">
+                  <p key={p} className="mt-2 text-zinc-200">
                     {p}
                   </p>
                 ))}
                 {section.bullets ? (
-                  <ul className="mt-4 list-disc space-y-2 pl-5 text-zinc-200 leading-relaxed">
+                  <ul className="mt-3 list-disc space-y-2 pl-5 text-zinc-200">
                     {section.bullets.map((b) => (
                       <li key={b}>{b}</li>
                     ))}
@@ -176,14 +171,14 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                   return (
                   <div
                     key={idx}
-                    className={`mt-4 rounded-lg border p-4 bg-zinc-900/80 ${
+                    className={`mt-4 rounded-lg border p-3 ${
                       callout.type === "note"
-                        ? "border-cyan-900/50 text-cyan-100"
+                        ? "border-cyan-400/30 bg-cyan-500/10 text-cyan-100"
                         : callout.type === "tip"
-                        ? "border-green-900/50 text-green-100"
+                        ? "border-green-400/30 bg-green-500/10 text-green-100"
                         : callout.type === "warning"
-                        ? "border-red-900/50 text-red-100"
-                        : "border-orange-900/50 text-orange-100"
+                        ? "border-red-400/30 bg-red-500/10 text-red-100"
+                        : "border-orange-400/30 bg-orange-500/10 text-orange-100"
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -302,7 +297,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       </p>
                     </div>
                   </div>
-                ) : section.heading === "13.2 Halving Schedule and Fixed Supply (Declining Inflation)" ? (
+                ) : section.heading === "14.2 Halving Schedule and Fixed Supply (Declining Inflation)" ? (
                   // Special rendering for halving periods table
                   <div className="mt-6">
                     <div className="overflow-x-auto rounded-lg border border-purple-400/25 bg-zinc-950/70">
@@ -668,109 +663,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           </div>
         </section>
 
-        {/* Assignments */}
-        <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
-          <h2 className="text-base font-semibold text-zinc-100 sm:text-lg mb-4">
-            Assignment
+        {/* Activities */}
+        <section className="rounded-xl border border-purple-400/25 bg-zinc-950/70 p-5 sm:p-6">
+          <h2 className="text-base font-semibold text-purple-200 sm:text-lg">
+            Activities / Exercises
           </h2>
-          {chapter.slug === 'the-nature-of-money' ? (
-            <ChapterAssignment
-              assignmentId="11111111-1111-4111-8111-111111111111"
-              title="Assignment: &quot;What Is Money to Me?&quot;"
-              question="What problem does money solve in my community?"
-              description="Reflect on how money functions in your daily life and community."
-              points={10}
-              rewardSats={50}
-            />
-          ) : chapter.slug === 'the-journey-of-money' ? (
-            <ChapterAssignment
-              assignmentId="22222222-2222-4222-8222-222222222222"
-              title="Assignment: Money Under Pressure"
-              question="Write about how you saw old money fail."
-              description="Reflect on your experiences or observations of traditional money systems failing."
-              points={10}
-              rewardSats={75}
-            />
-          ) : chapter.slug === 'problems-with-traditional-fiat-money' ? (
-            <ChapterAssignment
-              assignmentId="33333333-3333-4333-8333-333333333333"
-              title="Assignment: Inflation Reality Check"
-              question="Compare the price of one everyday item (bread, sugar, fuel) today vs 10–20 years ago."
-              description="Research and compare prices to understand inflation's impact on purchasing power."
-              points={10}
-              rewardSats={75}
-            />
-          ) : chapter.slug === 'from-crisis-to-innovation' ? (
-            <ChapterAssignment
-              assignmentId="44444444-4444-4444-8444-444444444444"
-              title="Assignment: &quot;What Broke?&quot;"
-              question="Explain in your own words one reason the old system failed (inflation, debt, bailouts, control)."
-              description="Reflect on the failures of the traditional financial system."
-              points={10}
-              rewardSats={75}
-            />
-          ) : chapter.slug === 'the-birth-of-bitcoin' ? (
-            <ChapterAssignment
-              assignmentId="55555555-5555-4555-8555-555555555555"
-              title="Assignment: Whitepaper Sentence Decode"
-              question="Rewrite this sentence in plain language: &quot;A purely peer-to-peer version of electronic cash…&quot;"
-              description="Practice translating technical language into everyday terms."
-              points={10}
-              rewardSats={100}
-            />
-          ) : chapter.slug === 'keys-and-transactions' ? (
-            <Chapter8Assignment
-              assignmentId="66666666-6666-4666-8666-666666666666"
-            />
-          ) : chapter.slug === 'blockchain-basics' ? (
-            <ChapterAssignment
-              assignmentId="77777777-7777-4777-8777-777777777777"
-              title="Assignment: Understanding a Block"
-              question="What would happen if someone tried to change a transaction in an old block?"
-              description="Explain the consequences of attempting to alter a transaction in a previous block on the blockchain."
-              points={10}
-              rewardSats={100}
-            />
-          ) : chapter.slug === 'exchange-software-wallet' ? (
-            <Chapter6Assignment
-              assignmentId="88888888-8888-4888-8888-888888888888"
-            />
-          ) : chapter.slug === 'hardware-signers' ? (
-            <ChapterAssignment
-              assignmentId="bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"
-              title="Assignment: Threat Model"
-              question="List 3 threats a hardware wallet protects against."
-              description="Understand the security benefits of hardware wallets."
-              points={10}
-              rewardSats={100}
-            />
-          ) : chapter.slug === 'utxos-fees-coin-control' ? (
-            <ChapterUTXOAssignment
-              assignmentId="99999999-9999-4999-8999-999999999999"
-            />
-          ) : chapter.slug === 'good-bitcoin-hygiene' ? (
-            <ChapterAssignment
-              assignmentId="10101010-1010-4101-8101-010101010101"
-              title="Assignment: Protect Your Future Self"
-              question="Why should you use a new receive address every time?"
-              description="Reflect on why using a new receive address every time is important for privacy and security."
-              points={10}
-              rewardSats={100}
-            />
-          ) : chapter.slug === 'intro-to-bitcoin-script-optional-track' ? (
-            <Chapter18Assignment
-              assignmentId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
-            />
-          ) : chapter.slug === 'why-bitcoin-philosophy-adoption' ? (
-            <ChapterAssignment
-              assignmentId="cccccccc-cccc-4ccc-8ccc-cccccccccccc"
-              title="Assignment: Code or State"
-              question="What do you think of Bitcoin?"
-              description="Reflect on your perspective of Bitcoin after completing the course."
-              points={10}
-              rewardSats={100}
-            />
-          ) : chapter.slug === 'verify-for-yourself-block-explorers-nodes' ? (
+          {chapter.slug === 'verify-for-yourself-block-explorers-nodes' ? (
             <div className="mt-3">
               <Link
                 href="/assignments/de36f0e1-8cb9-4386-af1a-39eb0529a0b0"
@@ -783,7 +681,15 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 Complete the assignment to practice using block explorers and verify transactions independently.
               </p>
             </div>
-          ) : null}
+          ) : chapter.activities.length === 0 ? (
+            <p className="mt-2 text-zinc-300">No activities in this chapter.</p>
+          ) : (
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-zinc-200">
+              {chapter.activities.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {/* Summary */}

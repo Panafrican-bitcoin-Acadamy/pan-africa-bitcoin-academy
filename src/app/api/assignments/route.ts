@@ -18,48 +18,26 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Check if user is an admin (admins have access to all assignments)
-    const { data: admin } = await supabaseAdmin
-      .from('admins')
-      .select('id, email, role')
+    // Get student profile
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, cohort_id')
       .eq('email', email.toLowerCase().trim())
-      .maybeSingle();
+      .single();
 
-    const isAdmin = !!admin;
-
-    // Get student profile (create a dummy profile for admins if they don't have one)
-    let profile;
-    if (!isAdmin) {
-      const { data: profileData, error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, cohort_id')
-        .eq('email', email.toLowerCase().trim())
-        .single();
-
-      if (profileError || !profileData) {
-        return NextResponse.json(
-          { error: 'Profile not found' },
-          { status: 404 }
-        );
-      }
-      profile = profileData;
-    } else {
-      // For admins without profiles, use a dummy profile to fetch all assignments
-      profile = { id: null, cohort_id: null };
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { error: 'Profile not found' },
+        { status: 404 }
+      );
     }
 
-    // Fetch assignments (admins see all, students see their cohort or all cohorts)
-    let assignmentsQuery = supabaseAdmin
+    // Fetch assignments (active assignments for student's cohort or all cohorts)
+    const { data: assignments, error: assignmentsError } = await supabaseAdmin
       .from('assignments')
       .select('*')
-      .eq('status', 'active');
-    
-    if (!isAdmin && profile.cohort_id) {
-      assignmentsQuery = assignmentsQuery.or(`cohort_id.is.null,cohort_id.eq.${profile.cohort_id}`);
-    }
-    // Admins see all assignments regardless of cohort
-    
-    const { data: assignments, error: assignmentsError } = await assignmentsQuery
+      .eq('status', 'active')
+      .or(`cohort_id.is.null,cohort_id.eq.${profile.cohort_id}`)
       .order('due_date', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false });
 
@@ -71,37 +49,20 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Fetch student's submissions (skip for admins without profile)
-    let submissions = [];
-    if (!isAdmin && profile.id) {
-      const { data: submissionsData, error: submissionsError } = await supabaseAdmin
-        .from('assignment_submissions')
-        .select('*')
-        .eq('student_id', profile.id);
-      
-      if (submissionsError) {
-        console.error('Error fetching submissions:', submissionsError);
-        // Continue without submissions if error
-      } else {
-        submissions = submissionsData || [];
-      }
-    }
-    
-    // For admins with profiles, also fetch their submissions
-    if (isAdmin && profile.id) {
-      const { data: submissionsData, error: submissionsError } = await supabaseAdmin
-        .from('assignment_submissions')
-        .select('*')
-        .eq('student_id', profile.id);
-      
-      if (!submissionsError) {
-        submissions = submissionsData || [];
-      }
+    // Fetch student's submissions
+    const { data: submissions, error: submissionsError } = await supabaseAdmin
+      .from('assignment_submissions')
+      .select('*')
+      .eq('student_id', profile.id);
+
+    if (submissionsError) {
+      console.error('Error fetching submissions:', submissionsError);
+      // Continue without submissions if error
     }
 
-    // Map submissions by assignment_id for quick lookup (skip if no profile)
+    // Map submissions by assignment_id for quick lookup
     const submissionsMap = new Map(
-      (submissions || []).map((sub: any) => [sub.assignment_id, sub])
+      (submissions || []).map((sub) => [sub.assignment_id, sub])
     );
 
     // Combine assignments with submission status

@@ -283,34 +283,6 @@ export async function POST(req: NextRequest) {
 
     // STEP 4: Enroll in Cohort (if cohort_id exists in students record)
     if (studentRecord.cohort_id) {
-      // Check if cohort has available seats before enrolling
-      const [{ data: cohort, error: cohortError }, { count: enrolledCount }, { count: pendingCount }] = await Promise.all([
-        supabaseAdmin
-          .from('cohorts')
-          .select('id, name, seats_total')
-          .eq('id', studentRecord.cohort_id)
-          .maybeSingle(),
-        supabaseAdmin
-          .from('cohort_enrollment')
-          .select('*', { count: 'exact', head: true })
-          .eq('cohort_id', studentRecord.cohort_id),
-        supabaseAdmin
-          .from('applications')
-          .select('*', { count: 'exact', head: true })
-          .eq('preferred_cohort_id', studentRecord.cohort_id)
-          .eq('status', 'Pending'),
-      ]);
-
-      if (cohortError) {
-        console.error('Error checking cohort availability:', cohortError);
-        return NextResponse.json(
-          { error: 'Failed to validate cohort availability' },
-          { status: 500 }
-        );
-      }
-
-      // Seat availability check removed - admins can approve applications even if cohort is full
-
       // Check if already enrolled
       // Use the same ID (studentIdentifier) - this is applications.id, profiles.id, and students.id
       const { data: existingEnrollment } = await supabaseAdmin

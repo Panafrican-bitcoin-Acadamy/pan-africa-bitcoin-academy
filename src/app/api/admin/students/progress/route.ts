@@ -35,81 +35,38 @@ export async function GET(_req: NextRequest) {
     }
 
     try {
-      // Fetch profiles first
-      const { data: profilesData, error: profilesError } = await supabaseAdmin
+      const result = await supabaseAdmin
         .from('profiles')
-        .select('id, name, email, status')
+        .select(`
+          id,
+          name,
+          email,
+          status,
+          students:students(id, cohort_id, created_at),
+          chapter_progress:chapter_progress(is_completed, is_unlocked, chapter_number),
+          attendance:attendance(event_id, join_time, duration_minutes),
+          cohort_enrollment:cohort_enrollment(cohort_id, enrolled_at)
+        `)
         .limit(200);
 
-      if (profilesError) {
-        throw profilesError;
-      }
-
-      profiles = profilesData || [];
-
-      if (profiles.length === 0) {
-        // No profiles found, return empty progress
-        profiles = [];
-      } else {
-        // Fetch related data separately for better reliability
-        const profileIds = profiles.map((p: any) => p.id);
-
-        // Fetch students data
-        const { data: studentsData } = await supabaseAdmin
-          .from('students')
-          .select('id, profile_id, cohort_id, created_at')
-          .in('profile_id', profileIds);
-
-        // Fetch chapter progress data - this is critical for tracking completion
-        const { data: chapterProgressData, error: chapterProgressError } = await supabaseAdmin
-          .from('chapter_progress')
-          .select('student_id, is_completed, is_unlocked, chapter_number')
-          .in('student_id', profileIds);
-
-        if (chapterProgressError) {
-          console.error('[admin/students/progress] Error fetching chapter progress:', chapterProgressError);
-          // Continue with empty chapter progress data
+      if (result.error) {
+        // If error is about missing table/column, try without relationships
+        if (result.error.message?.includes('relation') || result.error.message?.includes('column')) {
+          console.warn('Some relationships may not exist, fetching profiles only:', result.error.message);
+          const simpleResult = await supabaseAdmin
+            .from('profiles')
+            .select('id, name, email, status')
+            .limit(200);
+          
+          if (simpleResult.error) {
+            throw simpleResult.error;
+          }
+          profiles = simpleResult.data || [];
         } else {
-          console.log(`[admin/students/progress] Fetched ${chapterProgressData?.length || 0} chapter progress records for ${profileIds.length} profiles`);
-          // Debug: Log sample data
-          if (chapterProgressData && chapterProgressData.length > 0) {
-            const completedCount = chapterProgressData.filter((cp: any) => cp.is_completed === true).length;
-            console.log(`[admin/students/progress] Found ${completedCount} completed chapters out of ${chapterProgressData.length} total records`);
-          }
+          throw result.error;
         }
-
-        // Fetch attendance data
-        const { data: attendanceData } = await supabaseAdmin
-          .from('attendance')
-          .select('student_id, event_id, join_time, duration_minutes')
-          .in('student_id', profileIds);
-
-        // Fetch cohort enrollment data
-        const { data: enrollmentData } = await supabaseAdmin
-          .from('cohort_enrollment')
-          .select('student_id, cohort_id, enrolled_at')
-          .in('student_id', profileIds);
-
-        // Attach related data to profiles
-        profiles = profiles.map((profile: any) => {
-          const profileId = profile.id;
-          const studentProgress = chapterProgressData?.filter((cp: any) => cp.student_id === profileId) || [];
-          
-          // Debug: Log if we're not finding progress for a student who should have it
-          const hasStudentRecord = studentsData?.some((s: any) => s.profile_id === profileId);
-          if (studentProgress.length === 0 && hasStudentRecord) {
-            // Only log for students (to avoid spam for non-students)
-            console.log(`[admin/students/progress] No chapter progress found for student ${profile.email} (profile_id: ${profileId})`);
-          }
-          
-          return {
-            ...profile,
-            students: studentsData?.filter((s: any) => s.profile_id === profileId) || [],
-            chapter_progress: studentProgress,
-            attendance: attendanceData?.filter((a: any) => a.student_id === profileId) || [],
-            cohort_enrollment: enrollmentData?.filter((e: any) => e.student_id === profileId) || [],
-          };
-        });
+      } else {
+        profiles = result.data || [];
       }
     } catch (fetchError: any) {
       console.error('Error fetching profiles:', fetchError);
@@ -152,14 +109,8 @@ export async function GET(_req: NextRequest) {
     // Map profiles to progress data
     const progress = profiles.map((p: any) => {
       const chapterData = p.chapter_progress || [];
-      // Filter for completed chapters - check explicitly for true (handles null/undefined/false)
-      const completed = chapterData.filter((c: any) => c.is_completed === true).length;
+      const completed = chapterData.filter((c: any) => c.is_completed).length;
       const unlocked = chapterData.length;
-      
-      // Debug logging for first few students
-      if (profiles.indexOf(p) < 3) {
-        console.log(`[admin/students/progress] Student ${p.email}: ${chapterData.length} progress records, ${completed} completed`);
-      }
       
       // Calculate attendance
       const attendanceRecords = p.attendance || [];

@@ -15,9 +15,6 @@ const Footer = dynamic(() => import("@/components/Footer").then(mod => ({ defaul
   ssr: true,
 });
 
-// AdminModeBadgeWrapper is a client component - use dynamic import
-const AdminModeBadgeWrapper = dynamic(() => import("@/components/AdminModeBadgeWrapper").then(mod => ({ default: mod.AdminModeBadgeWrapper })));
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -188,9 +185,6 @@ export default function RootLayout({
         {/* Structured Data for SEO */}
         <StructuredData data={organizationStructuredData} />
         <StructuredData data={websiteStructuredData} />
-        
-        {/* Admin Mode Badge - shows on all pages when admin is logged in */}
-        <AdminModeBadgeWrapper />
         
         <div className="flex min-h-screen flex-col">
           <Navbar />

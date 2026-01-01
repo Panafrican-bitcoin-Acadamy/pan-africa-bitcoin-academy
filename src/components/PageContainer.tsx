@@ -8,16 +8,16 @@ type PageContainerProps = {
 
 export function PageContainer({ title, subtitle, children }: PageContainerProps) {
   return (
-    <div className="relative flex min-h-screen flex-col bg-black text-zinc-50">
-      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-12 pb-12 pt-8 sm:px-16 sm:pb-16 sm:pt-10 lg:px-20 xl:px-24">
-        {/* Subtle peripheral framing - moved far to edges, reduced by 70% */}
-        <div className="pointer-events-none fixed -left-96 -top-96 h-[600px] w-[600px] rounded-full bg-cyan-500/3 blur-3xl" />
-        <div className="pointer-events-none fixed -right-96 top-0 h-[500px] w-[500px] rounded-full bg-orange-500/3 blur-3xl" />
-        <div className="pointer-events-none fixed -bottom-96 left-1/2 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-purple-500/2 blur-3xl" />
+    <div className="relative flex min-h-screen flex-col bg-transparent text-zinc-50">
+      <main className="bg-grid relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-12 pb-12 pt-8 sm:px-16 sm:pb-16 sm:pt-10 lg:px-20 xl:px-24">
+        {/* Bitcoin-themed background elements */}
+        <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-40 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-purple-500/5 blur-3xl" />
         
         {title ? (
-          <header className="relative mb-8 space-y-3 sm:mb-12 z-10">
-            <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-cyan-300/60">
+          <header className="relative mb-8 space-y-3 sm:mb-12">
+            <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-cyan-300/80">
               Bitcoin · Learning Path
             </p>
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl lg:text-5xl">

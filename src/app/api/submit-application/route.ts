@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
-import { validateAndNormalizeEmail, sanitizeName } from '@/lib/validation';
-import { requireStudent } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,48 +24,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate and normalize email
-    const emailValidation = validateAndNormalizeEmail(email);
-    if (!emailValidation.valid || !emailValidation.normalized) {
-      return NextResponse.json(
-        { error: emailValidation.error || 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-    const emailLower = emailValidation.normalized;
-
-    // Optional: If user is logged in, verify email matches their session
-    const session = requireStudent(req);
-    if (session) {
-      const sessionEmail = session.email.toLowerCase().trim();
-      if (sessionEmail !== emailLower) {
-        return NextResponse.json(
-          { error: 'If you are logged in, you must use your account email address.' },
-          { status: 403 }
-        );
-      }
-    }
-
-    // Sanitize names
-    const sanitizedFirstName = sanitizeName(firstName, 50);
-    const sanitizedLastName = sanitizeName(lastName, 50);
-    
-    if (!sanitizedFirstName || sanitizedFirstName.length < 2) {
-      return NextResponse.json(
-        { error: 'First name must be at least 2 characters and contain only letters' },
-        { status: 400 }
-      );
-    }
-    
-    if (!sanitizedLastName || sanitizedLastName.length < 2) {
-      return NextResponse.json(
-        { error: 'Last name must be at least 2 characters and contain only letters' },
-        { status: 400 }
-      );
-    }
-
-    // Sanitize phone
-    const phoneNormalized = phone ? String(phone).replace(/[^\d\s\-\(\)\+]/g, '').trim() : null;
+    const emailLower = email.toLowerCase().trim();
+    const phoneNormalized = phone ? String(phone).trim() : null;
 
     // Basic phone validation (ensure 7-15 digits)
     if (phoneNormalized) {
@@ -173,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     // Check cohort availability before applying - use admin client
     if (cohortId) {
-      const [{ data: cohort, error: cohortError }, { count: enrolledCount }, { count: pendingCount }] = await Promise.all([
+      const [{ data: cohort, error: cohortError }, { count }] = await Promise.all([
         supabaseAdmin
           .from('cohorts')
           .select('id, seats_total')
@@ -183,11 +141,6 @@ export async function POST(req: NextRequest) {
           .from('cohort_enrollment')
           .select('*', { count: 'exact', head: true })
           .eq('cohort_id', cohortId),
-        supabaseAdmin
-          .from('applications')
-          .select('*', { count: 'exact', head: true })
-          .eq('preferred_cohort_id', cohortId)
-          .eq('status', 'Pending'),
       ]);
 
       if (cohortError) {
@@ -199,11 +152,8 @@ export async function POST(req: NextRequest) {
       }
 
       const seatsTotal = cohort?.seats_total || 0;
-      const enrolled = enrolledCount || 0;
-      const pending = pendingCount || 0;
-      
-      // Check if cohort is full: enrolled + pending applications >= total seats
-      if (seatsTotal > 0 && (enrolled + pending) >= seatsTotal) {
+      const enrolled = count || 0;
+      if (seatsTotal > 0 && enrolled >= seatsTotal) {
         return NextResponse.json(
           { error: 'This cohort is full. Please select another cohort.' },
           { status: 409 }
@@ -217,12 +167,12 @@ export async function POST(req: NextRequest) {
     const { data: application, error } = await supabaseAdmin
       .from('applications')
       .insert({
-        first_name: sanitizedFirstName,
-        last_name: sanitizedLastName,
+        first_name: firstName,
+        last_name: lastName,
         email: emailLower,
         phone: phoneNormalized,
-        country: country ? String(country).substring(0, 100) : null,
-        city: city ? String(city).substring(0, 100) : null,
+        country: country || null,
+        city: city || null,
         birth_date: birthDate || null,
         experience_level: experienceLevel || null,
         preferred_cohort_id: cohortId,

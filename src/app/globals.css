@@ -17,6 +17,7 @@
 }
 
 html {
+  background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
   background-color: #020617;
   min-height: 100vh;
 }
@@ -28,6 +29,22 @@ body {
   position: relative;
   overflow-x: hidden;
   min-height: 100vh;
+}
+
+/* Blurred background image layer - optimized */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/images/bitcoin-bg.jpg') center center / cover no-repeat fixed;
+  filter: blur(1px);
+  z-index: -2;
+  pointer-events: none;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* Gradient overlay: darker on left (text area), brighter on right (image area) */

@@ -4,11 +4,14 @@ import bcrypt from 'bcryptjs';
 import { requireAdmin } from '@/lib/adminSession';
 
 // Debug endpoint to check admin account status
-// ONLY accessible in development - BLOCKED in production
+// Only accessible in development or by authenticated admins
 export async function GET(req: NextRequest) {
-  // Completely block in production - do not allow even for admins
+  // Block in production unless admin is authenticated
   if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
   }
   try {
     const { searchParams } = new URL(req.url);
@@ -58,12 +61,14 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Test password endpoint - ONLY in development
-// COMPLETELY BLOCKED in production
+// Test password endpoint - only in development
 export async function POST(req: NextRequest) {
-  // Completely block in production - do not allow even for admins
+  // Block in production
   if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
   }
   try {
     const { email, password } = await req.json();

@@ -82,7 +82,7 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl">
+    <header className="relative z-50 border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link 
           href="/" 

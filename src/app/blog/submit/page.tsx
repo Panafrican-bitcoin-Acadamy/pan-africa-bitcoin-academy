@@ -1,23 +1,12 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { useAuth } from '@/hooks/useAuth';
-
-interface Cohort {
-  id: string;
-  name: string;
-}
+import { useState } from "react";
 
 export default function SubmitBlogPage() {
-  const { isAuthenticated, profile, loading: authLoading } = useAuth();
-  const [cohorts, setCohorts] = useState<Cohort[]>([]);
-  const [cohortsLoading, setCohortsLoading] = useState(true);
-  const [cohortOtherText, setCohortOtherText] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     cohort: "",
-    cohortId: "",
     title: "",
     category: "",
     content: "",
@@ -25,62 +14,6 @@ export default function SubmitBlogPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Fetch cohorts from database
-  useEffect(() => {
-    const fetchCohorts = async () => {
-      try {
-        const res = await fetch('/api/cohorts');
-        if (res.ok) {
-          const data = await res.json();
-          setCohorts(data.cohorts || []);
-        }
-      } catch (error) {
-        console.error('Error fetching cohorts:', error);
-      } finally {
-        setCohortsLoading(false);
-      }
-    };
-    fetchCohorts();
-  }, []);
-
-  // Auto-populate form if user is authenticated
-  useEffect(() => {
-    if (isAuthenticated && profile && !authLoading) {
-      setFormData(prev => ({
-        ...prev,
-        name: profile.name || "",
-        email: profile.email || "",
-      }));
-
-      // Fetch user's full profile data including cohort
-      const fetchUserData = async () => {
-        try {
-          const res = await fetch('/api/profile/user-data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ email: profile.email }),
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            if (data.profile?.cohort_id && data.cohort?.name) {
-              setFormData(prev => ({
-                ...prev,
-                cohort: data.cohort.name,
-                cohortId: data.profile.cohort_id,
-              }));
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      };
-      
-      fetchUserData();
-    }
-  }, [isAuthenticated, profile, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +29,6 @@ export default function SubmitBlogPage() {
           authorName: formData.name,
           authorEmail: formData.email,
           cohort: formData.cohort,
-          cohortId: formData.cohortId || null,
           authorBio: formData.bio,
           title: formData.title,
           category: formData.category,
@@ -126,28 +58,16 @@ export default function SubmitBlogPage() {
         alert(message);
       }
       
-      // Reset form (keep user data if authenticated)
-      if (isAuthenticated && profile) {
-        setFormData(prev => ({
-          ...prev,
-          title: "",
-          category: "",
-          content: "",
-        }));
-        setCohortOtherText("");
-      } else {
-        setFormData({
-          name: "",
-          email: "",
-          cohort: "",
-          cohortId: "",
-          title: "",
-          category: "",
-          content: "",
-          bio: "",
-        });
-        setCohortOtherText("");
-      }
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        cohort: "",
+        title: "",
+        category: "",
+        content: "",
+        bio: "",
+      });
     } catch (error: any) {
       console.error('Error submitting blog post:', error);
       alert(error.message || 'Failed to submit blog post. Please try again.');
@@ -200,15 +120,9 @@ export default function SubmitBlogPage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      disabled={isAuthenticated}
-                      className={`w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
-                        isAuthenticated ? 'opacity-70 cursor-not-allowed' : ''
-                      }`}
+                      className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
                       placeholder="your@email.com"
                     />
-                    {isAuthenticated && (
-                      <p className="mt-1 text-xs text-zinc-400">Email from your account</p>
-                    )}
                   </div>
                 </div>
 
@@ -216,67 +130,18 @@ export default function SubmitBlogPage() {
                   <label className="mb-2 block text-sm font-medium text-zinc-300">
                     Cohort / Status <span className="text-red-400">*</span>
                   </label>
-                  {cohortsLoading ? (
-                    <div className="text-sm text-zinc-400">Loading cohorts...</div>
-                  ) : (
-                    <>
-                      <select
-                        required
-                        value={formData.cohort === "Other" ? "Other" : formData.cohortId}
-                        onChange={(e) => {
-                          if (e.target.value === "Other") {
-                            setFormData({ ...formData, cohort: "Other", cohortId: "" });
-                            setCohortOtherText("");
-                          } else if (e.target.value === "") {
-                            setFormData({ ...formData, cohort: "", cohortId: "" });
-                            setCohortOtherText("");
-                          } else {
-                            const selectedCohort = cohorts.find(c => c.id === e.target.value);
-                            setFormData({ 
-                              ...formData, 
-                              cohort: selectedCohort?.name || "", 
-                              cohortId: e.target.value 
-                            });
-                            setCohortOtherText("");
-                          }
-                        }}
-                        disabled={!!(isAuthenticated && formData.cohortId && formData.cohort !== "Other")}
-                        className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer ${
-                          isAuthenticated && formData.cohortId && formData.cohort !== "Other" ? 'opacity-70 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <option value="" className="bg-zinc-950 text-zinc-400">
-                          {formData.category === "pre-education" ? "Select or choose Other" : "Select a cohort"}
-                        </option>
-                        {cohorts.map((cohort) => (
-                          <option key={cohort.id} value={cohort.id} className="bg-zinc-950 text-zinc-50">
-                            {cohort.name}
-                          </option>
-                        ))}
-                        <option value="Other" className="bg-zinc-950 text-zinc-50">Other</option>
-                      </select>
-                      {formData.cohort === "Other" && (
-                        <input
-                          type="text"
-                          required
-                          value={cohortOtherText}
-                          onChange={(e) => {
-                            setCohortOtherText(e.target.value);
-                            setFormData({ ...formData, cohort: e.target.value });
-                          }}
-                          className="mt-2 w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                          placeholder="Enter your cohort/status (e.g., Prospective Student, Not Yet Enrolled)"
-                        />
-                      )}
-                      {isAuthenticated && formData.cohortId && formData.cohort !== "Other" && (
-                        <p className="mt-1 text-xs text-zinc-400">Your assigned cohort</p>
-                      )}
-                      {formData.category === "pre-education" && (
-                        <p className="mt-1 text-xs text-zinc-400">
-                          Optional: If you're planning to enroll, select "Other" and mention it. Otherwise, you can leave this blank or write "Prospective Student".
-                        </p>
-                      )}
-                    </>
+                  <input
+                    type="text"
+                    required
+                    value={formData.cohort}
+                    onChange={(e) => setFormData({ ...formData, cohort: e.target.value })}
+                    className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                    placeholder={formData.category === "pre-education" ? "e.g., Prospective Student, Not Yet Enrolled, or leave blank" : "e.g., Cohort 1 - January 2025"}
+                  />
+                  {formData.category === "pre-education" && (
+                    <p className="mt-1 text-xs text-zinc-400">
+                      Optional: If you're planning to enroll, mention it here. Otherwise, you can leave this blank or write "Prospective Student".
+                    </p>
                   )}
                 </div>
 

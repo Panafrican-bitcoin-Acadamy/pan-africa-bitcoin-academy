@@ -171,7 +171,7 @@ export default function ImpactPage() {
   const displayMetrics = metrics
     ? [
         { label: "Total Students Trained", value: metrics.totalStudentsTrained.toString(), icon: "👥" },
-        { label: "Cohorts Completed", value: metrics.cohortsCompleted.toString(), icon: "" },
+        { label: "Cohorts Completed", value: metrics.cohortsCompleted.toString(), icon: "📚" },
         { label: "Countries Reached", value: metrics.countriesReached.toString(), icon: "🌍" },
         // Lightning Transactions - paused
         { label: "Assignments Submitted", value: metrics.assignmentsSubmitted.toString(), icon: "📝" },
@@ -217,7 +217,7 @@ export default function ImpactPage() {
               // Show placeholder with 0 values while loading
               [
                 { label: "Total Students Trained", icon: "👥", value: "0" },
-                { label: "Cohorts Completed", icon: "", value: "0" },
+                { label: "Cohorts Completed", icon: "📚", value: "0" },
                 { label: "Countries Reached", icon: "🌍", value: "0" },
                 { label: "Assignments Submitted", icon: "📝", value: "0" },
                 { label: "Teaching Hours", icon: "⏰", value: "0" },
@@ -442,10 +442,7 @@ export default function ImpactPage() {
           <p className="mt-2 text-sm text-zinc-300 sm:text-base">
             Get our comprehensive 1–2 page PDF report with mission, results, charts, stats, photos, and quotes.
           </p>
-          <button 
-            disabled
-            className="mt-6 rounded-lg bg-gradient-to-r from-zinc-600 to-zinc-700 px-6 py-3 text-sm font-semibold text-zinc-400 cursor-not-allowed opacity-60"
-          >
+          <button className="mt-6 rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110">
             Download PDF Report
           </button>
           </section>

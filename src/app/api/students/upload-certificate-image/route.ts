@@ -54,42 +54,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get student record, create if missing
-    let { data: student, error: studentError } = await supabaseAdmin
+    // Get student record
+    const { data: student, error: studentError } = await supabaseAdmin
       .from('students')
       .select('id, profile_id')
       .eq('profile_id', session.userId)
       .maybeSingle();
 
-    if (studentError) {
-      console.error('[upload-certificate-image] Error checking student record:', studentError);
-    }
-
-    if (!student) {
-      // Student record doesn't exist - create it automatically
-      console.log(`[upload-certificate-image] Creating missing student record for profile ${session.userId}`);
-      const { data: newStudent, error: createError } = await supabaseAdmin
-        .from('students')
-        .insert({
-          profile_id: session.userId,
-          progress_percent: 0,
-          assignments_completed: 0,
-          projects_completed: 0,
-          live_sessions_attended: 0,
-        })
-        .select('id, profile_id')
-        .single();
-
-      if (createError || !newStudent) {
-        console.error('[upload-certificate-image] Failed to create student record:', createError);
-        return NextResponse.json(
-          { error: 'Failed to create student record. Please contact support.' },
-          { status: 500 }
-        );
-      }
-
-      student = newStudent;
-      console.log(`[upload-certificate-image] Successfully created student record for profile ${session.userId}`);
+    if (studentError || !student) {
+      return NextResponse.json(
+        { error: 'Student record not found. Please ensure you are registered as a student.' },
+        { status: 404 }
+      );
     }
 
     // Convert base64 to buffer
@@ -180,42 +156,18 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get student record, create if missing
-    let { data: student, error: studentError } = await supabaseAdmin
+    // Get student record
+    const { data: student, error: studentError } = await supabaseAdmin
       .from('students')
       .select('id, certificate_image_url')
       .eq('profile_id', session.userId)
       .maybeSingle();
 
-    if (studentError) {
-      console.error('[upload-certificate-image DELETE] Error checking student record:', studentError);
-    }
-
-    if (!student) {
-      // Student record doesn't exist - create it automatically
-      console.log(`[upload-certificate-image DELETE] Creating missing student record for profile ${session.userId}`);
-      const { data: newStudent, error: createError } = await supabaseAdmin
-        .from('students')
-        .insert({
-          profile_id: session.userId,
-          progress_percent: 0,
-          assignments_completed: 0,
-          projects_completed: 0,
-          live_sessions_attended: 0,
-        })
-        .select('id, certificate_image_url')
-        .single();
-
-      if (createError || !newStudent) {
-        console.error('[upload-certificate-image DELETE] Failed to create student record:', createError);
-        return NextResponse.json(
-          { error: 'Failed to create student record. Please contact support.' },
-          { status: 500 }
-        );
-      }
-
-      student = newStudent;
-      console.log(`[upload-certificate-image DELETE] Successfully created student record for profile ${session.userId}`);
+    if (studentError || !student) {
+      return NextResponse.json(
+        { error: 'Student record not found' },
+        { status: 404 }
+      );
     }
 
     // Remove certificate image URL from student record

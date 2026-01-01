@@ -278,30 +278,6 @@ export default function DeveloperHubPage() {
                     </ul>
                   </div>
 
-                  {/* SavingsSatoshi */}
-                  <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-5 flex flex-col h-full">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h4 className="text-lg font-semibold text-indigo-200">SavingsSatoshi</h4>
-                      <a
-                        href="https://savingsatoshi.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-300 hover:text-indigo-200"
-                        aria-label="Visit SavingsSatoshi website (opens in new tab)"
-                      >
-                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                      </a>
-                    </div>
-                    <p className="mb-3 text-sm text-zinc-300">Code your way through the mysteries of bitcoin.</p>
-                    <p className="mb-3 text-sm font-medium text-indigo-200">Why use it?</p>
-                    <ul className="ml-4 space-y-1 text-sm text-zinc-400">
-                      <li>• Interactive coding challenges</li>
-                      <li>• Learn Bitcoin concepts through practice</li>
-                      <li>• Open-source production by the Bitcoin community</li>
-                      <li>• Build practical Bitcoin development skills</li>
-                    </ul>
-                  </div>
-
                   {/* Mempool Explorers & Block Explorers */}
                   <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-5">
                     <div className="mb-3 flex items-center justify-between">
@@ -656,7 +632,7 @@ export default function DeveloperHubPage() {
             <div className="space-y-8">
               {/* 1. Educational Resources & About Sites */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-orange-300">Educational Resources & About Sites</h3>
+                <h3 className="mb-4 text-xl font-semibold text-orange-300">📚 Educational Resources & About Sites</h3>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://bitcoin.org/en/how-it-works"
@@ -708,7 +684,7 @@ export default function DeveloperHubPage() {
 
               {/* 2. Environmental & Energy Trends */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-green-300">Environmental & Energy Trends</h3>
+                <h3 className="mb-4 text-xl font-semibold text-green-300">🌱 Environmental & Energy Trends</h3>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://bitcoinminingcouncil.com"
@@ -751,7 +727,7 @@ export default function DeveloperHubPage() {
 
               {/* 3. Practical Hands-On Mining Experiments */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-purple-300">Practical Hands-On Mining Experiments</h3>
+                <h3 className="mb-4 text-xl font-semibold text-purple-300">🧪 Practical Hands-On Mining Experiments</h3>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://github.com/bitcoin/bitcoin/tree/master/src/miner"
@@ -800,7 +776,7 @@ export default function DeveloperHubPage() {
                   </a>
                 </div>
                 <div className="mt-4 rounded-lg border border-purple-500/30 bg-purple-500/10 p-4">
-                  <p className="mb-2 text-sm font-medium text-purple-200">Experiment Ideas:</p>
+                  <p className="mb-2 text-sm font-medium text-purple-200">💡 Experiment Ideas:</p>
                   <ul className="ml-4 space-y-1 text-sm text-zinc-300">
                     <li>• Build a simple CPU miner using Python</li>
                     <li>• Simulate mining difficulty adjustments</li>
@@ -968,7 +944,7 @@ export default function DeveloperHubPage() {
 
               {/* 5. Current Industry & Market Developments */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-blue-300">Current Industry & Market Developments</h3>
+                <h3 className="mb-4 text-xl font-semibold text-blue-300">📈 Current Industry & Market Developments</h3>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://www.miningpoolstats.stream/bitcoin"
@@ -1166,7 +1142,7 @@ export default function DeveloperHubPage() {
             
             <div className="mt-8 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-center">
               <p className="text-sm text-cyan-200">
-                <strong>Interested in becoming a mentor?</strong> Check out our{' '}
+                💡 <strong>Interested in becoming a mentor?</strong> Check out our{' '}
                 <Link href="/mentorship" className="underline hover:text-cyan-100">
                   Mentorship Program
                 </Link>
@@ -1196,7 +1172,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-semibold text-zinc-100">Bitcoin Dev Kampala Meetup</h3>
-                  <span className="text-sm text-zinc-400">Last Friday of every month</span>
+                  <span className="text-sm text-zinc-400">March 3, 2025</span>
                 </div>
                 <p className="text-sm text-zinc-400">Local meetup for Bitcoin developers in Uganda</p>
               </div>

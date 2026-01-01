@@ -19,37 +19,29 @@ export async function GET() {
       );
     }
 
-    // For each cohort, count enrolled students, applications, and sessions
+    // For each cohort, count enrolled students and sessions
     const cohortsWithSeats = await Promise.all(
       (cohorts || []).map(async (cohort: any) => {
-        // Count enrolled students from cohort_enrollment
-        const { count: enrolledCount, error: countError } = await supabase
+        // Count enrolled students
+        const { count, error: countError } = await supabase
           .from('cohort_enrollment')
           .select('*', { count: 'exact', head: true })
           .eq('cohort_id', cohort.id);
 
-        const enrolled = enrolledCount || 0;
+        const enrolled = count || 0;
+        const available = Math.max(0, (cohort.seats_total || 0) - enrolled);
 
-        // Count only Pending applications (Approved applications are already counted as enrolled)
-        // When an application is approved, it creates a cohort_enrollment record, so we don't want to double count
-        const { count: pendingApplicationsCount, error: applicationsError } = await supabase
-          .from('applications')
+        // Count sessions from cohort_sessions table
+        const { count: sessionsCount, error: sessionsError } = await supabase
+          .from('cohort_sessions')
           .select('*', { count: 'exact', head: true })
-          .eq('preferred_cohort_id', cohort.id)
-          .eq('status', 'Pending');
+          .eq('cohort_id', cohort.id);
 
-        if (applicationsError) {
-          console.error(`Error counting applications for cohort ${cohort.id}:`, applicationsError);
+        if (sessionsError) {
+          console.error(`Error counting sessions for cohort ${cohort.id}:`, sessionsError);
         }
 
-        const pendingApplications = pendingApplicationsCount || 0;
-
-        // Calculate available seats: total - enrolled - pending applications
-        // (Approved applications are already included in enrolled count)
-        const available = Math.max(0, (cohort.seats_total || 0) - enrolled - pendingApplications);
-
-        // Get sessions count from cohorts.sessions column
-        const sessions = cohort.sessions || 0;
+        const sessions = sessionsCount || 0;
 
         return {
           id: cohort.id,
@@ -57,7 +49,7 @@ export async function GET() {
           startDate: cohort.start_date || null,
           endDate: cohort.end_date || null,
           status: cohort.status || 'Upcoming',
-          sessions: sessions, // From cohorts.sessions column
+          sessions: sessions, // Dynamic count from cohort_sessions table
           level: cohort.level || 'Beginner',
           seats: cohort.seats_total || 0,
           available: available,

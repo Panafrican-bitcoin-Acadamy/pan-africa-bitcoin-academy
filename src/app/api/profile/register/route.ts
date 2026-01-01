@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/passwordValidation';
-import { validateAndNormalizeEmail, sanitizeName } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,33 +21,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate and normalize email
-    const emailValidation = validateAndNormalizeEmail(email);
-    if (!emailValidation.valid || !emailValidation.normalized) {
-      return NextResponse.json(
-        { error: emailValidation.error || 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-
-    // Sanitize names
-    const sanitizedFirstName = sanitizeName(firstName, 50);
-    const sanitizedLastName = sanitizeName(lastName, 50);
-    
-    if (!sanitizedFirstName || sanitizedFirstName.length < 2) {
-      return NextResponse.json(
-        { error: 'First name must be at least 2 characters and contain only letters' },
-        { status: 400 }
-      );
-    }
-    
-    if (!sanitizedLastName || sanitizedLastName.length < 2) {
-      return NextResponse.json(
-        { error: 'Last name must be at least 2 characters and contain only letters' },
-        { status: 400 }
-      );
-    }
-
     // Validate strong password requirements
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
@@ -62,7 +34,7 @@ export async function POST(req: NextRequest) {
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
-      .eq('email', emailValidation.normalized)
+      .eq('email', email.toLowerCase().trim())
       .maybeSingle();
 
     if (existingProfile) {
@@ -81,8 +53,8 @@ export async function POST(req: NextRequest) {
     const { data: newProfile, error: profileError } = await supabase
       .from('profiles')
       .insert({
-        name: `${sanitizedFirstName} ${sanitizedLastName}`,
-        email: emailValidation.normalized,
+        name: `${firstName} ${lastName}`.trim(),
+        email: email.toLowerCase().trim(),
         password_hash: passwordHash,
         phone: null, // Keep phone empty - will be filled during application
         status: 'New', // Just signed up, not enrolled yet

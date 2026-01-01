@@ -94,15 +94,6 @@ const fallbackMentors: Mentor[] = [
     twitter: "https://twitter.com/samiromer",
     type: null,
   },
-  {
-    name: "Ojok Emmanuel Nsubuga",
-    role: "Software Developer",
-    description: "Software developer contributing to Bitcoin wallet development and open-source projects.",
-    image: "/images/mentors/ojokne.jpg",
-    github: "https://github.com/ojokne",
-    twitter: "https://x.com/Ojokne",
-    type: null,
-  },
 ];
 
 async function getMentors(): Promise<Mentor[]> {
@@ -214,18 +205,18 @@ export default async function Home() {
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
-        {/* Hero Content - Pushed to the absolute rightmost edge */}
-        <div className="relative z-10 ml-auto max-w-4xl space-y-8 text-center px-4 sm:px-6 lg:pr-2 xl:pr-4 2xl:pr-6">
+        {/* Hero Content - Positioned far right, close to edge */}
+        <div className="relative z-10 ml-auto mr-2 max-w-4xl space-y-8 pr-1 text-left sm:mr-4 sm:pr-2 lg:mr-8 lg:pr-3 xl:mr-12 xl:pr-4 2xl:mr-16 2xl:pr-5">
           <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
             Scaling Bitcoin adoption
           </h1>
           <p className="text-2xl font-semibold text-orange-400 sm:text-3xl lg:text-4xl">
             Turning the Africa orange
           </p>
-          <p className="mx-auto max-w-2xl text-base text-zinc-400 sm:text-lg">
+          <p className="max-w-2xl text-base text-zinc-400 sm:text-lg">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
           </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-start">
             <Link
               href="/apply"
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-8 py-4 text-base font-semibold text-black shadow-[0_0_40px_rgba(249,115,22,0.8)] transition hover:brightness-110"
@@ -533,11 +524,11 @@ export default async function Home() {
                   Guided by Mentors & Community Leaders
                 </h2>
               </div>
-              <AnimatedList animation="slideLeft" className="flex flex-wrap justify-center items-center gap-6 max-w-7xl mx-auto">
+              <AnimatedList animation="slideLeft" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {mentors.map((mentor, index) => (
                   <div
                     key={index}
-                    className="w-full sm:w-auto max-w-sm rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(34,211,238,0.1)] flex flex-col items-center text-center"
+                    className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
                   >
                     <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20 overflow-hidden">
                       {mentor.image ? (
@@ -557,9 +548,9 @@ export default async function Home() {
                     {mentor.type && (
                       <p className="mb-3 text-xs font-medium text-orange-300">{mentor.type}</p>
                     )}
-                    <p className="mb-4 text-sm text-zinc-400 flex-grow">"{mentor.description}"</p>
+                    <p className="mb-4 text-sm text-zinc-400">"{mentor.description}"</p>
                     {(mentor.github || mentor.twitter) && (
-                      <div className="flex items-center justify-center gap-3 mt-auto pt-4 border-t border-zinc-700 w-full">
+                      <div className="flex items-center gap-3 mt-4 pt-4 border-t border-zinc-700">
                         {mentor.github && (
                           <a
                             href={mentor.github}

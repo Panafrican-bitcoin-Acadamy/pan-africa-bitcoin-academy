@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession } from '@/hooks/useSession';
 import EmailComposer from '@/components/EmailComposer';
-import { StudentProgressModal } from '@/components/StudentProgressModal';
 
 // Lazy load heavy admin components
 const SessionExpiredModal = dynamic(() => import('@/components/SessionExpiredModal').then(mod => ({ default: mod.SessionExpiredModal })), {
@@ -132,26 +131,12 @@ export default function AdminDashboardPage() {
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam' | 'assignments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam'>('overview');
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
   const [loadingExamAccess, setLoadingExamAccess] = useState(false);
-  const [submissions, setSubmissions] = useState<any[]>([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
-  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'graded'>('submitted');
-  const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
-  const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
-  const [blogSubmissions, setBlogSubmissions] = useState<any[]>([]);
-  const [loadingBlogSubmissions, setLoadingBlogSubmissions] = useState(false);
-  const [blogFilter, setBlogFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
-  const [processingBlog, setProcessingBlog] = useState<string | null>(null);
-  const [expandedBlogId, setExpandedBlogId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  const [expandedApplicationId, setExpandedApplicationId] = useState<string | null>(null);
-  const [applicationDetails, setApplicationDetails] = useState<Record<string, any>>({});
-  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   const [isPending, startTransition] = useTransition();
-  const [selectedStudent, setSelectedStudent] = useState<{ id: string; email: string; name: string } | null>(null);
 
   const [eventForm, setEventForm] = useState({
     name: '',
@@ -218,8 +203,6 @@ export default function AdminDashboardPage() {
         fetchLiveClassEvents(),
         fetchMentorships(),
         fetchExamAccess(),
-        fetchSubmissions(),
-        fetchBlogSubmissions(),
       ]);
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
@@ -267,36 +250,9 @@ export default function AdminDashboardPage() {
   };
 
   const fetchProgress = async () => {
-    try {
-      const res = await fetchWithAuth('/api/admin/students/progress');
-      const data = await res.json();
-      if (!res.ok) {
-        console.error('[Admin] Error fetching progress:', data.error || 'Unknown error');
-        setProgress([]);
-        return;
-      }
-      if (data.progress) {
-        console.log(`[Admin] Loaded ${data.progress.length} student progress records`);
-        // Debug: Log first student's chapter progress
-        if (data.progress.length > 0) {
-          const firstStudent = data.progress[0];
-          console.log(`[Admin] Sample student progress:`, {
-            name: firstStudent.name,
-            email: firstStudent.email,
-            completedChapters: firstStudent.completedChapters,
-            unlockedChapters: firstStudent.unlockedChapters,
-            totalChapters: firstStudent.totalChapters,
-          });
-        }
-        setProgress(data.progress);
-      } else {
-        console.warn('[Admin] No progress data in response');
-        setProgress([]);
-      }
-    } catch (err: any) {
-      console.error('[Admin] Error fetching student progress:', err);
-      setProgress([]);
-    }
+    const res = await fetchWithAuth('/api/admin/students/progress');
+    const data = await res.json();
+    if (data.progress) setProgress(data.progress);
   };
 
   const fetchMentorships = async () => {
@@ -315,114 +271,6 @@ export default function AdminDashboardPage() {
       console.error('Error fetching exam access:', err);
     } finally {
       setLoadingExamAccess(false);
-    }
-  };
-
-  const fetchSubmissions = async () => {
-    if (!admin) return;
-    try {
-      setLoadingSubmissions(true);
-      const res = await fetchWithAuth(`/api/admin/assignments/submissions?email=${encodeURIComponent(admin.email)}&status=${submissionFilter === 'all' ? 'all' : submissionFilter}`);
-      const data = await res.json();
-      if (data.submissions) setSubmissions(data.submissions);
-    } catch (err) {
-      console.error('Error fetching submissions:', err);
-    } finally {
-      setLoadingSubmissions(false);
-    }
-  };
-
-  const handleGradeSubmission = async (submissionId: string, isCorrect: boolean) => {
-    if (!admin) return;
-    setGradingSubmission(submissionId);
-    try {
-      const res = await fetchWithAuth('/api/admin/assignments/grade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: admin.email,
-          submissionId,
-          isCorrect,
-          feedback: gradingFeedback[submissionId] || null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to grade submission');
-      alert(data.message || (isCorrect ? 'Assignment approved!' : 'Assignment rejected.'));
-      await fetchSubmissions();
-      setGradingFeedback((prev) => {
-        const next = { ...prev };
-        delete next[submissionId];
-        return next;
-      });
-    } catch (err: any) {
-      alert(err.message || 'Failed to grade submission');
-    } finally {
-      setGradingSubmission(null);
-    }
-  };
-
-  const fetchBlogSubmissions = async () => {
-    if (!admin) return;
-    try {
-      setLoadingBlogSubmissions(true);
-      const res = await fetchWithAuth(`/api/admin/blog?type=submissions&status=${blogFilter === 'all' ? '' : blogFilter}`);
-      const data = await res.json();
-      if (data.submissions) setBlogSubmissions(data.submissions);
-    } catch (err) {
-      console.error('Error fetching blog submissions:', err);
-    } finally {
-      setLoadingBlogSubmissions(false);
-    }
-  };
-
-  const handleApproveBlog = async (submissionId: string) => {
-    if (!admin) return;
-    setProcessingBlog(submissionId);
-    try {
-      const res = await fetchWithAuth('/api/admin/blog/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submissionId,
-          isFeatured: false,
-          isBlogOfMonth: false,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to approve blog');
-      alert(data.message || 'Blog approved and published!');
-      await fetchBlogSubmissions();
-    } catch (err: any) {
-      alert(err.message || 'Failed to approve blog');
-    } finally {
-      setProcessingBlog(null);
-    }
-  };
-
-  const handleRejectBlog = async (submissionId: string, reason?: string) => {
-    if (!admin) return;
-    const rejectionReason = reason || prompt('Reason for rejection (optional):');
-    if (rejectionReason === null) return; // User cancelled
-    
-    setProcessingBlog(submissionId);
-    try {
-      const res = await fetchWithAuth('/api/admin/blog/reject', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submissionId,
-          rejectionReason: rejectionReason || null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to reject blog');
-      alert(data.message || 'Blog rejected.');
-      await fetchBlogSubmissions();
-    } catch (err: any) {
-      alert(err.message || 'Failed to reject blog');
-    } finally {
-      setProcessingBlog(null);
     }
   };
 
@@ -617,37 +465,6 @@ export default function AdminDashboardPage() {
     } finally {
       // Clear processing state immediately
       setProcessing(null);
-    }
-  };
-
-  const fetchApplicationDetails = async (applicationId: string) => {
-    if (applicationDetails[applicationId]) {
-      // Already loaded, just toggle
-      return;
-    }
-
-    setLoadingDetails((prev) => ({ ...prev, [applicationId]: true }));
-    try {
-      const res = await fetchWithAuth(`/api/admin/applications/${applicationId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setApplicationDetails((prev) => ({ ...prev, [applicationId]: data }));
-      } else {
-        console.error('Failed to fetch application details:', data.error);
-      }
-    } catch (error) {
-      console.error('Error fetching application details:', error);
-    } finally {
-      setLoadingDetails((prev) => ({ ...prev, [applicationId]: false }));
-    }
-  };
-
-  const toggleApplicationDetails = (applicationId: string) => {
-    if (expandedApplicationId === applicationId) {
-      setExpandedApplicationId(null);
-    } else {
-      setExpandedApplicationId(applicationId);
-      fetchApplicationDetails(applicationId);
     }
   };
 
@@ -1047,256 +864,22 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-1.5 mt-2">
-                    <button
-                      onClick={() => toggleApplicationDetails(app.id)}
-                      disabled={loadingDetails[app.id]}
-                      className="flex-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-400 transition hover:bg-blue-500/30 disabled:opacity-50"
-                    >
-                      {loadingDetails[app.id] ? 'Loading...' : expandedApplicationId === app.id ? 'Hide Details' : 'View Details'}
-                    </button>
-                    {app.status.toLowerCase() === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(app.id, app.email)}
-                          disabled={processing === app.id}
-                          className="flex-1 rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
-                        >
-                          {processing === app.id ? '...' : 'Approve'}
-                        </button>
-                        <button
-                          onClick={() => handleReject(app.id, app.email)}
-                          disabled={processing === app.id}
-                          className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Expanded Details Dropdown */}
-                  {expandedApplicationId === app.id && applicationDetails[app.id] && (
-                    <div className="mt-3 pt-3 border-t border-zinc-800 space-y-3 text-xs">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-zinc-500">Application ID:</span>
-                          <p className="text-zinc-200 font-mono text-[10px] break-all">{app.id}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Status:</span>
-                          <p className="text-zinc-200">{app.status}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">First Name:</span>
-                          <p className="text-zinc-200">{app.first_name}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Last Name:</span>
-                          <p className="text-zinc-200">{app.last_name}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Email:</span>
-                          <p className="text-zinc-200 break-all">{app.email}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Phone:</span>
-                          <p className="text-zinc-200">{app.phone || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Country:</span>
-                          <p className="text-zinc-200">{app.country || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">City:</span>
-                          <p className="text-zinc-200">{app.city || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Experience Level:</span>
-                          <p className="text-zinc-200">{app.experience_level || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Preferred Language:</span>
-                          <p className="text-zinc-200">{app.preferred_language || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Birth Date:</span>
-                          <p className="text-zinc-200">{app.birth_date ? new Date(app.birth_date).toLocaleDateString() : 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Created At:</span>
-                          <p className="text-zinc-200">{new Date(app.created_at).toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      {/* Profile Data */}
-                      {applicationDetails[app.id].profile && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Profile Data</h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-zinc-500">Profile ID:</span>
-                              <p className="text-zinc-200 font-mono text-[10px] break-all">{applicationDetails[app.id].profile.id}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Student ID:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].profile.student_id || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Name:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].profile.name}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Status:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].profile.status}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Phone:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].profile.phone || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Country:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].profile.country || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">City:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].profile.city || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Created At:</span>
-                              <p className="text-zinc-200">{new Date(applicationDetails[app.id].profile.created_at).toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Student Data */}
-                      {applicationDetails[app.id].student && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Student Data</h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-zinc-500">Student ID:</span>
-                              <p className="text-zinc-200 font-mono text-[10px] break-all">{applicationDetails[app.id].student.id}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Status:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].student.status || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Created At:</span>
-                              <p className="text-zinc-200">{new Date(applicationDetails[app.id].student.created_at).toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Cohort Enrollments */}
-                      {applicationDetails[app.id].cohortEnrollments && applicationDetails[app.id].cohortEnrollments.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Cohort Enrollments</h4>
-                          {applicationDetails[app.id].cohortEnrollments.map((enrollment: any, idx: number) => (
-                            <div key={idx} className="mb-2 p-2 bg-zinc-800/50 rounded">
-                              <p className="text-zinc-200 font-medium">{enrollment.cohorts?.name || 'Unknown Cohort'}</p>
-                              <p className="text-zinc-400 text-[10px]">Enrolled: {new Date(enrollment.enrolled_at).toLocaleString()}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Chapter Progress */}
-                      {applicationDetails[app.id].chapterProgress && applicationDetails[app.id].chapterProgress.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Chapter Progress</h4>
-                          <div className="grid grid-cols-3 gap-1 text-[10px]">
-                            {applicationDetails[app.id].chapterProgress.map((progress: any) => (
-                              <div key={progress.chapter_number} className="p-1 bg-zinc-800/50 rounded">
-                                <span className="text-zinc-400">Ch {progress.chapter_number}:</span>
-                                <span className={progress.is_completed ? 'text-green-400' : progress.is_unlocked ? 'text-yellow-400' : 'text-zinc-500'}>
-                                  {progress.is_completed ? '✓' : progress.is_unlocked ? '○' : '✗'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Attendance */}
-                      {applicationDetails[app.id].attendance && applicationDetails[app.id].attendance.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Attendance ({applicationDetails[app.id].attendance.length} records)</h4>
-                          <div className="max-h-32 overflow-y-auto space-y-1">
-                            {applicationDetails[app.id].attendance.slice(0, 5).map((att: any, idx: number) => (
-                              <div key={idx} className="text-[10px] p-1 bg-zinc-800/50 rounded">
-                                <span className="text-zinc-200">{att.events?.name || 'Unknown Event'}</span>
-                                <span className="text-zinc-400 ml-2">{att.duration_minutes} min</span>
-                              </div>
-                            ))}
-                            {applicationDetails[app.id].attendance.length > 5 && (
-                              <p className="text-zinc-400 text-[10px]">+{applicationDetails[app.id].attendance.length - 5} more</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Sats Rewards */}
-                      {applicationDetails[app.id].satsRewards && applicationDetails[app.id].satsRewards.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Sats Rewards ({applicationDetails[app.id].satsRewards.length} records)</h4>
-                          <div className="max-h-32 overflow-y-auto space-y-1">
-                            {applicationDetails[app.id].satsRewards.slice(0, 5).map((reward: any, idx: number) => (
-                              <div key={idx} className="text-[10px] p-1 bg-zinc-800/50 rounded">
-                                <span className="text-zinc-200">{reward.amount} sats</span>
-                                <span className="text-zinc-400 ml-2">{reward.reward_type}</span>
-                                <span className="text-zinc-500 ml-2">{new Date(reward.created_at).toLocaleDateString()}</span>
-                              </div>
-                            ))}
-                            {applicationDetails[app.id].satsRewards.length > 5 && (
-                              <p className="text-zinc-400 text-[10px]">+{applicationDetails[app.id].satsRewards.length - 5} more</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Achievements */}
-                      {applicationDetails[app.id].achievements && applicationDetails[app.id].achievements.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Achievements ({applicationDetails[app.id].achievements.length})</h4>
-                          <div className="space-y-1">
-                            {applicationDetails[app.id].achievements.map((achievement: any, idx: number) => (
-                              <div key={idx} className="text-[10px] p-1 bg-zinc-800/50 rounded">
-                                <span className="text-zinc-200 font-medium">{achievement.badge_name}</span>
-                                <span className="text-zinc-400 ml-2">{achievement.points} pts</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Preferred Cohort */}
-                      {applicationDetails[app.id].preferredCohort && (
-                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                          <h4 className="text-xs font-semibold text-cyan-400 mb-2">Preferred Cohort</h4>
-                          <div className="grid grid-cols-2 gap-2 text-[10px]">
-                            <div>
-                              <span className="text-zinc-500">Name:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.name}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Level:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.level || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Start Date:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.start_date ? new Date(applicationDetails[app.id].preferredCohort.start_date).toLocaleDateString() : 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Status:</span>
-                              <p className="text-zinc-200">{applicationDetails[app.id].preferredCohort.status || 'N/A'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                  {app.status.toLowerCase() === 'pending' && (
+                    <div className="flex gap-1.5 mt-2">
+                      <button
+                        onClick={() => handleApprove(app.id, app.email)}
+                        disabled={processing === app.id}
+                        className="flex-1 rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                      >
+                        {processing === app.id ? '...' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => handleReject(app.id, app.email)}
+                        disabled={processing === app.id}
+                        className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1614,13 +1197,7 @@ export default function AdminDashboardPage() {
             <table className="min-w-full text-sm">
               <thead className="bg-zinc-900 text-left text-zinc-300">
                 <tr>
-                  <th className="px-3 py-2">#</th>
-                  <th className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      Name
-                      <span className="text-xs text-zinc-500">(Click to view details)</span>
-                    </div>
-                  </th>
+                  <th className="px-3 py-2">Name</th>
                   <th className="px-3 py-2">Email</th>
                   <th 
                     className="px-3 py-2 cursor-pointer hover:bg-zinc-800 transition select-none"
@@ -1684,13 +1261,11 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredAndSortedProgress.map((p, index) => (
+                {filteredAndSortedProgress.map((p) => (
                   <tr 
                     key={p.id} 
-                    className={`border-b border-zinc-800 cursor-pointer transition hover:bg-zinc-800/50 ${cohortFilter && p.cohortId === cohortFilter ? 'bg-zinc-800/30' : ''}`}
-                    onClick={() => setSelectedStudent({ id: p.id, email: p.email, name: p.name })}
+                    className={`border-b border-zinc-800 ${cohortFilter && p.cohortId === cohortFilter ? 'bg-zinc-800/30' : ''}`}
                   >
-                    <td className="px-3 py-2 text-zinc-400">{index + 1}</td>
                     <td className="px-3 py-2 text-zinc-50">{p.name}</td>
                     <td className="px-3 py-2 text-zinc-400">{p.email}</td>
                     <td className="px-3 py-2 text-zinc-400">
@@ -1732,301 +1307,6 @@ export default function AdminDashboardPage() {
               <p className="p-3 text-sm text-zinc-400">No students found for the selected cohort filter.</p>
             )}
           </div>
-        </div>
-
-        {/* Assignment Submissions Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-zinc-50">Assignment Submissions</h2>
-            <div className="flex gap-2">
-              {(['all', 'submitted', 'graded'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => {
-                    setSubmissionFilter(f);
-                    setTimeout(() => fetchSubmissions(), 0);
-                  }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                    submissionFilter === f
-                      ? 'bg-cyan-400 text-black'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)} (
-                  {submissions.filter((s) => {
-                    if (f === 'all') return true;
-                    return s.status === f;
-                  }).length})
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className="text-sm text-zinc-400 mb-6">
-            Review and grade student assignment submissions. Approve to award sats rewards.
-          </p>
-
-          {loadingSubmissions ? (
-            <div className="text-center py-8 text-zinc-400">Loading submissions...</div>
-          ) : submissions.length === 0 ? (
-            <div className="text-center py-8 text-zinc-400">No submissions found.</div>
-          ) : (
-            <div className="space-y-4">
-              {submissions
-                .filter((s) => {
-                  if (submissionFilter === 'all') return true;
-                  return s.status === submissionFilter;
-                })
-                .map((submission) => {
-                  const assignment = submission.assignments;
-                  const student = submission.profiles;
-                  return (
-                    <div
-                      key={submission.id}
-                      className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
-                    >
-                      <div className="mb-3 flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-zinc-50">
-                            {assignment?.title || 'Untitled Assignment'}
-                          </h3>
-                          <p className="text-xs text-zinc-400 mt-1">
-                            Chapter {assignment?.chapter_number || 'N/A'} • {student?.name || student?.email || 'Unknown Student'}
-                          </p>
-                          {assignment?.reward_sats && (
-                            <p className="text-xs text-cyan-400 mt-1">
-                              Reward: {assignment.reward_sats} sats
-                            </p>
-                          )}
-                        </div>
-                        <span
-                          className={`rounded-full border px-2 py-1 text-xs ${
-                            submission.status === 'graded'
-                              ? submission.is_correct
-                                ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                                : 'text-red-400 bg-red-500/10 border-red-500/30'
-                              : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
-                          }`}
-                        >
-                          {submission.status === 'graded'
-                            ? submission.is_correct
-                              ? 'Approved'
-                              : 'Rejected'
-                            : 'Pending Review'}
-                        </span>
-                      </div>
-
-                      {assignment?.question && (
-                        <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                          <p className="text-xs font-medium text-zinc-300 mb-1">Question:</p>
-                          <p className="text-sm text-zinc-200">{assignment.question}</p>
-                        </div>
-                      )}
-
-                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                        <p className="text-xs font-medium text-zinc-300 mb-1">Student Answer:</p>
-                        <p className="text-sm text-zinc-200 whitespace-pre-wrap">{submission.answer}</p>
-                      </div>
-
-                      {submission.feedback && (
-                        <div className="mb-3 rounded bg-blue-500/10 border border-blue-500/30 p-3">
-                          <p className="text-xs font-medium text-blue-300 mb-1">Feedback:</p>
-                          <p className="text-sm text-blue-200">{submission.feedback}</p>
-                        </div>
-                      )}
-
-                      <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                        <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
-                        {submission.graded_at && (
-                          <span>• Graded: {new Date(submission.graded_at).toLocaleString()}</span>
-                        )}
-                      </div>
-
-                      {submission.status === 'submitted' && (
-                        <div className="mt-4 space-y-2">
-                          <textarea
-                            placeholder="Optional feedback for student..."
-                            value={gradingFeedback[submission.id] || ''}
-                            onChange={(e) =>
-                              setGradingFeedback((prev) => ({
-                                ...prev,
-                                [submission.id]: e.target.value,
-                              }))
-                            }
-                            className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                            rows={2}
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleGradeSubmission(submission.id, true)}
-                              disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
-                            >
-                              {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
-                            </button>
-                            <button
-                              onClick={() => handleGradeSubmission(submission.id, false)}
-                              disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
-                            >
-                              {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </div>
-
-        {/* Blog Submissions Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
-            <div className="flex gap-2">
-              {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => {
-                    setBlogFilter(f);
-                    setTimeout(() => fetchBlogSubmissions(), 0);
-                  }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                    blogFilter === f
-                      ? 'bg-purple-400 text-black'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)} (
-                  {blogSubmissions.filter((s) => {
-                    if (f === 'all') return true;
-                    return s.status === f;
-                  }).length})
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className="text-sm text-zinc-400 mb-6">
-            Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
-          </p>
-
-          {loadingBlogSubmissions ? (
-            <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
-          ) : blogSubmissions.filter((s) => {
-              if (blogFilter === 'all') return true;
-              return s.status === blogFilter;
-            }).length === 0 ? (
-            <div className="text-center py-8 text-zinc-400">No blog submissions found.</div>
-          ) : (
-            <div className="space-y-4">
-              {blogSubmissions
-                .filter((s) => {
-                  if (blogFilter === 'all') return true;
-                  return s.status === blogFilter;
-                })
-                .map((submission) => (
-                  <div
-                    key={submission.id}
-                    className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
-                  >
-                    <div className="mb-3 flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-zinc-50">
-                          {submission.title}
-                        </h3>
-                        <p className="text-xs text-zinc-400 mt-1">
-                          {submission.author_name} • {submission.author_email}
-                          {submission.cohort && ` • ${submission.cohort}`}
-                        </p>
-                        <p className="text-xs text-purple-400 mt-1">
-                          Category: {submission.category}
-                        </p>
-                      </div>
-                      <span
-                        className={`rounded-full border px-2 py-1 text-xs ${
-                          submission.status === 'approved'
-                            ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                            : submission.status === 'rejected'
-                            ? 'text-red-400 bg-red-500/10 border-red-500/30'
-                            : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
-                        }`}
-                      >
-                        {submission.status === 'approved'
-                          ? 'Approved'
-                          : submission.status === 'rejected'
-                          ? 'Rejected'
-                          : 'Pending Review'}
-                      </span>
-                    </div>
-
-                    <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                      <p className="text-xs font-medium text-zinc-300 mb-1">Content Preview:</p>
-                      <p className="text-sm text-zinc-200 line-clamp-3">
-                        {submission.content.substring(0, 300)}...
-                      </p>
-                    </div>
-
-                    {expandedBlogId === submission.id && (
-                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                        <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
-                        <p className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                          {submission.content}
-                        </p>
-                      </div>
-                    )}
-
-                    {submission.rejection_reason && (
-                      <div className="mb-3 rounded bg-red-500/10 border border-red-500/30 p-3">
-                        <p className="text-xs font-medium text-red-300 mb-1">Rejection Reason:</p>
-                        <p className="text-sm text-red-200">{submission.rejection_reason}</p>
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                      <span>Submitted: {new Date(submission.created_at).toLocaleString()}</span>
-                      {submission.reviewed_at && (
-                        <span>• Reviewed: {new Date(submission.reviewed_at).toLocaleString()}</span>
-                      )}
-                    </div>
-
-                    {submission.status === 'pending' && (
-                      <div className="mt-4 space-y-2">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setExpandedBlogId(expandedBlogId === submission.id ? null : submission.id)}
-                            className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30"
-                          >
-                            {expandedBlogId === submission.id ? 'Hide Full Content' : 'View Full Content'}
-                          </button>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApproveBlog(submission.id)}
-                            disabled={processingBlog === submission.id}
-                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
-                          >
-                            {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
-                          </button>
-                          <button
-                            onClick={() => {
-                              const reason = prompt('Rejection reason (optional):');
-                              if (reason !== null) {
-                                handleRejectBlog(submission.id, reason || undefined);
-                              }
-                            }}
-                            disabled={processingBlog === submission.id}
-                            className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
-                          >
-                            {processingBlog === submission.id ? 'Processing...' : '✗ Reject'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
         </div>
 
         {/* Exam Management Section */}
@@ -2125,16 +1405,6 @@ export default function AdminDashboardPage() {
         }}
         userType="admin"
       />
-      )}
-
-      {/* Student Progress Modal */}
-      {selectedStudent && (
-        <StudentProgressModal
-          studentId={selectedStudent.id}
-          studentEmail={selectedStudent.email}
-          studentName={selectedStudent.name}
-          onClose={() => setSelectedStudent(null)}
-        />
       )}
     </div>
   );

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { examQuestions } from '@/content/examQuestions';
-import { validateAndNormalizeEmail } from '@/lib/validation';
-import { requireStudent } from '@/lib/session';
-import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * Submit final exam answers and calculate score
@@ -23,93 +20,59 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate and normalize email
-    const emailValidation = validateAndNormalizeEmail(email);
-    if (!emailValidation.valid || !emailValidation.normalized) {
+    if (!answers || typeof answers !== 'object') {
       return NextResponse.json(
-        { error: emailValidation.error || 'Invalid email format' },
+        { error: 'Answers object is required' },
         { status: 400 }
       );
     }
 
-    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
-      return NextResponse.json(
-        { error: 'Answers must be a valid object' },
-        { status: 400 }
-      );
-    }
+    // Step 0: Check if user is an admin (admins can take exam for testing)
+    const { data: admin } = await supabaseAdmin
+      .from('admins')
+      .select('id, email')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
 
-    // Validate answers structure - must be object with question IDs as keys
-    const answerKeys = Object.keys(answers);
-    if (answerKeys.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one answer is required' },
-        { status: 400 }
-      );
-    }
+    const isAdmin = !!admin;
 
-    // Validate each answer value is a string and reasonable length
-    for (const [questionId, answerValue] of Object.entries(answers)) {
-      if (typeof answerValue !== 'string') {
-        return NextResponse.json(
-          { error: `Answer for question ${questionId} must be a string` },
-          { status: 400 }
-        );
-      }
-      if (answerValue.length > 100) {
-        return NextResponse.json(
-          { error: `Answer for question ${questionId} is too long (max 100 characters)` },
-          { status: 400 }
-        );
-      }
-      // Validate question ID format (should be valid UUID or numeric)
-      if (!/^[0-9a-f-]+$/i.test(questionId) && !/^\d+$/.test(questionId)) {
-        return NextResponse.json(
-          { error: 'Invalid question ID format' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Check authentication - user must be logged in
-    const studentSession = requireStudent(req);
-    const adminSession = requireAdmin(req);
-    
-    if (!studentSession && !adminSession) {
-      return NextResponse.json(
-        { error: 'Authentication required. Please log in.' },
-        { status: 401 }
-      );
-    }
-
-    // Verify email matches authenticated session
-    const sessionEmail = (studentSession?.email || adminSession?.email)?.toLowerCase().trim();
-    if (sessionEmail !== emailValidation.normalized) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Email does not match your session.' },
-        { status: 403 }
-      );
-    }
-
-    const isAdmin = !!adminSession;
-
-    // Step 1: Get profile by email (admins might not have profiles with matching IDs)
+    // Step 1: Get or create profile
     let profile;
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('id, email')
-      .eq('email', emailValidation.normalized)
+      .eq('email', email.toLowerCase().trim())
       .maybeSingle();
 
     if (profileError || !existingProfile) {
-      // Profile should exist for authenticated users
-      return NextResponse.json(
-        { error: 'Profile not found. Please contact support.' },
-        { status: 404 }
-      );
+      // If admin and no profile, create a temporary profile for exam
+      if (isAdmin) {
+        const { data: newProfile, error: createError } = await supabaseAdmin
+          .from('profiles')
+          .insert({
+            email: email.toLowerCase().trim(),
+            name: 'Admin User',
+            status: 'Active',
+          })
+          .select('id, email')
+          .single();
+
+        if (createError || !newProfile) {
+          return NextResponse.json(
+            { error: 'Failed to create profile for exam' },
+            { status: 500 }
+          );
+        }
+        profile = newProfile;
+      } else {
+        return NextResponse.json(
+          { error: 'Profile not found' },
+          { status: 404 }
+        );
+      }
+    } else {
+      profile = existingProfile;
     }
-    
-    profile = existingProfile;
 
     // Step 2: Check if exam already completed (skip for admins to allow retakes for testing)
     if (!isAdmin) {

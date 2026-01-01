@@ -46,71 +46,7 @@ export function sanitizeString(input: string): string {
   if (typeof input !== 'string') {
     return '';
   }
-  
-  // Remove null bytes and control characters (except newlines and tabs)
-  let sanitized = input.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
-  
-  // Remove HTML tags
-  sanitized = sanitized.replace(/<[^>]*>/g, '');
-  
-  // Remove script content
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  sanitized = sanitized.replace(/on\w+\s*=/gi, '');
-  
-  return sanitized.trim();
-}
-
-/**
- * Sanitize text content (for longer text like assignments, blog posts)
- */
-export function sanitizeTextContent(input: string, maxLength: number = 50000): string {
-  if (typeof input !== 'string') {
-    return '';
-  }
-
-  // Remove null bytes
-  let sanitized = input.replace(/\x00/g, '');
-  
-  // Remove script tags and their content
-  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
-  // Remove event handlers
-  sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
-  
-  // Remove javascript: URLs
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  
-  // Trim
-  sanitized = sanitized.trim();
-  
-  // Limit length
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength);
-  }
-  
-  return sanitized;
-}
-
-/**
- * Validate and sanitize name input
- */
-export function sanitizeName(input: string, maxLength: number = 100): string {
-  if (typeof input !== 'string') {
-    return '';
-  }
-
-  // Allow letters, spaces, hyphens, apostrophes, and basic Unicode
-  let sanitized = input.replace(/[^a-zA-Z\s\-\'\u00C0-\u017F]/g, '');
-  
-  // Remove multiple consecutive spaces
-  sanitized = sanitized.replace(/\s+/g, ' ');
-  
-  sanitized = sanitized.trim();
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength);
-  }
-  
-  return sanitized;
+  return input.trim().replace(/[<>]/g, '');
 }
 
 /**

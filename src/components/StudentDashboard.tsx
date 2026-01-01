@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
 import { Download, Book, FileText } from 'lucide-react';
+import { AdminModeBadge } from './AdminModeBadge';
+
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
 const CertificateImageSection = lazy(() => import('./CertificateImageSection').then(mod => ({ default: mod.CertificateImageSection })));
@@ -537,6 +539,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
 
   return (
     <>
+      <AdminModeBadge />
       <div className="min-h-screen bg-black/95">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ProfileModal

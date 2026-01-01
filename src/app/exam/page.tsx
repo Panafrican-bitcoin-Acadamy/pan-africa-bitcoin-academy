@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
 import { examQuestions } from '@/content/examQuestions';
 import { CheckCircle2, XCircle, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { AdminModeBadge } from '@/components/AdminModeBadge';
 
 interface ExamAccess {
   hasAccess: boolean;
@@ -204,6 +205,7 @@ export default function ExamPage() {
   if (loading || checkingAccess) {
     return (
       <>
+        <AdminModeBadge />
         <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-orange-500 mx-auto mb-4" />
@@ -217,6 +219,7 @@ export default function ExamPage() {
   if (!accessCheck) {
     return (
       <>
+        <AdminModeBadge />
         <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center p-4">
           <div className="text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
@@ -231,6 +234,7 @@ export default function ExamPage() {
   if (!accessCheck.hasAccess) {
     return (
       <>
+        <AdminModeBadge />
         <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-8 text-center">
             <Lock className="w-16 h-16 text-orange-500 mx-auto mb-6" />
@@ -239,7 +243,7 @@ export default function ExamPage() {
             
             {!accessCheck.chapter21Completed && (
               <div className="bg-zinc-900/50 rounded-lg p-4 mb-4">
-                <p className="text-sm text-zinc-300 mb-2">Complete Chapter 21 first</p>
+                <p className="text-sm text-zinc-300 mb-2">📚 Complete Chapter 21 first</p>
                 <button
                   onClick={() => router.push('/chapters')}
                   className="text-orange-500 hover:text-orange-400 underline"
@@ -266,6 +270,7 @@ export default function ExamPage() {
   if (accessCheck.examCompleted && examResult?.completed && !accessCheck.isAdmin) {
     return (
       <>
+        <AdminModeBadge />
         <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 py-12 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-8 text-center">
@@ -294,6 +299,7 @@ export default function ExamPage() {
   // Show exam form
   return (
     <>
+      <AdminModeBadge />
       <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900">
         <div className="max-w-5xl mx-auto px-4 pt-12 pb-8">
           {/* Header */}
@@ -303,6 +309,12 @@ export default function ExamPage() {
                 <h1 className="text-3xl font-bold text-white mb-2">Final Exam</h1>
                 <p className="text-zinc-400">50 Multiple Choice Questions</p>
               </div>
+              {accessCheck.isAdmin && (
+                <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg px-4 py-2">
+                  <p className="text-orange-400 text-sm font-semibold">👑 Admin Mode</p>
+                  <p className="text-orange-300/70 text-xs">Testing Access</p>
+                </div>
+              )}
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="text-sm text-zinc-400">

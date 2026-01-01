@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { validateAndNormalizeEmail, sanitizeName, sanitizeTextContent } from '@/lib/validation';
-import { requireStudent } from '@/lib/session';
-import { requireAdmin } from '@/lib/adminSession';
+import { validateAndNormalizeEmail } from '@/lib/validation';
 
 /**
  * POST /api/blog/submit
@@ -15,7 +13,6 @@ export async function POST(request: NextRequest) {
       authorName,
       authorEmail,
       cohort,
-      cohortId,
       authorBio,
       title,
       category,
@@ -39,38 +36,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Sanitize inputs
-    const sanitizedAuthorName = sanitizeName(authorName, 100);
-    const sanitizedTitle = sanitizeTextContent(title, 200);
-    const sanitizedCategory = String(category).substring(0, 50);
-    const sanitizedBio = authorBio ? sanitizeTextContent(authorBio, 500) : null;
-    const sanitizedContent = sanitizeTextContent(content, 50000); // Max 50k chars
-    
-    // Validate sanitized inputs
-    if (!sanitizedAuthorName || sanitizedAuthorName.length < 2) {
-      return NextResponse.json(
-        { error: 'Author name must be at least 2 characters' },
-        { status: 400 }
-      );
-    }
-    
-    if (!sanitizedTitle || sanitizedTitle.length < 10) {
-      return NextResponse.json(
-        { error: 'Title must be at least 10 characters' },
-        { status: 400 }
-      );
-    }
-    
-    if (!sanitizedContent || sanitizedContent.length < 100) {
-      return NextResponse.json(
-        { error: 'Content must be at least 100 characters' },
-        { status: 400 }
-      );
-    }
-
     // Check word count (minimum 500 for regular posts, 300 for pre-education, maximum 2000)
-    const wordCount = sanitizedContent.trim().split(/\s+/).filter(Boolean).length;
-    const isPreEducation = sanitizedCategory.trim().toLowerCase() === 'pre-education';
+    const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+    const isPreEducation = category.trim().toLowerCase() === 'pre-education';
     const minWords = isPreEducation ? 300 : 500;
     
     if (wordCount < minWords) {
@@ -86,27 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check authentication - user must be logged in
-    const studentSession = requireStudent(request);
-    const adminSession = requireAdmin(request);
-    
-    if (!studentSession && !adminSession) {
-      return NextResponse.json(
-        { error: 'Authentication required. Please log in.' },
-        { status: 401 }
-      );
-    }
-
-    // Verify email matches authenticated session
-    const sessionEmail = (studentSession?.email || adminSession?.email)?.toLowerCase().trim();
-    if (sessionEmail !== emailValidation.normalized) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Email does not match your session.' },
-        { status: 403 }
-      );
-    }
-
-    // Try to find author profile by email (admins might not have profiles with matching IDs)
+    // Try to find author profile by email and check if they're a student
     let authorId = null;
     let isAcademyStudent = false;
     let studentCohort = null;
@@ -152,21 +100,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Create excerpt from first 200 characters
-    const excerpt = sanitizedContent.substring(0, 200).trim() + '...';
+    const excerpt = content.substring(0, 200).trim() + '...';
 
     // Insert submission
     const { data: submission, error } = await supabaseAdmin
       .from('blog_submissions')
       .insert({
         author_id: authorId,
-        author_name: sanitizedAuthorName,
+        author_name: authorName.trim(),
         author_email: emailValidation.normalized!,
-        cohort_id: cohortId || null,
-        cohort: cohort ? String(cohort).substring(0, 100) : null,
-        author_bio: sanitizedBio,
-        title: sanitizedTitle,
-        category: sanitizedCategory,
-        content: sanitizedContent,
+        cohort: cohort?.trim() || null,
+        author_bio: authorBio?.trim() || null,
+        title: title.trim(),
+        category: category.trim(),
+        content: content.trim(),
         status: 'pending',
       })
       .select('id, created_at')

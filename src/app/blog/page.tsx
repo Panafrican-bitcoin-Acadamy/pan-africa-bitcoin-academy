@@ -291,12 +291,7 @@ export default function BlogPage() {
                   <div className="text-left">
                     <h3 className="mb-2 text-lg font-semibold text-purple-200">Pre-Education Ideas</h3>
                     <p className="text-sm text-zinc-300">
-                      Are you curious about Bitcoin but haven't started learning yet?
-                      <br />
-                      Share your thoughts, questions, or ideas about Bitcoin as you see it today.
-                      <br />
-                      <br />
-                      <span className="text-purple-300 font-medium">Thoughtful and well-explained contributions will receive a sats reward.</span>
+                      Are you curious about Bitcoin but haven't started learning yet? Share your thoughts, questions, or ideas about Bitcoin before your education journey begins. We'd love to hear what you think!
                     </p>
                     <Link
                       href="/blog/submit"
@@ -315,6 +310,7 @@ export default function BlogPage() {
             <AnimatedSection animation="slideRight">
               <div className="mb-16 rounded-xl border-2 border-orange-400/50 bg-gradient-to-br from-orange-500/10 to-cyan-500/10 p-8 shadow-[0_0_50px_rgba(249,115,22,0.3)]">
               <div className="mb-4 flex items-center gap-2">
+                <span className="text-2xl">⭐</span>
                 <span className="rounded-full border border-orange-400/30 bg-orange-500/20 px-3 py-1 text-xs font-bold text-orange-300">
                   BLOG OF THE MONTH
                 </span>

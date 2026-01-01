@@ -3,14 +3,14 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(_req: NextRequest) {
   try {
-    // 1. Total Students Trained (count approved applications)
-    const { count: totalStudentsTrained, error: applicationsError } = await supabaseAdmin
-      .from('applications')
+    // 1. Total Students Trained (status = 'Graduated')
+    const { count: totalStudentsTrained, error: studentsError } = await supabaseAdmin
+      .from('students')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'Approved');
+      .eq('status', 'Graduated');
 
-    if (applicationsError) {
-      console.error('Error fetching approved applications:', applicationsError);
+    if (studentsError) {
+      console.error('Error fetching graduated students:', studentsError);
     }
 
     // 2. Cohorts Completed (status = 'Completed')
