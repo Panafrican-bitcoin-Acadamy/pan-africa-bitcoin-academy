@@ -11,6 +11,7 @@ import { ChapterAssignment } from "@/components/ChapterAssignment";
 import { Chapter6Assignment } from "@/components/Chapter6Assignment";
 import { Chapter8Assignment } from "@/components/Chapter8Assignment";
 import { Chapter18Assignment } from "@/components/Chapter18Assignment";
+import { ChapterUTXOAssignment } from "@/components/ChapterUTXOAssignment";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -742,6 +743,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               description="Understand the security benefits of hardware wallets."
               points={10}
               rewardSats={100}
+            />
+          ) : chapter.slug === 'utxos-fees-coin-control' ? (
+            <ChapterUTXOAssignment
+              assignmentId="99999999-9999-4999-8999-999999999999"
             />
           ) : chapter.slug === 'good-bitcoin-hygiene' ? (
             <ChapterAssignment

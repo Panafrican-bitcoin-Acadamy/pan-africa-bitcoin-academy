@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { validateAndNormalizeEmail, sanitizeName } from '@/lib/validation';
+import { requireStudent } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,8 +26,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const emailLower = email.toLowerCase().trim();
-    const phoneNormalized = phone ? String(phone).trim() : null;
+    // Validate and normalize email
+    const emailValidation = validateAndNormalizeEmail(email);
+    if (!emailValidation.valid || !emailValidation.normalized) {
+      return NextResponse.json(
+        { error: emailValidation.error || 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+    const emailLower = emailValidation.normalized;
+
+    // Optional: If user is logged in, verify email matches their session
+    const session = requireStudent(req);
+    if (session) {
+      const sessionEmail = session.email.toLowerCase().trim();
+      if (sessionEmail !== emailLower) {
+        return NextResponse.json(
+          { error: 'If you are logged in, you must use your account email address.' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Sanitize names
+    const sanitizedFirstName = sanitizeName(firstName, 50);
+    const sanitizedLastName = sanitizeName(lastName, 50);
+    
+    if (!sanitizedFirstName || sanitizedFirstName.length < 2) {
+      return NextResponse.json(
+        { error: 'First name must be at least 2 characters and contain only letters' },
+        { status: 400 }
+      );
+    }
+    
+    if (!sanitizedLastName || sanitizedLastName.length < 2) {
+      return NextResponse.json(
+        { error: 'Last name must be at least 2 characters and contain only letters' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize phone
+    const phoneNormalized = phone ? String(phone).replace(/[^\d\s\-\(\)\+]/g, '').trim() : null;
 
     // Basic phone validation (ensure 7-15 digits)
     if (phoneNormalized) {
@@ -175,12 +217,12 @@ export async function POST(req: NextRequest) {
     const { data: application, error } = await supabaseAdmin
       .from('applications')
       .insert({
-        first_name: firstName,
-        last_name: lastName,
+        first_name: sanitizedFirstName,
+        last_name: sanitizedLastName,
         email: emailLower,
         phone: phoneNormalized,
-        country: country || null,
-        city: city || null,
+        country: country ? String(country).substring(0, 100) : null,
+        city: city ? String(city).substring(0, 100) : null,
         birth_date: birthDate || null,
         experience_level: experienceLevel || null,
         preferred_cohort_id: cohortId,

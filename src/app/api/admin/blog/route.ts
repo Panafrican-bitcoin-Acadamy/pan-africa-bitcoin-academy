@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * GET /api/admin/blog
@@ -10,7 +11,12 @@ import { supabaseAdmin } from '@/lib/supabase';
  */
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add admin authentication check
+    // Check admin authentication
+    const session = requireAdmin(request);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type') || 'posts';
     const status = searchParams.get('status');

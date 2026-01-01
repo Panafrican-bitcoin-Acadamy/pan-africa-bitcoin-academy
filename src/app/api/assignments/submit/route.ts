@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkAndUnlockAchievements } from '@/lib/achievements';
+import { validateAndNormalizeEmail } from '@/lib/validation';
+import { sanitizeTextContent } from '@/lib/validation';
+import { requireStudent } from '@/lib/session';
+import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * POST /api/assignments/submit
@@ -18,22 +22,91 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user is an admin (admins can submit assignments too)
-    const { data: admin } = await supabaseAdmin
-      .from('admins')
-      .select('id, email, role')
-      .eq('email', email.toLowerCase().trim())
-      .maybeSingle();
+    // Validate and normalize email
+    const emailValidation = validateAndNormalizeEmail(email);
+    if (!emailValidation.valid || !emailValidation.normalized) {
+      return NextResponse.json(
+        { error: emailValidation.error || 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+    const normalizedEmail = emailValidation.normalized;
 
-    const isAdmin = !!admin;
+    // Validate assignmentId (should be UUID format)
+    if (typeof assignmentId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assignmentId)) {
+      return NextResponse.json(
+        { error: 'Invalid assignment ID format' },
+        { status: 400 }
+      );
+    }
 
-    // Get or create profile for admin/student
+    // Sanitize answer - handle both string and JSON answers
+    let sanitizedAnswer: string;
+    let answerIsJSON = false;
+    
+    if (typeof answer === 'string') {
+      // Try to parse as JSON first (for structured answers like Chapter6Assignment, Chapter8Assignment)
+      try {
+        const parsed = JSON.parse(answer);
+        // If it's a valid JSON object/array, sanitize the stringified version
+        const stringified = JSON.stringify(parsed);
+        sanitizedAnswer = sanitizeTextContent(stringified, 50000);
+        answerIsJSON = true;
+      } catch {
+        // Not JSON, treat as plain text
+        sanitizedAnswer = sanitizeTextContent(answer, 50000);
+      }
+    } else {
+      // Already an object, stringify and sanitize
+      sanitizedAnswer = sanitizeTextContent(JSON.stringify(answer), 50000);
+      answerIsJSON = true;
+    }
+    
+    if (!sanitizedAnswer || sanitizedAnswer.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Answer cannot be empty' },
+        { status: 400 }
+      );
+    }
+
+    // For non-JSON answers, require minimum length
+    if (!answerIsJSON && sanitizedAnswer.length < 10) {
+      return NextResponse.json(
+        { error: 'Answer must be at least 10 characters long' },
+        { status: 400 }
+      );
+    }
+
+    // Check authentication - user must be logged in
+    const studentSession = requireStudent(req);
+    const adminSession = requireAdmin(req);
+    
+    if (!studentSession && !adminSession) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in.' },
+        { status: 401 }
+      );
+    }
+
+    // Verify email matches authenticated session
+    const sessionEmail = (studentSession?.email || adminSession?.email)?.toLowerCase().trim();
+    if (sessionEmail !== normalizedEmail) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Email does not match your session.' },
+        { status: 403 }
+      );
+    }
+
+    const isAdmin = !!adminSession;
+
+    // Get profile for authenticated user
     let profile;
     if (!isAdmin) {
+      // For students, get profile by session userId
       const { data: profileData, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('id')
-        .eq('email', email.toLowerCase().trim())
+        .eq('id', studentSession!.userId)
         .single();
 
       if (profileError || !profileData) {
@@ -44,19 +117,17 @@ export async function POST(req: NextRequest) {
       }
       profile = profileData;
     } else {
-      // For admins, try to get their profile, or create a dummy one for submission
+      // For admins, try to get their profile
       const { data: profileData } = await supabaseAdmin
         .from('profiles')
         .select('id')
-        .eq('email', email.toLowerCase().trim())
+        .eq('email', normalizedEmail)
         .maybeSingle();
       
       if (profileData) {
         profile = profileData;
       } else {
-        // Admin doesn't have a profile - we'll need to handle this differently
-        // For now, return an error suggesting they need a profile
-        // Alternatively, we could create a profile or use admin.id
+        // Admin doesn't have a profile - return error
         return NextResponse.json(
           { error: 'Admin profile not found. Please contact system administrator.' },
           { status: 404 }
@@ -94,10 +165,11 @@ export async function POST(req: NextRequest) {
       pointsEarned = 0;
     } else {
       // Normalize answer for comparison (case-insensitive, trim whitespace)
-      const normalizedAnswer = answer.trim().toLowerCase();
+      // Only for non-JSON answers
+      const normalizedAnswer = answerIsJSON ? sanitizedAnswer : sanitizedAnswer.trim().toLowerCase();
       const normalizedCorrectAnswer = assignment.correct_answer
-        .trim()
-        .toLowerCase();
+        ? assignment.correct_answer.trim().toLowerCase()
+        : '';
 
       // Check if answer is correct
       isCorrect = normalizedAnswer === normalizedCorrectAnswer;
@@ -125,7 +197,7 @@ export async function POST(req: NextRequest) {
       const { data: updated, error: updateError } = await supabaseAdmin
         .from('assignment_submissions')
         .update({
-          answer: answer,
+          answer: sanitizedAnswer,
           is_correct: isCorrect,
           points_earned: pointsEarned,
           status: requiresReview ? 'submitted' : (isCorrect ? 'graded' : 'submitted'),
@@ -151,7 +223,7 @@ export async function POST(req: NextRequest) {
         .insert({
           assignment_id: assignmentId,
           student_id: profile.id,
-          answer: answer,
+          answer: sanitizedAnswer,
           is_correct: isCorrect,
           points_earned: pointsEarned,
           status: requiresReview ? 'submitted' : (isCorrect ? 'graded' : 'submitted'),

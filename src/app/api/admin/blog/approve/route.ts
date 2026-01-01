@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { BLOG_POST_REWARD_SATS, BLOG_REWARD_TYPE } from '@/lib/blog-rewards';
+import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * POST /api/admin/blog/approve
- * Approve a blog submission and create a published blog post
+ * Approve a blog submission and create a published blog post (admin only)
  */
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication check
+    // Check admin authentication
+    const session = requireAdmin(request);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { submissionId, slug, isFeatured, isBlogOfMonth } = body;
 
@@ -121,7 +127,7 @@ export async function POST(request: NextRequest) {
       .update({
         status: 'approved',
         reviewed_at: new Date().toISOString(),
-        // reviewed_by: adminId, // TODO: Add admin ID from auth
+        reviewed_by: session.adminId,
       })
       .eq('id', submissionId);
 

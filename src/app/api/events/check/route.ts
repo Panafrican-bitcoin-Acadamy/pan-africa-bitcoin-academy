@@ -3,8 +3,13 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 /**
  * Check events in database - for debugging/verification
+ * ONLY accessible in development - BLOCKED in production
  */
 export async function GET() {
+  // Completely block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
   try {
     // Get all events from database
     const { data: events, error } = await supabaseAdmin

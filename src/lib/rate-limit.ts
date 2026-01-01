@@ -82,16 +82,23 @@ export function checkRateLimit(
 /**
  * Get client IP address from request
  */
-export function getClientIP(req: Request): string {
+export function getClientIP(req: Request | { headers: Headers }): string {
+  const headers = req.headers;
+  
   // Try to get IP from headers (Vercel, Cloudflare, etc.)
-  const forwarded = req.headers.get('x-forwarded-for');
+  const forwarded = headers.get('x-forwarded-for');
   if (forwarded) {
     return forwarded.split(',')[0].trim();
   }
 
-  const realIP = req.headers.get('x-real-ip');
+  const realIP = headers.get('x-real-ip');
   if (realIP) {
     return realIP;
+  }
+
+  const cfConnectingIP = headers.get('cf-connecting-ip'); // Cloudflare
+  if (cfConnectingIP) {
+    return cfConnectingIP;
   }
 
   // Fallback (shouldn't happen in production)
@@ -116,6 +123,36 @@ export const RATE_LIMITS = {
   UPLOAD: {
     maxRequests: 10,
     windowMs: 60 * 60 * 1000, // 1 hour
+  },
+  // Assignment submission
+  ASSIGNMENT_SUBMIT: {
+    maxRequests: 20,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
+  // Blog submission
+  BLOG_SUBMIT: {
+    maxRequests: 5,
+    windowMs: 60 * 60 * 1000, // 1 hour
+  },
+  // Exam submission
+  EXAM_SUBMIT: {
+    maxRequests: 10,
+    windowMs: 30 * 60 * 1000, // 30 minutes
+  },
+  // Application submission
+  APPLICATION_SUBMIT: {
+    maxRequests: 5,
+    windowMs: 60 * 60 * 1000, // 1 hour
+  },
+  // API write operations
+  API_WRITE: {
+    maxRequests: 50,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
+  // Admin endpoints
+  ADMIN: {
+    maxRequests: 200,
+    windowMs: 15 * 60 * 1000, // 15 minutes
   },
 } as const;
 

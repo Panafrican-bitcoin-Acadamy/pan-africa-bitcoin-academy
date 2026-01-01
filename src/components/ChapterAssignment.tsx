@@ -72,8 +72,20 @@ export function ChapterAssignment({
       return;
     }
 
-    if (!answer.trim()) {
+    // Validate input length
+    const trimmedAnswer = answer.trim();
+    if (!trimmedAnswer) {
       setError('Please write your response.');
+      return;
+    }
+
+    if (trimmedAnswer.length < 10) {
+      setError('Your response must be at least 10 characters long.');
+      return;
+    }
+
+    if (trimmedAnswer.length > 50000) {
+      setError('Your response is too long. Maximum 50,000 characters allowed.');
       return;
     }
 
@@ -87,7 +99,7 @@ export function ChapterAssignment({
         body: JSON.stringify({
           email: email,
           assignmentId,
-          answer: answer.trim(),
+          answer: trimmedAnswer,
         }),
       });
 
