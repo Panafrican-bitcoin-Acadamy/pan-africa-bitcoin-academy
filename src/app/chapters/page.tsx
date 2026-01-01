@@ -9,6 +9,7 @@ import { useSession } from "@/hooks/useSession";
 import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
+import { SyllabusModal } from "@/components/SyllabusModal";
 import type { Metadata } from "next";
 
 // Note: Metadata cannot be exported from client components
@@ -482,6 +483,7 @@ export default function ChaptersPage() {
   const [chapterStatus, setChapterStatus] = useState<Record<number, { isUnlocked: boolean; isCompleted: boolean }>>({});
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
   const { isAuthenticated, profile, loading } = useAuth();
   const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
   const router = useRouter();
@@ -1270,6 +1272,38 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+
+              {/* Bitcoin Development Philosophy */}
+              <a
+                href="http://bitcoindevphilosophy.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col rounded-xl border border-rose-400/30 bg-black/60 p-6 transition hover:border-rose-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(244,63,94,0.2)]"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-lg bg-rose-500/20 p-3">
+                    <BookOpen className="h-6 w-6 text-rose-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-rose-300 transition group-hover:text-rose-200">
+                      Bitcoin Development Philosophy
+                    </h3>
+                    <p className="text-sm text-zinc-400">Kalle Rosenbaum & Linnéa Rosenbaum</p>
+                  </div>
+                </div>
+                <p className="mb-4 flex-1 text-sm text-zinc-300">
+                  A guide for Bitcoin developers covering decentralization, trustlessness, privacy, scaling, and the philosophy behind Bitcoin's design trade-offs.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-medium text-rose-300">
+                    Free (Online)
+                  </span>
+                  <div className="flex items-center gap-2 text-sm text-rose-400">
+                    <span>Read Online</span>
+                    <ExternalLink className="h-4 w-4" />
+                  </div>
+                </div>
+              </a>
             </div>
             </div>
           </AnimatedSection>
@@ -1473,14 +1507,14 @@ export default function ChaptersPage() {
                 href="/apply"
                 className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
               >
-                🔸 Join Cohort 1
+                🔸 Join our course
               </Link>
-              <Link
-                href="/about"
+              <button
+                onClick={() => setIsSyllabusOpen(true)}
                 className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
               >
                 🔸 Download the Syllabus
-              </Link>
+              </button>
               <a
                 href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji"
                 target="_blank"
@@ -1494,6 +1528,14 @@ export default function ChaptersPage() {
           </AnimatedSection>
         </div>
       </div>
+      
+      {/* Syllabus Modal */}
+      <SyllabusModal
+        isOpen={isSyllabusOpen}
+        onClose={() => setIsSyllabusOpen(false)}
+        chapters={chapters}
+        levels={levels}
+      />
     </div>
     </>
   );
