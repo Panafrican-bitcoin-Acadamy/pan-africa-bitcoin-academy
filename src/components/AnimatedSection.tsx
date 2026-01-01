@@ -22,9 +22,29 @@ export function AnimatedSection({
   threshold = 0.1,
 }: AnimatedSectionProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Check for reduced motion preference
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    // Skip animation if user prefers reduced motion
+    if (prefersReducedMotion) {
+      setIsVisible(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -46,19 +66,23 @@ export function AnimatedSection({
     return () => {
       observer.disconnect();
     };
-  }, [threshold]);
+  }, [threshold, prefersReducedMotion]);
+
+  // Mobile-first: Shorter, lighter animations for better performance
+  const actualDuration = prefersReducedMotion ? 0 : Math.min(duration, 600);
+  const actualDelay = prefersReducedMotion ? 0 : delay;
 
   const animationClasses = {
-    slideUp: isVisible
+    slideUp: isVisible || prefersReducedMotion
       ? 'opacity-100 translate-y-0'
-      : 'opacity-0 translate-y-10',
-    slideLeft: isVisible
+      : 'opacity-0 translate-y-5', // Reduced movement for mobile
+    slideLeft: isVisible || prefersReducedMotion
       ? 'opacity-100 translate-x-0'
-      : 'opacity-0 -translate-x-10',
-    slideRight: isVisible
+      : 'opacity-0 -translate-x-5', // Reduced movement
+    slideRight: isVisible || prefersReducedMotion
       ? 'opacity-100 translate-x-0'
-      : 'opacity-0 translate-x-10',
-    fadeIn: isVisible ? 'opacity-100' : 'opacity-0',
+      : 'opacity-0 translate-x-5', // Reduced movement
+    fadeIn: isVisible || prefersReducedMotion ? 'opacity-100' : 'opacity-0',
   };
 
   return (
@@ -66,8 +90,8 @@ export function AnimatedSection({
       ref={ref}
       className={`transition-all ease-out ${animationClasses[animation]} ${className}`}
       style={{
-        transitionDuration: `${duration}ms`,
-        transitionDelay: `${delay}ms`,
+        transitionDuration: `${actualDuration}ms`,
+        transitionDelay: `${actualDelay}ms`,
       }}
     >
       {children}

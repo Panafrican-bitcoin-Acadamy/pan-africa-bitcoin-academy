@@ -83,14 +83,16 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+      {/* Mobile-first: Smaller padding on mobile */}
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 lg:px-6">
         <Link 
           href="/" 
           className="flex items-center gap-3 group"
           aria-label="Pan-African Bitcoin Academy - Home"
           title="Pan-African Bitcoin Academy - First Eritrea Based Bitcoin Academy"
         >
-          <div className="relative flex h-16 w-16 items-center justify-center transition-transform duration-300 group-hover:scale-105">
+          {/* Mobile-first: Smaller logo on mobile */}
+          <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 items-center justify-center">
             {/* Logo image with SEO optimization - bold and visible */}
             <Image
               src="/images/logo_3.png"
@@ -101,15 +103,15 @@ export function Navbar() {
               loading="eager"
               className="object-contain brightness-110 contrast-125 saturate-120"
               quality={95}
-              sizes="(max-width: 768px) 48px, 64px"
+              sizes="(max-width: 640px) 48px, (max-width: 768px) 56px, 64px"
               fetchPriority="high"
             />
           </div>
           <div className="hidden flex-col leading-tight sm:flex">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300">
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300">
               Pan-African
             </span>
-            <span className="text-sm font-medium text-zinc-100">Bitcoin Academy</span>
+            <span className="text-xs sm:text-sm font-medium text-zinc-100">Bitcoin Academy</span>
           </div>
         </Link>
         
@@ -386,48 +388,48 @@ export function Navbar() {
           )}
         </nav>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu Button - Touch-friendly */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="rounded-lg p-2 text-zinc-300 transition hover:bg-cyan-400/10 lg:hidden"
+          className="rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-zinc-300 active:bg-cyan-400/10 lg:hidden touch-target"
           aria-label="Toggle menu"
         >
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Touch-friendly with larger tap targets */}
       {mobileMenuOpen && (
-        <div className="border-t border-cyan-400/20 bg-black/95 lg:hidden">
-          <nav className="mx-auto max-w-7xl space-y-1 px-4 py-4">
-            <div className="mb-4 flex items-center gap-2">
+        <div className="border-t border-cyan-400/20 bg-black/95 lg:hidden max-h-[calc(100vh-80px)] overflow-y-auto">
+          <nav className="mx-auto max-w-7xl space-y-1 px-3 py-3 sm:px-4 sm:py-4">
+            <div className="mb-3 sm:mb-4">
               <SearchBar />
             </div>
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
               Home
             </Link>
             <Link
               href="/chapters"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
               Chapters
             </Link>
             <Link
               href="/blog"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
               Blog
             </Link>
             <Link
               href="/developer-hub"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
               Developer Hub
             </Link>
@@ -435,7 +437,7 @@ export function Navbar() {
             <Link
               href="/apply"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base font-medium text-orange-300 active:bg-orange-400/10 touch-target flex items-center"
             >
               Apply
             </Link>
@@ -443,45 +445,45 @@ export function Navbar() {
             <Link
               href="/mentorship"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
               Mentorship
             </Link>
             <Link
               href="/impact"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
               Impact
             </Link>
             <Link
               href="/about"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+              className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
               About
             </Link>
             <Link
               href="/donate"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-4 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
+              className="block rounded-lg bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-4 py-3 min-h-[48px] text-base font-medium text-orange-300 active:from-orange-400/30 active:to-cyan-400/30 touch-target flex items-center"
             >
               Donate
             </Link>
             {loading ? (
-              <div className="h-10 w-full animate-pulse rounded-lg bg-zinc-800" />
+              <div className="h-12 w-full animate-pulse rounded-lg bg-zinc-800" />
             ) : isAuthenticated && profile ? (
-              <div className="space-y-2">
-                <div className="px-4 py-2 text-sm text-zinc-400 border-b border-zinc-700">
-                  {profile.name}
-                  <div className="text-xs text-zinc-500 mt-1">{profile.email}</div>
+              <div className="space-y-2 mt-3 border-t border-zinc-700 pt-3">
+                <div className="px-4 py-2 text-sm text-zinc-400 border-b border-zinc-700 pb-3">
+                  <div className="font-medium text-zinc-300">{profile.name}</div>
+                  <div className="text-xs text-zinc-500 mt-1 break-all">{profile.email}</div>
                 </div>
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-4 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+                  className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-4 py-3 min-h-[48px] text-base font-medium text-orange-300 active:from-orange-500/30 active:to-cyan-500/30 touch-target"
                 >
-                  <LayoutDashboard className="h-4 w-4" />
+                  <LayoutDashboard className="h-5 w-5" />
                   Dashboard
                 </Link>
                 <button
@@ -491,9 +493,9 @@ export function Navbar() {
                     setMobileMenuOpen(false);
                     setProfileModalOpen(true);
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target"
                 >
-                  <User className="h-4 w-4" />
+                  <User className="h-5 w-5" />
                   Profile
                 </button>
                 <button
@@ -503,9 +505,9 @@ export function Navbar() {
                     setMobileMenuOpen(false);
                     setChangePasswordOpen(true);
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target"
                 >
-                  <Key className="h-4 w-4" />
+                  <Key className="h-5 w-5" />
                   Change Password
                 </button>
                 <button
@@ -514,9 +516,9 @@ export function Navbar() {
                     e.stopPropagation();
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-5 w-5" />
                   Logout
                 </button>
               </div>
@@ -527,7 +529,7 @@ export function Navbar() {
                   setAuthModalOpen(true);
                   setMobileMenuOpen(false);
                 }}
-                className="w-full rounded-lg bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-4 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30 text-left"
+                className="w-full rounded-lg bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-4 py-3 min-h-[48px] text-base font-medium text-orange-300 active:from-orange-500/30 active:to-cyan-500/30 text-left touch-target"
               >
                 Sign In
               </button>

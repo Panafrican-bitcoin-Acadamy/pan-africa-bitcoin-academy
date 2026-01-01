@@ -214,27 +214,28 @@ export default async function Home() {
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
-        {/* Hero Content - Pushed to the absolute rightmost edge */}
-        <div className="relative z-10 ml-auto max-w-4xl space-y-8 text-center px-4 sm:px-6 lg:pr-2 xl:pr-4 2xl:pr-6">
-          <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
+        {/* Hero Content - Mobile-first responsive */}
+        <div className="relative z-10 w-full max-w-4xl space-y-6 sm:space-y-8 text-center px-4 sm:px-6 lg:ml-auto lg:pr-2 xl:pr-4 2xl:pr-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-zinc-50 leading-tight">
             Scaling Bitcoin adoption
           </h1>
-          <p className="text-2xl font-semibold text-orange-400 sm:text-3xl lg:text-4xl">
+          <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-orange-400 leading-tight">
             Turning the Africa orange
           </p>
-          <p className="mx-auto max-w-2xl text-base text-zinc-400 sm:text-lg">
+          <p className="mx-auto max-w-2xl text-base sm:text-lg text-zinc-400 leading-relaxed px-2">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
           </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          {/* Mobile-first: Full width buttons on mobile, side-by-side on larger screens */}
+          <div className="flex flex-col items-stretch sm:items-center sm:justify-center gap-3 sm:gap-4 sm:flex-row w-full sm:w-auto">
             <Link
               href="/apply"
-              className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-8 py-4 text-base font-semibold text-black shadow-[0_0_40px_rgba(249,115,22,0.8)] transition hover:brightness-110"
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-orange-400 to-purple-500 px-6 sm:px-8 py-4 min-h-[52px] text-base font-semibold text-black shadow-[0_0_40px_rgba(249,115,22,0.8)] transition active:brightness-110 active:scale-95 touch-target w-full sm:w-auto"
             >
               👉 Join Cohort
             </Link>
             <Link
               href="/chapters"
-              className="inline-flex items-center justify-center rounded-full border-2 border-orange-400/50 bg-orange-400/10 px-8 py-4 text-base font-semibold text-orange-300 backdrop-blur-sm transition hover:bg-orange-400/20"
+              className="inline-flex items-center justify-center rounded-full border-2 border-orange-400/50 bg-orange-400/10 px-6 sm:px-8 py-4 min-h-[52px] text-base font-semibold text-orange-300 backdrop-blur-sm transition active:bg-orange-400/20 active:scale-95 touch-target w-full sm:w-auto"
             >
               👉 Explore Learning Paths
             </Link>
@@ -292,9 +293,9 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Content Sections - Full Width */}
+      {/* Content Sections - Full Width - Mobile-first padding */}
       <div className="relative z-10 w-full bg-black/60 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           {/* 2. How It Started Section */}
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">

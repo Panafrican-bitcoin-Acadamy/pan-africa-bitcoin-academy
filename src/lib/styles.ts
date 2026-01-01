@@ -39,16 +39,16 @@ export const formStyles = {
 };
 
 /**
- * Button Styles
+ * Button Styles - Mobile-First: Touch-friendly with min 44x44px targets
  */
 export const buttonStyles = {
-  primary: "inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:from-orange-500 hover:to-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed",
-  secondary: "inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-zinc-900/50 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-400/20",
-  success: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-orange-500",
-  outline: "mt-4 w-full rounded-lg bg-cyan-400/20 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/30",
-  selected: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-2 text-sm font-semibold text-black transition",
-  small: "rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 transition hover:bg-zinc-800 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed",
-  danger: "rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20",
+  primary: "inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-4 sm:px-6 py-3 min-h-[48px] text-base font-semibold text-black transition active:from-orange-500 active:to-cyan-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-target",
+  secondary: "inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-zinc-900/50 px-4 py-3 min-h-[44px] text-base font-medium text-cyan-300 transition active:bg-cyan-400/20 active:scale-95 touch-target",
+  success: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-3 min-h-[48px] text-base font-semibold text-black transition active:bg-orange-500 active:scale-95 touch-target",
+  outline: "mt-4 w-full rounded-lg bg-cyan-400/20 px-4 py-3 min-h-[48px] text-base font-semibold text-cyan-300 transition active:bg-cyan-400/30 active:scale-95 touch-target",
+  selected: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-3 min-h-[48px] text-base font-semibold text-black transition active:scale-95 touch-target",
+  small: "rounded-lg border border-zinc-700 bg-zinc-900/50 p-2.5 min-h-[44px] min-w-[44px] text-sm transition active:bg-zinc-800 active:scale-95 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed touch-target",
+  danger: "rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 min-h-[44px] text-base font-medium text-red-300 transition active:bg-red-500/20 active:scale-95 touch-target",
 };
 
 /**
@@ -63,16 +63,16 @@ export const cardStyles = {
 };
 
 /**
- * Page Container Styles
+ * Page Container Styles - Mobile-First
  */
 export const pageStyles = {
   container: "relative min-h-screen w-full overflow-x-hidden",
   content: "relative z-10 w-full bg-black/95",
-  wrapper: "mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8",
-  section: "space-y-12",
-  heading: "text-xl font-semibold text-zinc-50",
-  headingLarge: "text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl",
-  subtitle: "mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl",
+  wrapper: "mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20",
+  section: "space-y-8 sm:space-y-12",
+  heading: "text-lg sm:text-xl font-semibold text-zinc-50",
+  headingLarge: "text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-zinc-50 leading-tight",
+  subtitle: "mx-auto mt-4 sm:mt-6 max-w-3xl text-base sm:text-lg text-zinc-400 leading-relaxed",
 };
 
 /**

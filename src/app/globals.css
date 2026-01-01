@@ -19,6 +19,11 @@
 html {
   background-color: #020617;
   min-height: 100vh;
+  /* Mobile-first: Base font size for readability without zooming */
+  font-size: 16px;
+  /* Prevent text size adjustment on iOS */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -28,6 +33,9 @@ body {
   position: relative;
   overflow-x: hidden;
   min-height: 100vh;
+  /* Mobile-first: Ensure readable base font size */
+  font-size: 1rem; /* 16px */
+  line-height: 1.5;
 }
 
 /* Gradient overlay: darker on left (text area), brighter on right (image area) */
@@ -113,6 +121,56 @@ select:focus {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Mobile-First: Touch-friendly targets */
+/* Minimum touch target size: 44x44px (Apple HIG) / 48x48px (Material Design) */
+button,
+a[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  /* Improve touch feedback */
+  -webkit-tap-highlight-color: rgba(249, 115, 22, 0.2);
+  tap-highlight-color: rgba(249, 115, 22, 0.2);
+}
+
+/* Mobile-First: Prevent text selection on interactive elements */
+button,
+a[role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Mobile-First: High contrast for readability */
+@media (prefers-contrast: high) {
+  body {
+    background-color: #000000;
+  }
+}
+
+/* Mobile-First: Reduce motion for performance and accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mobile-First: Optimize background image loading for low bandwidth */
+@media (max-width: 768px) {
+  body {
+    /* Use smaller/lighter background on mobile or disable if bandwidth is low */
+    background-attachment: scroll; /* Better performance than fixed */
+  }
 }
 
 /* Hide Student button if it appears (cached content) - using attribute selector */

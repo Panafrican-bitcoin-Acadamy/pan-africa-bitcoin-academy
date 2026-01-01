@@ -12,6 +12,7 @@ import { Chapter6Assignment } from "@/components/Chapter6Assignment";
 import { Chapter8Assignment } from "@/components/Chapter8Assignment";
 import { Chapter18Assignment } from "@/components/Chapter18Assignment";
 import { ChapterUTXOAssignment } from "@/components/ChapterUTXOAssignment";
+import { Chapter14HalvingPuzzle } from "@/components/Chapter14HalvingPuzzle";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -783,6 +784,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 Complete the assignment to practice using block explorers and verify transactions independently.
               </p>
             </div>
+          ) : chapter.slug === 'proof-of-work-and-block-rewards' ? (
+            <Chapter14HalvingPuzzle
+              assignmentId="dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+            />
           ) : null}
         </section>
 

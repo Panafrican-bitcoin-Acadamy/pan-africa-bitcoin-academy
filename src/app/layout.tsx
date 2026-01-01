@@ -194,7 +194,8 @@ export default function RootLayout({
         
         <div className="flex min-h-screen flex-col">
           <Navbar />
-          <main className="flex-1 relative z-10 px-8 sm:px-12 lg:px-16 xl:px-20">{children}</main>
+          {/* Mobile-first: Responsive padding - smaller on mobile, larger on desktop */}
+          <main className="flex-1 relative z-10 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">{children}</main>
           <Footer />
         </div>
       </body>
