@@ -399,141 +399,70 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                     </div>
                   </div>
                 ) : section.images && section.images.length > 0 && (
-                  section.heading === "Introduction" && section.images.length === 5 ? (
-                    // Circular layout for Introduction section with 5 images
+                  section.images.length > 1 ? (
+                    // Circular layout for multiple images - arrange around central image
                     <div className="mt-4 flex items-center justify-center w-full">
                       <div className="relative w-full sm:max-w-3xl aspect-square">
-                        {/* Futuristic arrows showing the flow: Left (banana) → Right (banana→shoes) → Bottom (shoes→bread) */}
-                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-5" style={{ overflow: 'visible' }}>
-                          <defs>
-                            {/* Glow filter for futuristic effect */}
-                            <filter id="glow">
-                              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                              <feMerge>
-                                <feMergeNode in="coloredBlur"/>
-                                <feMergeNode in="SourceGraphic"/>
-                              </feMerge>
-                            </filter>
-                            {/* Futuristic arrowhead */}
-                            <marker id="arrowhead-futuristic" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
-                              <path d="M 0 0 L 12 6 L 0 12 L 3 6 Z" fill="#f97316" filter="url(#glow)" />
-                            </marker>
-                            {/* Animated gradient */}
-                            <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#f97316" stopOpacity="0.8" />
-                              <stop offset="50%" stopColor="#fb923c" stopOpacity="1" />
-                              <stop offset="100%" stopColor="#f97316" stopOpacity="0.8" />
-                            </linearGradient>
-                          </defs>
-                          {/* Arrow from Left (banana) to Right (banana→shoes) */}
-                          <path
-                            d="M 18% 50% L 82% 50%"
-                            stroke="url(#arrowGradient)"
-                            strokeWidth="4"
-                            fill="none"
-                            markerEnd="url(#arrowhead-futuristic)"
-                            filter="url(#glow)"
-                            className="drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]"
-                          />
-                          {/* Arrow from Right (banana→shoes) to Bottom (shoes→bread) */}
-                          <path
-                            d="M 50% 50% L 50% 82%"
-                            stroke="url(#arrowGradient)"
-                            strokeWidth="4"
-                            fill="none"
-                            markerEnd="url(#arrowhead-futuristic)"
-                            filter="url(#glow)"
-                            className="drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]"
-                          />
-                        </svg>
-                        
-                        {/* Center image (barter_system) */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-40 sm:w-48">
-                          <img
-                            src={section.images[3].src}
-                            alt={section.images[3].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
-                          />
-                          {section.images[3].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[3].caption}
-                            </p>
-                          )}
-                        </div>
-                        {/* Top image */}
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-36 sm:w-44 z-20">
-                          <img
-                            src={section.images[0].src}
-                            alt={section.images[0].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
-                          />
-                          {section.images[0].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[0].caption}
-                            </p>
-                          )}
-                        </div>
-                        {/* Right image */}
-                        <div className="absolute top-1/2 right-0 transform -translate-y-1/2 w-36 sm:w-44 z-20">
-                          <img
-                            src={section.images[1].src}
-                            alt={section.images[1].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
-                          />
-                          {section.images[1].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[1].caption}
-                            </p>
-                          )}
-                        </div>
-                        {/* Bottom image */}
-                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-36 sm:w-44 z-20">
-                          <img
-                            src={section.images[4].src}
-                            alt={section.images[4].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
-                          />
-                          {section.images[4].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[4].caption}
-                            </p>
-                          )}
-                        </div>
-                        {/* Left image */}
-                        <div className="absolute top-1/2 left-0 transform -translate-y-1/2 w-36 sm:w-44 z-20">
-                          <img
-                            src={section.images[2].src}
-                            alt={section.images[2].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
-                          />
-                          {section.images[2].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[2].caption}
-                            </p>
-                          )}
-                        </div>
+                        {(() => {
+                          // Use middle image as center, or last image if even number
+                          const centerIndex = Math.floor(section.images.length / 2);
+                          const centerImage = section.images[centerIndex];
+                          const surroundingImages = section.images.filter((_, idx) => idx !== centerIndex);
+                          const angleStep = (2 * Math.PI) / surroundingImages.length;
+                          
+                          return (
+                            <>
+                              {/* Central image */}
+                              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-40 sm:w-48">
+                                <img
+                                  src={centerImage.src}
+                                  alt={centerImage.alt}
+                                  className="w-full rounded-lg border-2 border-orange-400/30 shadow-lg"
+                                />
+                                {centerImage.caption && (
+                                  <p className="mt-2 text-center text-xs text-zinc-400 italic">
+                                    {centerImage.caption}
+                                  </p>
+                                )}
+                              </div>
+                              {/* Surrounding images in circular formation */}
+                              {surroundingImages.map((image, idx) => {
+                                const angle = idx * angleStep - Math.PI / 2; // Start from top
+                                const radius = 35; // Percentage from center
+                                const x = 50 + radius * Math.cos(angle);
+                                const y = 50 + radius * Math.sin(angle);
+                                
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="absolute z-20 w-32 sm:w-40"
+                                    style={{
+                                      top: `${y}%`,
+                                      left: `${x}%`,
+                                      transform: 'translate(-50%, -50%)',
+                                    }}
+                                  >
+                                    <img
+                                      src={image.src}
+                                      alt={image.alt}
+                                      className="w-full rounded-lg border border-orange-400/20 shadow-md"
+                                    />
+                                    {image.caption && (
+                                      <p className="mt-1 text-center text-[10px] sm:text-xs text-zinc-400 italic">
+                                        {image.caption}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   ) : (
-                    // Default layout for other sections
-                    section.heading === "1.3 Properties of Sound Money" && section.images.length > 1 ? (
-                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {section.images.map((image, idx) => (
-                          <div key={idx} className="flex flex-col items-center space-y-3">
-                            <img
-                              src={image.src}
-                              alt={image.alt}
-                              className="w-full rounded-lg border border-orange-400/20 shadow-lg"
-                            />
-                            {image.caption && (
-                              <p className="text-center text-sm text-zinc-200 leading-relaxed px-2">
-                                {image.caption}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : section.heading === "3.1 Inflation and Loss of Purchasing Power" && section.images.length >= 4 ? (
+                    // Special layouts for specific sections
+                    section.heading === "3.1 Inflation and Loss of Purchasing Power" && section.images.length >= 4 ? (
                       // Special layout: first 3 images (animals, arrow, animals) in a row, then the 4th image below, then Zimbabwe images side by side
                       <div className="mt-6 space-y-6">
                         <div className="flex flex-col items-center mb-4">
