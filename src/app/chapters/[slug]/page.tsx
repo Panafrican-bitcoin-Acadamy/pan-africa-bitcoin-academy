@@ -401,8 +401,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 ) : section.images && section.images.length > 0 && (
                   section.heading === "Introduction" && section.images.length === 5 ? (
                     // Circular layout for Introduction section with 5 images
-                    <div className="mt-4 flex items-center justify-center">
-                      <div className="relative w-full max-w-3xl aspect-square">
+                    <div className="mt-4 flex items-center justify-center w-full">
+                      <div className="relative w-full sm:max-w-3xl aspect-square">
                         {/* Futuristic arrows showing the flow: Left (banana) → Right (banana→shoes) → Bottom (shoes→bread) */}
                         <svg className="absolute inset-0 w-full h-full pointer-events-none z-5" style={{ overflow: 'visible' }}>
                           <defs>

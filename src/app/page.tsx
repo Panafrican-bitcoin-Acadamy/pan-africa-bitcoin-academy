@@ -208,21 +208,21 @@ export default async function Home() {
   const impactStats = await getImpactStats();
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      {/* Full-page Hero Section */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center px-4">
+      {/* Full-page Hero Section - Edge-to-edge on mobile */}
+      <section className="relative flex min-h-screen flex-col items-center justify-center w-full">
         {/* Background effects */}
         <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
-        {/* Hero Content - Mobile-first responsive */}
-        <div className="relative z-10 w-full max-w-4xl space-y-6 sm:space-y-8 text-center px-4 sm:px-6 lg:ml-auto lg:pr-2 xl:pr-4 2xl:pr-6">
+        {/* Hero Content - Full width on mobile, max-width only on larger screens */}
+        <div className="relative z-10 w-full px-4 space-y-6 sm:space-y-8 text-center sm:max-w-4xl sm:mx-auto lg:px-6">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-zinc-50 leading-tight">
             Scaling Bitcoin adoption
           </h1>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-orange-400 leading-tight">
             Turning the Africa orange
           </p>
-          <p className="mx-auto max-w-2xl text-base sm:text-lg text-zinc-400 leading-relaxed px-2">
+          <p className="w-full text-base sm:text-lg text-zinc-400 leading-relaxed sm:max-w-2xl sm:mx-auto">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
           </p>
           {/* Mobile-first: Full width buttons on mobile, side-by-side on larger screens */}
@@ -293,9 +293,10 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Content Sections - Full Width - Mobile-first padding */}
+      {/* Content Sections - Full Width - Edge-to-edge on mobile */}
       <div className="relative z-10 w-full bg-black/60 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+        {/* Full width on mobile, max-width only on larger screens */}
+        <div className="w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-7xl sm:mx-auto lg:px-8 lg:py-20">
           {/* 2. How It Started Section */}
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">
@@ -303,12 +304,12 @@ export default async function Home() {
                 <h2 className="text-3xl font-semibold text-orange-200 sm:text-4xl lg:text-5xl">
                   How It Started: From Bailouts to Blockchain
                 </h2>
-                <p className="mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg max-w-3xl mx-auto">
+                <p className="mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg w-full sm:max-w-3xl sm:mx-auto">
                   In 2008, the global financial crisis exposed the fragility of traditional banking. While governments bailed out the banks, ordinary people lost homes, jobs, and savings. Bitcoin was born from this crisis — a decentralized alternative that doesn't require trust in banks or governments.
                 </p>
               </div>
-              <div className="flex items-center justify-center">
-                <div className="relative w-full max-w-4xl rounded-xl overflow-hidden border border-orange-500/25 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+              <div className="flex items-center justify-center w-full">
+                <div className="relative w-full sm:max-w-4xl rounded-xl overflow-hidden border border-orange-500/25 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
                   {/* Image container */}
                   <div className="relative w-full bg-gradient-to-br from-zinc-900 via-orange-900/20 to-zinc-900 flex items-center justify-center">
                     {/* Image showing Bitcoin's origin story */}
@@ -325,8 +326,8 @@ export default async function Home() {
 
           {/* 3. Core Identity */}
           <AnimatedSection animation="slideUp">
-            <section className="mb-16 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-zinc-900 via-cyan-900/20 to-zinc-900 p-8 shadow-[0_0_40px_rgba(14,165,233,0.2)] sm:p-10">
-              <div className="mx-auto max-w-4xl text-center">
+            <section className="mb-16 w-full rounded-xl border border-cyan-500/30 bg-gradient-to-r from-zinc-900 via-cyan-900/20 to-zinc-900 p-8 shadow-[0_0_40px_rgba(14,165,233,0.2)] sm:p-10">
+              <div className="w-full sm:max-w-4xl sm:mx-auto text-center">
                 <div className="mb-4 inline-block rounded-full bg-cyan-500/20 px-4 py-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Our Core Identity</p>
                 </div>

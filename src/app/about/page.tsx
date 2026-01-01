@@ -40,7 +40,7 @@ export default function AboutPage() {
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       <div className="relative z-10 w-full bg-black/95">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-7xl sm:mx-auto lg:px-8 lg:py-20">
           {/* Hero */}
           <AnimatedSection animation="slideUp">
             <div className="mb-14 text-center">
@@ -56,7 +56,7 @@ export default function AboutPage() {
           {/* Core Identity */}
           <AnimatedSection animation="slideUp">
             <section className="mb-12 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-zinc-900 via-cyan-900/20 to-zinc-900 p-8 shadow-[0_0_40px_rgba(14,165,233,0.2)] sm:p-10">
-              <div className="mx-auto max-w-4xl text-center">
+              <div className="w-full sm:max-w-4xl sm:mx-auto text-center">
                 <div className="mb-4 inline-block rounded-full bg-cyan-500/20 px-4 py-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Our Core Identity</p>
                 </div>

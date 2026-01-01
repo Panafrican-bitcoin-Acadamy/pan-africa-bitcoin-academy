@@ -63,16 +63,16 @@ export const cardStyles = {
 };
 
 /**
- * Page Container Styles - Mobile-First
+ * Page Container Styles - Mobile-First: Full width on mobile, max-width only on larger screens
  */
 export const pageStyles = {
   container: "relative min-h-screen w-full overflow-x-hidden",
   content: "relative z-10 w-full bg-black/95",
-  wrapper: "mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20",
+  wrapper: "w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-7xl sm:mx-auto lg:px-8 lg:py-20",
   section: "space-y-8 sm:space-y-12",
   heading: "text-lg sm:text-xl font-semibold text-zinc-50",
   headingLarge: "text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-zinc-50 leading-tight",
-  subtitle: "mx-auto mt-4 sm:mt-6 max-w-3xl text-base sm:text-lg text-zinc-400 leading-relaxed",
+  subtitle: "w-full mt-4 sm:mt-6 sm:max-w-3xl sm:mx-auto text-base sm:text-lg text-zinc-400 leading-relaxed",
 };
 
 /**

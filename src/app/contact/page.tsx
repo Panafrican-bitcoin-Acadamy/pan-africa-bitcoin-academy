@@ -149,13 +149,13 @@ const contactMethods = [
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-black">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-7xl sm:mx-auto lg:px-8 lg:py-20">
         <AnimatedSection animation="slideUp">
-          <div className="mb-16 text-center">
+          <div className="mb-16 text-center w-full">
             <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
               Get in Touch
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+            <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
               We'd love to hear from you! Connect with us through any of these channels.
             </p>
           </div>

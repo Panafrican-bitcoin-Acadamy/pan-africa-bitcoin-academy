@@ -3,8 +3,9 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="border-t border-cyan-400/15 bg-black/80 text-[11px] text-zinc-500 backdrop-blur-xl sm:text-xs">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+    <footer className="border-t border-cyan-400/15 bg-black/80 text-[11px] text-zinc-500 backdrop-blur-xl sm:text-xs w-full">
+      {/* Full width on mobile, max-width only on larger screens */}
+      <div className="w-full px-4 py-6 sm:px-6 sm:max-w-5xl sm:mx-auto">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           {/* Logo and Brand Section */}
           <div className="flex flex-col gap-4">

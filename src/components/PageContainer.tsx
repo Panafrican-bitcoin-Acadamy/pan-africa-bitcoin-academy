@@ -8,8 +8,9 @@ type PageContainerProps = {
 
 export function PageContainer({ title, subtitle, children }: PageContainerProps) {
   return (
-    <div className="relative flex min-h-screen flex-col bg-black text-zinc-50">
-      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-12 pb-12 pt-8 sm:px-16 sm:pb-16 sm:pt-10 lg:px-20 xl:px-24">
+    <div className="relative flex min-h-screen flex-col bg-black text-zinc-50 w-full">
+      {/* Full width on mobile, max-width only on larger screens */}
+      <main className="relative z-10 w-full flex flex-1 flex-col overflow-hidden px-4 pb-8 pt-6 sm:px-6 sm:pb-12 sm:pt-8 sm:max-w-6xl sm:mx-auto lg:px-12 lg:pb-16 lg:pt-10 xl:px-20 xl:px-24">
         {/* Subtle peripheral framing - moved far to edges, reduced by 70% */}
         <div className="pointer-events-none fixed -left-96 -top-96 h-[600px] w-[600px] rounded-full bg-cyan-500/3 blur-3xl" />
         <div className="pointer-events-none fixed -right-96 top-0 h-[500px] w-[500px] rounded-full bg-orange-500/3 blur-3xl" />
@@ -24,7 +25,7 @@ export function PageContainer({ title, subtitle, children }: PageContainerProps)
               {title}
             </h1>
             {subtitle ? (
-              <p className="max-w-3xl text-sm text-zinc-400 sm:text-base lg:text-lg">
+              <p className="w-full text-sm text-zinc-400 sm:text-base sm:max-w-3xl lg:text-lg">
                 {subtitle}
               </p>
             ) : null}

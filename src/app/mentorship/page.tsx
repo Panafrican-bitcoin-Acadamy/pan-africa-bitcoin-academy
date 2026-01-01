@@ -97,14 +97,14 @@ export default function MentorshipPage() {
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       <div className="relative z-10 w-full bg-black/95">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-7xl sm:mx-auto lg:px-8 lg:py-20">
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
-            <div className="mb-16 text-center">
+            <div className="mb-16 text-center w-full">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 Mentorship & Volunteer
               </h1>
-              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
+              <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
                 Join us in building Bitcoin education and sovereignty in Africa.
               </p>
             </div>
