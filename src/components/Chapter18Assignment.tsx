@@ -192,7 +192,7 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
               setSubmissionStatus(null);
               setShowAnswers(false);
             }}
-            className="text-sm text-cyan-400 hover:text-cyan-300 underline"
+            className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
           >
             Edit Submission
           </button>
@@ -203,44 +203,44 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
           <div className="space-y-3 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
             <p className="text-sm font-medium text-zinc-300 mb-3">Copy these addresses and paste them in the inputs below:</p>
             
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-zinc-400 w-24">Address A:</span>
-                <code className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200 font-mono break-all">
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <span className="text-sm font-semibold text-zinc-400 sm:w-24 flex-shrink-0">Address A:</span>
+                <code className="flex-1 w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200 font-mono break-all">
                   {ADDRESSES.A}
                 </code>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(ADDRESSES.A)}
-                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-sm transition"
+                  className="px-4 py-2 min-h-[44px] bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-300 rounded text-sm transition touch-target w-full sm:w-auto"
                 >
                   Copy
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-zinc-400 w-24">Address B:</span>
-                <code className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200 font-mono break-all">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <span className="text-sm font-semibold text-zinc-400 sm:w-24 flex-shrink-0">Address B:</span>
+                <code className="flex-1 w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200 font-mono break-all">
                   {ADDRESSES.B}
                 </code>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(ADDRESSES.B)}
-                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-sm transition"
+                  className="px-4 py-2 min-h-[44px] bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-300 rounded text-sm transition touch-target w-full sm:w-auto"
                 >
                   Copy
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-zinc-400 w-24">Address C:</span>
-                <code className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200 font-mono break-all">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <span className="text-sm font-semibold text-zinc-400 sm:w-24 flex-shrink-0">Address C:</span>
+                <code className="flex-1 w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200 font-mono break-all">
                   {ADDRESSES.C}
                 </code>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(ADDRESSES.C)}
-                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-sm transition"
+                  className="px-4 py-2 min-h-[44px] bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-300 rounded text-sm transition touch-target w-full sm:w-auto"
                 >
                   Copy
                 </button>
@@ -311,7 +311,7 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-6 py-3 font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-6 py-3 min-h-[48px] font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
           >
             {submitting ? 'Submitting...' : 'Submit Assignment'}
           </button>

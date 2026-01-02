@@ -177,7 +177,7 @@ export function ChapterAssignment({
                 setSubmitted(false);
                 setSubmissionStatus(null);
               }}
-              className="text-sm text-cyan-400 hover:text-cyan-300 underline"
+              className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
             >
               Edit Submission
             </button>
@@ -209,7 +209,7 @@ export function ChapterAssignment({
           <button
             type="submit"
             disabled={submitting || !answer.trim()}
-            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-6 py-3 font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-6 py-3 min-h-[48px] font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
           >
             {submitting ? 'Submitting...' : 'Submit Assignment'}
           </button>

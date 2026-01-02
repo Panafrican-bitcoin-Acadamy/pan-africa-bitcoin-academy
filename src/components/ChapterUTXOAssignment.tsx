@@ -345,16 +345,16 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
           {/* UTXO Selection */}
           <div className="space-y-4 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
             <h4 className="text-base font-semibold text-zinc-200">Your UTXOs (Click to Select)</h4>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {utxos.map((utxo) => (
                 <button
                   key={utxo.id}
                   type="button"
                   onClick={() => toggleUTXO(utxo.id)}
-                  className={`relative p-4 rounded-lg border-2 transition-all ${
+                  className={`relative p-4 min-h-[100px] rounded-lg border-2 transition-all touch-target active:scale-95 ${
                     utxo.selected
                       ? 'bg-orange-500/20 border-orange-500/50 shadow-lg shadow-orange-500/20'
-                      : 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600'
+                      : 'bg-zinc-800/50 border-zinc-700/50 active:border-zinc-500'
                   }`}
                 >
                   <div className="flex flex-col items-center space-y-2">
@@ -432,7 +432,7 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
           <button
             onClick={handleSubmit}
             disabled={submitting || selectedUTXOs.length === 0 || (totalInput - fee < SEND_AMOUNT)}
-            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-6 py-3 font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-6 py-3 min-h-[48px] font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
           >
             {submitting ? 'Submitting...' : 'Submit Assignment'}
           </button>
