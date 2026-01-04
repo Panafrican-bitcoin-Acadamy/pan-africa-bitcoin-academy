@@ -1,4 +1,4 @@
-# 🟠 Pan-Africa Bitcoin Academy
+#              Pan-Africa Bitcoin Academy
 
 <div align="center">
 
