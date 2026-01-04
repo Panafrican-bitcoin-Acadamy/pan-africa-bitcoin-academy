@@ -495,7 +495,7 @@ export default function ApplyPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center w-full">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Apply to PanAfrican Bitcoin Academy - Join Bitcoin Education Program
+                Join our Program
               </h1>
               <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
                 Apply to join the Pan-Africa Bitcoin Academy and start your journey toward financial sovereignty.

@@ -215,7 +215,7 @@ export default async function Home() {
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
         {/* Hero Content - Full width on mobile, max-width only on larger screens */}
-        <div className="relative z-10 w-full px-4 space-y-6 sm:space-y-8 text-center sm:max-w-4xl sm:mx-auto lg:px-6">
+        <div className="relative z-10 w-full px-4 space-y-6 sm:space-y-8 text-center sm:max-w-4xl ml-auto lg:px-6">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-zinc-50 leading-tight">
             Scaling Bitcoin adoption
           </h1>
@@ -406,7 +406,6 @@ export default async function Home() {
               </div>
             </section>
           </AnimatedSection>
-
           {/* 5. How It Works Preview */}
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">
