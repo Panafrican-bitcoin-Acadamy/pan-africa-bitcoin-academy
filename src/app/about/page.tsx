@@ -44,10 +44,7 @@ export default function AboutPage() {
           {/* Hero */}
           <AnimatedSection animation="slideUp">
             <div className="mb-14 text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">
-                Pan-African Bitcoin Academy
-              </p>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <h1 className="mt-4 text-4xl tracking-tight text-zinc-30 sm:text-5xl lg:text-6xl">
                 Understand Bitcoin the right way — through precise explanations, transparent guidance, and meaningful technical depth
               </h1>
             </div>
