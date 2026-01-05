@@ -217,7 +217,7 @@ export default async function Home() {
         {/* Hero Content - Full width on mobile, max-width only on larger screens */}
         <div className="relative z-10 w-full px-4 space-y-6 sm:space-y-8 text-center sm:max-w-4xl ml-auto lg:px-6">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-zinc-50 leading-tight">
-            Scaling Bitcoin adoption
+            <b>Scaling</b> Bitcoin adoption
           </h1>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-orange-400 leading-tight">
             Turning the Africa orange
