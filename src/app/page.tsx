@@ -354,7 +354,7 @@ export default async function Home() {
                     href="/about"
                     className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition hover:brightness-110"
                   >
-                    👉 Read Our Mission
+                     Read Our Mission
                   </Link>
                 </div>
                 <div className="flex items-center justify-center">
@@ -401,11 +401,12 @@ export default async function Home() {
                   href="/chapters"
                   className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
                 >
-                  👉 View Full Curriculum
+                 View Full Curriculum
                 </Link>
               </div>
             </section>
           </AnimatedSection>
+
           {/* 5. How It Works Preview */}
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">
