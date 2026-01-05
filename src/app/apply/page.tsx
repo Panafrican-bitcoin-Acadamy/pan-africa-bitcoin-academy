@@ -498,7 +498,7 @@ export default function ApplyPage() {
                 Join our Program
               </h1>
               <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
-                Apply to join the Pan-Africa Bitcoin Academy and start your journey toward financial sovereignty.
+                Apply to join the Pan-Africa Bitcoin Academy and <b>start</b> your journey toward financial sovereignty.
               </p>
             </div>
           </AnimatedSection>
