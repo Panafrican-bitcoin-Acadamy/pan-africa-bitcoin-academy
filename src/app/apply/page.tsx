@@ -703,7 +703,7 @@ export default function ApplyPage() {
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-text"
-                  placeholder="John"
+                  placeholder="Micheal"
                 />
               </div>
               <div>
@@ -719,7 +719,7 @@ export default function ApplyPage() {
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-text"
-                  placeholder="Doe"
+                  placeholder="Jordan"
                 />
               </div>
             </FormGrid>
@@ -776,7 +776,7 @@ export default function ApplyPage() {
                     onChange={handlePhoneChange}
                     maxLength={selectedCountry ? getPhoneRule(selectedCountry).max : 13}
                     className={inputStyles.phone}
-                    placeholder="1234567890"
+                    placeholder="7000501"
                     aria-describedby={phoneError ? "phone-error" : selectedCountry ? "phone-help" : undefined}
                   />
                 </div>
