@@ -759,7 +759,7 @@ export default function ApplyPage() {
                     style={{ minWidth: '80px', maxWidth: '100px' }}
                     title={selectedCountryCode ? sortedCountries.find(c => c.code === selectedCountryCode)?.name : "Select country code"}
                   >
-                    <option value="" className="bg-zinc-950 text-zinc-400">Code</option>
+                    <option value="" className="bg-zinc-950 text-zinc-400">+291</option>
                     {sortedCountries.map((country) => (
                       <option key={country.code} value={country.code} className="bg-zinc-950 text-zinc-50">
                         {country.flag} {country.code}
@@ -873,7 +873,7 @@ export default function ApplyPage() {
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className={inputStyles.optional}
-                  placeholder="Lagos"
+                  placeholder="Asmara"
                 />
               </div>
             </FormGrid>

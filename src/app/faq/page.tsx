@@ -11,15 +11,15 @@ const faqs = [
     questions: [
       {
         q: "What time zones do you support?",
-        a: "Our cohorts are designed to accommodate students across Africa. Sessions are typically scheduled in UTC+0 (GMT) or UTC+1 to ensure maximum participation. We also record all sessions for students who cannot attend live.",
+        a: "Our cohorts are designed to accommodate students across Africa. Sessions are typically scheduled in UTC+2 (GMT) or UTC+3 to ensure maximum participation. We also record all sessions for students who cannot attend live.",
       },
       {
         q: "What are the class times?",
-        a: "Classes are held twice a week, typically on Tuesdays and Thursdays at 6:00 PM UTC. Each session lasts 90 minutes. We also offer weekend sessions for students who prefer Saturday mornings.",
+        a: "Classes are held twice a week, typically on Tuesdays and Thursdays at 7:00 PM UTC. Each session lasts 60 minutes. We also offer weekend sessions for students who prefer Saturday mornings.",
       },
       {
         q: "Can I attend if I'm in a different time zone?",
-        a: "Yes! All sessions are recorded and made available within 24 hours. You can watch at your convenience and participate in asynchronous discussions.",
+        a: "Yes! All sessions are recorded and made available within 48 hours. You can watch at your convenience and participate in asynchronous discussions.",
       },
     ],
   },
@@ -53,7 +53,7 @@ const faqs = [
       },
       {
         q: "Is there an age requirement?",
-        a: "Students must be 18 years or older to participate. We welcome learners of all ages and backgrounds.",
+        a: "There is no age limit to participate. Learners of all ages and backgrounds are welcome.",
       },
     ],
   },
@@ -87,7 +87,7 @@ const faqs = [
     questions: [
       {
         q: "How much does the course cost?",
-        a: "The course is completely free! We're funded by donations and sponsors who believe in Bitcoin education.",
+        a: "The course is completely free!",
       },
       {
         q: "How do sats rewards work?",
