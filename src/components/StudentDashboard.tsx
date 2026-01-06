@@ -84,6 +84,30 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [chapterStatus, setChapterStatus] = useState<Record<number, { isUnlocked: boolean; isCompleted: boolean }>>({});
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [withdrawalRequested, setWithdrawalRequested] = useState(false);
+
+  // Check localStorage for withdrawal request status on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const requested = localStorage.getItem('withdrawalRequested');
+      if (requested === 'true') {
+        setWithdrawalRequested(true);
+      }
+    }
+  }, []);
+
+  // Clear withdrawal request flag when pending sats become 0 (withdrawal processed)
+  useEffect(() => {
+    const satsPending = userData?.student?.satsPending ?? satsTotals.pending ?? 0;
+    if (satsPending === 0 && withdrawalRequested) {
+      setWithdrawalRequested(false);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('withdrawalRequested');
+      }
+    }
+  }, [userData?.student?.satsPending, satsTotals.pending, withdrawalRequested]);
 
   useEffect(() => {
     let mounted = true;
@@ -456,6 +480,52 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     }
   }, [userData?.profile?.email]);
 
+  const handleWithdraw = async () => {
+    if (satsPending === 0) {
+      setWithdrawMessage({
+        type: 'error',
+        text: 'You have no pending sats to withdraw. Complete assignments and chapters to earn sats!',
+      });
+      return;
+    }
+
+    setWithdrawing(true);
+    setWithdrawMessage(null);
+
+    try {
+      const response = await fetch('/api/sats/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setWithdrawMessage({
+          type: 'success',
+          text: data.message || 'Withdrawal request submitted successfully! You will receive your sats via Lightning Network soon.',
+        });
+        // Mark withdrawal as requested to disable the button
+        setWithdrawalRequested(true);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('withdrawalRequested', 'true');
+        }
+      } else {
+        setWithdrawMessage({
+          type: 'error',
+          text: data.error || 'Failed to submit withdrawal request. Please try again.',
+        });
+      }
+    } catch (error: any) {
+      setWithdrawMessage({
+        type: 'error',
+        text: error.message || 'Failed to submit withdrawal request. Please try again.',
+      });
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
   const fetchExamData = async () => {
     if (!userData?.profile?.email) return;
     setLoadingExam(true);
@@ -730,9 +800,22 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                             {satsPending} sats
                         </div>
                       </div>
-                      <button className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-white transition hover:brightness-110">
-                        Withdraw (LNURL)
+                      <button 
+                        onClick={handleWithdraw}
+                        disabled={withdrawing || satsPending === 0 || withdrawalRequested}
+                        className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {withdrawing ? 'Submitting Request...' : withdrawalRequested ? 'Withdrawal Requested' : 'Withdraw (LNURL)'}
                       </button>
+                      {withdrawMessage && (
+                        <div className={`mt-2 rounded-lg border p-3 text-sm ${
+                          withdrawMessage.type === 'success'
+                            ? 'border-green-500/30 bg-green-500/10 text-green-200'
+                            : 'border-red-500/30 bg-red-500/10 text-red-200'
+                        }`}>
+                          {withdrawMessage.text}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
