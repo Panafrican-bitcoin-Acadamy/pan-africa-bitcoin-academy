@@ -600,7 +600,7 @@ export default function ChaptersPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
-              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <h1 className="text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 Learning Path
               </h1>
               <div className="mx-auto mt-8 max-w-4xl">
