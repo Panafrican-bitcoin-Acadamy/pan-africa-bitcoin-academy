@@ -773,13 +773,9 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             />
           ) : chapter.slug === 'verify-for-yourself-block-explorers-nodes' ? (
             <div className="mt-3">
-              <Link
-                href="/assignments/de36f0e1-8cb9-4386-af1a-39eb0529a0b0"
-                className="inline-flex items-center gap-2 rounded-lg border border-purple-400/30 bg-purple-500/10 px-4 py-3 text-purple-200 transition hover:border-purple-400/50 hover:bg-purple-500/20"
-              >
+              <div className="inline-flex items-center gap-2 rounded-lg border border-purple-400/30 bg-purple-500/10 px-4 py-3 text-purple-200">
                 <span>📋 Explorer Scavenger Hunt Assignment</span>
-                <span className="text-purple-400">→</span>
-              </Link>
+              </div>
               <p className="mt-3 text-sm text-zinc-400">
                 Complete the assignment to practice using block explorers and verify transactions independently.
               </p>

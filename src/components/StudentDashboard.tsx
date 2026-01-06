@@ -1019,7 +1019,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           .map((assignment: any) => (
                             <Link
                               key={assignment.id}
-                              href={`/assignments/${assignment.id}`}
+                              href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
                               className="block rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 transition hover:border-orange-500/50 hover:bg-orange-500/20"
                             >
                               <div className="flex items-center justify-between">
@@ -1051,7 +1051,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           .map((assignment: any) => (
                             <Link
                               key={assignment.id}
-                              href={`/assignments/${assignment.id}`}
+                              href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
                               className="block rounded-lg border border-green-500/30 bg-green-500/10 p-4 transition hover:border-green-500/50"
                             >
                               <div className="flex items-center justify-between">

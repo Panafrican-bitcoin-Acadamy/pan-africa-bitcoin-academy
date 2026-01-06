@@ -185,23 +185,12 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
               </div>
             </div>
           </div>
-          
-          <button
-            onClick={() => {
-              setSubmitted(false);
-              setSubmissionStatus(null);
-              setShowAnswers(false);
-            }}
-            className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
-          >
-            Edit Submission
-          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Addresses to copy */}
           <div className="space-y-3 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
-            <p className="text-sm font-medium text-zinc-300 mb-3">Copy these addresses and paste them in the inputs below:</p>
+            <p className="text-sm font-medium text-zinc-300 mb-3">Copy these addresses and paste each one in the correct script type field below:</p>
             
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
@@ -248,56 +237,57 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
             </div>
           </div>
 
-          {/* Input fields */}
+          {/* Input fields - Mixed arrangement so students must match addresses to script types */}
+          {/* Field 1: Taproot (P2TR) → Address C | Field 2: P2WPKH → Address A | Field 3: P2SH → Address B */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">
-                1. Address A → <span className="text-zinc-400">(paste address and identify script type)</span>
-              </label>
-              <input
-                type="text"
-                value={answerA}
-                onChange={(e) => setAnswerA(e.target.value)}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition font-mono text-sm"
-                placeholder="Paste Address A and identify script type (e.g., P2WPKH)"
-                required
-              />
-              {showAnswers && (
-                <p className="mt-1 text-xs text-green-400">Correct answer: {CORRECT_ANSWERS.A}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                2. Address B → <span className="text-zinc-400">(paste address and identify script type)</span>
-              </label>
-              <input
-                type="text"
-                value={answerB}
-                onChange={(e) => setAnswerB(e.target.value)}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition font-mono text-sm"
-                placeholder="Paste Address B and identify script type (e.g., P2SH)"
-                required
-              />
-              {showAnswers && (
-                <p className="mt-1 text-xs text-green-400">Correct answer: {CORRECT_ANSWERS.B}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                3. Address C → <span className="text-zinc-400">(paste address and identify script type)</span>
+                1. <span className="text-cyan-400 font-semibold">{CORRECT_ANSWERS.C}</span> → Paste the matching address here
               </label>
               <input
                 type="text"
                 value={answerC}
                 onChange={(e) => setAnswerC(e.target.value)}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition font-mono text-sm"
-                placeholder="Paste Address C and identify script type (e.g., Taproot/P2TR)"
+                placeholder="Paste the address that matches Taproot (P2TR) script type"
                 required
               />
               {showAnswers && (
-                <p className="mt-1 text-xs text-green-400">Correct answer: {CORRECT_ANSWERS.C}</p>
+                <p className="mt-1 text-xs text-green-400">Correct address: {ADDRESSES.C}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                2. <span className="text-cyan-400 font-semibold">{CORRECT_ANSWERS.A}</span> → Paste the matching address here
+              </label>
+              <input
+                type="text"
+                value={answerA}
+                onChange={(e) => setAnswerA(e.target.value)}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition font-mono text-sm"
+                placeholder="Paste the address that matches P2WPKH script type"
+                required
+              />
+              {showAnswers && (
+                <p className="mt-1 text-xs text-green-400">Correct address: {ADDRESSES.A}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                3. <span className="text-cyan-400 font-semibold">{CORRECT_ANSWERS.B}</span> → Paste the matching address here
+              </label>
+              <input
+                type="text"
+                value={answerB}
+                onChange={(e) => setAnswerB(e.target.value)}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition font-mono text-sm"
+                placeholder="Paste the address that matches P2SH script type"
+                required
+              />
+              {showAnswers && (
+                <p className="mt-1 text-xs text-green-400">Correct address: {ADDRESSES.B}</p>
               )}
             </div>
           </div>
