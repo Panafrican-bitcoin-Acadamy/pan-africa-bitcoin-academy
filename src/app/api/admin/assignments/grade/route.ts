@@ -120,7 +120,12 @@ export async function POST(req: NextRequest) {
           .insert({
             student_id: studentProfile.id,
             amount_pending: rewardAmount,
-            amount_received: 0,
+            reward_type: 'assignment',
+            related_entity_type: 'assignment',
+            related_entity_id: assignment.id,
+            reason: `Assignment approved: ${assignment.title || 'Assignment'}`,
+            status: 'pending',
+            awarded_by: adminProfile?.id || null,
           });
       }
 

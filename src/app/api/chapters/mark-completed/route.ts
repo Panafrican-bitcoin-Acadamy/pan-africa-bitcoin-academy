@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
 
     // Award sats reward for completing chapter (only if not already completed)
     if (!wasAlreadyCompleted) {
-      const rewardAmount = 200; // 200 sats for completing a chapter
+      const rewardAmount = 100; // 100 sats for completing a chapter
       
       // Check if sats_rewards record exists
       const { data: existingReward } = await supabaseAdmin

@@ -241,12 +241,15 @@ export async function POST(req: NextRequest) {
       submission = created;
     }
 
-    // Always add reward amount to pending sats when answer is submitted (only for new submissions to avoid double-adding)
-    // This reserves the reward amount in pending, whether it's auto-graded or requires instructor review
-    if (isNewSubmission) {
+    // Award sats rewards only for auto-graded correct answers (not for submissions requiring review)
+    // For assignments requiring review, sats will be awarded when admin marks it as correct
+    if (isNewlyCorrect && !requiresReview) {
+      // Use rewardAmount already calculated above (capped at 200 sats maximum)
+      
+      // Update or insert sats reward
       const { data: existingReward } = await supabaseAdmin
         .from('sats_rewards')
-        .select('*')
+        .select('id, amount_pending')
         .eq('student_id', profile.id)
         .maybeSingle();
 
@@ -265,7 +268,7 @@ export async function POST(req: NextRequest) {
           reward_type: 'assignment',
           related_entity_type: 'assignment',
           related_entity_id: assignmentId,
-          reason: `Assignment submitted: ${assignment.title}`,
+          reason: `Assignment completed: ${assignment.title}`,
           status: 'pending',
         });
       }

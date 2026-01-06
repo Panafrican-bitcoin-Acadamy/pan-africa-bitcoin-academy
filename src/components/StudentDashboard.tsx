@@ -383,38 +383,14 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     { id: 'recovery_master', title: 'Recovery Master', icon: '🔐', unlocked: false },
   ];
 
-  const createFallbackLiveSessions = () => {
-    const now = new Date();
-    const d1 = new Date(now);
-    const d2 = new Date(now);
-    d1.setDate(now.getDate() + 1);
-    d2.setDate(now.getDate() + 2);
-    return [
-      {
-        id: 'fallback-live-1',
-        title: 'Live Class - Welcome Session',
-        date: d1.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        time: '7:00 PM',
-        type: 'upcoming',
-        link: '#',
-      },
-      {
-        id: 'fallback-live-2',
-        title: 'Office Hours with Mentors',
-        date: d2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        time: '6:00 PM',
-        type: 'upcoming',
-        link: '#',
-      },
-    ];
-  };
+  // No fallback live sessions - show empty list if no sessions available
   // Use achievements from userData if available, otherwise use defaults
   const achievements = (userData?.student?.achievements && userData.student.achievements.length > 0)
     ? userData.student.achievements
     : defaultAchievements;
   const liveSessions = (student.liveSessions && student.liveSessions.length > 0)
     ? student.liveSessions
-    : createFallbackLiveSessions();
+    : [];
   
   // Build chapters list from chaptersContent with completion status (using same logic as chapters page)
   const chapters = chaptersContent.map((chapter) => {

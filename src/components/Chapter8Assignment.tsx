@@ -38,6 +38,7 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<any>(null);
+  const [assignment, setAssignment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,19 +76,22 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
       
       const data = await response.json();
       const thisAssignment = data.assignments?.find((a: any) => a.id === assignmentId);
-      if (thisAssignment?.submission) {
-        setSubmissionStatus(thisAssignment.submission);
-        setSubmitted(true);
-        if (thisAssignment.submission.answer) {
-          try {
-            const answerData = JSON.parse(thisAssignment.submission.answer);
-            if (answerData.seedPhrase) {
-              setSeedPhrase(answerData.seedPhrase);
-              setStudentInputs(answerData.studentInputs || Array(12).fill(''));
+      if (thisAssignment) {
+        setAssignment(thisAssignment);
+        if (thisAssignment.submission) {
+          setSubmissionStatus(thisAssignment.submission);
+          setSubmitted(true);
+          if (thisAssignment.submission.answer) {
+            try {
+              const answerData = JSON.parse(thisAssignment.submission.answer);
+              if (answerData.seedPhrase) {
+                setSeedPhrase(answerData.seedPhrase);
+                setStudentInputs(answerData.studentInputs || Array(12).fill(''));
+              }
+              setReflection(answerData.reflection || '');
+            } catch (e) {
+              // Legacy format, ignore
             }
-            setReflection(answerData.reflection || '');
-          } catch (e) {
-            // Legacy format, ignore
           }
         }
       }
@@ -203,7 +207,7 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-zinc-100 mb-2">Assignment: First Wallet Proof</h3>
-        <p className="text-sm text-zinc-400 mb-4">Create a wallet, back up seed securely, restore it. Reflection: What went wrong or surprised you? | Reward: 200 sats (after instructor review)</p>
+        <p className="text-sm text-zinc-400 mb-4">Create a wallet, back up seed securely, restore it. Reflection: What went wrong or surprised you? | Reward: {assignment?.reward_sats || 'TBD'} sats (awarded after instructor review)</p>
       </div>
 
       {submitted && submissionStatus ? (
@@ -212,7 +216,7 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
             <p className="text-green-200 font-medium mb-2">✓ Assignment Submitted</p>
             <p className="text-sm text-zinc-300 mb-3">Your submission is under instructor review.</p>
             {submissionStatus.status === 'graded' && submissionStatus.is_correct && (
-              <p className="text-sm text-green-300 font-medium">✓ Approved! You earned 200 sats.</p>
+              <p className="text-sm text-green-300 font-medium">✓ Approved! You earned {assignment?.reward_sats || 0} sats.</p>
             )}
           </div>
           

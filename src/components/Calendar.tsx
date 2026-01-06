@@ -16,32 +16,7 @@ interface CalendarEvent {
   duration?: number; // Duration in minutes for iCal export
 }
 
-// Fallback mock events (dated relative to "now") used if API fails
-const createFallbackEvents = (): CalendarEvent[] => {
-  const now = new Date();
-  const d1 = new Date(now);
-  const d2 = new Date(now);
-  d1.setDate(now.getDate() + 1);
-  d2.setDate(now.getDate() + 2);
-  return [
-    {
-      id: 'fallback-1',
-      title: 'Live Class - Welcome Session',
-      date: d1,
-      type: 'live-class',
-      time: '7:00 PM',
-      link: '#',
-    },
-    {
-      id: 'fallback-2',
-      title: 'Office Hours with Mentors',
-      date: d2,
-      type: 'community',
-      time: '6:00 PM',
-      link: '#',
-    },
-  ];
-};
+// No fallback events - show empty calendar if API fails
 
 const eventTypeColors = {
   'live-class': 'bg-blue-500/20 border-blue-500/50 text-blue-300',
@@ -74,7 +49,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [view, setView] = useState<'month' | 'list'>('month');
-  const [events, setEvents] = useState<CalendarEvent[]>(createFallbackEvents());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -294,14 +269,14 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
           setEvents(transformedEvents);
           console.log('✅ Calendar: Events loaded successfully');
         } else {
-          console.warn('⚠️ Calendar: No valid events found, using fallback');
-          setEvents(createFallbackEvents());
+          console.warn('⚠️ Calendar: No valid events found');
+          setEvents([]);
         }
       } catch (err: any) {
         console.error('❌ Calendar: Error fetching events:', err);
         setError(err.message);
-        // Use fallback events on error
-        setEvents(createFallbackEvents());
+        // Show empty calendar on error
+        setEvents([]);
       } finally {
         setLoading(false);
       }
