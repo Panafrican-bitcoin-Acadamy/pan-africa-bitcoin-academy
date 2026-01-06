@@ -176,10 +176,10 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                       title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
                       date: sessionDate,
                       type: 'live-class' as const,
-                      time: session.duration_minutes ? `${session.duration_minutes} min` : '',
+                      time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
                       link: session.link || '#',
                       description: session.topic || `Cohort session ${session.session_number}`,
-                      duration: session.duration_minutes || 90,
+                      duration: session.duration_minutes || 60,
                     };
                   });
                 
@@ -555,7 +555,20 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   >
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex-1 min-w-0">
-                        <div className="truncate font-medium">{event.title}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="truncate font-medium">{event.title}</span>
+                          {event.link && event.link !== '#' && event.type === 'live-class' && event.id.startsWith('session-') && (
+                            <a
+                              href={event.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-blue-300 bg-blue-500/20 border border-blue-500/50 hover:bg-blue-500/30 transition"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Join Video
+                            </a>
+                          )}
+                        </div>
                         {event.time && <div className="text-xs text-zinc-400">{event.time}</div>}
                       </div>
                       <a
@@ -564,6 +577,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                         rel="noopener noreferrer"
                         className="flex-shrink-0 rounded px-1 py-0.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
                         title="Add to Google Calendar"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         +G
                       </a>
@@ -603,7 +617,20 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                       </>
                     )}
                   </div>
-                  <div className="text-xs font-medium truncate">{event.title}</div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-medium truncate">{event.title}</span>
+                    {event.link && event.link !== '#' && event.type === 'live-class' && event.id.startsWith('session-') && (
+                      <a
+                        href={event.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-blue-300 bg-blue-500/20 border border-blue-500/50 hover:bg-blue-500/30 transition"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Join Video
+                      </a>
+                    )}
+                  </div>
                   {event.description && (
                     <div className="mt-0.5 text-xs text-zinc-400 line-clamp-1">{event.description}</div>
                   )}
