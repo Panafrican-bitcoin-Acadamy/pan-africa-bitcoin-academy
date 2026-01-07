@@ -84,6 +84,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [chapterStatus, setChapterStatus] = useState<Record<number, { isUnlocked: boolean; isCompleted: boolean }>>({});
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
@@ -352,7 +354,54 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       }
     };
 
+    const fetchSessions = async () => {
+      const email = userData?.profile?.email || storedProfileEmail || profileEmail;
+      const cohortId = userData?.cohort?.id;
+      
+      if (!email && !cohortId) {
+        setSessions([]);
+        return;
+      }
+
+      try {
+        setLoadingSessions(true);
+        // Build URL - prefer cohortId if available, otherwise use email
+        const url = cohortId 
+          ? `/api/sessions?cohortId=${encodeURIComponent(cohortId)}`
+          : `/api/sessions?email=${encodeURIComponent(email!)}`;
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Transform sessions to match expected format
+          const transformedSessions = (data.sessions || []).map((session: any) => {
+            const cohortName = session.cohorts?.name || 'Cohort';
+            const sessionDate = new Date(session.session_date);
+            return {
+              id: session.id,
+              title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
+              date: sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
+              link: session.link || null, // Get link from database
+              session_date: session.session_date,
+            };
+          });
+          setSessions(transformedSessions);
+        } else {
+          // Silently fail - sessions are optional
+          setSessions([]);
+        }
+      } catch (error) {
+        // Silently fail - sessions are optional
+        setSessions([]);
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
+
     fetchAssignments();
+    fetchSessions();
   }, [userData, storedProfileEmail, profileEmail]);
 
   const fetchProfileByEmail = async (lookupEmail: string) => {
@@ -412,9 +461,12 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const achievements = (userData?.student?.achievements && userData.student.achievements.length > 0)
     ? userData.student.achievements
     : defaultAchievements;
-  const liveSessions = (student.liveSessions && student.liveSessions.length > 0)
-    ? student.liveSessions
-    : [];
+  // Use fetched sessions from database, fallback to student.liveSessions if available
+  const liveSessions = sessions.length > 0 
+    ? sessions 
+    : (student.liveSessions && student.liveSessions.length > 0)
+      ? student.liveSessions
+      : [];
   
   // Build chapters list from chaptersContent with completion status (using same logic as chapters page)
   const chapters = chaptersContent.map((chapter) => {
@@ -892,12 +944,16 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       <div className="mb-1 text-xs font-medium text-purple-300">{session.date}</div>
                       <div className="mb-2 text-sm font-medium text-zinc-100">{session.title}</div>
                       <div className="text-xs text-zinc-400">{session.time}</div>
-                      <Link
-                        href={session.link}
-                        className="mt-2 block rounded bg-purple-500/20 px-3 py-1.5 text-center text-xs font-medium text-purple-300 transition hover:bg-purple-500/30"
-                      >
-                        Join
-                      </Link>
+                      {session.link && session.link !== '#' && session.link.trim() !== '' && (
+                        <Link
+                          href={session.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 block rounded bg-purple-500/20 px-3 py-1.5 text-center text-xs font-medium text-purple-300 transition hover:bg-purple-500/30"
+                        >
+                          Join Meeting
+                        </Link>
+                      )}
                     </div>
                   ))}
                 </div>
