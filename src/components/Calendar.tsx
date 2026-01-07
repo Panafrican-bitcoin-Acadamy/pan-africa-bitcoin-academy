@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Download } from 'lucide-react';
 import { downloadICalFile } from '@/lib/icalExport';
+import { EventEditModal } from './EventEditModal';
 
 interface CalendarEvent {
   id: string;
@@ -14,6 +15,7 @@ interface CalendarEvent {
   link?: string;
   description?: string;
   duration?: number; // Duration in minutes for iCal export
+  cohortId?: string | null; // For admin edit modal
 }
 
 // No fallback events - show empty calendar if API fails
@@ -52,6 +54,9 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [cohorts, setCohorts] = useState<Array<{ id: string; name: string }>>([]);
 
   // Fetch events from Supabase, filtered by cohort if provided
   useEffect(() => {
@@ -107,6 +112,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
               time: event.time || '',
               link: event.link || '#',
               description: event.description || '',
+              cohortId: event.cohortId || event.cohort_id || null,
             }));
         }
         
@@ -284,6 +290,81 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
 
     fetchEvents();
   }, [cohortId, studentId, showCohorts, email]);
+
+  // Fetch cohorts for admin edit modal
+  useEffect(() => {
+    if (showCohorts) {
+      fetch('/api/cohorts')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.cohorts && Array.isArray(data.cohorts)) {
+            setCohorts(data.cohorts.map((c: any) => ({ id: c.id, name: c.name })));
+          }
+        })
+        .catch((err) => console.error('Error fetching cohorts:', err));
+    }
+  }, [showCohorts]);
+
+  const handleEventClick = (event: CalendarEvent) => {
+    if (showCohorts && !event.id.startsWith('session-') && !event.id.startsWith('cohort-')) {
+      // Only allow editing regular events (not sessions or cohort dates) in admin mode
+      setSelectedEvent(event);
+      setEditModalOpen(true);
+    }
+  };
+
+  const handleEventUpdate = () => {
+    // Refresh events after update
+    const fetchEventsRefresh = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const url = showCohorts
+          ? '/api/admin/events/all'
+          : cohortId 
+          ? `/api/events?cohort_id=${encodeURIComponent(cohortId)}`
+          : '/api/events';
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch events: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        let transformedEvents: CalendarEvent[] = [];
+        
+        if (data.events && Array.isArray(data.events)) {
+          transformedEvents = data.events
+            .filter((event: any) => {
+              if (!event.date) return false;
+              const eventDate = new Date(event.date);
+              return !isNaN(eventDate.getTime());
+            })
+            .map((event: any) => ({
+              id: event.id,
+              title: event.title,
+              date: new Date(event.date),
+              type: event.type || 'community',
+              time: event.time || '',
+              link: event.link || '#',
+              description: event.description || '',
+              cohortId: event.cohortId || event.cohort_id || null,
+            }));
+        }
+        
+        setEvents(transformedEvents);
+      } catch (err: any) {
+        console.error('Error fetching events:', err);
+        setError(err.message);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEventsRefresh();
+  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -551,13 +632,18 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                 {getEventsForDate(selectedDate).map((event) => (
                   <div
                     key={event.id}
-                    className={`rounded border p-1 text-xs ${eventTypeColors[event.type]}`}
+                    className={`rounded border p-1 text-xs ${eventTypeColors[event.type]} ${
+                      showCohorts && !event.id.startsWith('session-') && !event.id.startsWith('cohort-')
+                        ? 'cursor-pointer hover:brightness-110'
+                        : ''
+                    }`}
+                    onClick={() => handleEventClick(event)}
                   >
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="truncate font-medium">{event.title}</span>
-                          {event.link && event.link !== '#' && event.type === 'live-class' && event.id.startsWith('session-') && (
+                          {event.link && event.link !== '#' && event.link.trim() !== '' && (
                             <a
                               href={event.link}
                               target="_blank"
@@ -565,7 +651,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                               className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-blue-300 bg-blue-500/20 border border-blue-500/50 hover:bg-blue-500/30 transition"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              Join Video
+                              Join Meeting
                             </a>
                           )}
                         </div>
@@ -597,7 +683,12 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
           {getUpcomingEvents().map((event) => (
             <div
               key={event.id}
-              className={`rounded border p-1.5 ${eventTypeColors[event.type]}`}
+              className={`rounded border p-1.5 ${eventTypeColors[event.type]} ${
+                showCohorts && !event.id.startsWith('session-') && !event.id.startsWith('cohort-')
+                  ? 'cursor-pointer hover:brightness-110'
+                  : ''
+              }`}
+              onClick={() => handleEventClick(event)}
             >
               <div className="flex items-start justify-between gap-1">
                 <div className="flex-1 min-w-0">
@@ -619,7 +710,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-medium truncate">{event.title}</span>
-                    {event.link && event.link !== '#' && event.type === 'live-class' && event.id.startsWith('session-') && (
+                    {event.link && event.link !== '#' && event.link.trim() !== '' && (
                       <a
                         href={event.link}
                         target="_blank"
@@ -627,7 +718,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                         className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-blue-300 bg-blue-500/20 border border-blue-500/50 hover:bg-blue-500/30 transition"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        Join Video
+                        Join Meeting
                       </a>
                     )}
                   </div>
@@ -685,6 +776,29 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
           </div>
         </div>
       </div>
+
+      {/* Event Edit Modal - Only for admin mode */}
+      {showCohorts && (
+        <EventEditModal
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedEvent(null);
+          }}
+          event={selectedEvent ? {
+            id: selectedEvent.id,
+            title: selectedEvent.title,
+            type: selectedEvent.type,
+            date: selectedEvent.date,
+            time: selectedEvent.time,
+            link: selectedEvent.link,
+            description: selectedEvent.description,
+            cohortId: selectedEvent.cohortId || null,
+          } : null}
+          cohorts={cohorts}
+          onUpdate={handleEventUpdate}
+        />
+      )}
     </div>
   );
 }
