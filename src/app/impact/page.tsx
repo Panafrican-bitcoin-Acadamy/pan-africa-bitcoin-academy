@@ -413,7 +413,7 @@ export default function ImpactPage() {
                       </div>
                     ) : (
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20">
-                        <span className="text-xl">👤</span>
+                        <span className="text-xl"> 👤</span>
                       </div>
                     )}
                     <div>
