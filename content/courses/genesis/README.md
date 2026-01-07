@@ -42,7 +42,7 @@ Content is published under **CC-BY-SA-4.0** (Creative Commons Attribution-ShareA
 ## Images to place in `images/`
 Please drop the supplied assets here, preserving these filenames:
 ```
-burning-cash.jpg
+images/burning-cash.jpg
 medium-of-exchange.png
 barter-shoes-bread.png
 song-dynasty-note.jpg
