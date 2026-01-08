@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, Twitter, Instagram, Music2 } from "lucide-react";
+import { Facebook, Twitter, Instagram, Music2, Video, Users, GraduationCap, Rocket, FileText, Calendar as CalendarIcon } from "lucide-react";
 import { StructuredData } from "@/components/StructuredData";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
@@ -203,9 +203,92 @@ async function getImpactStats(): Promise<ImpactStats> {
   }
 }
 
+interface UpcomingEvent {
+  id: string;
+  title: string;
+  type: string;
+  date: Date;
+  dateString: string;
+  time: string;
+  description: string;
+  link: string | null;
+}
+
+async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Fetch all events (for everyone - cohort_id is null) and upcoming cohort sessions
+    const [eventsResult, sessionsResult] = await Promise.all([
+      // Fetch events for everyone
+      supabaseAdmin
+        .from('events')
+        .select('*')
+        .is('cohort_id', null)
+        .gte('start_time', today.toISOString())
+        .order('start_time', { ascending: true })
+        .limit(10),
+      // Fetch upcoming cohort sessions
+      supabaseAdmin
+        .from('cohort_sessions')
+        .select('*, cohorts(name)')
+        .gte('session_date', today.toISOString().split('T')[0])
+        .order('session_date', { ascending: true })
+        .limit(10),
+    ]);
+
+    const upcomingEvents: UpcomingEvent[] = [];
+
+    // Transform events
+    if (eventsResult.data) {
+      eventsResult.data.forEach((event: any) => {
+        const startTime = event.start_time ? new Date(event.start_time) : new Date();
+        upcomingEvents.push({
+          id: event.id,
+          title: event.name || 'Untitled Event',
+          type: event.type || 'community',
+          date: startTime,
+          dateString: startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+          description: event.description || '',
+          link: event.link || null,
+        });
+      });
+    }
+
+    // Transform sessions
+    if (sessionsResult.data) {
+      sessionsResult.data.forEach((session: any) => {
+        const sessionDate = new Date(session.session_date);
+        const cohortName = session.cohorts?.name || 'Cohort';
+        upcomingEvents.push({
+          id: `session-${session.id}`,
+          title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
+          type: 'live-class',
+          date: sessionDate,
+          dateString: sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
+          description: session.topic || `Cohort session ${session.session_number}`,
+          link: session.link || null,
+        });
+      });
+    }
+
+    // Sort by date and return top 6
+    return upcomingEvents
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 6);
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const mentors = await getMentors();
   const impactStats = await getImpactStats();
+  const upcomingEvents = await getUpcomingEvents();
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Full-page Hero Section - Edge-to-edge on mobile */}
@@ -775,6 +858,123 @@ export default async function Home() {
               >
                 👉 Support the Academy
               </Link>
+            </section>
+          </AnimatedSection>
+
+          {/* 13. Upcoming Events */}
+          <AnimatedSection animation="slideUp">
+            <section className="mb-20 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Upcoming Events</h2>
+                <p className="mt-4 text-base text-zinc-400 sm:text-lg">
+                  Join our upcoming sessions and workshops.
+                </p>
+              </div>
+              {upcomingEvents.length > 0 ? (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {upcomingEvents.map((event, index) => {
+                    const isClosestEvent = index === 0; // First event is the closest
+                    const getEventTypeStyle = (type: string) => {
+                      const styles: Record<string, { border: string; bg: string; text: string; icon: any }> = {
+                        'live-class': {
+                          border: 'border-blue-500/30',
+                          bg: 'bg-blue-500/10',
+                          text: 'text-blue-300',
+                          icon: Video,
+                        },
+                        'community': {
+                          border: 'border-purple-500/30',
+                          bg: 'bg-purple-500/10',
+                          text: 'text-purple-300',
+                          icon: Users,
+                        },
+                        'workshop': {
+                          border: 'border-cyan-500/30',
+                          bg: 'bg-cyan-500/10',
+                          text: 'text-cyan-300',
+                          icon: GraduationCap,
+                        },
+                        'cohort': {
+                          border: 'border-green-500/30',
+                          bg: 'bg-green-500/10',
+                          text: 'text-green-300',
+                          icon: Rocket,
+                        },
+                        'assignment': {
+                          border: 'border-yellow-500/30',
+                          bg: 'bg-yellow-500/10',
+                          text: 'text-yellow-300',
+                          icon: FileText,
+                        },
+                      };
+                      return styles[type] || {
+                        border: 'border-zinc-500/30',
+                        bg: 'bg-zinc-500/10',
+                        text: 'text-zinc-300',
+                        icon: CalendarIcon,
+                      };
+                    };
+
+                    const style = getEventTypeStyle(event.type);
+                    const IconComponent = style.icon;
+                    return (
+                      <div
+                        key={event.id}
+                        className={`rounded-xl border p-6 transition hover:brightness-110 ${
+                          isClosestEvent
+                            ? 'border-yellow-500/50 bg-gradient-to-br from-yellow-500/20 via-yellow-400/15 to-yellow-500/20 shadow-[0_0_40px_rgba(234,179,8,0.4)] ring-2 ring-yellow-500/30'
+                            : `${style.border} ${style.bg} hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]`
+                        }`}
+                      >
+                        {isClosestEvent && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="rounded-full bg-yellow-500/30 px-2 py-0.5 text-xs font-semibold text-yellow-200">
+                              Next Up
+                            </span>
+                          </div>
+                        )}
+                        <div className="mb-3 flex items-start gap-3">
+                          <IconComponent className={`h-6 w-6 ${isClosestEvent ? 'text-yellow-300' : style.text} flex-shrink-0 mt-0.5`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="mb-2 flex items-center gap-2 flex-wrap">
+                              <span className={`text-xs font-medium ${isClosestEvent ? 'text-yellow-300' : style.text}`}>
+                                {event.dateString}
+                              </span>
+                              {event.time && (
+                                <>
+                                  <span className="text-zinc-500">•</span>
+                                  <span className="text-xs text-zinc-400">{event.time}</span>
+                                </>
+                              )}
+                            </div>
+                            <h3 className={`mb-2 text-lg font-semibold line-clamp-2 ${isClosestEvent ? 'text-yellow-200' : 'text-zinc-100'}`}>
+                              {event.title}
+                            </h3>
+                            {event.description && (
+                              <p className="mb-3 text-sm text-zinc-400 line-clamp-2">
+                                {event.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/30 p-12 text-center">
+                  <p className="text-lg text-zinc-400 mb-2">No upcoming events scheduled</p>
+                  <p className="text-sm text-zinc-500">Check back soon for new sessions and events!</p>
+                </div>
+              )}
+              <div className="text-center">
+                <Link
+                  href="/apply"
+                  className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+                >
+                  👉 Join a Cohort
+                </Link>
+              </div>
             </section>
           </AnimatedSection>
         </div>

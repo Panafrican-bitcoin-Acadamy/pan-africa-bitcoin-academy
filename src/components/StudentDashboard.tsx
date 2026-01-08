@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
-import { Download, Book, FileText } from 'lucide-react';
+import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink } from 'lucide-react';
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
 const CertificateImageSection = lazy(() => import('./CertificateImageSection').then(mod => ({ default: mod.CertificateImageSection })));
@@ -86,6 +86,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
@@ -400,8 +402,50 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       }
     };
 
+    const fetchEvents = async () => {
+      const cohortId = userData?.cohort?.id;
+      
+      try {
+        setLoadingEvents(true);
+        // Fetch events - include both cohort-specific and "for everyone" events
+        const url = cohortId 
+          ? `/api/events?cohort_id=${encodeURIComponent(cohortId)}`
+          : '/api/events';
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Transform events to match expected format
+          const transformedEvents = (data.events || []).map((event: any) => {
+            const startTime = event.date ? new Date(event.date) : new Date();
+            return {
+              id: event.id,
+              title: event.title || event.name || 'Untitled Event',
+              type: event.type || 'community',
+              date: startTime,
+              dateString: startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              time: event.time || '',
+              description: event.description || '',
+              link: event.link || null,
+            };
+          });
+          setEvents(transformedEvents);
+        } else {
+          console.warn('Failed to fetch events:', response.status);
+          setEvents([]);
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        setEvents([]);
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
+
     fetchAssignments();
     fetchSessions();
+    fetchEvents();
   }, [userData, storedProfileEmail, profileEmail]);
 
   const fetchProfileByEmail = async (lookupEmail: string) => {
@@ -467,6 +511,151 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     : (student.liveSessions && student.liveSessions.length > 0)
       ? student.liveSessions
       : [];
+
+  // Combine sessions and events, filter for upcoming items, and sort by date
+  const getUpcomingItems = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Transform sessions to match event format
+    const sessionItems = liveSessions
+      .filter((session: any) => {
+        // Handle both session_date (from API) and date (from transformed sessions)
+        const sessionDateStr = session.session_date || session.date;
+        if (!sessionDateStr) return false;
+        try {
+          const sessionDate = new Date(sessionDateStr);
+          if (isNaN(sessionDate.getTime())) return false;
+          sessionDate.setHours(0, 0, 0, 0);
+          return sessionDate.getTime() >= today.getTime();
+        } catch {
+          return false;
+        }
+      })
+      .map((session: any) => {
+        const sessionDateStr = session.session_date || session.date;
+        const sessionDate = new Date(sessionDateStr);
+        return {
+          id: `session-${session.id}`,
+          title: session.title,
+          type: 'live-class',
+          date: sessionDate,
+          dateString: session.date || sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          time: session.time || '',
+          description: session.topic || `Cohort session ${session.session_number}`,
+          link: session.link || null,
+        };
+      });
+
+    // Filter events for upcoming
+    const eventItems = (events || [])
+      .filter((event: any) => {
+        if (!event || !event.date) return false;
+        try {
+          const eventDate = new Date(event.date);
+          if (isNaN(eventDate.getTime())) return false;
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate.getTime() >= today.getTime();
+        } catch {
+          return false;
+        }
+      })
+      .map((event: any) => ({
+        ...event,
+        dateString: event.dateString || new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      }));
+
+    // Add cohort start date as an upcoming item
+    const cohortItems: any[] = [];
+    if (userData?.cohort?.startDate) {
+      try {
+        const cohortStartDate = new Date(userData.cohort.startDate);
+        if (!isNaN(cohortStartDate.getTime())) {
+          cohortStartDate.setHours(0, 0, 0, 0);
+          if (cohortStartDate.getTime() >= today.getTime()) {
+            cohortItems.push({
+              id: `cohort-start-${userData.cohort.id}`,
+              title: `${userData.cohort.name} - Orientation & Start`,
+              type: 'cohort',
+              date: cohortStartDate,
+              dateString: cohortStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              time: '',
+              description: `Welcome to ${userData.cohort.name}! Orientation session and cohort kickoff.`,
+              link: null,
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Error parsing cohort start date:', error);
+      }
+    }
+
+    // Combine and sort by date
+    const allItems = [...sessionItems, ...eventItems, ...cohortItems].sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateA - dateB;
+    });
+
+    return allItems.slice(0, 5); // Show up to 5 upcoming items
+  };
+
+  const upcomingItems = getUpcomingItems();
+
+  // Event type icons and colors
+  const getEventTypeConfig = (type: string) => {
+    const configs: Record<string, { icon: any; color: string; bgColor: string; borderColor: string }> = {
+      'live-class': {
+        icon: Video,
+        color: 'text-blue-300',
+        bgColor: 'bg-blue-500/10',
+        borderColor: 'border-blue-500/30',
+      },
+      'assignment': {
+        icon: FileCheck,
+        color: 'text-yellow-300',
+        bgColor: 'bg-yellow-500/10',
+        borderColor: 'border-yellow-500/30',
+      },
+      'community': {
+        icon: Users,
+        color: 'text-purple-300',
+        bgColor: 'bg-purple-500/10',
+        borderColor: 'border-purple-500/30',
+      },
+      'workshop': {
+        icon: GraduationCap,
+        color: 'text-cyan-300',
+        bgColor: 'bg-cyan-500/10',
+        borderColor: 'border-cyan-500/30',
+      },
+      'deadline': {
+        icon: Clock,
+        color: 'text-red-300',
+        bgColor: 'bg-red-500/10',
+        borderColor: 'border-red-500/30',
+      },
+      'quiz': {
+        icon: FileText,
+        color: 'text-orange-300',
+        bgColor: 'bg-orange-500/10',
+        borderColor: 'border-orange-500/30',
+      },
+      'cohort': {
+        icon: GraduationCap,
+        color: 'text-green-300',
+        bgColor: 'bg-green-500/10',
+        borderColor: 'border-green-500/30',
+      },
+    };
+
+    return configs[type] || {
+      icon: CalendarIcon,
+      color: 'text-zinc-300',
+      bgColor: 'bg-zinc-500/10',
+      borderColor: 'border-zinc-500/30',
+    };
+  };
   
   // Build chapters list from chaptersContent with completion status (using same logic as chapters page)
   const chapters = chaptersContent.map((chapter) => {
@@ -873,7 +1062,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                 </div>
               </div>
               {/* Right side: Calendar */}
-              <div className="lg:col-span-1">
+              <div id="calendar" className="lg:col-span-1 scroll-mt-8">
                 <Suspense fallback={<div className="flex h-64 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/50"><div className="text-zinc-400">Loading calendar...</div></div>}>
                   <Calendar 
                     cohortId={userData?.cohort?.id || null}
@@ -934,29 +1123,97 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               <div className="lg:col-span-1 rounded-xl border border-purple-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-zinc-50">Upcoming</h2>
-                </div>
-                <div className="space-y-3">
-                  {liveSessions.slice(0, 3).map((session: any) => (
-                    <div
-                      key={session.id}
-                      className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-3"
+                  {upcomingItems.length > 0 && (
+                    <Link
+                      href="#calendar"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const element = document.getElementById('calendar');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                      className="text-xs text-purple-300 hover:text-purple-200 transition"
                     >
-                      <div className="mb-1 text-xs font-medium text-purple-300">{session.date}</div>
-                      <div className="mb-2 text-sm font-medium text-zinc-100">{session.title}</div>
-                      <div className="text-xs text-zinc-400">{session.time}</div>
-                      {session.link && session.link !== '#' && session.link.trim() !== '' && (
-                        <Link
-                          href={session.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 block rounded bg-purple-500/20 px-3 py-1.5 text-center text-xs font-medium text-purple-300 transition hover:bg-purple-500/30"
-                        >
-                          Join Meeting
-                        </Link>
-                      )}
-                    </div>
-                  ))}
+                      View All
+                    </Link>
+                  )}
                 </div>
+                {loadingEvents || loadingSessions ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-3 animate-pulse">
+                        <div className="h-4 w-20 bg-zinc-700 rounded mb-2"></div>
+                        <div className="h-5 w-full bg-zinc-700 rounded mb-1"></div>
+                        <div className="h-3 w-16 bg-zinc-700 rounded"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : upcomingItems.length > 0 ? (
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {upcomingItems.map((item: any) => {
+                      const config = getEventTypeConfig(item.type);
+                      const Icon = config.icon;
+                      return (
+                        <div
+                          key={item.id}
+                          className={`rounded-lg border ${config.borderColor} ${config.bgColor} p-3 transition hover:brightness-110`}
+                        >
+                          <div className="mb-2 flex items-start gap-2">
+                            <Icon className={`h-4 w-4 ${config.color} mt-0.5 flex-shrink-0`} />
+                            <div className="flex-1 min-w-0">
+                              <div className="mb-1 flex items-center gap-2 flex-wrap">
+                                <span className={`text-xs font-medium ${config.color}`}>
+                                  {item.dateString}
+                                </span>
+                                {item.time && (
+                                  <>
+                                    <span className="text-zinc-500">•</span>
+                                    <span className="text-xs text-zinc-400">{item.time}</span>
+                                  </>
+                                )}
+                              </div>
+                              <div className="mb-1 text-sm font-semibold text-zinc-100 line-clamp-1">
+                                {item.title}
+                              </div>
+                              {item.description && (
+                                <div className="mb-2 text-xs text-zinc-400 line-clamp-2">
+                                  {item.description}
+                                </div>
+                              )}
+                              {item.link && item.link !== '#' && item.link.trim() !== '' && (
+                                <Link
+                                  href={item.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`mt-2 inline-flex items-center gap-1.5 rounded ${config.bgColor} border ${config.borderColor} px-2.5 py-1 text-xs font-medium ${config.color} transition hover:brightness-110`}
+                                >
+                                  {item.type === 'live-class' ? (
+                                    <>
+                                      <Video className="h-3 w-3" />
+                                      Join Video
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ExternalLink className="h-3 w-3" />
+                                      View Details
+                                    </>
+                                  )}
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-zinc-700/50 bg-zinc-900/30 p-6 text-center">
+                    <CalendarIcon className="h-8 w-8 text-zinc-500 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-400 mb-1">No upcoming events</p>
+                    <p className="text-xs text-zinc-500">Check back later for new sessions and events</p>
+                  </div>
+                )}
               </div>
             </div>
 
