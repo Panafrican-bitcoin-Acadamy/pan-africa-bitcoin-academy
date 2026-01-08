@@ -23,30 +23,30 @@
 
 **Level I (Genesis)** - Foundations, the fiat problem, and first steps into Bitcoin
 <br><center> [Chapter 1: The Nature of Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch01-nature-of-money.md)</center>
-- [Chapter 2: The Journey of Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch02-journey-of-money.md)
-- [Chapter 3: Problems with Traditional (Fiat) Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch03-fiat-problems.md)
-- [Chapter 4: From Crisis to Innovation](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch04-crisis-to-innovation.md)
-- [Chapter 5: The Birth of Bitcoin](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch05-birth-of-bitcoin.md)
-- [Chapter 6: Keys and Transactions](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch06-keys-and-transactions.md)
-- [Chapter 7: Blockchain Basics](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch07-blockchain-basics.md)
-- [Chapter 8: Exchange & Software Wallet](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch08-exchange-and-wallet.md)
+<br><center> [Chapter 2: The Journey of Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch02-journey-of-money.md)</center>
+<br><center> [Chapter 3: Problems with Traditional (Fiat) Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch03-fiat-problems.md)</center>
+<br><center> [Chapter 4: From Crisis to Innovation](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch04-crisis-to-innovation.md)</center>
+<br><center> [Chapter 5: The Birth of Bitcoin](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch05-birth-of-bitcoin.md)</center>
+<br><center> [Chapter 6: Keys and Transactions](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch06-keys-and-transactions.md)</center>
+<br><center> [Chapter 7: Blockchain Basics](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch07-blockchain-basics.md)</center>
+<br><center> [Chapter 8: Exchange & Software Wallet](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch08-exchange-and-wallet.md)</center>
 
 **Level II (Difficulty-Adjustment 1)**
-- [Chapter 9: UTXOs, Fees & Coin Control](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch09-utxos-fees.md)
-- [Chapter 10: Good Bitcoin Hygiene](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch10-hygiene.md)
-- [Chapter 11: Hardware Signers](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch11-hardware-signers.md)
-- [Chapter 12: Layer 2 & Sidechains](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch12-layer2-sidechains.md)
-- [Chapter 13: Verify for Yourself — Block Explorers & Nodes](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch13-verify.md)
-- [Chapter 14: Proof of Work and Block Rewards](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch14-pow-rewards.md)
-- [Chapter 15: Mining in Practice](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch15-mining-practice.md)
+<br><center> [Chapter 9: UTXOs, Fees & Coin Control](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch09-utxos-fees.md)</center>
+<br><center> [Chapter 10: Good Bitcoin Hygiene](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch10-hygiene.md)</center>
+<br><center> [Chapter 11: Hardware Signers](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch11-hardware-signers.md)</center>
+<br><center> [Chapter 12: Layer 2 & Sidechains](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch12-layer2-sidechains.md)</center>
+<br><center> [Chapter 13: Verify for Yourself — Block Explorers & Nodes](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch13-verify.md)</center>
+<br><center> [Chapter 14: Proof of Work and Block Rewards](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch14-pow-rewards.md)</center>
+<br><center> [Chapter 15: Mining in Practice](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch15-mining-practice.md)</center>
 
 **Level III (Advanced Sovereignty)**
-- [Chapter 16: Full Node & Opening a Lightning Channel](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch16-full-node-lightning.md)
-- [Chapter 17: Multi-Sig (Collaborative Custody)](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch17-multisig.md)
-- [Chapter 18: Intro to Bitcoin Script](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch18-bitcoin-script.md)
-- [Chapter 19: UTXO Consolidation & Privacy Risks](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch19-consolidation-privacy.md)
-- [Chapter 20: Why Bitcoin? Philosophy & Adoption](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch20-philosophy.md)
-- [Chapter 21: Wrap-Up & Resources](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch21-wrap-up.md)
+<br><center> [Chapter 16: Full Node & Opening a Lightning Channel](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch16-full-node-lightning.md)</center>
+<br><center> [Chapter 17: Multi-Sig (Collaborative Custody)](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch17-multisig.md)</center>
+<br><center> [Chapter 18: Intro to Bitcoin Script](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch18-bitcoin-script.md)</center>
+<br><center> [Chapter 19: UTXO Consolidation & Privacy Risks](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch19-consolidation-privacy.md)</center>
+<br><center> [Chapter 20: Why Bitcoin? Philosophy & Adoption](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch20-philosophy.md)</center>
+<br><center> [Chapter 21: Wrap-Up & Resources](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch21-wrap-up.md)</center>
 
 📖 **[View Full Course Overview →](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/README.md)**
 
