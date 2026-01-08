@@ -1571,13 +1571,15 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           <span className={hasPassedFinalAssessment ? 'text-green-300 font-semibold' : 'text-red-400'}>
                             {examResult.score}/{examResult.totalQuestions} ({examResult.percentage}%)
                           </span>
-                        ) : examAccess?.hasAccess ? (
+                        ) : examAccess?.hasAccess && hasCompletedAllChapters ? (
                           <Link
                             href="/exam"
                             className="text-orange-400 hover:text-orange-300 underline text-sm"
                           >
                             Take Exam →
                           </Link>
+                        ) : !hasCompletedAllChapters ? (
+                          <span className="text-zinc-500 text-sm">Complete all 20 chapters first</span>
                         ) : examAccess?.chapter21Completed ? (
                           <span className="text-zinc-500 text-sm">Waiting for access</span>
                         ) : (
