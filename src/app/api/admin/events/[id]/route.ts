@@ -8,7 +8,7 @@ import { requireAdmin, attachRefresh } from '@/lib/adminSession';
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = requireAdmin(req);
@@ -16,7 +16,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const { 
       name, 
       type, 
@@ -76,11 +76,11 @@ export async function PUT(
         type: eventType,
         start_time: start_time,
         end_time: end_time || null,
-        description: description || null,
-        link: link || null,
-        recording_url: recording_url || null,
+        description: description?.trim() || null,
+        link: link?.trim() || null,
+        recording_url: recording_url?.trim() || null,
         cohort_id: finalCohortId,
-        chapter_number: chapter_number && eventType === 'live-class' ? parseInt(chapter_number) : null,
+        chapter_number: chapter_number && eventType === 'live-class' && !isNaN(parseInt(chapter_number)) ? parseInt(chapter_number) : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', eventId)
@@ -145,7 +145,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = requireAdmin(req);
@@ -153,7 +153,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const eventId = params.id;
+    const { id: eventId } = await params;
 
     const { error: deleteError } = await supabaseAdmin
       .from('events')

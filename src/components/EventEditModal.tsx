@@ -81,18 +81,21 @@ export function EventEditModal({ isOpen, onClose, event, cohorts, onUpdate }: Ev
     setError(null);
 
     try {
+      // Convert datetime-local string to ISO for API
+      const toIsoString = (value: string) => (value ? new Date(value).toISOString() : null);
+
       const updateData: any = {
         name: formData.name.trim(),
         type: formData.type,
-        start_time: formData.start_time,
-        end_time: formData.end_time || null,
-        description: formData.description || null,
-        link: formData.link || null,
+        start_time: toIsoString(formData.start_time),
+        end_time: toIsoString(formData.end_time),
+        description: formData.description?.trim() || null,
+        link: formData.link?.trim() || null,
         cohort_id: formData.cohort_id === 'for_all' ? null : formData.cohort_id,
       };
 
-      if (formData.type === 'live-class' && formData.chapter_number) {
-        updateData.chapter_number = formData.chapter_number;
+      if (formData.type === 'live-class' && formData.chapter_number && !isNaN(parseInt(formData.chapter_number))) {
+        updateData.chapter_number = parseInt(formData.chapter_number);
       }
 
       const response = await fetch(`/api/admin/events/${event.id}`, {
@@ -147,32 +150,35 @@ export function EventEditModal({ isOpen, onClose, event, cohorts, onUpdate }: Ev
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      className="fixed inset-0 z-40 flex items-start justify-center bg-black/80 p-4 pt-24 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div 
-        className="w-full max-w-md rounded-xl border border-cyan-400/30 bg-gradient-to-br from-zinc-900 to-black p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]"
+        className="w-full max-w-md rounded-xl border border-cyan-400/30 bg-gradient-to-br from-zinc-900 to-black shadow-[0_0_40px_rgba(34,211,238,0.2)] my-4 max-h-[calc(100vh-8rem)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 px-6 pt-6 pb-4 flex items-center justify-between border-b border-zinc-800">
           <h2 className="text-xl font-semibold text-cyan-300">Edit Event</h2>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-200"
+            className="text-zinc-400 hover:text-zinc-200 text-2xl leading-none"
           >
             ×
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" id="event-edit-form">
           <div>
             <label className="mb-1 block text-sm text-zinc-300">Event Name</label>
             <input
@@ -274,9 +280,15 @@ export function EventEditModal({ isOpen, onClose, event, cohorts, onUpdate }: Ev
             </select>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          </form>
+        </div>
+
+        {/* Footer with Buttons - Fixed */}
+        <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-zinc-800">
+          <div className="flex gap-2">
             <button
               type="submit"
+              form="event-edit-form"
               disabled={loading || !formData.name || !formData.start_time}
               className="flex-1 rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50"
             >
@@ -291,7 +303,7 @@ export function EventEditModal({ isOpen, onClose, event, cohorts, onUpdate }: Ev
               Delete
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
