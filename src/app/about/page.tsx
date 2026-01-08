@@ -170,6 +170,38 @@ export default function AboutPage() {
               </section>
             </AnimatedSection>
 
+            {/* License */}
+            <AnimatedSection animation="slideUp">
+              <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-5 sm:p-6 shadow-[0_0_40px_rgba(34,211,238,0.18)]">
+                <h2 className="text-lg font-semibold text-cyan-200 sm:text-xl mb-3">Open Source License</h2>
+                <p className="text-zinc-200 mb-4">
+                  This program is free software: you can redistribute it and/or modify it under the terms of the{" "}
+                  <a
+                    href="https://www.gnu.org/licenses/gpl-3.0.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-400 hover:text-cyan-300 underline"
+                  >
+                    GNU General Public License v3
+                  </a>
+                  {" "}or (at your option) any later version.
+                </p>
+                <p className="text-zinc-300 text-sm mb-4">
+                  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+                </p>
+                <div className="mt-4">
+                  <a
+                    href="/LICENSE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+                  >
+                    View Full License
+                  </a>
+                </div>
+              </section>
+            </AnimatedSection>
+
             {/* Evolving project */}
             <AnimatedSection animation="slideLeft">
               <section className="space-y-3">

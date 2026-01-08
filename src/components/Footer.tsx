@@ -100,6 +100,27 @@ export function Footer() {
             Educational only. Not financial advice. Practice on testnet/regtest, never with
             money you can&apos;t lose.
           </p>
+          <p className="text-[10px] text-zinc-500 sm:text-[11px]">
+            This program is free software: you can redistribute it and/or modify it under the terms of the{" "}
+            <a
+              href="https://www.gnu.org/licenses/gpl-3.0.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-400 hover:text-cyan-300 underline"
+            >
+              GNU General Public License v3
+            </a>
+            {" "}or (at your option) any later version.{" "}
+            <a
+              href="/LICENSE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-400 hover:text-cyan-300 underline"
+            >
+              View full license
+            </a>
+            .
+          </p>
         </div>
       </div>
     </footer>
