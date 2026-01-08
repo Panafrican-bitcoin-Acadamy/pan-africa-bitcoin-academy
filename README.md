@@ -22,7 +22,7 @@
 ### Quick Chapter Links
 
 **Level I (Genesis)** - Foundations, the fiat problem, and first steps into Bitcoin
-- [Chapter 1: The Nature of Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch01-nature-of-money.md)
+<br><center> [Chapter 1: The Nature of Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch01-nature-of-money.md)</center>
 - [Chapter 2: The Journey of Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch02-journey-of-money.md)
 - [Chapter 3: Problems with Traditional (Fiat) Money](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch03-fiat-problems.md)
 - [Chapter 4: From Crisis to Innovation](https://github.com/Joie199/pan-africa-bitcoin-academy/blob/main/content/courses/genesis/chapters/ch04-crisis-to-innovation.md)
