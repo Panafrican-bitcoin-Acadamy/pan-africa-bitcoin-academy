@@ -502,3 +502,142 @@ export async function sendRejectionEmail(data: RejectionEmailData): Promise<{ su
     };
   }
 }
+
+interface VerificationEmailData {
+  userName: string;
+  userEmail: string;
+  verificationToken: string;
+}
+
+/**
+ * Send email verification email to new user
+ */
+export async function sendVerificationEmail(data: VerificationEmailData): Promise<{ success: boolean; error?: string; errorDetails?: string }> {
+  try {
+    // Check if Resend API key is configured
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('❌ RESEND_API_KEY not configured. Email will not be sent.');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Please set RESEND_API_KEY in your environment variables (.env.local for local development)');
+      }
+      return { success: false, error: 'Email service not configured' };
+    }
+    
+    const resend = getResendClient();
+    if (!resend) {
+      console.error('❌ Failed to initialize Resend client even though API key exists.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const { userName, userEmail, verificationToken } = data;
+
+    // Validate email
+    const emailValidation = validateAndNormalizeEmail(userEmail);
+    if (!emailValidation.valid || !emailValidation.normalized) {
+      console.error('❌ Invalid user email:', userEmail);
+      return {
+        success: false,
+        error: 'Invalid email address',
+        errorDetails: `User email "${userEmail}" is not valid`,
+      };
+    }
+
+    const normalizedEmail = emailValidation.normalized;
+
+    // Create verification link
+    const verificationLink = `${SITE_URL}/verify-email?token=${encodeURIComponent(verificationToken)}&email=${encodeURIComponent(normalizedEmail)}`;
+
+    // Create email content
+    const emailSubject = 'Verify Your Email - Pan-Africa Bitcoin Academy';
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">✉️ Verify Your Email Address</h1>
+          </div>
+          
+          <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; margin-bottom: 20px;">
+              Hi ${userName},
+            </p>
+            
+            <p style="font-size: 16px; margin-bottom: 20px;">
+              Thank you for registering with Pan-Africa Bitcoin Academy! To complete your registration and verify your identity, please confirm your email address by clicking the button below.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationLink}" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                Verify Email Address
+              </a>
+            </div>
+            
+            <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+              Or copy and paste this link into your browser:
+            </p>
+            <p style="font-size: 12px; color: #9ca3af; word-break: break-all; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+              ${verificationLink}
+            </p>
+            
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 15px; margin-top: 20px;">
+              <p style="margin: 0; color: #92400e; font-size: 14px;">
+                <strong>⚠️ Important:</strong> This verification link will expire in 24 hours. If you didn't create an account with us, please ignore this email.
+              </p>
+            </div>
+            
+            <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              If the button doesn't work, you can also verify by visiting our website and entering the verification code when prompted.
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Send email via Resend
+    console.log('📧 Sending verification email:', {
+      to: normalizedEmail,
+      userName,
+    });
+
+    const { data: emailResponse, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: normalizedEmail,
+      subject: emailSubject,
+      html: emailHtml,
+    });
+
+    if (error) {
+      console.error('❌ Error sending verification email:', {
+        error: error.message,
+        userEmail: normalizedEmail,
+      });
+      return {
+        success: false,
+        error: error.message || 'Failed to send email',
+      };
+    }
+
+    console.log('✅ Verification email sent successfully:', {
+      emailId: emailResponse?.id,
+      to: normalizedEmail,
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ Exception in sendVerificationEmail:', {
+      error: error.message,
+      stack: error.stack,
+    });
+    return {
+      success: false,
+      error: error.message || 'Failed to send verification email',
+    };
+  }
+}

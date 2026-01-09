@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, status, cohort_id, phone, country, city, password_hash')
+      .select('id, email, status, cohort_id, phone, country, city, password_hash, email_verified_at, created_at')
       .eq('email', emailLower)
       .maybeSingle();
 
@@ -80,6 +80,25 @@ export async function POST(req: NextRequest) {
     const studentIdentifier = application.id; // This is the UUID from applications table
 
     if (existingProfile) {
+      // Check email verification status
+      // For existing users (grandfathered): if email_verified_at is NULL and profile was created before email verification feature,
+      // we consider them verified. For new profiles, email_verified_at must be set.
+      const profileCreatedAt = existingProfile.created_at ? new Date(existingProfile.created_at) : null;
+      const verificationFeatureDate = new Date('2025-01-15'); // Date when email verification was added
+      const isGrandfathered = profileCreatedAt && profileCreatedAt < verificationFeatureDate;
+      
+      // If email is not verified and not grandfathered, block approval
+      if (!existingProfile.email_verified_at && !isGrandfathered) {
+        return NextResponse.json(
+          { 
+            error: 'Email verification required',
+            details: 'The applicant must verify their email address before the application can be approved. Please ask them to check their email and click the verification link.',
+            emailNotVerified: true
+          },
+          { status: 400 }
+        );
+      }
+
       // Link to existing profile (basic profile already exists)
       profileId = existingProfile.id;
       isExistingProfile = true;

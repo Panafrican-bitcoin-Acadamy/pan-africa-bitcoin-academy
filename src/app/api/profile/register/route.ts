@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/passwordValidation';
 import { validateAndNormalizeEmail, sanitizeName } from '@/lib/validation';
+import { sendVerificationEmail } from '@/lib/email';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -76,9 +78,15 @@ export async function POST(req: NextRequest) {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiry = new Date();
+    tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Expires in 24 hours
+
     // Create profile - minimal data, phone is empty/null
     // This is just account creation, not academy enrollment
-    const { data: newProfile, error: profileError } = await supabase
+    // Email is NOT verified yet - user must verify via email
+    const { data: newProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
         name: `${sanitizedFirstName} ${sanitizedLastName}`,
@@ -86,6 +94,9 @@ export async function POST(req: NextRequest) {
         password_hash: passwordHash,
         phone: null, // Keep phone empty - will be filled during application
         status: 'New', // Just signed up, not enrolled yet
+        email_verification_token: verificationToken,
+        email_verification_token_expiry: tokenExpiry.toISOString(),
+        email_verified_at: null, // Email not verified yet
       })
       .select()
       .single();
@@ -100,13 +111,32 @@ export async function POST(req: NextRequest) {
 
     const profile = newProfile;
 
+    // Send verification email
+    const emailResult = await sendVerificationEmail({
+      userName: `${sanitizedFirstName} ${sanitizedLastName}`,
+      userEmail: emailValidation.normalized,
+      verificationToken,
+    });
+
+    if (!emailResult.success) {
+      console.error('Failed to send verification email:', emailResult.error);
+      // Don't fail registration if email fails - user can request resend
+      // But log the error for admin awareness
+    }
+
     // Don't create student record automatically
     // Student record will be created when user applies and gets accepted
     // This allows users to sign up without being students yet
 
     // Return success - profile was created successfully
+    // Note: Email verification is required before application approval
     return NextResponse.json(
-      { success: true, profileId: profile.id },
+      { 
+        success: true, 
+        profileId: profile.id,
+        emailVerificationSent: emailResult.success,
+        message: 'Account created successfully. Please check your email to verify your address.'
+      },
       { status: 200 }
     );
   } catch (error: any) {

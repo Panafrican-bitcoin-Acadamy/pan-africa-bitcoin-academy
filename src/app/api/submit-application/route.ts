@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { validateAndNormalizeEmail, sanitizeName } from '@/lib/validation';
 import { requireStudent } from '@/lib/session';
+import { sendVerificationEmail } from '@/lib/email';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -146,6 +148,52 @@ export async function POST(req: NextRequest) {
     // The application will be linked to their existing profile on approval
     // Don't block - they can apply even if they have a profile
 
+    // If profile doesn't exist, create one and send verification email
+    // This ensures email verification happens before application approval
+    if (!existingProfile) {
+      const fullName = `${sanitizedFirstName} ${sanitizedLastName}`.trim();
+      
+      // Generate email verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpiry = new Date();
+      tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Expires in 24 hours
+
+      // Create profile with unverified email
+      const { data: newProfile, error: profileCreateError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          name: fullName,
+          email: emailLower,
+          phone: phoneNormalized,
+          country: country ? String(country).substring(0, 100) : null,
+          city: city ? String(city).substring(0, 100) : null,
+          status: 'New',
+          email_verification_token: verificationToken,
+          email_verification_token_expiry: tokenExpiry.toISOString(),
+          email_verified_at: null, // Email not verified yet
+        })
+        .select()
+        .single();
+
+      if (profileCreateError) {
+        console.error('Error creating profile for application:', profileCreateError);
+        // Don't fail application submission if profile creation fails
+        // But log it for admin awareness
+      } else if (newProfile) {
+        // Send verification email
+        const emailResult = await sendVerificationEmail({
+          userName: fullName,
+          userEmail: emailLower,
+          verificationToken,
+        });
+
+        if (!emailResult.success) {
+          console.error('Failed to send verification email:', emailResult.error);
+          // Don't fail application submission if email fails
+        }
+      }
+    }
+
     // Resolve cohort (accepts ID or name). Frontend sends ID. - use admin client
     let cohortId: string | null = null;
     if (preferredCohort) {
@@ -246,8 +294,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if we created a new profile (which means verification email was sent)
+    const profileWasCreated = !existingProfile;
+    
     return NextResponse.json(
-      { success: true, applicationId: application.id },
+      { 
+        success: true, 
+        applicationId: application.id,
+        verificationEmailSent: profileWasCreated // Indicate if verification email was sent
+      },
       { status: 200 }
     );
   } catch (error: any) {

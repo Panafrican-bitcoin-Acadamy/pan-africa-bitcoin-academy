@@ -92,6 +92,18 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
               window.location.href = data.setupPasswordUrl;
               return;
             }
+            // Check if user needs to verify email
+            if (data.needsEmailVerification) {
+              const verificationMsg = data.message || 'Please verify your email address before logging in.';
+              setServerError(
+                `${verificationMsg} Check your inbox for the verification email or click here to resend.`
+              );
+              // Store email for potential resend action
+              if (data.resendVerificationUrl) {
+                // Could add a button to resend, but for now just show the message
+              }
+              return;
+            }
             // Handle specific error messages from API
             const errorMsg = data.error || `Sign in failed (${res.status})`;
             setServerError(errorMsg);
@@ -166,6 +178,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
               // ignore
             }
             onClose();
+            // Show success message about email verification
+            alert('Account created successfully! Please check your email to verify your address before logging in.');
             // Reload page to update navbar with new auth state
             window.location.reload();
           } else {

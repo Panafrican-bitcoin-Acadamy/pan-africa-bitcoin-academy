@@ -442,7 +442,12 @@ export default function ApplyPage() {
       const result = await applicationRes.json();
 
       if (applicationRes.ok) {
-        setSubmitSuccess('Application submitted successfully! We will review and get back to you soon.');
+        // Check if verification email was sent (new profile created)
+        if (result.verificationEmailSent) {
+          setSubmitSuccess('Application submitted successfully! Please check your email to verify your address. We will review your application and get back to you soon.');
+        } else {
+          setSubmitSuccess('Application submitted successfully! We will review and get back to you soon.');
+        }
         // Reset form
         setFormData({
           firstName: "",

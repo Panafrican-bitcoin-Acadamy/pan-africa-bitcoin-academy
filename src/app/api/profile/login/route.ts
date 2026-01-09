@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     // Look up profile by email (including password_hash for verification)
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, email_verified_at, created_at')
       .eq('email', normalizedEmail)
       .maybeSingle();
 
@@ -125,6 +125,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid email or password', found: false },
         { status: 401 }
+      );
+    }
+
+    // Check email verification status
+    // For existing users (grandfathered): if email_verified_at is NULL and profile was created before email verification feature,
+    // we consider them verified. For new profiles, email_verified_at must be set.
+    const profileCreatedAt = profile.created_at ? new Date(profile.created_at) : null;
+    const verificationFeatureDate = new Date('2025-01-15'); // Date when email verification was added
+    const isGrandfathered = profileCreatedAt && profileCreatedAt < verificationFeatureDate;
+    
+    // If email is not verified and not grandfathered, prompt for verification
+    if (!profile.email_verified_at && !isGrandfathered) {
+      return NextResponse.json(
+        { 
+          error: 'Email verification required',
+          found: true,
+          needsEmailVerification: true,
+          message: 'Please verify your email address before logging in. Check your inbox for the verification email or request a new one.',
+          verificationUrl: '/verify-email',
+          resendVerificationUrl: '/api/profile/resend-verification'
+        },
+        { status: 403 }
       );
     }
 
