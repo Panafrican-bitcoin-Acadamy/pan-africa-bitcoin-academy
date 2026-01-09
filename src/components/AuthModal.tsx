@@ -20,6 +20,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
     email: '',
     password: '',
     confirmPassword: '',
+    needsVerification: false,
+    userEmail: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -94,14 +97,15 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             }
             // Check if user needs to verify email
             if (data.needsEmailVerification) {
+              // Use the message from API which already indicates if email was sent
               const verificationMsg = data.message || 'Please verify your email address before logging in.';
-              setServerError(
-                `${verificationMsg} Check your inbox for the verification email or click here to resend.`
-              );
-              // Store email for potential resend action
-              if (data.resendVerificationUrl) {
-                // Could add a button to resend, but for now just show the message
-              }
+              setServerError(verificationMsg);
+              // Store email for resend action
+              setFormData(prev => ({ 
+                ...prev, 
+                needsVerification: true, 
+                userEmail: formData.email 
+              }));
               return;
             }
             // Handle specific error messages from API
@@ -469,8 +473,40 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
         </form>
 
         {serverError && (
-          <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-            {serverError}
+          <div className="mt-4 space-y-2">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+              {serverError}
+            </div>
+            {formData.needsVerification && formData.userEmail && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setResendingVerification(true);
+                  try {
+                    const res = await fetch('/api/profile/resend-verification', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: formData.userEmail }),
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                      setServerError('Verification email sent! Please check your inbox and click the verification link.');
+                      setFormData(prev => ({ ...prev, needsVerification: false }));
+                    } else {
+                      setServerError(data.error || 'Failed to send verification email. Please try again.');
+                    }
+                  } catch (error: any) {
+                    setServerError('Failed to send verification email. Please try again.');
+                  } finally {
+                    setResendingVerification(false);
+                  }
+                }}
+                disabled={resendingVerification}
+                className="w-full rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resendingVerification ? 'Sending...' : 'Resend Verification Email'}
+              </button>
+            )}
           </div>
         )}
 

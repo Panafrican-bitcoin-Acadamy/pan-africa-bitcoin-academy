@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { setStudentCookie } from '@/lib/session';
 import { validateAndNormalizeEmail, validatePassword } from '@/lib/validation';
 import { handleApiError } from '@/lib/api-error-handler';
 import { checkRateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
+import { sendVerificationEmail } from '@/lib/email';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   // Rate limiting
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
     // Look up profile by email (including password_hash for verification)
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*, email_verified_at, created_at')
+      .select('*, email_verified_at, email_verification_token, email_verification_token_expiry, created_at')
       .eq('email', normalizedEmail)
       .maybeSingle();
 
@@ -135,19 +137,91 @@ export async function POST(req: NextRequest) {
     const verificationFeatureDate = new Date('2025-01-15'); // Date when email verification was added
     const isGrandfathered = profileCreatedAt && profileCreatedAt < verificationFeatureDate;
     
-    // If email is not verified and not grandfathered, prompt for verification
+    // If email is not verified and not grandfathered, generate token and send verification email
     if (!profile.email_verified_at && !isGrandfathered) {
-      return NextResponse.json(
-        { 
-          error: 'Email verification required',
-          found: true,
-          needsEmailVerification: true,
-          message: 'Please verify your email address before logging in. Check your inbox for the verification email or request a new one.',
-          verificationUrl: '/verify-email',
-          resendVerificationUrl: '/api/profile/resend-verification'
-        },
-        { status: 403 }
-      );
+      // Generate verification token if one doesn't exist or has expired
+      let verificationToken = null;
+      let needsNewToken = true;
+      
+      // Check if there's an existing valid token
+      if (profile.email_verification_token && profile.email_verification_token_expiry) {
+        const expiryDate = new Date(profile.email_verification_token_expiry);
+        const now = new Date();
+        if (now < expiryDate) {
+          // Token is still valid, use existing one
+          verificationToken = profile.email_verification_token;
+          needsNewToken = false;
+        }
+      }
+      
+      // Generate new token if needed
+      if (needsNewToken) {
+        verificationToken = crypto.randomBytes(32).toString('hex');
+        const tokenExpiry = new Date();
+        tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Expires in 24 hours
+        
+        // Update profile with new token (use admin client to bypass RLS)
+        await supabaseAdmin
+          .from('profiles')
+          .update({
+            email_verification_token: verificationToken,
+            email_verification_token_expiry: tokenExpiry.toISOString(),
+          })
+          .eq('id', profile.id);
+      }
+      
+      // Always send verification email when user tries to log in without verification
+      if (verificationToken) {
+        const emailResult = await sendVerificationEmail({
+          userName: profile.name || 'User',
+          userEmail: profile.email,
+          verificationToken,
+        });
+        
+        if (emailResult.success) {
+          return NextResponse.json(
+            { 
+              error: 'Email verification required',
+              found: true,
+              needsEmailVerification: true,
+              message: 'Please verify your email address before logging in. A verification email has been sent to your inbox. Check your email and click the verification link.',
+              verificationUrl: '/verify-email',
+              resendVerificationUrl: '/api/profile/resend-verification',
+              emailSent: true
+            },
+            { status: 403 }
+          );
+        } else {
+          console.error('Failed to send verification email during login:', emailResult.error);
+          // Still return error but indicate email wasn't sent
+          return NextResponse.json(
+            { 
+              error: 'Email verification required',
+              found: true,
+              needsEmailVerification: true,
+              message: 'Please verify your email address before logging in. Click the button below to receive a verification email.',
+              verificationUrl: '/verify-email',
+              resendVerificationUrl: '/api/profile/resend-verification',
+              emailSent: false
+            },
+            { status: 403 }
+          );
+        }
+      } else {
+        // Fallback if token generation failed
+        return NextResponse.json(
+          { 
+            error: 'Email verification required',
+            found: true,
+            needsEmailVerification: true,
+            message: 'Please verify your email address before logging in. Click the button below to receive a verification email.',
+            verificationUrl: '/verify-email',
+            resendVerificationUrl: '/api/profile/resend-verification',
+            emailSent: false
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Password is valid - create secure session

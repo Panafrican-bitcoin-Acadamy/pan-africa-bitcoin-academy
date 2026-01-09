@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { validateAndNormalizeEmail, sanitizeName } from '@/lib/validation';
 import { requireStudent } from '@/lib/session';
+import { sendVerificationEmail } from '@/lib/email';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
 
     // Validate and normalize email if being updated
     let normalizedEmail = email.toLowerCase().trim();
+    let emailChanged = false;
     if (updateData.email) {
       const emailValidation = validateAndNormalizeEmail(updateData.email);
       if (!emailValidation.valid || !emailValidation.normalized) {
@@ -42,7 +45,12 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      normalizedEmail = emailValidation.normalized;
+      const newEmail = emailValidation.normalized;
+      // Check if email is actually changing
+      if (newEmail !== normalizedEmail) {
+        emailChanged = true;
+        normalizedEmail = newEmail;
+      }
     }
 
     // Sanitize name if being updated
@@ -91,8 +99,21 @@ export async function POST(req: NextRequest) {
     if (updateData.photoUrl) updateObject.photo_url = String(updateData.photoUrl).substring(0, 500);
     if (normalizedEmail !== email.toLowerCase().trim()) updateObject.email = normalizedEmail;
 
-    // Update profile - use session userId for security
-    const { data: profile, error } = await supabase
+    // If email changed, require re-verification
+    if (emailChanged) {
+      // Generate new verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpiry = new Date();
+      tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Expires in 24 hours
+      
+      // Invalidate old verification and set new token
+      updateObject.email_verified_at = null;
+      updateObject.email_verification_token = verificationToken;
+      updateObject.email_verification_token_expiry = tokenExpiry.toISOString();
+    }
+
+    // Update profile - use admin client to ensure we can update email_verified_at
+    const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .update(updateObject)
       .eq('id', session.userId)
@@ -118,6 +139,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // If email changed, send verification email to new address
+    let emailVerificationSent = false;
+    if (emailChanged && updateObject.email_verification_token) {
+      const emailResult = await sendVerificationEmail({
+        userName: profile.name || 'User',
+        userEmail: normalizedEmail,
+        verificationToken: updateObject.email_verification_token,
+      });
+      
+      emailVerificationSent = emailResult.success;
+      if (!emailResult.success) {
+        console.error('Failed to send verification email after email change:', emailResult.error);
+      }
+    }
+
     return NextResponse.json(
       {
         profile: {
@@ -130,6 +166,13 @@ export async function POST(req: NextRequest) {
           status: profile.status,
           photoUrl: profile.photo_url,
         },
+        emailChanged,
+        emailVerificationSent,
+        message: emailChanged 
+          ? (emailVerificationSent 
+              ? 'Email updated successfully. A verification email has been sent to your new email address.' 
+              : 'Email updated successfully, but verification email could not be sent. Please request a new verification email.')
+          : undefined,
       },
       { status: 200 }
     );
