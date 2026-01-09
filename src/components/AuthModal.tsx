@@ -223,6 +223,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
       email: '',
       password: '',
       confirmPassword: '',
+      needsVerification: false,
+      userEmail: '',
     });
     setErrors({});
     setShowPassword(false);
