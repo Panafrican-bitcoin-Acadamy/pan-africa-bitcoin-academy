@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AnimatedSection } from '@/components/AnimatedSection';
 import { Mail, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
-export default function VerifyEmailPage() {
+// Force dynamic rendering since we use searchParams
+export const dynamic = 'force-dynamic';
+
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired'>('loading');
@@ -204,6 +207,29 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="relative min-h-screen w-full overflow-x-hidden bg-black">
+        <div className="relative z-10 w-full">
+          <div className="w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-3xl sm:mx-auto lg:px-8 lg:py-20">
+            <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 sm:p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+              <div className="text-center">
+                <Loader2 className="h-16 w-16 text-cyan-400 animate-spin mx-auto mb-4" />
+                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-50 mb-2">
+                  Loading...
+                </h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
 
