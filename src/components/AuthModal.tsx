@@ -31,6 +31,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -47,6 +48,16 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
+
+  // Countdown timer for resend verification
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown(resendCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
 
   if (!isOpen || !mounted) return null;
 
@@ -494,6 +505,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
                     if (res.ok && data.success) {
                       setServerError('Verification email sent! Please check your inbox and click the verification link.');
                       setFormData(prev => ({ ...prev, needsVerification: false }));
+                      // Start 60 second countdown
+                      setResendCountdown(60);
                     } else {
                       setServerError(data.error || 'Failed to send verification email. Please try again.');
                     }
@@ -503,10 +516,14 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
                     setResendingVerification(false);
                   }
                 }}
-                disabled={resendingVerification}
+                disabled={resendingVerification || resendCountdown > 0}
                 className="w-full rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {resendingVerification ? 'Sending...' : 'Resend Verification Email'}
+                {resendingVerification 
+                  ? 'Sending...' 
+                  : resendCountdown > 0 
+                    ? `Resend Verification Email (${resendCountdown}s)`
+                    : 'Resend Verification Email'}
               </button>
             )}
           </div>
