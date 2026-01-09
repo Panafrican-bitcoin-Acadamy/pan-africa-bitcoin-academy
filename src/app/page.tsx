@@ -114,7 +114,17 @@ async function getMentors(): Promise<Mentor[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching mentors:', error);
+      // Only log meaningful errors (not empty objects)
+      const errorInfo = {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      };
+      // Only log if there's actual error information
+      if (errorInfo.message || errorInfo.code) {
+        console.error('Error fetching mentors:', errorInfo);
+      }
       return fallbackMentors;
     }
 
@@ -136,7 +146,7 @@ async function getMentors(): Promise<Mentor[]> {
     
     return [...transformedMentors, ...additionalMentors];
   } catch (error) {
-    console.error('Error fetching mentors:', error);
+    console.error('Error fetching mentors:', error instanceof Error ? error.message : String(error));
     return fallbackMentors;
   }
 }
@@ -155,13 +165,32 @@ async function getImpactStats(): Promise<ImpactStats> {
       .select('*', { count: 'exact', head: true });
 
     if (studentsError) {
-      console.error('Error fetching students:', studentsError);
+      // Only log meaningful errors (not empty objects)
+      const errorInfo = {
+        message: studentsError.message,
+        details: studentsError.details,
+        hint: studentsError.hint,
+        code: studentsError.code,
+      };
+      // Only log if there's actual error information
+      if (errorInfo.message || errorInfo.code) {
+        console.error('Error fetching students:', errorInfo);
+      }
     }
 
     // Fetch distinct countries from students
     const { data: studentsData, error: countriesError } = await supabaseAdmin
       .from('students')
       .select('country');
+
+    if (countriesError) {
+      console.error('Error fetching student countries:', {
+        message: countriesError.message,
+        details: countriesError.details,
+        hint: countriesError.hint,
+        code: countriesError.code,
+      });
+    }
 
     let countriesReached = 0;
     if (!countriesError && studentsData) {
@@ -178,6 +207,15 @@ async function getImpactStats(): Promise<ImpactStats> {
       .from('sats_rewards')
       .select('amount_paid, amount_pending');
 
+    if (satsError) {
+      console.error('Error fetching sats rewards:', {
+        message: satsError.message,
+        details: satsError.details,
+        hint: satsError.hint,
+        code: satsError.code,
+      });
+    }
+
     let satsRewarded = 0;
     if (!satsError && rewards) {
       rewards.forEach((reward: any) => {
@@ -193,7 +231,7 @@ async function getImpactStats(): Promise<ImpactStats> {
       countriesRepresented: countriesReached || 0,
     };
   } catch (error) {
-    console.error('Error fetching impact stats:', error);
+    console.error('Error fetching impact stats:', error instanceof Error ? error.message : String(error));
     // Return fallback values
     return {
       studentsTrained: 0,

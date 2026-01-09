@@ -60,11 +60,12 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.supabase.co https://*.supabase.in",
+              // Allow Vercel Live feedback in development only
+              `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.supabase.co https://*.supabase.in${process.env.NODE_ENV === 'development' ? ' https://vercel.live' : ''}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in",
+              `connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in${process.env.NODE_ENV === 'development' ? ' https://vercel.live wss://vercel.live' : ''}`,
               "frame-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
