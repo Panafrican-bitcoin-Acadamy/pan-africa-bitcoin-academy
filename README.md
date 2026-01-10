@@ -1,6 +1,6 @@
 #              <div align="center"> Pan-Africa Bitcoin Academy </dev>
 
-<div align="center">
+<div align="right ">
 
 ![Bitcoin Academy](https://img.shields.io/badge/Bitcoin-Education-orange?style=for-the-badge&logo=bitcoin)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
