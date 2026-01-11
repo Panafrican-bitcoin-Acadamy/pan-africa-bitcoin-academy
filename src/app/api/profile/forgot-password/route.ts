@@ -55,14 +55,31 @@ export async function POST(req: NextRequest) {
       .eq('email', emailValidation.normalized)
       .maybeSingle();
 
-    // For security, don't reveal if email exists
-    // Always return success message
-    if (profileError || !profile) {
-      // Still return success to prevent email enumeration
+    // Check if email exists in database
+    if (profileError) {
+      console.error('❌ Error checking profile:', {
+        error: profileError.message,
+        details: profileError.details,
+        hint: profileError.hint,
+        code: profileError.code,
+      });
       const response = NextResponse.json(
         { 
-          success: true, 
-          message: 'If an account exists with this email, you will receive password reset instructions.' 
+          success: false,
+          error: 'An error occurred. Please try again later.' 
+        },
+        { status: 500 }
+      );
+      return addSecurityHeaders(response);
+    }
+
+    if (!profile) {
+      // Email not found - return response indicating account doesn't exist
+      const response = NextResponse.json(
+        { 
+          success: false,
+          emailFound: false,
+          message: 'No account found with this email address.' 
         },
         { status: 200 }
       );
@@ -129,8 +146,9 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json(
       { 
-        success: true, 
-        message: 'If an account exists with this email, you will receive password reset instructions.',
+        success: true,
+        emailFound: true,
+        message: 'Password reset instructions have been sent to your email.',
         // Remove this in production - only for development
         ...(process.env.NODE_ENV === 'development' && { resetLink })
       },

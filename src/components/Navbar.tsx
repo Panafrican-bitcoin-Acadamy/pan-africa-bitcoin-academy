@@ -579,6 +579,11 @@ export function Navbar() {
               setForgotPasswordEmail('');
             }}
             initialEmail={forgotPasswordEmail}
+            onSignUp={() => {
+              setForgotPasswordOpen(false);
+              setAuthMode('signup');
+              setAuthModalOpen(true);
+            }}
           />
         </Suspense>
       )}

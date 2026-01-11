@@ -2,18 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Mail, CheckCircle } from 'lucide-react';
+import { X, Mail, CheckCircle, UserPlus, AlertCircle } from 'lucide-react';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialEmail?: string;
+  onSignUp?: () => void;
 }
 
-export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: ForgotPasswordModalProps) {
+export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '', onSignUp }: ForgotPasswordModalProps) {
   const [email, setEmail] = useState(initialEmail);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [emailNotFound, setEmailNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -32,6 +34,7 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
       setEmail('');
       setError(null);
       setSuccess(false);
+      setEmailNotFound(false);
     }
   }, [isOpen, initialEmail]);
 
@@ -73,32 +76,37 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
 
       const data = await res.json();
 
-      // API always returns 200 for security (prevents email enumeration)
-      // Check for success in data object
-      if (data.success) {
+      // Check if email was found
+      if (data.success && data.emailFound) {
+        // Email found - password reset email sent
         console.log('✅ Password reset request successful');
         if (process.env.NODE_ENV === 'development' && data.resetLink) {
           console.log('📧 Reset link (DEV ONLY):', data.resetLink);
         }
+        setSuccess(true);
+        setEmailNotFound(false);
+        setEmail('');
+        setTimeout(() => {
+          onClose();
+          setSuccess(false);
+        }, 3000);
+      } else if (data.success === false && data.emailFound === false) {
+        // Email not found - show sign up prompt
+        console.log('⚠️ Email not found in database');
+        setEmailNotFound(true);
+        setSuccess(false);
+        setError(null);
       } else {
+        // Error case
         console.error('❌ Password reset request failed:', data.error || 'Unknown error');
+        setError(data.error || 'An error occurred. Please try again.');
+        setEmailNotFound(false);
       }
-
-      // Always show success message to user (security best practice)
-      setSuccess(true);
-      setEmail('');
-      setTimeout(() => {
-        onClose();
-        setSuccess(false);
-      }, 3000);
     } catch (err: any) {
-      // Even on error, show success for security
-      setSuccess(true);
-      setEmail('');
-      setTimeout(() => {
-        onClose();
-        setSuccess(false);
-      }, 3000);
+      console.error('❌ Error in forgot password request:', err);
+      setError('An error occurred. Please try again.');
+      setSuccess(false);
+      setEmailNotFound(false);
     } finally {
       setLoading(false);
     }
@@ -140,8 +148,45 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
               Password reset email sent!
             </p>
             <p className="text-xs text-green-300/80">
-              If an account exists with this email, you'll receive instructions to reset your password.
+              Please check your inbox and click the link to reset your password.
             </p>
+          </div>
+        ) : emailNotFound ? (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 text-center">
+              <AlertCircle className="mx-auto mb-2 h-12 w-12 text-orange-400" />
+              <p className="mb-2 text-sm font-medium text-orange-200">
+                Account not found
+              </p>
+              <p className="text-xs text-orange-300/80">
+                No account exists with this email address.
+              </p>
+            </div>
+            <div className="rounded-lg border border-cyan-400/30 bg-cyan-400/10 p-4">
+              <p className="mb-3 text-sm text-cyan-200">
+                Would you like to create an account?
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSignUp) {
+                    onClose();
+                    onSignUp();
+                  }
+                }}
+                className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-3 font-semibold text-black transition hover:brightness-110 flex items-center justify-center gap-2"
+              >
+                <UserPlus className="h-5 w-5" />
+                Sign Up
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 font-medium text-zinc-300 transition hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
