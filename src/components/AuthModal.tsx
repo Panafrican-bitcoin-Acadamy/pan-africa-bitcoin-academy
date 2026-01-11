@@ -60,7 +60,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
     }
   }, [resendCountdown]);
 
-  if (!isOpen || !mounted) return null;
+  // Don't return null if forgot password modal is open, even if auth modal is closed
+  if ((!isOpen && !forgotPasswordOpen) || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -556,7 +557,9 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
 
   return (
     <>
-      {createPortal(modalContent, document.body)}
+      {/* Only render auth modal content if isOpen is true */}
+      {isOpen && createPortal(modalContent, document.body)}
+      {/* ForgotPasswordModal is rendered independently and can be open even when AuthModal is closed */}
       <ForgotPasswordModal
         isOpen={forgotPasswordOpen}
         onClose={() => {
