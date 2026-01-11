@@ -31,6 +31,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword }: AuthModal
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -92,7 +93,8 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword }: AuthModal
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               email: formData.email,
-              password: formData.password 
+              password: formData.password,
+              rememberMe: rememberMe
             }),
           });
           
@@ -239,6 +241,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword }: AuthModal
     setErrors({});
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setRememberMe(false); // Reset remember me when switching modes
   };
 
   const modalContent = (
@@ -455,10 +458,12 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword }: AuthModal
 
           {isSignIn && (
             <div className="flex items-center justify-between">
-              <label className="flex items-center">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  className="mr-2 rounded border-zinc-700 bg-zinc-900/50 text-orange-400 focus:ring-orange-400/20"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="mr-2 rounded border-zinc-700 bg-zinc-900/50 text-orange-400 focus:ring-orange-400/20 cursor-pointer"
                 />
                 <span className="text-sm text-zinc-400">Remember me</span>
               </label>

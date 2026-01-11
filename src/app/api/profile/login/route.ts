@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       return addSecurityHeaders(response);
     }
 
-    const { email, password } = body;
+    const { email, password, rememberMe } = body;
 
     // Validate and sanitize email
     const emailValidation = secureEmailInput(email);
@@ -264,6 +264,7 @@ export async function POST(req: NextRequest) {
       email: profile.email.toLowerCase().trim(),
       issuedAt: now,
       lastActive: now,
+      rememberMe: rememberMe === true, // Store remember me preference in session
     };
 
     const res = NextResponse.json(

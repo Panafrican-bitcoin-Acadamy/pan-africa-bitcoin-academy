@@ -16,6 +16,7 @@ interface SessionPayload {
   userType: UserType;
   issuedAt: number;
   lastActive: number;
+  rememberMe?: boolean; // Whether "remember me" was checked
 }
 
 function getSecret(): string {
@@ -57,9 +58,13 @@ export function verifySession(token: string | undefined): SessionPayload | null 
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString()) as SessionPayload;
     const now = Date.now();
 
+    // Use different timeouts based on rememberMe flag
+    const idleTimeout = payload.rememberMe ? REMEMBER_ME_IDLE_TIMEOUT_MS : IDLE_TIMEOUT_MS;
+    const absoluteTimeout = payload.rememberMe ? REMEMBER_ME_ABSOLUTE_TIMEOUT_MS : ABSOLUTE_TIMEOUT_MS;
+
     // Enforce idle timeout and absolute lifetime
-    if (now - payload.lastActive > IDLE_TIMEOUT_MS) return null;
-    if (now - payload.issuedAt > ABSOLUTE_TIMEOUT_MS) return null;
+    if (now - payload.lastActive > idleTimeout) return null;
+    if (now - payload.issuedAt > absoluteTimeout) return null;
 
     return payload;
   } catch (e) {
@@ -74,11 +79,15 @@ function getCookieName(userType: UserType): string {
 export function setSessionCookie(res: NextResponse, payload: SessionPayload) {
   const token = signSession(payload);
   const cookieName = getCookieName(payload.userType);
+  // Use different maxAge based on rememberMe flag
+  const maxAge = payload.rememberMe 
+    ? Math.floor(REMEMBER_ME_ABSOLUTE_TIMEOUT_MS / 1000)
+    : Math.floor(ABSOLUTE_TIMEOUT_MS / 1000);
   res.cookies.set(cookieName, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: Math.floor(ABSOLUTE_TIMEOUT_MS / 1000), // expires at absolute lifetime
+    maxAge: maxAge,
     path: '/',
   });
 }
@@ -149,13 +158,14 @@ export function requireStudent(req: NextRequest) {
   };
 }
 
-export function setStudentCookie(res: NextResponse, payload: { userId: string; email: string; issuedAt: number; lastActive: number }) {
+export function setStudentCookie(res: NextResponse, payload: { userId: string; email: string; issuedAt: number; lastActive: number; rememberMe?: boolean }) {
   setSessionCookie(res, {
     userId: payload.userId,
     email: payload.email,
     userType: 'student',
     issuedAt: payload.issuedAt,
     lastActive: payload.lastActive,
+    rememberMe: payload.rememberMe || false,
   });
 }
 
