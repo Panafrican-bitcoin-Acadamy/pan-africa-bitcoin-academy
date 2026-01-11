@@ -471,13 +471,16 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
                   e.preventDefault();
                   e.stopPropagation();
                   // Store email before closing modal
-                  setEmailForForgotPassword(formData.email);
-                  // Close the sign-in modal first
-                  onClose();
-                  // Small delay to ensure modal closes, then open forgot password modal
+                  const currentEmail = formData.email;
+                  console.log('🔓 Forgot password clicked, email:', currentEmail);
+                  setEmailForForgotPassword(currentEmail);
+                  // Open forgot password modal FIRST, then close auth modal
+                  setForgotPasswordOpen(true);
+                  // Small delay to ensure forgot password modal opens, then close auth modal
                   setTimeout(() => {
-                    setForgotPasswordOpen(true);
-                  }, 150);
+                    onClose();
+                    console.log('🔓 AuthModal closed, ForgotPasswordModal should be visible');
+                  }, 100);
                 }}
                 className="text-sm text-orange-400 hover:text-orange-300 transition cursor-pointer underline"
               >

@@ -15,6 +15,13 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Mount check for client-side rendering
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // Update email when initialEmail changes
   useEffect(() => {
@@ -28,7 +35,31 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
     }
   }, [isOpen, initialEmail]);
 
-  if (!isOpen) return null;
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Debug logging
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔓 ForgotPasswordModal: isOpen = true, mounted =', mounted);
+    }
+  }, [isOpen, mounted]);
+
+  if (!isOpen || !mounted) {
+    if (isOpen && !mounted) {
+      console.log('⚠️ ForgotPasswordModal: isOpen but not mounted yet');
+    }
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,8 +117,19 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/70 backdrop-blur-xl p-4">
-      <div className="w-full max-w-md rounded-2xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-2xl">
+    <div 
+      className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/70 backdrop-blur-xl p-4"
+      onClick={(e) => {
+        // Close modal when clicking backdrop
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="w-full max-w-md rounded-2xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-cyan-400" />
