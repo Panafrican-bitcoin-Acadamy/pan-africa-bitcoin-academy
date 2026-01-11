@@ -1,19 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Mail, CheckCircle } from 'lucide-react';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialEmail?: string;
 }
 
-export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
-  const [email, setEmail] = useState('');
+export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: ForgotPasswordModalProps) {
+  const [email, setEmail] = useState(initialEmail);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update email when initialEmail changes
+  useEffect(() => {
+    if (isOpen && initialEmail) {
+      setEmail(initialEmail);
+    } else if (!isOpen) {
+      // Reset form when modal closes
+      setEmail('');
+      setError(null);
+      setSuccess(false);
+    }
+  }, [isOpen, initialEmail]);
 
   if (!isOpen) return null;
 
@@ -81,10 +94,12 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
             <h3 className="text-lg font-semibold text-zinc-50">Reset Password</h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-full px-3 py-1 text-sm text-zinc-400 hover:bg-zinc-800"
+            className="rounded-full px-3 py-1 text-sm text-zinc-400 hover:bg-zinc-800 transition cursor-pointer"
+            aria-label="Close modal"
           >
-            ×
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -130,14 +145,14 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 font-medium text-zinc-300 transition hover:bg-zinc-800"
+                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 font-medium text-zinc-300 transition hover:bg-zinc-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !email.trim()}
                 className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-3 font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading ? (

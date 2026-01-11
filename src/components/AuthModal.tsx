@@ -551,6 +551,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
       <ForgotPasswordModal
         isOpen={forgotPasswordOpen}
         onClose={() => setForgotPasswordOpen(false)}
+        initialEmail={formData.email}
       />
     </>
   );

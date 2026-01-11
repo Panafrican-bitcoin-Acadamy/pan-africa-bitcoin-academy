@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { sendPasswordResetEmail } from '@/lib/email';
+import { secureEmailInput, validateRequestBody, addSecurityHeaders } from '@/lib/security-utils';
 import crypto from 'crypto';
 
 /**
@@ -17,33 +19,53 @@ import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const body = await req.json();
 
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
+    // Validate request body structure and size
+    const bodyValidation = validateRequestBody(body, 10000);
+    if (!bodyValidation.valid) {
+      const response = NextResponse.json(
+        { error: bodyValidation.error || 'Invalid request' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
     }
 
-    // Check if profile exists
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, email, name')
-      .eq('email', email.toLowerCase().trim())
-      .maybeSingle();
+    const { email } = body;
 
-    // For security, don't reveal if email exists
-    // Always return success message
-    if (profileError || !profile) {
-      // Still return success to prevent email enumeration
-      return NextResponse.json(
+    // Validate and sanitize email
+    const emailValidation = secureEmailInput(email);
+    if (!emailValidation.valid || !emailValidation.normalized) {
+      // Always return success for security (prevent email enumeration)
+      const response = NextResponse.json(
         { 
           success: true, 
           message: 'If an account exists with this email, you will receive password reset instructions.' 
         },
         { status: 200 }
       );
+      return addSecurityHeaders(response);
+    }
+
+    // Check if profile exists (use normalized email)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email, name')
+      .eq('email', emailValidation.normalized)
+      .maybeSingle();
+
+    // For security, don't reveal if email exists
+    // Always return success message
+    if (profileError || !profile) {
+      // Still return success to prevent email enumeration
+      const response = NextResponse.json(
+        { 
+          success: true, 
+          message: 'If an account exists with this email, you will receive password reset instructions.' 
+        },
+        { status: 200 }
+      );
+      return addSecurityHeaders(response);
     }
 
     // Generate secure reset token
@@ -73,16 +95,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // In production, send email with reset link
-    // For now, we'll log it (remove in production!)
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    // Create reset link (use normalized email for encoding)
+    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(emailValidation.normalized)}`;
     
-    console.log('Password reset link (DEV ONLY - remove in production):', resetLink);
+    // Send password reset email
+    const emailResult = await sendPasswordResetEmail({
+      userName: profile.name || 'User',
+      userEmail: profile.email,
+      resetLink,
+    });
     
-    // TODO: Integrate with email service
-    // await sendPasswordResetEmail(profile.email, profile.name, resetLink);
+    if (!emailResult.success) {
+      console.error('Failed to send password reset email:', emailResult.error);
+      // Still return success for security - don't reveal email sending failure
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Password reset link (DEV ONLY):', resetLink);
+      }
+    }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         success: true, 
         message: 'If an account exists with this email, you will receive password reset instructions.',
@@ -91,16 +122,18 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
+    return addSecurityHeaders(response);
   } catch (error: any) {
     console.error('Error in forgot password API:', error);
-    // Return success even on error for security
-    return NextResponse.json(
+    // Return success even on error for security (prevent information leakage)
+    const response = NextResponse.json(
       { 
         success: true, 
         message: 'If an account exists with this email, you will receive password reset instructions.' 
       },
       { status: 200 }
     );
+    return addSecurityHeaders(response);
   }
 }
 

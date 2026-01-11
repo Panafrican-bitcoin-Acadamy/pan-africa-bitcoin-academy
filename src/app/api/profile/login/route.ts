@@ -6,6 +6,7 @@ import { validateAndNormalizeEmail, validatePassword } from '@/lib/validation';
 import { handleApiError } from '@/lib/api-error-handler';
 import { checkRateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 import { sendVerificationEmail } from '@/lib/email';
+import { secureEmailInput, validateRequestBody, addSecurityHeaders } from '@/lib/security-utils';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -31,25 +32,57 @@ export async function POST(req: NextRequest) {
     );
   }
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
 
-    // Validate email
-    const emailValidation = validateAndNormalizeEmail(email);
-    if (!emailValidation.valid) {
-      return NextResponse.json(
+    // Validate request body structure and size
+    const bodyValidation = validateRequestBody(body, 10000);
+    if (!bodyValidation.valid) {
+      const response = NextResponse.json(
+        { error: bodyValidation.error || 'Invalid request' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
+    }
+
+    const { email, password } = body;
+
+    // Validate and sanitize email
+    const emailValidation = secureEmailInput(email);
+    if (!emailValidation.valid || !emailValidation.normalized) {
+      const response = NextResponse.json(
         { error: emailValidation.error || 'Email is required' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
     }
-    const normalizedEmail = emailValidation.normalized!;
+    const normalizedEmail = emailValidation.normalized;
 
-    // Validate password
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return NextResponse.json(
-        { error: passwordValidation.error || 'Password is required' },
+    // Validate password type and length (prevent DoS)
+    if (!password || typeof password !== 'string') {
+      const response = NextResponse.json(
+        { error: 'Password is required' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
+    }
+
+    // Limit password length (prevent DoS attacks)
+    if (password.length > 128) {
+      const response = NextResponse.json(
+        { error: 'Password too long' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      const response = NextResponse.json(
+        { error: passwordValidation.error || 'Password does not meet requirements' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
     }
 
     // Look up profile by email (including password_hash for verification)

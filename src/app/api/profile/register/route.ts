@@ -8,56 +8,87 @@ import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password } = await req.json();
+    const body = await req.json();
 
-    if (!firstName || !lastName || !email) {
-      return NextResponse.json(
-        { error: 'firstName, lastName, and email are required' },
+    // Validate request body structure and size
+    const bodyValidation = validateRequestBody(body, 10000);
+    if (!bodyValidation.valid) {
+      const response = NextResponse.json(
+        { error: bodyValidation.error || 'Invalid request' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
     }
 
-    if (!password) {
-      return NextResponse.json(
-        { error: 'Password is required' },
+    const { firstName, lastName, email, password } = body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      const response = NextResponse.json(
+        { error: 'firstName, lastName, email, and password are required' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
     }
 
-    // Validate and normalize email
-    const emailValidation = validateAndNormalizeEmail(email);
+    // Validate and sanitize email
+    const emailValidation = secureEmailInput(email);
     if (!emailValidation.valid || !emailValidation.normalized) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: emailValidation.error || 'Invalid email format' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
     }
 
-    // Sanitize names
-    const sanitizedFirstName = sanitizeName(firstName, 50);
-    const sanitizedLastName = sanitizeName(lastName, 50);
-    
-    if (!sanitizedFirstName || sanitizedFirstName.length < 2) {
-      return NextResponse.json(
-        { error: 'First name must be at least 2 characters and contain only letters' },
+    // Validate and sanitize names
+    const firstNameValidation = secureNameInput(firstName, 50);
+    if (!firstNameValidation.valid || !firstNameValidation.sanitized) {
+      const response = NextResponse.json(
+        { error: firstNameValidation.error || 'First name is invalid' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
     }
-    
-    if (!sanitizedLastName || sanitizedLastName.length < 2) {
-      return NextResponse.json(
-        { error: 'Last name must be at least 2 characters and contain only letters' },
+
+    const lastNameValidation = secureNameInput(lastName, 50);
+    if (!lastNameValidation.valid || !lastNameValidation.sanitized) {
+      const response = NextResponse.json(
+        { error: lastNameValidation.error || 'Last name is invalid' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
+    }
+
+    const sanitizedFirstName = firstNameValidation.sanitized;
+    const sanitizedLastName = lastNameValidation.sanitized;
+
+    // Validate password type and length
+    if (typeof password !== 'string') {
+      const response = NextResponse.json(
+        { error: 'Password must be a string' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
+    }
+
+    // Limit password length (prevent DoS)
+    if (password.length > 128) {
+      const response = NextResponse.json(
+        { error: 'Password too long' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
     }
 
     // Validate strong password requirements
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: passwordValidation.errors[0] || 'Password does not meet security requirements' },
         { status: 400 }
       );
+      return addSecurityHeaders(response);
     }
 
     // Check if profile already exists
@@ -103,10 +134,11 @@ export async function POST(req: NextRequest) {
 
     if (profileError) {
       console.error('Error creating profile:', profileError);
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Failed to create profile', details: profileError.message },
         { status: 500 }
       );
+      return addSecurityHeaders(response);
     }
 
     const profile = newProfile;
@@ -130,7 +162,7 @@ export async function POST(req: NextRequest) {
 
     // Return success - profile was created successfully
     // Note: Email verification is required before application approval
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         success: true, 
         profileId: profile.id,
@@ -139,15 +171,24 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
+    return addSecurityHeaders(response);
   } catch (error: any) {
     console.error('Error in profile register API:', error);
-    return NextResponse.json(
+    
+    // Validate error is safe to return
+    const errorMessage = error?.message || 'Failed to create profile';
+    const safeError = typeof errorMessage === 'string' && errorMessage.length < 500 
+      ? errorMessage 
+      : 'Failed to create profile';
+    
+    const response = NextResponse.json(
       { 
         error: 'Failed to create profile',
-        ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {})
+        ...(process.env.NODE_ENV === 'development' && safeError ? { details: safeError } : {})
       },
       { status: 500 }
     );
+    return addSecurityHeaders(response);
   }
 }
 
