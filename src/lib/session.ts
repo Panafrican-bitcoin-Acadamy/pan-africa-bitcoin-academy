@@ -85,18 +85,27 @@ export function setSessionCookie(res: NextResponse, payload: SessionPayload) {
   const maxAge = payload.rememberMe 
     ? Math.floor(REMEMBER_ME_ABSOLUTE_TIMEOUT_MS / 1000)
     : Math.floor(ABSOLUTE_TIMEOUT_MS / 1000);
+  // Set secure session cookie with best security practices
   res.cookies.set(cookieName, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: maxAge,
-    path: '/',
+    httpOnly: true, // Prevents JavaScript access (XSS protection)
+    sameSite: 'lax', // CSRF protection - allows same-site and safe cross-site requests
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    maxAge: maxAge, // Session expiration based on rememberMe preference
+    path: '/', // Available site-wide
+    // Note: domain is not set to allow subdomain flexibility if needed
   });
 }
 
 export function clearSessionCookie(res: NextResponse, userType: UserType) {
   const cookieName = getCookieName(userType);
-  res.cookies.set(cookieName, '', { httpOnly: true, maxAge: 0, path: '/' });
+  // Clear cookie with same security settings
+  res.cookies.set(cookieName, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 0, // Expire immediately
+    path: '/',
+  });
 }
 
 export function getSession(req: NextRequest, userType: UserType): SessionPayload | null {

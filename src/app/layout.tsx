@@ -19,7 +19,7 @@ const Footer = dynamic(() => import("@/components/Footer").then(mod => ({ defaul
 const AdminModeBadgeWrapper = dynamic(() => import("@/components/AdminModeBadgeWrapper").then(mod => ({ default: mod.AdminModeBadgeWrapper })));
 
 // CookieConsent is a client component - use dynamic import
-const CookieConsent = dynamic(() => import("@/components/CookieConsent").then(mod => ({ default: mod.CookieConsent })), {
+const CookieConsent = dynamic(() => import("@/components/CookieConsent").then((mod) => ({ default: mod.CookieConsent })), {
   ssr: false, // Client-side only since it uses localStorage
 });
 

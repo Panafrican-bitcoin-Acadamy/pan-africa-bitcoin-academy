@@ -58,13 +58,22 @@ export function CookieConsent() {
 
         <div className="mb-6 space-y-3">
           <p className="text-sm text-zinc-300 leading-relaxed">
-            We use cookies to manage your session and provide authentication. Cookies help us:
+            We use cookies to manage your session and provide authentication. Our cookies are secure and help us:
           </p>
           <ul className="text-sm text-zinc-400 space-y-2 ml-4 list-disc">
             <li>Keep you logged in securely</li>
             <li>Remember your preferences (like "Remember me")</li>
             <li>Maintain your session across pages</li>
           </ul>
+          <div className="mt-4 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-3">
+            <p className="text-xs text-cyan-300 font-medium mb-2">🔒 Security Features:</p>
+            <ul className="text-xs text-cyan-300/80 space-y-1 ml-4 list-disc">
+              <li>HTTP-only cookies (not accessible via JavaScript)</li>
+              <li>Encrypted with HMAC-SHA256 signatures</li>
+              <li>HTTPS-only in production</li>
+              <li>Automatic expiration based on your preferences</li>
+            </ul>
+          </div>
           <p className="text-sm text-zinc-300 leading-relaxed mt-4">
             By clicking "Accept", you agree to our use of cookies. You can manage cookie preferences in your browser settings.
           </p>
