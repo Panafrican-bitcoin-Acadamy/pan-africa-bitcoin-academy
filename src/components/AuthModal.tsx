@@ -28,6 +28,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [emailForForgotPassword, setEmailForForgotPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
@@ -467,9 +468,17 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
-                  setForgotPasswordOpen(true);
+                  e.stopPropagation();
+                  // Store email before closing modal
+                  setEmailForForgotPassword(formData.email);
+                  // Close the sign-in modal first
+                  onClose();
+                  // Small delay to ensure modal closes, then open forgot password modal
+                  setTimeout(() => {
+                    setForgotPasswordOpen(true);
+                  }, 150);
                 }}
-                className="text-sm text-orange-400 hover:text-orange-300"
+                className="text-sm text-orange-400 hover:text-orange-300 transition cursor-pointer underline"
               >
                 Forgot password?
               </button>
@@ -550,8 +559,11 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
       {createPortal(modalContent, document.body)}
       <ForgotPasswordModal
         isOpen={forgotPasswordOpen}
-        onClose={() => setForgotPasswordOpen(false)}
-        initialEmail={formData.email}
+        onClose={() => {
+          setForgotPasswordOpen(false);
+          setEmailForForgotPassword('');
+        }}
+        initialEmail={emailForForgotPassword}
       />
     </>
   );
