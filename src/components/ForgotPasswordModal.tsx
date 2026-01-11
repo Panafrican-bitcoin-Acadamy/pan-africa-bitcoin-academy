@@ -54,18 +54,18 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
 
       const data = await res.json();
 
-      if (!res.ok) {
-        // Don't reveal if email exists for security
-        // Always show success message
-        setSuccess(true);
-        setEmail('');
-        setTimeout(() => {
-          onClose();
-          setSuccess(false);
-        }, 3000);
-        return;
+      // API always returns 200 for security (prevents email enumeration)
+      // Check for success in data object
+      if (data.success) {
+        console.log('✅ Password reset request successful');
+        if (process.env.NODE_ENV === 'development' && data.resetLink) {
+          console.log('📧 Reset link (DEV ONLY):', data.resetLink);
+        }
+      } else {
+        console.error('❌ Password reset request failed:', data.error || 'Unknown error');
       }
 
+      // Always show success message to user (security best practice)
       setSuccess(true);
       setEmail('');
       setTimeout(() => {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { secureEmailInput, validateRequestBody, addSecurityHeaders } from '@/lib/security-utils';
 import crypto from 'crypto';
@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if profile exists (use normalized email)
-    const { data: profile, error: profileError } = await supabase
+    // Use supabaseAdmin for reliable querying
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('id, email, name')
       .eq('email', emailValidation.normalized)
@@ -74,8 +75,8 @@ export async function POST(req: NextRequest) {
     resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // Token expires in 1 hour
 
     // Store reset token in database
-    // Note: You'll need to add reset_token and reset_token_expiry columns to profiles table
-    const { error: updateError } = await supabase
+    // Use supabaseAdmin for reliable updates
+    const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
         reset_token: resetToken,
@@ -84,15 +85,22 @@ export async function POST(req: NextRequest) {
       .eq('id', profile.id);
 
     if (updateError) {
-      console.error('Error storing reset token:', updateError);
-      // Still return success for security
-      return NextResponse.json(
+      console.error('❌ Error storing reset token:', {
+        error: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+        code: updateError.code,
+        profileId: profile.id,
+      });
+      // Still return success for security - don't reveal database errors
+      const response = NextResponse.json(
         { 
           success: true, 
           message: 'If an account exists with this email, you will receive password reset instructions.' 
         },
         { status: 200 }
       );
+      return addSecurityHeaders(response);
     }
 
     // Create reset link (use normalized email for encoding)
@@ -106,11 +114,17 @@ export async function POST(req: NextRequest) {
     });
     
     if (!emailResult.success) {
-      console.error('Failed to send password reset email:', emailResult.error);
+      console.error('❌ Failed to send password reset email:', {
+        error: emailResult.error,
+        errorDetails: emailResult.errorDetails,
+        email: profile.email,
+      });
       // Still return success for security - don't reveal email sending failure
       if (process.env.NODE_ENV === 'development') {
-        console.log('Password reset link (DEV ONLY):', resetLink);
+        console.log('📧 Password reset link (DEV ONLY - copy this to test):', resetLink);
       }
+    } else {
+      console.log('✅ Password reset email sent successfully to:', profile.email);
     }
 
     const response = NextResponse.json(
@@ -124,7 +138,11 @@ export async function POST(req: NextRequest) {
     );
     return addSecurityHeaders(response);
   } catch (error: any) {
-    console.error('Error in forgot password API:', error);
+    console.error('❌ Error in forgot password API:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
     // Return success even on error for security (prevent information leakage)
     const response = NextResponse.json(
       { 
