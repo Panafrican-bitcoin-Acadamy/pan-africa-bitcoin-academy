@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 // Unified session configuration
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout
-const ABSOLUTE_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes absolute lifetime
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout (for non-remember me)
+const ABSOLUTE_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes absolute lifetime (for non-remember me)
+const REMEMBER_ME_IDLE_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days idle timeout (for remember me)
+const REMEMBER_ME_ABSOLUTE_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days absolute lifetime (for remember me)
 const ADMIN_COOKIE_NAME = 'admin_session';
 const STUDENT_COOKIE_NAME = 'student_session';
 
