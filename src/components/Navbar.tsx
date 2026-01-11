@@ -11,6 +11,7 @@ import { SearchBar } from "./SearchBar";
 // Lazy load modals - only load when needed (using React.lazy for better code splitting)
 const AuthModal = lazy(() => import("./AuthModal").then(mod => ({ default: mod.AuthModal })));
 const ChangePasswordModal = lazy(() => import("./ChangePasswordModal").then(mod => ({ default: mod.ChangePasswordModal })));
+const ForgotPasswordModal = lazy(() => import("./ForgotPasswordModal").then(mod => ({ default: mod.ForgotPasswordModal })));
 const ProfileModal = lazy(() => import("./ProfileModal").then(mod => ({ default: mod.ProfileModal })));
 const SessionExpiredModal = lazy(() => import("./SessionExpiredModal").then(mod => ({ default: mod.SessionExpiredModal })));
 
@@ -22,6 +23,8 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState<string>('');
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileData, setProfileData] = useState<any | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -559,6 +562,23 @@ export function Navbar() {
             isOpen={authModalOpen}
             onClose={() => setAuthModalOpen(false)}
             mode={authMode}
+            onForgotPassword={(email) => {
+              setForgotPasswordEmail(email);
+              setAuthModalOpen(false);
+              setForgotPasswordOpen(true);
+            }}
+          />
+        </Suspense>
+      )}
+      {forgotPasswordOpen && (
+        <Suspense fallback={null}>
+          <ForgotPasswordModal
+            isOpen={forgotPasswordOpen}
+            onClose={() => {
+              setForgotPasswordOpen(false);
+              setForgotPasswordEmail('');
+            }}
+            initialEmail={forgotPasswordEmail}
           />
         </Suspense>
       )}

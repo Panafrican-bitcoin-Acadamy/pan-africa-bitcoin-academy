@@ -47,19 +47,7 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '' }: Forg
     };
   }, [isOpen]);
 
-  // Debug logging
-  useEffect(() => {
-    if (isOpen) {
-      console.log('🔓 ForgotPasswordModal: isOpen = true, mounted =', mounted);
-    }
-  }, [isOpen, mounted]);
-
-  if (!isOpen || !mounted) {
-    if (isOpen && !mounted) {
-      console.log('⚠️ ForgotPasswordModal: isOpen but not mounted yet');
-    }
-    return null;
-  }
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

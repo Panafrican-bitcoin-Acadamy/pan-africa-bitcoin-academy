@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Eye, EyeOff } from 'lucide-react';
-import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { validatePassword, getPasswordRequirements } from '@/lib/passwordValidation';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'signin' | 'signup';
+  onForgotPassword?: (email: string) => void;
 }
 
-export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, mode, onForgotPassword }: AuthModalProps) {
   const [isSignIn, setIsSignIn] = useState(mode === 'signin');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -27,8 +27,6 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
-  const [emailForForgotPassword, setEmailForForgotPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
@@ -60,8 +58,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
     }
   }, [resendCountdown]);
 
-  // Don't return null if forgot password modal is open, even if auth modal is closed
-  if ((!isOpen && !forgotPasswordOpen) || !mounted) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -470,17 +467,11 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  // Store email before closing modal
+                  // Call parent's onForgotPassword callback with current email
                   const currentEmail = formData.email;
-                  console.log('🔓 Forgot password clicked, email:', currentEmail);
-                  setEmailForForgotPassword(currentEmail);
-                  // Open forgot password modal FIRST, then close auth modal
-                  setForgotPasswordOpen(true);
-                  // Small delay to ensure forgot password modal opens, then close auth modal
-                  setTimeout(() => {
-                    onClose();
-                    console.log('🔓 AuthModal closed, ForgotPasswordModal should be visible');
-                  }, 100);
+                  if (onForgotPassword) {
+                    onForgotPassword(currentEmail);
+                  }
                 }}
                 className="text-sm text-orange-400 hover:text-orange-300 transition cursor-pointer underline"
               >
@@ -558,21 +549,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
     </div>
   );
 
-  return (
-    <>
-      {/* Only render auth modal content if isOpen is true */}
-      {isOpen && createPortal(modalContent, document.body)}
-      {/* ForgotPasswordModal is rendered independently and can be open even when AuthModal is closed */}
-      <ForgotPasswordModal
-        isOpen={forgotPasswordOpen}
-        onClose={() => {
-          setForgotPasswordOpen(false);
-          setEmailForForgotPassword('');
-        }}
-        initialEmail={emailForForgotPassword}
-      />
-    </>
-  );
+  return createPortal(modalContent, document.body);
 }
 
 
