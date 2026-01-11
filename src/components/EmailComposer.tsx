@@ -678,6 +678,7 @@ export default function EmailComposer({
       <div className="px-4 py-3 border-t border-zinc-700 bg-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -695,12 +696,15 @@ export default function EmailComposer({
             {isSending ? 'Sending...' : 'Send'}
           </button>
           <button
+            type="button"
             onClick={saveDraft}
-            className="px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 rounded transition"
+            className="px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 rounded transition cursor-pointer"
           >
             Save Draft
           </button>
           <button
+            type="button"
+            disabled
             className="px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 rounded transition opacity-50 cursor-not-allowed"
             title="Schedule Send (Coming Soon)"
           >
@@ -710,8 +714,9 @@ export default function EmailComposer({
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleDeleteDraft}
-            className="p-2 text-zinc-300 hover:bg-zinc-700 rounded transition"
+            className="p-2 text-zinc-300 hover:bg-zinc-700 rounded transition cursor-pointer"
             title="Delete Draft"
           >
             <Trash2 className="w-4 h-4" />

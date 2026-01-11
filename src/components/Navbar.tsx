@@ -172,6 +172,7 @@ export function Navbar() {
           ) : isAuthenticated && profile ? (
             <div className="relative" ref={desktopDropdownRef}>
               <button
+                type="button"
                 onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
                 className="flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
               >
@@ -204,37 +205,40 @@ export function Navbar() {
                       Dashboard
                     </Link>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setAccountDropdownOpen(false);
                         setProfileModalOpen(true);
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200 cursor-pointer"
                     >
                       <User className="h-4 w-4" />
                       Profile
                     </button>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setAccountDropdownOpen(false);
                         setChangePasswordOpen(true);
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200 cursor-pointer"
                     >
                       <Key className="h-4 w-4" />
                       Change Password
                     </button>
                     <div className="my-1 border-t border-zinc-700" />
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleLogout();
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10 cursor-pointer"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout
@@ -245,6 +249,7 @@ export function Navbar() {
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => {
                 setAuthMode('signin');
                 setAuthModalOpen(true);
@@ -296,6 +301,7 @@ export function Navbar() {
           ) : isAuthenticated && profile ? (
             <div className="relative" ref={tabletDropdownRef}>
               <button
+                type="button"
                 onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
                 className="flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
               >
@@ -328,6 +334,7 @@ export function Navbar() {
                       Dashboard
                     </Link>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -343,6 +350,7 @@ export function Navbar() {
                       Profile
                     </button>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -359,6 +367,7 @@ export function Navbar() {
                     </button>
                     <div className="my-1 border-t border-zinc-700" />
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -377,6 +386,7 @@ export function Navbar() {
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => {
                 setAuthMode('signin');
                 setAuthModalOpen(true);
@@ -390,6 +400,7 @@ export function Navbar() {
 
         {/* Mobile Menu Button - Touch-friendly */}
         <button
+          type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-zinc-300 active:bg-cyan-400/10 lg:hidden touch-target"
           aria-label="Toggle menu"
@@ -487,6 +498,7 @@ export function Navbar() {
                   Dashboard
                 </Link>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -499,6 +511,7 @@ export function Navbar() {
                   Profile
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -511,6 +524,7 @@ export function Navbar() {
                   Change Password
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -524,6 +538,7 @@ export function Navbar() {
               </div>
             ) : (
               <button
+                type="button"
                 onClick={() => {
                   setAuthMode('signin');
                   setAuthModalOpen(true);

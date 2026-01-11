@@ -383,20 +383,22 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
           {/* Submit Button - Mobile-first: Full width on mobile, side-by-side on larger screens */}
           <div className="flex flex-col sm:flex-row gap-3">
              <button
+               type="submit"
                onClick={handleSubmit}
                disabled={!allSlotsFilled || submitting}
                className={`flex-1 min-h-[48px] px-6 py-3 rounded-lg text-base font-medium transition-all touch-target ${
                  allSlotsFilled && !submitting
-                   ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white active:from-green-600 active:via-emerald-600 active:to-teal-600 active:scale-95'
-                   : 'bg-zinc-800 text-zinc-500'
+                   ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white active:from-green-600 active:via-emerald-600 active:to-teal-600 active:scale-95 cursor-pointer'
+                   : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                }`}
              >
                {submitting ? 'Submitting...' : 'Submit Answer'}
              </button>
              <button
+               type="button"
                onClick={handleReset}
                disabled={submitting}
-               className="flex-1 sm:flex-initial min-h-[48px] px-6 py-3 rounded-lg text-base font-medium bg-gradient-to-r from-slate-600 via-zinc-600 to-slate-700 text-white active:from-slate-500 active:via-zinc-500 active:to-slate-600 active:scale-95 transition-all touch-target"
+               className="flex-1 sm:flex-initial min-h-[48px] px-6 py-3 rounded-lg text-base font-medium bg-gradient-to-r from-slate-600 via-zinc-600 to-slate-700 text-white active:from-slate-500 active:via-zinc-500 active:to-slate-600 active:scale-95 transition-all touch-target cursor-pointer disabled:cursor-not-allowed"
              >
                Reset
              </button>

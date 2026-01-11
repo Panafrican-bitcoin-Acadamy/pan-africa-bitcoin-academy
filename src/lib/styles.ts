@@ -42,13 +42,13 @@ export const formStyles = {
  * Button Styles - Mobile-First: Touch-friendly with min 44x44px targets
  */
 export const buttonStyles = {
-  primary: "inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-4 sm:px-6 py-3 min-h-[48px] text-base font-semibold text-black transition active:from-orange-500 active:to-cyan-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-target",
-  secondary: "inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-zinc-900/50 px-4 py-3 min-h-[44px] text-base font-medium text-cyan-300 transition active:bg-cyan-400/20 active:scale-95 touch-target",
-  success: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-3 min-h-[48px] text-base font-semibold text-black transition active:bg-orange-500 active:scale-95 touch-target",
-  outline: "mt-4 w-full rounded-lg bg-cyan-400/20 px-4 py-3 min-h-[48px] text-base font-semibold text-cyan-300 transition active:bg-cyan-400/30 active:scale-95 touch-target",
-  selected: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-3 min-h-[48px] text-base font-semibold text-black transition active:scale-95 touch-target",
-  small: "rounded-lg border border-zinc-700 bg-zinc-900/50 p-2.5 min-h-[44px] min-w-[44px] text-sm transition active:bg-zinc-800 active:scale-95 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed touch-target",
-  danger: "rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 min-h-[44px] text-base font-medium text-red-300 transition active:bg-red-500/20 active:scale-95 touch-target",
+  primary: "inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-4 sm:px-6 py-3 min-h-[48px] text-base font-semibold text-black transition active:from-orange-500 active:to-cyan-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-target",
+  secondary: "inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-zinc-900/50 px-4 py-3 min-h-[44px] text-base font-medium text-cyan-300 transition active:bg-cyan-400/20 active:scale-95 cursor-pointer touch-target",
+  success: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-3 min-h-[48px] text-base font-semibold text-black transition active:bg-orange-500 active:scale-95 cursor-pointer touch-target",
+  outline: "mt-4 w-full rounded-lg bg-cyan-400/20 px-4 py-3 min-h-[48px] text-base font-semibold text-cyan-300 transition active:bg-cyan-400/30 active:scale-95 cursor-pointer touch-target",
+  selected: "mt-4 w-full rounded-lg bg-orange-400 px-4 py-3 min-h-[48px] text-base font-semibold text-black transition active:scale-95 cursor-pointer touch-target",
+  small: "rounded-lg border border-zinc-700 bg-zinc-900/50 p-2.5 min-h-[44px] min-w-[44px] text-sm transition active:bg-zinc-800 active:scale-95 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-target",
+  danger: "rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 min-h-[44px] text-base font-medium text-red-300 transition active:bg-red-500/20 active:scale-95 cursor-pointer touch-target",
 };
 
 /**

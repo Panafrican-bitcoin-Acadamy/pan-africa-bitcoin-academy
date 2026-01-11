@@ -133,9 +133,18 @@ input[type="reset"],
 .touch-target {
   min-height: 44px;
   min-width: 44px;
+  cursor: pointer;
   /* Improve touch feedback */
   -webkit-tap-highlight-color: rgba(249, 115, 22, 0.2);
   tap-highlight-color: rgba(249, 115, 22, 0.2);
+}
+
+/* Disabled buttons should show not-allowed cursor */
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled {
+  cursor: not-allowed;
 }
 
 /* Mobile-First: Prevent text selection on interactive elements */
