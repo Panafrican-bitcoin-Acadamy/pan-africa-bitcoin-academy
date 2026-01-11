@@ -101,9 +101,6 @@ export function Footer() {
             money you can&apos;t lose.
           </p>
           <p className="text-[10px] text-zinc-500 sm:text-[11px]">
-            We use cookies to manage your session and provide authentication. By using this site, you agree to our use of cookies.
-          </p>
-          <p className="text-[10px] text-zinc-500 sm:text-[11px]">
             This program is free software: you can redistribute it and/or modify it under the terms of the{" "}
             <a
               href="https://www.gnu.org/licenses/gpl-3.0.html"
