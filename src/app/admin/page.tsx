@@ -928,8 +928,9 @@ export default function AdminDashboardPage() {
             <p className="text-sm text-zinc-500">Signed in as {admin.email}</p>
           </div>
           <button
+            type="button"
             onClick={handleLogout}
-            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:border-red-400 hover:text-red-300"
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:border-red-400 hover:text-red-300 transition cursor-pointer"
           >
             Logout
           </button>
@@ -968,8 +969,9 @@ export default function AdminDashboardPage() {
                 {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
                   <button
                     key={f}
+                    type="button"
                     onClick={() => setFilter(f)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                       filter === f
                         ? 'bg-cyan-400 text-black'
                         : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
@@ -1049,25 +1051,28 @@ export default function AdminDashboardPage() {
 
                   <div className="flex gap-1.5 mt-2">
                     <button
+                      type="button"
                       onClick={() => toggleApplicationDetails(app.id)}
                       disabled={loadingDetails[app.id]}
-                      className="flex-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-400 transition hover:bg-blue-500/30 disabled:opacity-50"
+                      className="flex-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-400 transition hover:bg-blue-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     >
                       {loadingDetails[app.id] ? 'Loading...' : expandedApplicationId === app.id ? 'Hide Details' : 'View Details'}
                     </button>
                     {app.status.toLowerCase() === 'pending' && (
                       <>
                         <button
+                          type="button"
                           onClick={() => handleApprove(app.id, app.email)}
                           disabled={processing === app.id}
-                          className="flex-1 rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                          className="flex-1 rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         >
                           {processing === app.id ? '...' : 'Approve'}
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleReject(app.id, app.email)}
                           disabled={processing === app.id}
-                          className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                          className="flex-1 rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         >
                           Reject
                         </button>
@@ -1355,9 +1360,10 @@ export default function AdminDashboardPage() {
                   <option>Completed</option>
                 </select>
                 <button
+                  type="button"
                   onClick={createCohort}
                   disabled={creatingCohort || !cohortForm.name}
-                  className="w-full rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50"
+                  className="w-full rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {creatingCohort ? 'Saving...' : 'Create Cohort'}
                 </button>
@@ -1434,9 +1440,10 @@ export default function AdminDashboardPage() {
                   ))}
                 </select>
                 <button
+                  type="button"
                   onClick={createEvent}
                   disabled={creatingEvent || !eventForm.name || !eventForm.start_time}
-                  className="w-full rounded-lg bg-orange-400 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50"
+                  className="w-full rounded-lg bg-orange-400 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {creatingEvent ? 'Saving...' : 'Create Event'}
                 </button>
@@ -1499,14 +1506,16 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="px-3 py-2 text-right space-x-2">
                       <button
+                        type="button"
                         onClick={() => updateMentorshipStatus(m.id, 'Approved')}
-                        className="rounded border border-green-500/40 px-2 py-1 text-xs text-green-300 hover:bg-green-500/10"
+                        className="rounded border border-green-500/40 px-2 py-1 text-xs text-green-300 hover:bg-green-500/10 transition cursor-pointer"
                       >
                         Approve
                       </button>
                       <button
+                        type="button"
                         onClick={() => updateMentorshipStatus(m.id, 'Rejected')}
-                        className="rounded border border-red-500/40 px-2 py-1 text-xs text-red-300 hover:bg-red-500/10"
+                        className="rounded border border-red-500/40 px-2 py-1 text-xs text-red-300 hover:bg-red-500/10 transition cursor-pointer"
                       >
                         Reject
                       </button>
@@ -1593,16 +1602,18 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 {cohortFilter && (
                   <button
+                    type="button"
                     onClick={() => setCohortFilter(null)}
-                    className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+                    className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
                   >
                     Clear Filter
                   </button>
                 )}
                 {attendanceSort && (
                   <button
+                    type="button"
                     onClick={() => setAttendanceSort(null)}
-                    className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+                    className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
                   >
                     Clear Sort
                   </button>
@@ -1742,11 +1753,12 @@ export default function AdminDashboardPage() {
               {(['all', 'submitted', 'graded'] as const).map((f) => (
                 <button
                   key={f}
+                  type="button"
                   onClick={() => {
                     setSubmissionFilter(f);
                     setTimeout(() => fetchSubmissions(), 0);
                   }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                     submissionFilter === f
                       ? 'bg-cyan-400 text-black'
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
@@ -1857,16 +1869,18 @@ export default function AdminDashboardPage() {
                           />
                           <div className="flex gap-2">
                             <button
+                              type="button"
                               onClick={() => handleGradeSubmission(submission.id, true)}
                               disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                              className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                             >
                               {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleGradeSubmission(submission.id, false)}
                               disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                              className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                             >
                               {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
                             </button>
@@ -1888,11 +1902,12 @@ export default function AdminDashboardPage() {
               {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
                 <button
                   key={f}
+                  type="button"
                   onClick={() => {
                     setBlogFilter(f);
                     setTimeout(() => fetchBlogSubmissions(), 0);
                   }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                     blogFilter === f
                       ? 'bg-purple-400 text-black'
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
@@ -1994,21 +2009,24 @@ export default function AdminDashboardPage() {
                       <div className="mt-4 space-y-2">
                         <div className="flex gap-2">
                           <button
+                            type="button"
                             onClick={() => setExpandedBlogId(expandedBlogId === submission.id ? null : submission.id)}
-                            className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30"
+                            className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30 cursor-pointer"
                           >
                             {expandedBlogId === submission.id ? 'Hide Full Content' : 'View Full Content'}
                           </button>
                         </div>
                         <div className="flex gap-2">
                           <button
+                            type="button"
                             onClick={() => handleApproveBlog(submission.id)}
                             disabled={processingBlog === submission.id}
-                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                           >
                             {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
                           </button>
                           <button
+                            type="button"
                             onClick={() => {
                               const reason = prompt('Rejection reason (optional):');
                               if (reason !== null) {
@@ -2016,7 +2034,7 @@ export default function AdminDashboardPage() {
                               }
                             }}
                             disabled={processingBlog === submission.id}
-                            className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+                            className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                           >
                             {processingBlog === submission.id ? 'Processing...' : '✗ Reject'}
                           </button>
@@ -2086,15 +2104,17 @@ export default function AdminDashboardPage() {
                             <span className="text-zinc-500 text-xs">Completed</span>
                           ) : student.hasExamAccess ? (
                             <button
+                              type="button"
                               onClick={() => revokeExamAccess(student.id)}
-                              className="text-red-400 hover:text-red-300 text-xs"
+                              className="text-red-400 hover:text-red-300 text-xs transition cursor-pointer"
                             >
                               Revoke
                             </button>
                           ) : (
                             <button
+                              type="button"
                               onClick={() => grantExamAccess(student.id)}
-                              className="text-green-400 hover:text-green-300 text-xs"
+                              className="text-green-400 hover:text-green-300 text-xs transition cursor-pointer"
                             >
                               Grant Access
                             </button>

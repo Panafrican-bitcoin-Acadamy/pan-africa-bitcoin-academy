@@ -91,8 +91,10 @@ export function StudentProgressModal({
             <p className="text-sm text-zinc-400">{studentEmail}</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
+            className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="h-5 w-5" />
           </button>

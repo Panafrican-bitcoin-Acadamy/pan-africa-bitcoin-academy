@@ -74,8 +74,10 @@ export function SyllabusModal({ isOpen, onClose, chapters, levels }: SyllabusMod
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
+            className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="h-5 w-5" />
           </button>

@@ -97,8 +97,9 @@ function ResetPasswordForm() {
             This password reset link is invalid or has expired.
           </p>
           <button
+            type="button"
             onClick={() => router.push('/')}
-            className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 font-semibold text-white transition hover:from-orange-600 hover:to-orange-700"
+            className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 font-semibold text-white transition hover:from-orange-600 hover:to-orange-700 cursor-pointer"
           >
             Go to Home
           </button>

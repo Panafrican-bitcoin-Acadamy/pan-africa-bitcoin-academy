@@ -1042,9 +1042,10 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                         </div>
                       </div>
                       <button 
+                        type="button"
                         onClick={handleWithdraw}
                         disabled={withdrawing || satsPending === 0 || withdrawalRequested}
-                        className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {withdrawing ? 'Submitting Request...' : withdrawalRequested ? 'Withdrawal Requested' : 'Withdraw (LNURL)'}
                       </button>
@@ -1592,8 +1593,9 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               </div>
               <div className="text-center">
                 <button
+                  type="button"
                   disabled={certificationProgress < 100}
-                  className={`rounded-lg px-6 py-3 font-semibold transition ${
+                  className={`rounded-lg px-6 py-3 font-semibold transition cursor-pointer ${
                     certificationProgress >= 100
                       ? 'bg-gradient-to-r from-orange-500 to-cyan-500 text-black hover:brightness-110'
                       : 'border border-zinc-700 bg-zinc-800/50 text-zinc-500 cursor-not-allowed'

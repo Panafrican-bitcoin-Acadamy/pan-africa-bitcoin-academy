@@ -301,6 +301,7 @@ export function ProfileModal({
               <div className="mb-3 flex items-center justify-between">
                 <div className="font-semibold text-zinc-50">Profile Information</div>
                 <button
+                  type="button"
                   onClick={() => {
                     if (isEditing) {
                       setEditFormData(originalData);
@@ -308,7 +309,7 @@ export function ProfileModal({
                     }
                     setIsEditing(!isEditing);
                   }}
-                  className="text-xs text-cyan-400 hover:text-cyan-300"
+                  className="text-xs text-cyan-400 hover:text-cyan-300 transition cursor-pointer"
                 >
                   {isEditing ? 'Cancel' : 'Edit'}
                 </button>
@@ -390,9 +391,10 @@ export function ProfileModal({
             {/* Save Changes Button */}
             {hasChanges && (
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-3 font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-3 font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
               >
                 {saving ? (
                   <div className="flex items-center justify-center">

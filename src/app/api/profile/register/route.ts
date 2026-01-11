@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/passwordValidation';
 import { validateAndNormalizeEmail, sanitizeName } from '@/lib/validation';
 import { sendVerificationEmail } from '@/lib/email';
+import { secureEmailInput, secureNameInput, validateRequestBody, addSecurityHeaders } from '@/lib/security-utils';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
