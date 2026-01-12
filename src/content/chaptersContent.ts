@@ -63,7 +63,7 @@ export const chaptersContent: ChapterContent[] = [
           {
             src: "/images/book_images/bannana-bread.png",
             alt: "Man exchanging bananas for shoes with baker",
-            caption: "The barter system requires a double coincidence of wants",
+            caption: "but the baker want shoes not banana",
           },
           {
             src: "/images/book_images/banana-shoes.png",
@@ -78,7 +78,7 @@ export const chaptersContent: ChapterContent[] = [
           {
             src: "/images/book_images/barter_system.png",
             alt: "Circular diagram showing bananas, bread, and shoes in barter system",
-            caption: "but the baker want shoes not banana",
+            caption: "The barter system requires a double coincidence of wants",
           },
           {
             src: "/images/book_images/shoes-bread.png",
