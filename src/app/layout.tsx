@@ -18,10 +18,8 @@ const Footer = dynamic(() => import("@/components/Footer").then(mod => ({ defaul
 // AdminModeBadgeWrapper is a client component - use dynamic import
 const AdminModeBadgeWrapper = dynamic(() => import("@/components/AdminModeBadgeWrapper").then(mod => ({ default: mod.AdminModeBadgeWrapper })));
 
-// CookieConsent is a client component - use dynamic import
-const CookieConsent = dynamic(() => import("@/components/CookieConsent").then((mod) => ({ default: mod.CookieConsent })), {
-  ssr: false, // Client-side only since it uses localStorage
-});
+// CookieConsentWrapper is a client component - use dynamic import
+const CookieConsentWrapper = dynamic(() => import("@/components/CookieConsentWrapper").then(mod => ({ default: mod.CookieConsentWrapper })));
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -198,7 +196,7 @@ export default function RootLayout({
         <AdminModeBadgeWrapper />
         
         {/* Cookie Consent Popup - shows on first visit */}
-        <CookieConsent />
+        <CookieConsentWrapper />
         
         <div className="flex min-h-screen flex-col">
           <Navbar />

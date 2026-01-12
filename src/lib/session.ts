@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 // Unified session configuration
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout (for non-remember me)
