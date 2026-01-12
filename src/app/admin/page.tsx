@@ -71,6 +71,7 @@ interface ProgressItem {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
   status: string;
   cohortId: string | null;
   cohortName: string | null;
@@ -1634,6 +1635,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </th>
                   <th className="px-3 py-2">Email</th>
+                  <th className="px-3 py-2">Phone</th>
                   <th 
                     className="px-3 py-2 cursor-pointer hover:bg-zinc-800 transition select-none"
                     title="Click to filter by cohort"
@@ -1705,6 +1707,7 @@ export default function AdminDashboardPage() {
                     <td className="px-3 py-2 text-zinc-400">{index + 1}</td>
                     <td className="px-3 py-2 text-zinc-50">{p.name}</td>
                     <td className="px-3 py-2 text-zinc-400">{p.email}</td>
+                    <td className="px-3 py-2 text-zinc-400">{p.phone || '—'}</td>
                     <td className="px-3 py-2 text-zinc-400">
                       {p.cohortName || p.cohortId || '—'}
                       {cohortFilter && p.cohortId === cohortFilter && (

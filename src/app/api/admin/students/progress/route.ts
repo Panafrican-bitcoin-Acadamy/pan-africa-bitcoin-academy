@@ -35,31 +35,34 @@ export async function GET(_req: NextRequest) {
     }
 
     try {
-      // Fetch profiles first - only show Active students (approved and enrolled)
-      const { data: profilesData, error: profilesError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, name, email, status')
-        .eq('status', 'Active')
+      // Start from students table - only show approved students (those with records in students table)
+      const { data: studentsData, error: studentsError } = await supabaseAdmin
+        .from('students')
+        .select('id, profile_id, cohort_id, created_at')
         .limit(200);
 
-      if (profilesError) {
-        throw profilesError;
+      if (studentsError) {
+        throw studentsError;
       }
 
-      profiles = profilesData || [];
-
-      if (profiles.length === 0) {
-        // No profiles found, return empty progress
+      if (!studentsData || studentsData.length === 0) {
+        // No students found, return empty progress
         profiles = [];
       } else {
-        // Fetch related data separately for better reliability
-        const profileIds = profiles.map((p: any) => p.id);
+        // Get profile IDs from students
+        const profileIds = studentsData.map((s: any) => s.profile_id).filter(Boolean);
 
-        // Fetch students data
-        const { data: studentsData } = await supabaseAdmin
-          .from('students')
-          .select('id, profile_id, cohort_id, created_at')
-          .in('profile_id', profileIds);
+        // Fetch profiles for these students
+        const { data: profilesData, error: profilesError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, name, email, phone, status')
+          .in('id', profileIds);
+
+        if (profilesError) {
+          throw profilesError;
+        }
+
+        profiles = profilesData || [];
 
         // Fetch chapter progress data - this is critical for tracking completion
         const { data: chapterProgressData, error: chapterProgressError } = await supabaseAdmin
@@ -196,6 +199,7 @@ export async function GET(_req: NextRequest) {
         id: p.id,
         name: p.name || 'Unnamed',
         email: p.email,
+        phone: p.phone || null,
         status: p.status,
         cohortId: cohortId,
         cohortName: cohortName,
