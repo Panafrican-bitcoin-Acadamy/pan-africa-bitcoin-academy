@@ -123,13 +123,6 @@ export const chaptersContent: ChapterContent[] = [
             content: "Zimbabwe once experienced such extreme inflation that a loaf of bread cost billions of Zimbabwean dollars. People who saved in cash lost everything. Even in Uganda, the shilling has weakened against the US dollar, making imported goods more expensive year after year.",
           },
         ],
-        images: [
-          {
-            src: "/images/book_images/money_usage.png",
-            alt: "Illustration showing the three functions of money: Medium of Exchange, Store of Value, and Unit of Account",
-            caption: "The three essential functions of money",
-          },
-        ],
       },
       {
         heading: "1.3 Properties of Sound Money",
@@ -153,7 +146,7 @@ export const chaptersContent: ChapterContent[] = [
           {
             src: "/images/book_images/durable_money.png",
             alt: "Illustration showing durable money - money that lasts over time",
-            caption: "Durable: Money should last. Gold and silver survive centuries",
+            caption: "Durable:<br>Money should last. Gold and silver survive centuries",
           },
           {
             src: "/images/book_images/portable.png",
@@ -163,12 +156,12 @@ export const chaptersContent: ChapterContent[] = [
           {
             src: "/images/book_images/divsible.png",
             alt: "Illustration showing divisible money - can be split into smaller parts",
-            caption: "Divisible: Split into smaller parts without losing value",
+            caption: "Divisible: <br>Split into smaller parts without losing value",
           },
           {
             src: "/images/book_images/recognazable.png",
             alt: "Illustration showing recognizable money - people know it's real",
-            caption: "Recognizable: Easy to identify as genuine",
+            caption: "Recognizable:<br> Easy to identify as genuine",
           },
         ],
       },
