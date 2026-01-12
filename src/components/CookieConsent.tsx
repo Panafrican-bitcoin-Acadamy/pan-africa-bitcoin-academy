@@ -70,15 +70,6 @@ export function CookieConsent() {
                 <li>Remember your preferences (like "Remember me")</li>
                 <li>Maintain your session across pages</li>
               </ul>
-              <div className="mt-4 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-3">
-                <p className="text-xs text-cyan-300 font-medium mb-2">🔒 Security Features:</p>
-                <ul className="text-xs text-cyan-300/80 space-y-1 ml-4 list-disc">
-                  <li>HTTP-only cookies (not accessible via JavaScript)</li>
-                  <li>Encrypted with HMAC-SHA256 signatures</li>
-                  <li>HTTPS-only in production</li>
-                  <li>Automatic expiration based on your preferences</li>
-                </ul>
-              </div>
               <p className="text-xs text-zinc-400 leading-relaxed mt-4">
                 By clicking "Accept", you agree to our use of cookies. You can manage cookie preferences in your browser settings.
               </p>
@@ -89,7 +80,7 @@ export function CookieConsent() {
             <button
               type="button"
               onClick={handleAccept}
-              className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-6 py-2.5 font-semibold text-black transition hover:brightness-110 cursor-pointer text-sm"
+              className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-1.5 font-medium text-black transition hover:brightness-110 cursor-pointer text-xs"
             >
               Accept
             </button>
