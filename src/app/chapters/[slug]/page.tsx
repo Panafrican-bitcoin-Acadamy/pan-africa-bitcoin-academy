@@ -448,7 +448,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         </svg>
                         
                         {/* Center image (barter_system) */}
-                        <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-[21rem] sm:w-[27rem] lg:w-36 mb-4">
+                        <div className="absolute top-[40%] left-1/2 transform -translate-x-1/2 -translate-y-1/3 z-10 w-[21rem] sm:w-[27rem] lg:w-36">
                           <img
                             src={section.images[3].src}
                             alt={section.images[3].alt}
@@ -461,7 +461,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           )}
                         </div>
                         {/* Top image */}
-                        <div className="absolute -top-16 sm:-top-20 lg:top-[12%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
+                        <div className="absolute -top-16 sm:-top-20 lg:top-[8%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/2 w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
                           <img
                             src={section.images[0].src}
                             alt={section.images[0].alt}
