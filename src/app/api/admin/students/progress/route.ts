@@ -35,10 +35,11 @@ export async function GET(_req: NextRequest) {
     }
 
     try {
-      // Fetch profiles first
+      // Fetch profiles first - only show Active students (approved and enrolled)
       const { data: profilesData, error: profilesError } = await supabaseAdmin
         .from('profiles')
         .select('id, name, email, status')
+        .eq('status', 'Active')
         .limit(200);
 
       if (profilesError) {
