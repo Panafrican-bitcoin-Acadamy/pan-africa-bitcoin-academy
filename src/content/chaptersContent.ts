@@ -118,10 +118,6 @@ export const chaptersContent: ChapterContent[] = [
             type: "example",
             content: "In Uganda today, you don't exchange sugarcane directly for airtime. You sell the sugarcane for shillings and use the shillings to buy airtime.",
           },
-          {
-            type: "warning",
-            content: "Zimbabwe once experienced such extreme inflation that a loaf of bread cost billions of Zimbabwean dollars. People who saved in cash lost everything. Even in Uganda, the shilling has weakened against the US dollar, making imported goods more expensive year after year.",
-          },
         ],
       },
       {
