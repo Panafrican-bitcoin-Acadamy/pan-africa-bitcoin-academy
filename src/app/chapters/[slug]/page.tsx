@@ -401,8 +401,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 ) : section.images && section.images.length > 0 && (
                   section.heading === "Introduction" && section.images.length === 5 ? (
                     // Circular layout for Introduction section with 5 images
-                    <div className="mt-16 sm:mt-24 lg:mt-32 mb-24 sm:mb-32 lg:mb-16 flex items-center justify-center w-full overflow-visible">
-                      <div className="relative w-full sm:max-w-3xl aspect-square overflow-visible">
+                    <div className="mt-16 sm:mt-24 lg:mt-12 mb-24 sm:mb-32 lg:mb-6 flex items-center justify-center w-full overflow-hidden lg:overflow-visible">
+                      <div className="relative w-full sm:max-w-3xl lg:max-w-lg aspect-square overflow-visible">
                         {/* Futuristic arrows showing the flow: Left (banana) → Right (banana→shoes) → Bottom (shoes→bread) */}
                         <svg className="absolute inset-0 w-full h-full pointer-events-none z-5" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
                           <defs>
@@ -448,7 +448,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         </svg>
                         
                         {/* Center image (barter_system) */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-28 sm:w-36">
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-28 sm:w-36 lg:w-24">
                           <img
                             src={section.images[3].src}
                             alt={section.images[3].alt}
@@ -461,7 +461,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           )}
                         </div>
                         {/* Top image */}
-                        <div className="absolute -top-16 sm:-top-20 lg:-top-6 left-1/2 transform -translate-x-1/2 w-24 sm:w-32 z-20">
+                        <div className="absolute -top-16 sm:-top-20 lg:top-[5%] left-1/2 transform -translate-x-1/2 -translate-y-full w-24 sm:w-32 lg:w-24 z-20">
                           <img
                             src={section.images[0].src}
                             alt={section.images[0].alt}
@@ -474,7 +474,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           )}
                         </div>
                         {/* Right image */}
-                        <div className="absolute top-1/2 -right-16 sm:-right-20 lg:-right-6 transform -translate-y-1/2 w-24 sm:w-32 z-20">
+                        <div className="absolute top-1/2 -right-16 sm:-right-20 lg:right-[5%] transform -translate-y-1/2 translate-x-full w-24 sm:w-32 lg:w-24 z-20">
                           <img
                             src={section.images[1].src}
                             alt={section.images[1].alt}
@@ -487,7 +487,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           )}
                         </div>
                         {/* Bottom image */}
-                        <div className="absolute -bottom-24 sm:-bottom-32 lg:-bottom-12 left-1/2 transform -translate-x-1/2 w-24 sm:w-32 z-20">
+                        <div className="absolute -bottom-24 sm:-bottom-32 lg:bottom-[5%] left-1/2 transform -translate-x-1/2 translate-y-full w-24 sm:w-32 lg:w-24 z-20">
                           <img
                             src={section.images[4].src}
                             alt={section.images[4].alt}
@@ -500,7 +500,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           )}
                         </div>
                         {/* Left image */}
-                        <div className="absolute top-1/2 -left-16 sm:-left-20 lg:-left-6 transform -translate-y-1/2 w-24 sm:w-32 z-20">
+                        <div className="absolute top-1/2 -left-16 sm:-left-20 lg:left-[5%] transform -translate-y-1/2 -translate-x-full w-24 sm:w-32 lg:w-24 z-20">
                           <img
                             src={section.images[2].src}
                             alt={section.images[2].alt}
