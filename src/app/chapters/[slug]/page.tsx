@@ -461,7 +461,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           )}
                         </div>
                         {/* Top image */}
-                        <div className="absolute -top-16 sm:-top-20 lg:top-[12%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-24 sm:w-32 lg:w-24 z-20">
+                        <div className="absolute -top-16 sm:-top-20 lg:top-[12%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-48 sm:w-64 lg:w-48 z-20">
                           <img
                             src={section.images[0].src}
                             alt={section.images[0].alt}
