@@ -943,12 +943,13 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Overview cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {overview && [
             { label: 'Applications', value: overview.totalApplications, accent: 'cyan' },
             { label: 'Pending', value: overview.pendingApplications, accent: 'yellow' },
-            { label: 'Students', value: overview.totalStudents, accent: 'green' },
-            { label: 'Cohorts', value: overview.totalCohorts, accent: 'blue' },
+            { label: 'Approved', value: overview.approvedApplications, accent: 'green' },
+            { label: 'Students', value: overview.totalStudents, accent: 'blue' },
+            { label: 'Cohorts', value: overview.totalCohorts, accent: 'purple' },
           ].map((card) => (
             <div
               key={card.label}
