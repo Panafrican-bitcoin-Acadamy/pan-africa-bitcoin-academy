@@ -30,39 +30,39 @@ export function CookieConsent() {
 
   const modalContent = (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-[999999] flex items-end justify-center p-4"
+      className="fixed bottom-0 left-0 right-0 z-[999999] flex items-end justify-center p-2 sm:p-3"
     >
       <div 
         className="w-full max-w-2xl rounded-t-2xl border-t border-x border-cyan-400/20 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black shadow-2xl transition-all duration-300"
       >
-        <div className="p-4 sm:p-6">
-          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-            <p className="text-sm text-zinc-300 leading-relaxed flex-1 min-w-[200px]">
+        <div className="p-2 sm:p-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-sm text-zinc-300 leading-tight flex-1 min-w-[200px]">
               We use cookies only for essential site functions and anonymous analytics.
             </p>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setShowDetails(!showDetails)}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-cyan-400 hover:bg-cyan-400/10 transition cursor-pointer flex items-center gap-1"
+                className="rounded-lg px-2.5 py-1 text-xs font-medium text-cyan-400 hover:bg-cyan-400/10 transition cursor-pointer flex items-center gap-1"
                 aria-label={showDetails ? "Hide details" : "Show details"}
               >
                 {showDetails ? (
                   <>
                     <span>Less</span>
-                    <ChevronUp className="h-4 w-4" />
+                    <ChevronUp className="h-3.5 w-3.5" />
                   </>
                 ) : (
                   <>
                     <span>More</span>
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-3.5 w-3.5" />
                   </>
                 )}
               </button>
               <button
                 type="button"
                 onClick={handleAccept}
-                className="rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-1.5 font-medium text-black transition hover:brightness-110 cursor-pointer text-xs whitespace-nowrap"
+                className="rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-3 py-1 font-medium text-black transition hover:brightness-110 cursor-pointer text-xs whitespace-nowrap"
               >
                 Accept
               </button>
@@ -70,7 +70,7 @@ export function CookieConsent() {
           </div>
 
           {showDetails && (
-            <div className="mb-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+            <div className="mt-3 space-y-2 animate-in slide-in-from-top-2 duration-200">
               <p className="text-sm text-zinc-400 leading-relaxed">
                 Our cookies are secure and help us:
               </p>
