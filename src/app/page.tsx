@@ -341,7 +341,7 @@ export default async function Home() {
             <b>Scaling Bitcoin adoption </b>
           </h1>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-orange-400 leading-tight">
-            Turning the Africa orange
+            Turning Africa orange
           </p>
           <p className="w-full text-base sm:text-lg text-zinc-400 leading-relaxed sm:max-w-2xl sm:mx-auto">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.

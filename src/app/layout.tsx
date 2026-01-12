@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     template: "%s | PanAfrican Bitcoin Academy",
   },
   description:
-    "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners community. Clear lessons, real security, and developer pathways.",
+    "PanAfrican Bitcoin Academy is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways.",
   keywords: [
     "Bitcoin education Africa",
     "Learn Bitcoin",
@@ -94,7 +94,7 @@ export const metadata: Metadata = {
     url: '/',
     siteName: 'PanAfrican Bitcoin Academy',
     title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
-    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education, convert Bitcoin to Nakfa, join Eritrean Bitcoiners. Clear lessons, real security, and developer pathways.',
+    description: "PanAfrican Bitcoin Academy is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways.",
     images: [
       {
         url: '/og-image.png',
@@ -113,7 +113,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
-    description: 'PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners. Clear lessons, real security, and developer pathways.',
+    description: "PanAfrican Bitcoin Academy is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways.",
     images: [
       {
         url: '/og-image.png',
