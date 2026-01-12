@@ -38,7 +38,7 @@ export function CookieConsent() {
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <p className="text-sm text-zinc-300 leading-relaxed flex-1 min-w-[200px]">
-              We use cookies to manage your session and provide authentication.
+              We use cookies only for essential site functions and anonymous analytics.
             </p>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
