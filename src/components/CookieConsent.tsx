@@ -36,28 +36,37 @@ export function CookieConsent() {
         className="w-full max-w-2xl rounded-t-2xl border-t border-x border-cyan-400/20 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black shadow-2xl transition-all duration-300"
       >
         <div className="p-4 sm:p-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <p className="text-sm text-zinc-300 leading-relaxed flex-1">
+          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <p className="text-sm text-zinc-300 leading-relaxed flex-1 min-w-[200px]">
               We use cookies to manage your session and provide authentication.
             </p>
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-cyan-400 hover:bg-cyan-400/10 transition cursor-pointer flex items-center gap-1"
-              aria-label={showDetails ? "Hide details" : "Show details"}
-            >
-              {showDetails ? (
-                <>
-                  <span>Less</span>
-                  <ChevronUp className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  <span>More</span>
-                  <ChevronDown className="h-4 w-4" />
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-cyan-400 hover:bg-cyan-400/10 transition cursor-pointer flex items-center gap-1"
+                aria-label={showDetails ? "Hide details" : "Show details"}
+              >
+                {showDetails ? (
+                  <>
+                    <span>Less</span>
+                    <ChevronUp className="h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    <span>More</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleAccept}
+                className="rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-1.5 font-medium text-black transition hover:brightness-110 cursor-pointer text-xs whitespace-nowrap"
+              >
+                Accept
+              </button>
+            </div>
           </div>
 
           {showDetails && (
@@ -75,16 +84,6 @@ export function CookieConsent() {
               </p>
             </div>
           )}
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleAccept}
-              className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-1.5 font-medium text-black transition hover:brightness-110 cursor-pointer text-xs"
-            >
-              Accept
-            </button>
-          </div>
         </div>
       </div>
     </div>
