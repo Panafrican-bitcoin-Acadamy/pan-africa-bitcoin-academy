@@ -1349,6 +1349,67 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
+        {/* Manage Cohorts Section */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Manage Cohorts</h3>
+          {cohorts.length === 0 ? (
+            <p className="text-sm text-zinc-400">No cohorts found.</p>
+          ) : (
+            <div className="space-y-3">
+              {cohorts.map((cohort) => (
+                <div
+                  key={cohort.id}
+                  className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-zinc-50">{cohort.name}</h4>
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
+                        {cohort.startDate && (
+                          <span>Start: {new Date(cohort.startDate).toLocaleDateString()}</span>
+                        )}
+                        {cohort.endDate && (
+                          <span>End: {new Date(cohort.endDate).toLocaleDateString()}</span>
+                        )}
+                        {cohort.level && <span>Level: {cohort.level}</span>}
+                        {cohort.status && (
+                          <span className={`px-2 py-0.5 rounded ${
+                            cohort.status === 'Active' ? 'bg-green-500/20 text-green-400' :
+                            cohort.status === 'Upcoming' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-zinc-500/20 text-zinc-400'
+                          }`}>
+                            {cohort.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        type="button"
+                        onClick={() => regenerateSessions(cohort.id)}
+                        disabled={regeneratingSessions === cohort.id}
+                        className="rounded border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        title="Regenerate all sessions based on start/end dates"
+                      >
+                        {regeneratingSessions === cohort.id ? 'Regenerating...' : 'Regenerate Sessions'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => rearrangeSessions(cohort.id, cohort.name)}
+                        disabled={rearrangingSessions === cohort.id}
+                        className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        title="Rearrange sessions to Mon/Wed/Fri pattern"
+                      >
+                        {rearrangingSessions === cohort.id ? 'Rearranging...' : 'Rearrange Sessions'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Create Cohort and Create Event - Side by Side */}
         <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
