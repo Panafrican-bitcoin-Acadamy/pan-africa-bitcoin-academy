@@ -80,6 +80,67 @@ export async function PUT(
       );
     }
 
+    // If updating session_date, validate and check for conflicts
+    if (updateData.session_date !== undefined) {
+      // Normalize date format (ensure YYYY-MM-DD)
+      let normalizedDate: string;
+      try {
+        const dateObj = new Date(updateData.session_date);
+        if (isNaN(dateObj.getTime())) {
+          return NextResponse.json(
+            { error: 'Invalid date format. Please use YYYY-MM-DD format.' },
+            { status: 400 }
+          );
+        }
+        // Format as YYYY-MM-DD
+        normalizedDate = dateObj.toISOString().split('T')[0];
+        updateData.session_date = normalizedDate;
+      } catch (dateError) {
+        return NextResponse.json(
+          { error: 'Invalid date format. Please use YYYY-MM-DD format.' },
+          { status: 400 }
+        );
+      }
+
+      // Normalize existing session date for comparison
+      const existingDate = existingSession.session_date instanceof Date
+        ? existingSession.session_date.toISOString().split('T')[0]
+        : String(existingSession.session_date).split('T')[0];
+
+      // Only check for conflicts if the date is actually changing
+      if (normalizedDate !== existingDate) {
+        const { data: conflictingSession, error: conflictError } = await supabaseAdmin
+          .from('cohort_sessions')
+          .select('id, session_number')
+          .eq('cohort_id', existingSession.cohort_id)
+          .eq('session_date', normalizedDate)
+          .neq('id', sessionId) // Exclude the current session
+          .maybeSingle();
+
+        if (conflictError) {
+          console.error('Error checking for date conflicts:', conflictError);
+          return NextResponse.json(
+            { error: 'Failed to validate session date', details: conflictError.message },
+            { status: 500 }
+          );
+        }
+
+        if (conflictingSession) {
+          return NextResponse.json(
+            { 
+              error: `Another session (Session ${conflictingSession.session_number}) already exists on this date for this cohort. Please choose a different date.` 
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Log update data for debugging (in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Updating session with data:', updateData);
+    }
+
     // Update the session
     const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('cohort_sessions')
@@ -98,6 +159,16 @@ export async function PUT(
 
     if (updateError) {
       console.error('Error updating session:', updateError);
+      // Check if it's a unique constraint violation
+      if (updateError.code === '23505' || updateError.message?.includes('unique constraint')) {
+        return NextResponse.json(
+          { 
+            error: 'A session with this date already exists for this cohort. Please choose a different date.',
+            details: updateError.message 
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
         { error: 'Failed to update session', details: updateError.message },
         { status: 500 }
