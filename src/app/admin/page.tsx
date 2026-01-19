@@ -890,9 +890,7 @@ export default function AdminDashboardPage() {
             <div className="space-y-2">
               <label className="text-sm text-zinc-300">Password</label>
               <input
-                type="password"
-                name="password"
-                autoComplete="current-password"
+                type="password" name="password" autoComplete="current-password"
                 required
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
@@ -919,7 +917,6 @@ export default function AdminDashboardPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-black p-6 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-10">

@@ -48,8 +48,8 @@ const chapters = [
     ],
     theory: ["Introduction to money", "Why humans created money", "Functions and properties of money"],
     practice: ["Class discussion on money", "Activity: What is Money?"],
-    video: "5-minute explanation of money evolution",
-    quiz: "5 questions on money fundamentals",
+    LiveSession: "5-minute explanation of money evolution",
+    quiz: "questions on money fundamentals",
   },
   {
     id: 2,
@@ -70,8 +70,8 @@ const chapters = [
     ],
     theory: ["History of money evolution", "Barter to fiat transition", "Pre-Bitcoin innovations"],
     practice: ["Create timeline of money", "Activity: Timeline of Money"],
-    video: "Visual journey through money history",
-    quiz: "5 questions on money evolution",
+    LiveSession: "Visual journey through money history",
+    quiz: "questions on money evolution",
   },
   {
     id: 3,
@@ -91,8 +91,8 @@ const chapters = [
     ],
     theory: ["Fiat money problems", "Inflation mechanisms", "Centralization risks"],
     practice: ["Class discussion", "Activity: Trust in money"],
-    video: "Problems with fiat explained",
-    quiz: "5 questions on fiat issues",
+    LiveSession: "Problems with fiat explained",
+    quiz: "questions on fiat issues",
   },
   {
     id: 4,
@@ -113,8 +113,8 @@ const chapters = [
     ],
     theory: ["System failures", "Inflation effects", "Cypherpunk movement"],
     practice: ["Auction simulation", "Activity: Inflation effects"],
-    video: "Crisis to innovation story",
-    quiz: "5 questions on crisis and innovation",
+    LiveSession : "Crisis to innovation story",
+    quiz: "questions on crisis and innovation",
   },
   {
     id: 5,
@@ -134,8 +134,8 @@ const chapters = [
     ],
     theory: ["2008 crisis", "Satoshi's vision", "Bitcoin whitepaper basics"],
     practice: ["Read whitepaper excerpt", "Activity: Whitepaper analysis"],
-    video: "Birth of Bitcoin story",
-    quiz: "5 questions on Bitcoin origins",
+    LiveSession: "Birth of Bitcoin story",
+    quiz: "questions on Bitcoin origins",
   },
   {
     id: 6,
@@ -154,8 +154,8 @@ const chapters = [
     ],
     theory: ["Digital signatures", "Public/private keys", "Transaction flow"],
     practice: ["Role-play transaction", "Activity: Transaction simulation"],
-    video: "Keys and transactions explained",
-    quiz: "5 questions on keys and transactions",
+    LiveSession : "Keys and transactions explained",
+    quiz:"questions on keys and transactions",
   },
   {
     id: 7,
@@ -175,8 +175,8 @@ const chapters = [
     ],
     theory: ["Block structure", "Merkle trees", "Immutability concepts"],
     practice: ["Paper blockchain demo", "Activity: Hash-link demo"],
-    video: "Blockchain basics visualized",
-    quiz: "5 questions on blockchain",
+    LiveSession: "Blockchain basics visualized",
+    quiz: "questions on blockchain",
   },
   {
     id: 8,
@@ -196,8 +196,8 @@ const chapters = [
     ],
     theory: ["Exchanges overview", "Wallet basics", "Privacy fundamentals"],
     practice: ["Create wallet", "Testnet transaction", "Activity: Testnet walkthrough"],
-    video: "Wallet setup tutorial",
-    quiz: "5 questions on wallets",
+    LiveSession: "Wallet setup tutorial",
+    quiz: "questions on wallets",
   },
   // Level II
   {
@@ -218,8 +218,8 @@ const chapters = [
     ],
     theory: ["UTXO model", "Fee mechanisms", "Coin control"],
     practice: ["UTXO planning", "Activity: UTXO set exercise"],
-    video: "UTXOs explained",
-    quiz: "5 questions on UTXOs",
+    LiveSession: "UTXOs explained",
+    quiz: "questions on UTXOs",
   },
   {
     id: 10,
@@ -238,8 +238,8 @@ const chapters = [
     ],
     theory: ["Privacy best practices", "Address management", "Transaction labeling"],
     practice: ["Hygiene audit", "Activity: Checklist audit"],
-    video: "Bitcoin hygiene guide",
-    quiz: "5 questions on hygiene",
+    LiveSession: "Bitcoin hygiene guide",
+    quiz: "questions on hygiene",
   },
   {
     id: 11,
@@ -258,8 +258,8 @@ const chapters = [
     ],
     theory: ["Hardware wallet security", "Hot vs cold storage", "PSBT basics"],
     practice: ["Hardware setup", "Recovery test", "Activity: PSBT signing"],
-    video: "Hardware wallet tutorial",
-    quiz: "5 questions on hardware wallets",
+    LiveSession: "Hardware wallet tutorial",
+    quiz: "questions on hardware wallets",
   },
   {
     id: 12,
@@ -279,8 +279,8 @@ const chapters = [
     ],
     theory: ["Block explorers", "Node importance", "Verification methods"],
     practice: ["Explorer usage", "Activity: Scavenger hunt"],
-    video: "Nodes and explorers guide",
-    quiz: "5 questions on verification",
+    LiveSession: "Nodes and explorers guide",
+    quiz: "questions on verification",
   },
   {
     id: 13,
@@ -300,8 +300,8 @@ const chapters = [
     ],
     theory: ["Proof of Work", "Mining rewards", "Halving schedule"],
     practice: ["PoW game", "Activity: Proof-of-Work by hand"],
-    video: "Mining explained",
-    quiz: "5 questions on PoW",
+    LiveSession: "Mining explained",
+    quiz: "questions on PoW",
   },
   {
     id: 14,
@@ -321,8 +321,8 @@ const chapters = [
     ],
     theory: ["Difficulty adjustment", "Mining pools", "Security budget"],
     practice: ["Security analysis", "Activity: Chart impact"],
-    video: "Mining in practice",
-    quiz: "5 questions on mining",
+    LiveSession: "Mining in practice",
+    quiz: "questions on mining",
   },
   {
     id: 15,
@@ -342,8 +342,8 @@ const chapters = [
     ],
     theory: ["Lightning Network", "Layer 2 solutions", "Sidechains"],
     practice: ["Lightning payment", "Activity: Live demo"],
-    video: "Lightning explained",
-    quiz: "5 questions on Lightning",
+    LiveSession: "Lightning explained",
+    quiz: "questions on Lightning",
   },
   // Level III
   {
@@ -363,8 +363,8 @@ const chapters = [
     ],
     theory: ["Node stacks", "Lightning channels", "Routing basics"],
     practice: ["Channel operations", "Activity: Channel simulation"],
-    video: "Node and Lightning setup",
-    quiz: "5 questions on nodes and channels",
+    LiveSession: "Node and Lightning setup",
+    quiz: " questions on nodes and channels",
   },
   {
     id: 17,
@@ -383,8 +383,8 @@ const chapters = [
     ],
     theory: ["Multi-sig concepts", "M-of-N designs", "Custody strategies"],
     practice: ["Multi-sig setup", "Activity: Family custody plan"],
-    video: "Multi-sig explained",
-    quiz: "5 questions on multi-sig",
+    LiveSession: "Multi-sig explained",
+    quiz: "questions on multi-sig",
   },
   {
     id: 18,
@@ -403,8 +403,8 @@ const chapters = [
     ],
     theory: ["Bitcoin Script", "Locking conditions", "Timelocks"],
     practice: ["Script examples", "Policy design"],
-    video: "Script basics",
-    quiz: "5 questions on Script",
+    LiveSession: "Script basics",
+    quiz: "questions on Script",
   },
   {
     id: 19,
@@ -423,8 +423,8 @@ const chapters = [
     ],
     theory: ["Consolidation strategies", "Privacy risks", "Coin control"],
     practice: ["Consolidation planning", "Activity: Draft plan"],
-    video: "Privacy and consolidation",
-    quiz: "5 questions on consolidation",
+    LiveSession: "Privacy and consolidation",
+    quiz: "questions on consolidation",
   },
   {
     id: 20,
@@ -443,8 +443,8 @@ const chapters = [
     ],
     theory: ["Money philosophy", "Bitcoin vs bitcoin", "Trust minimization"],
     practice: ["Philosophical debate", "Activity: Code vs State debate"],
-    video: "Bitcoin philosophy",
-    quiz: "5 questions on philosophy",
+    LiveSession: "Bitcoin philosophy",
+    quiz: "questions on philosophy",
   },
   {
     id: 21,
@@ -463,7 +463,7 @@ const chapters = [
     ],
     theory: ["Course summary", "Resources", "Next steps"],
     practice: ["Final reflection", "Activity: Reflection exercise"],
-    video: "Course wrap-up",
+    LiveSession: "Course wrap-up",
     quiz: "Final assessment",
   },
 ];
@@ -1417,8 +1417,8 @@ export default function ChaptersPage() {
                             </ul>
                           </div>
                           <div>
-                            <p className="mb-1 font-medium text-purple-200">🎥 Video:</p>
-                            <p className="ml-4 text-zinc-400">{chapter.video}</p>
+                            <p className="mb-1 font-medium text-purple-200">🎥 Live Session:</p>
+                            <p className="ml-4 text-zinc-400">{chapter.LiveSession}</p>
                           </div>
                           <div>
                             <p className="mb-1 font-medium text-cyan-200">Quiz:</p>

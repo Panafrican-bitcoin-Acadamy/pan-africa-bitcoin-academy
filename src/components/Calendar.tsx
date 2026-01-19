@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Download } from 'lucide-react';
 import { downloadICalFile } from '@/lib/icalExport';
 import { EventEditModal } from './EventEditModal';
+import { SessionEditModal } from './SessionEditModal';
 
 interface CalendarEvent {
   id: string;
@@ -56,6 +57,9 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
   const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any | null>(null);
+  const [sessionEditModalOpen, setSessionEditModalOpen] = useState(false);
+  const [sessionsMap, setSessionsMap] = useState<Map<string, any>>(new Map());
   const [cohorts, setCohorts] = useState<Array<{ id: string; name: string }>>([]);
 
   // Fetch events from Supabase, filtered by cohort if provided
@@ -159,6 +163,9 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
               }
               
               if (sessionsData.sessions && Array.isArray(sessionsData.sessions)) {
+                // Store sessions in a Map for later access when editing
+                const newSessionsMap = new Map<string, any>();
+                
                 const sessionEvents: CalendarEvent[] = sessionsData.sessions
                   .filter((session: any) => {
                     if (!session.session_date) {
@@ -177,8 +184,13 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                     const sessionDate = new Date(session.session_date);
                     // Format date to ensure proper timezone handling
                     sessionDate.setHours(0, 0, 0, 0);
+                    
+                    // Store original session data in Map
+                    const sessionEventId = `session-${session.id}`;
+                    newSessionsMap.set(sessionEventId, session);
+                    
                     return {
-                      id: `session-${session.id}`,
+                      id: sessionEventId,
                       title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
                       date: sessionDate,
                       type: 'live-class' as const,
@@ -189,6 +201,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                     };
                   });
                 
+                setSessionsMap(newSessionsMap);
                 transformedEvents = [...transformedEvents, ...sessionEvents];
                 console.log(`✅ Calendar: Added ${sessionEvents.length} session events from cohort_sessions table`);
                 
@@ -306,8 +319,17 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
   }, [showCohorts]);
 
   const handleEventClick = (event: CalendarEvent) => {
-    if (showCohorts && !event.id.startsWith('session-') && !event.id.startsWith('cohort-')) {
-      // Only allow editing regular events (not sessions or cohort dates) in admin mode
+    if (!showCohorts) return; // Only allow editing in admin mode
+    
+    if (event.id.startsWith('session-')) {
+      // Handle session editing
+      const session = sessionsMap.get(event.id);
+      if (session) {
+        setSelectedSession(session);
+        setSessionEditModalOpen(true);
+      }
+    } else if (!event.id.startsWith('cohort-')) {
+      // Handle regular event editing (not cohort dates)
       setSelectedEvent(event);
       setEditModalOpen(true);
     }
@@ -781,25 +803,37 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
 
       {/* Event Edit Modal - Only for admin mode */}
       {showCohorts && (
-        <EventEditModal
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSelectedEvent(null);
-          }}
-          event={selectedEvent ? {
-            id: selectedEvent.id,
-            title: selectedEvent.title,
-            type: selectedEvent.type,
-            date: selectedEvent.date,
-            time: selectedEvent.time,
-            link: selectedEvent.link,
-            description: selectedEvent.description,
-            cohortId: selectedEvent.cohortId || null,
-          } : null}
-          cohorts={cohorts}
-          onUpdate={handleEventUpdate}
-        />
+        <>
+          <EventEditModal
+            isOpen={editModalOpen}
+            onClose={() => {
+              setEditModalOpen(false);
+              setSelectedEvent(null);
+            }}
+            event={selectedEvent ? {
+              id: selectedEvent.id,
+              title: selectedEvent.title,
+              type: selectedEvent.type,
+              date: selectedEvent.date,
+              time: selectedEvent.time,
+              link: selectedEvent.link,
+              description: selectedEvent.description,
+              cohortId: selectedEvent.cohortId || null,
+            } : null}
+            cohorts={cohorts}
+            onUpdate={handleEventUpdate}
+          />
+          
+          <SessionEditModal
+            isOpen={sessionEditModalOpen}
+            onClose={() => {
+              setSessionEditModalOpen(false);
+              setSelectedSession(null);
+            }}
+            session={selectedSession}
+            onUpdate={handleEventUpdate}
+          />
+        </>
       )}
     </div>
   );

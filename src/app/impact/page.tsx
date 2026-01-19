@@ -45,8 +45,8 @@ interface Testimonial {
 
 const outcomes = [
   "50% now using Bitcoin daily",
-  "4 students supporting local communities",
-  "3 students teaching Bitcoin in their schools",
+  "students supporting local communities",
+  "students teaching Bitcoin in their schools",
   "Lightning payments used in real life: 120+ transactions",
 ];
 
@@ -338,7 +338,7 @@ export default function ImpactPage() {
         <AnimatedSection animation="slideRight">
           <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
           <h2 className="text-xl font-semibold text-orange-200">Graduate Outcomes</h2>
-          <p className="text-sm text-zinc-300 sm:text-base">What our students have achieved:</p>
+          <p className="text-sm text-zinc-300 sm:text-base">What our students are expected to achieve:</p>
           <ul className="mt-4 space-y-2">
             {outcomes.map((outcome, index) => (
               <li key={index} className="flex items-start gap-2 text-sm text-zinc-300 sm:text-base">
