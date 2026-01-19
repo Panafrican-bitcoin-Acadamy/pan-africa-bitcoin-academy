@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 
+type RouteParams = {
+  params: Promise<{ id: string }>;
+};
+
 /**
  * Update an existing event
  * PUT /api/admin/events/[id]
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteParams
 ) {
   try {
     const session = requireAdmin(req);
@@ -145,7 +149,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteParams
 ) {
   try {
     const session = requireAdmin(req);
