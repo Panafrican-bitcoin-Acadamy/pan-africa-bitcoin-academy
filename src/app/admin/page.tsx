@@ -132,6 +132,7 @@ export default function AdminDashboardPage() {
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
+  const [rearrangingSessions, setRearrangingSessions] = useState<string | null>(null);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam' | 'assignments'>('overview');
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
@@ -830,6 +831,35 @@ export default function AdminDashboardPage() {
       alert(err.message || 'Failed to regenerate sessions');
     } finally {
       setRegeneratingSessions(null);
+    }
+  };
+
+  const rearrangeSessions = async (cohortId: string, cohortName: string) => {
+    const startDate = prompt(`Rearrange sessions for ${cohortName}?\n\nEnter start date for Session 1 (YYYY-MM-DD):\nDefault: 2026-01-19`, '2026-01-19');
+    if (!startDate) return;
+    
+    if (!confirm(`This will rearrange all sessions for ${cohortName} starting from ${startDate}.\nSessions will be spaced 1 day apart, skipping Sundays.\n\nContinue?`)) {
+      return;
+    }
+    
+    setRearrangingSessions(cohortId);
+    try {
+      const res = await fetchWithAuth('/api/admin/cohorts/rearrange-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cohortId, startDate }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to rearrange sessions');
+      alert(`Sessions rearranged successfully! ${data.sessionsUpdated || 0} sessions updated.\nStart: ${data.startDate}\nEnd: ${data.endDate}`);
+      await fetchCohorts();
+      await fetchOverview();
+      // Refresh calendar if it's open
+      window.location.reload();
+    } catch (err: any) {
+      alert(err.message || 'Failed to rearrange sessions');
+    } finally {
+      setRearrangingSessions(null);
     }
   };
 
