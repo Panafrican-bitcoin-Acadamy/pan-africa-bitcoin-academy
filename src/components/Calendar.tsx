@@ -846,7 +846,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                       </a>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 {getEventsForDate(selectedDate).length === 0 && (
                   <div className="text-center text-xs text-zinc-500">No events</div>
                 )}
