@@ -171,6 +171,106 @@ export default function AdminDashboardPage() {
   const [sessionDateFilter, setSessionDateFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam' | 'assignments'>('overview');
+  
+  // Sidebar state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
+  
+  // Sidebar navigation structure
+  const sidebarSections = [
+    {
+      id: 'students',
+      label: 'Students',
+      icon: '👥',
+      subMenus: [
+        { id: 'approved-students', label: 'Approved Students' },
+        { id: 'pending-students', label: 'Pending Students' },
+        { id: 'rejected-students', label: 'Rejected Students' },
+        { id: 'student-database', label: 'Student Database' },
+        { id: 'assignments-submissions', label: 'Assignment Submissions' },
+        { id: 'blog-submissions', label: 'Blog Submissions' },
+      ],
+    },
+    {
+      id: 'cohorts',
+      label: 'Cohorts',
+      icon: '📚',
+      subMenus: [
+        { id: 'cohort-list', label: 'Cohort List' },
+        { id: 'sessions', label: 'Sessions' },
+        { id: 'cohort-analytics', label: 'Cohort Analytics' },
+      ],
+    },
+    {
+      id: 'communications',
+      label: 'Communications',
+      icon: '✉️',
+      subMenus: [
+        { id: 'email-composition', label: 'Email Composition' },
+        { id: 'calendar', label: 'Calendar' },
+      ],
+    },
+    {
+      id: 'assessments',
+      label: 'Assessments',
+      icon: '📝',
+      subMenus: [
+        { id: 'final-exam-submissions', label: 'Final Exam Submissions' },
+      ],
+    },
+  ];
+  
+  // Get breadcrumbs based on current navigation
+  const getBreadcrumbs = () => {
+    if (!activeSection || !activeSubMenu) {
+      return [{ label: 'Dashboard', path: null }];
+    }
+    
+    try {
+      const section = sidebarSections.find(s => s.id === activeSection);
+      const subMenu = section?.subMenus?.find(sm => sm.id === activeSubMenu);
+      
+      return [
+        { label: 'Dashboard', path: null },
+        { label: section?.label || '', path: null },
+        { label: subMenu?.label || '', path: null },
+      ];
+    } catch (error) {
+      return [{ label: 'Dashboard', path: null }];
+    }
+  };
+  
+  // Handle sidebar navigation
+  const handleSidebarNavigation = (sectionId: string, subMenuId: string) => {
+    setActiveSection(sectionId);
+    setActiveSubMenu(subMenuId);
+    
+    // Map sidebar selections to existing tab system
+    const navigationMap: Record<string, string> = {
+      'approved-students': 'students',
+      'pending-students': 'applications',
+      'rejected-students': 'applications',
+      'student-database': 'students',
+      'assignments-submissions': 'assignments',
+      'blog-submissions': 'overview',
+      'cohort-list': 'overview',
+      'sessions': 'overview',
+      'cohort-analytics': 'overview',
+      'email-composition': 'overview',
+      'calendar': 'overview',
+      'final-exam-submissions': 'exam',
+    };
+    
+    const mappedTab = navigationMap[subMenuId];
+    if (mappedTab) {
+      setActiveTab(mappedTab as any);
+      // Set filters based on sub-menu
+      if (subMenuId === 'pending-students') setFilter('pending');
+      if (subMenuId === 'rejected-students') setFilter('rejected');
+      if (subMenuId === 'approved-students') setFilter('approved');
+    }
+  };
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
   const [loadingExamAccess, setLoadingExamAccess] = useState(false);
   const [submissions, setSubmissions] = useState<any[]>([]);
@@ -889,12 +989,8 @@ export default function AdminDashboardPage() {
   };
 
   const rearrangeSessions = async (cohortId: string, cohortName: string) => {
-    // Get today's date as default, or use a reasonable default
-    const today = new Date();
-    const defaultDate = today.toISOString().split('T')[0];
-    
-    const startDate = prompt(`Rearrange sessions for ${cohortName}?\n\nEnter start date for Session 1 (YYYY-MM-DD):\nDefault: ${defaultDate}`, defaultDate);
-    if (!startDate) return;
+    const startDate = prompt(`Rearrange sessions for ${cohortName}?\n\nEnter start date for Session 1 (YYYY-MM-DD):`);
+    if (!startDate || !startDate.trim()) return;
     
     if (!confirm(`This will rearrange all sessions for ${cohortName} starting from ${startDate}.\n\nSchedule Pattern:\n- 3 working days per week: Monday, Wednesday, Friday\n- Sundays are always excluded\n- All sessions will be rescheduled (none removed)\n\nContinue?`)) {
       return;
@@ -1016,30 +1112,150 @@ export default function AdminDashboardPage() {
     );
   }
   return (
-    <div className="min-h-screen bg-black p-6 sm:p-8">
-      <div className="mx-auto max-w-7xl space-y-10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-zinc-50">Admin Dashboard</h1>
-            <p className="text-sm text-zinc-500">Signed in as {admin.email}</p>
-          </div>
+    <div className="min-h-screen bg-black flex">
+      {/* Sidebar */}
+      <aside className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-zinc-900 border-r border-zinc-800 flex flex-col transition-all duration-300 ease-in-out flex-shrink-0`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+          {!sidebarCollapsed && (
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-50">Admin Panel</h2>
+              <p className="text-xs text-zinc-500 truncate">{admin.email}</p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? '→' : '←'}
+          </button>
+        </div>
+        
+        {/* Sidebar Navigation */}
+        <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+          {sidebarSections.map((section) => {
+            const isSectionActive = activeSection === section.id;
+            const hasActiveSubMenu = section.subMenus.some(sm => activeSubMenu === sm.id);
+            
+            return (
+              <div key={section.id} className="mb-4">
+                {/* Section Header */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isSectionActive) {
+                      setActiveSection(null);
+                      setActiveSubMenu(null);
+                    } else {
+                      setActiveSection(section.id);
+                      // Auto-select first sub-menu
+                      if (section.subMenus.length > 0) {
+                        handleSidebarNavigation(section.id, section.subMenus[0].id);
+                      }
+                    }
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                    isSectionActive || hasActiveSubMenu
+                      ? 'bg-zinc-800 text-zinc-50'
+                      : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-300'
+                  }`}
+                >
+                  <span className="text-lg flex-shrink-0">{section.icon}</span>
+                  {!sidebarCollapsed && <span className="flex-1 text-left">{section.label}</span>}
+                  {!sidebarCollapsed && (
+                    <span className={`transition-transform ${isSectionActive ? 'rotate-90' : ''}`}>
+                      ›
+                    </span>
+                  )}
+                </button>
+                
+                {/* Sub-menus */}
+                {!sidebarCollapsed && isSectionActive && (
+                  <div className="mt-1 ml-4 space-y-0.5 border-l border-zinc-800 pl-3">
+                    {section.subMenus.map((subMenu) => (
+                      <button
+                        key={subMenu.id}
+                        type="button"
+                        onClick={() => handleSidebarNavigation(section.id, subMenu.id)}
+                        className={`w-full text-left px-3 py-2 rounded text-xs transition ${
+                          activeSubMenu === subMenu.id
+                            ? 'bg-cyan-500/20 text-cyan-300 border-l-2 border-cyan-500'
+                            : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300'
+                        }`}
+                      >
+                        {subMenu.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+        
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-zinc-800">
           <button
             type="button"
             onClick={handleLogout}
-            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:border-red-400 hover:text-red-300 transition cursor-pointer"
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:bg-red-500/10 hover:text-red-300 transition ${
+              sidebarCollapsed ? 'justify-center' : ''
+            }`}
+            title={sidebarCollapsed ? 'Logout' : ''}
           >
-            Logout
+            <span>🚪</span>
+            {!sidebarCollapsed && <span>Logout</span>}
           </button>
         </div>
+      </aside>
+      
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-6 sm:p-8">
+          <div className="mx-auto max-w-7xl space-y-6">
+            {/* Breadcrumbs */}
+            <nav className="flex items-center gap-2 text-sm text-zinc-500">
+              {getBreadcrumbs().map((crumb, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  {index > 0 && <span>›</span>}
+                  <span className={index === getBreadcrumbs().length - 1 ? 'text-zinc-300 font-medium' : ''}>
+                    {crumb.label}
+                  </span>
+                </div>
+              ))}
+            </nav>
+            
+            {/* Page Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-zinc-50">
+                  {activeSubMenu && activeSection
+                    ? (() => {
+                        const section = sidebarSections.find(s => s.id === activeSection);
+                        const subMenu = section?.subMenus?.find(sm => sm.id === activeSubMenu);
+                        return subMenu?.label || 'Admin Dashboard';
+                      })()
+                    : 'Admin Dashboard'}
+                </h1>
+                {activeSubMenu && activeSection && (
+                  <p className="text-sm text-zinc-500 mt-1">
+                    {sidebarSections.find(s => s.id === activeSection)?.label || ''}
+                  </p>
+                )}
+              </div>
+            </div>
 
-        {error && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-200">
-            {error}
-          </div>
-        )}
+            {error && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-200">
+                {error}
+              </div>
+            )}
 
-        {/* Overview cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {/* Overview cards - show on dashboard or when no specific sub-menu is selected */}
+            {(!activeSubMenu || activeSubMenu === 'cohort-list' || activeSubMenu === 'sessions' || activeSubMenu === 'cohort-analytics') && (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {overview && [
             { label: 'Applications', value: overview.totalApplications, accent: 'cyan' },
             { label: 'Pending', value: overview.pendingApplications, accent: 'yellow' },
@@ -1057,10 +1273,12 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           ))}
-        </div>
+            </div>
+            )}
 
-        {/* Applications */}
-        <div className="space-y-4">
+            {/* Students Section - Pending/Rejected Students */}
+            {(activeSubMenu === 'pending-students' || activeSubMenu === 'rejected-students' || (activeTab === 'applications' && (filter === 'pending' || filter === 'rejected'))) && (
+              <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
@@ -1405,73 +1623,77 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           </div>
+            )}
 
-        {/* Manage Cohorts Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Manage Cohorts</h3>
-          {cohorts.length === 0 ? (
-            <p className="text-sm text-zinc-400">No cohorts found.</p>
-          ) : (
-            <div className="space-y-3">
-              {cohorts.map((cohort) => (
-                <div
-                  key={cohort.id}
-                  className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-semibold text-zinc-50">{cohort.name}</h4>
-                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-                        {cohort.startDate && (
-                          <span>Start: {new Date(cohort.startDate).toLocaleDateString()}</span>
-                        )}
-                        {cohort.endDate && (
-                          <span>End: {new Date(cohort.endDate).toLocaleDateString()}</span>
-                        )}
-                        {cohort.level && <span>Level: {cohort.level}</span>}
-                        {cohort.status && (
-                          <span className={`px-2 py-0.5 rounded ${
-                            cohort.status === 'Active' ? 'bg-green-500/20 text-green-400' :
-                            cohort.status === 'Upcoming' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-zinc-500/20 text-zinc-400'
-                          }`}>
-                            {cohort.status}
-                          </span>
-                        )}
-                      </div>
+            {/* Cohorts Section */}
+            {(activeSubMenu === 'cohort-list' || activeSubMenu === 'sessions' || activeSubMenu === 'cohort-analytics' || (!activeSubMenu && activeTab === 'overview')) && (
+              <>
+                {/* Manage Cohorts Section */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                  <h3 className="mb-3 text-lg font-semibold text-zinc-50">Manage Cohorts</h3>
+                  {cohorts.length === 0 ? (
+                    <p className="text-sm text-zinc-400">No cohorts found.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {cohorts.map((cohort) => (
+                        <div
+                          key={cohort.id}
+                          className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-semibold text-zinc-50">{cohort.name}</h4>
+                              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
+                                {cohort.startDate && (
+                                  <span>Start: {new Date(cohort.startDate).toLocaleDateString()}</span>
+                                )}
+                                {cohort.endDate && (
+                                  <span>End: {new Date(cohort.endDate).toLocaleDateString()}</span>
+                                )}
+                                {cohort.level && <span>Level: {cohort.level}</span>}
+                                {cohort.status && (
+                                  <span className={`px-2 py-0.5 rounded ${
+                                    cohort.status === 'Active' ? 'bg-green-500/20 text-green-400' :
+                                    cohort.status === 'Upcoming' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    'bg-zinc-500/20 text-zinc-400'
+                                  }`}>
+                                    {cohort.status}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 ml-4">
+                              <button
+                                type="button"
+                                onClick={() => regenerateSessions(cohort.id)}
+                                disabled={regeneratingSessions === cohort.id}
+                                className="rounded border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                title="Regenerate all sessions based on start/end dates"
+                              >
+                                {regeneratingSessions === cohort.id ? 'Regenerating...' : 'Regenerate Sessions'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => rearrangeSessions(cohort.id, cohort.name)}
+                                disabled={rearrangingSessions === cohort.id}
+                                className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                title="Rearrange sessions to Mon/Wed/Fri pattern"
+                              >
+                                {rearrangingSessions === cohort.id ? 'Rearranging...' : 'Rearrange Sessions'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        type="button"
-                        onClick={() => regenerateSessions(cohort.id)}
-                        disabled={regeneratingSessions === cohort.id}
-                        className="rounded border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        title="Regenerate all sessions based on start/end dates"
-                      >
-                        {regeneratingSessions === cohort.id ? 'Regenerating...' : 'Regenerate Sessions'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => rearrangeSessions(cohort.id, cohort.name)}
-                        disabled={rearrangingSessions === cohort.id}
-                        className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        title="Rearrange sessions to Mon/Wed/Fri pattern"
-                      >
-                        {rearrangingSessions === cohort.id ? 'Rearranging...' : 'Rearrange Sessions'}
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Create Cohort and Create Event - Side by Side */}
-        <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-              <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
-              <div className="mt-3 space-y-3">
+                {/* Create Cohort and Create Event - Side by Side */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                    <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
+                    <div className="mt-3 space-y-3">
                 <input
                   className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
                   placeholder="Cohort name"
@@ -1609,45 +1831,60 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Email Composition and Calendar - Side by Side */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Email Composition Interface */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
-            <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
-            <p className="text-xs text-zinc-400 mb-3">
-              Send professional emails to students, applicants, or other recipients.
-            </p>
-            <div className="rounded-lg">
-              <EmailComposer />
-            </div>
-          </div>
+                {/* Cohort Analytics Section */}
+                {activeSubMenu === 'cohort-analytics' && (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-zinc-50">Cohort Analytics</h3>
+                      <p className="text-xs text-zinc-400 mt-1">Enrollment stats, completion rates, and participation metrics</p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {cohorts.map((cohort) => {
+                        const cohortStudents = progress.filter(p => p.cohortId === cohort.id);
+                        const activeStudents = cohortStudents.filter(p => p.status === 'Active').length;
+                        const avgProgress = cohortStudents.length > 0
+                          ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.overallProgress || 0), 0) / cohortStudents.length)
+                          : 0;
+                        const avgAttendance = cohortStudents.length > 0
+                          ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.attendancePercent || 0), 0) / cohortStudents.length)
+                          : 0;
+                        
+                        return (
+                          <div key={cohort.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                            <h4 className="text-sm font-semibold text-zinc-50 mb-3">{cohort.name}</h4>
+                            <div className="space-y-2 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-zinc-400">Enrolled:</span>
+                                <span className="text-zinc-200 font-medium">{activeStudents}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-zinc-400">Avg Progress:</span>
+                                <span className="text-yellow-300 font-medium">{avgProgress}%</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-zinc-400">Avg Attendance:</span>
+                                <span className="text-blue-300 font-medium">{avgAttendance}%</span>
+                              </div>
+                              {cohort.seats && (
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-400">Capacity:</span>
+                                  <span className="text-zinc-200">{activeStudents}/{cohort.seats}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {cohorts.length === 0 && (
+                      <p className="p-3 text-sm text-zinc-400 text-center">No cohorts found.</p>
+                    )}
+                  </div>
+                )}
 
-          {/* Calendar - Events, Cohorts & Activities */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-50">Calendar</h2>
-              <div className="flex items-center gap-3 text-xs text-zinc-400">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-cyan-400"></span>
-                  Mon/Wed/Fri Only
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-red-400/50"></span>
-                  Sundays Excluded
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-400 mb-3">
-              Sessions follow a 3-day-per-week pattern (Monday, Wednesday, Friday). Sundays are never scheduled.
-            </p>
-            <div className="rounded-lg">
-              <Calendar cohortId={null} showCohorts={true} />
-            </div>
-          </div>
-        </div>
-
-        {/* Sessions List/Table View */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                {/* Sessions List/Table View */}
+                {(activeSubMenu === 'sessions' || (!activeSubMenu && activeTab === 'overview')) && (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-zinc-50">All Sessions</h3>
@@ -1878,12 +2115,64 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+                  )}
+                </div>
+                )}
+              </>
+            )}
 
-        {/* Mentorship applications */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Mentorship Applications</h3>
+            {/* Communications Section */}
+            {(activeSubMenu === 'email-composition' || activeSubMenu === 'calendar') && (
+              <>
+                {/* Email Composition and Calendar */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {/* Email Composition Interface */}
+                  {activeSubMenu === 'email-composition' && (
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+                      <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
+                      <p className="text-xs text-zinc-400 mb-3">
+                        Send professional emails to students, applicants, or other recipients.
+                      </p>
+                      <div className="rounded-lg">
+                        <EmailComposer />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Calendar - Events, Cohorts & Activities */}
+                  {activeSubMenu === 'calendar' && (
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-zinc-50">Calendar</h2>
+                        <div className="flex items-center gap-3 text-xs text-zinc-400">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-cyan-400"></span>
+                            Mon/Wed/Fri Only
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-red-400/50"></span>
+                            Sundays Excluded
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-zinc-400 mb-3">
+                        Sessions follow a 3-day-per-week pattern (Monday, Wednesday, Friday). Sundays are never scheduled.
+                      </p>
+                      <div className="rounded-lg">
+                        <Calendar cohortId={null} showCohorts={true} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+                {/* Mentorship applications - Show in overview or cohorts section */}
+                {(!activeSubMenu || activeSubMenu === 'cohort-list' || activeSubMenu === 'cohort-analytics') && (
+                  <>
+                    {/* Mentorship applications */}
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                      <h3 className="mb-3 text-lg font-semibold text-zinc-50">Mentorship Applications</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-zinc-900 text-left text-zinc-300">
@@ -1935,12 +2224,12 @@ export default function AdminDashboardPage() {
             {mentorships.length === 0 && (
               <p className="p-3 text-sm text-zinc-400">No mentorship applications yet.</p>
             )}
-          </div>
-        </div>
+                    </div>
+                  </div>
 
-        {/* Attendance Upload */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Upload Attendance (Google Meet CSV)</h3>
+                  {/* Attendance Upload */}
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                    <h3 className="mb-3 text-lg font-semibold text-zinc-50">Upload Attendance (Google Meet CSV)</h3>
           <form onSubmit={handleAttendanceUpload} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
@@ -1980,13 +2269,80 @@ export default function AdminDashboardPage() {
               CSV should include: Email, Name, Join Time, Leave Time, Duration (minutes)
             </p>
           </form>
-        </div>
+                  </div>
+                  </>
+                )}
 
-        {/* Student Database */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-zinc-50">Student Database</h3>
+            {/* Approved Students - Show filtered student database */}
+            {activeSubMenu === 'approved-students' && (
+              <>
+                {/* Student Database - Filtered to approved students */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-zinc-50">Approved Students</h3>
+                    <p className="text-xs text-zinc-400 mt-1">Students who have been approved and enrolled</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-zinc-900 text-left text-zinc-300">
+                        <tr>
+                          <th className="px-3 py-2">#</th>
+                          <th className="px-3 py-2">Name</th>
+                          <th className="px-3 py-2">Email</th>
+                          <th className="px-3 py-2">Phone</th>
+                          <th className="px-3 py-2">Cohort</th>
+                          <th className="px-3 py-2">Progress</th>
+                          <th className="px-3 py-2">Attendance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {progress.filter(p => p.status === 'Active').map((p, idx) => (
+                          <tr key={p.id} className="border-b border-zinc-800 hover:bg-zinc-800/30">
+                            <td className="px-3 py-2 text-zinc-400">{idx + 1}</td>
+                            <td className="px-3 py-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedStudent({ id: p.id, email: p.email, name: p.name })}
+                                className="text-cyan-400 hover:text-cyan-300 transition cursor-pointer"
+                              >
+                                {p.name}
+                              </button>
+                            </td>
+                            <td className="px-3 py-2 text-zinc-300">{p.email}</td>
+                            <td className="px-3 py-2 text-zinc-400">{p.phone || '—'}</td>
+                            <td className="px-3 py-2 text-zinc-300">{p.cohortName || '—'}</td>
+                            <td className="px-3 py-2">
+                              <span className="text-green-300">{p.completedChapters}</span>
+                              <span className="text-zinc-500">/{p.totalChapters || 20}</span>
+                            </td>
+                            <td className="px-3 py-2">
+                              {p.attendancePercent !== undefined ? (
+                                <span className="text-blue-300">{p.attendancePercent}%</span>
+                              ) : (
+                                <span className="text-zinc-500">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {progress.filter(p => p.status === 'Active').length === 0 && (
+                      <p className="p-3 text-sm text-zinc-400 text-center">No approved students found.</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Student Database Section */}
+            {(activeSubMenu === 'student-database' || activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || activeTab === 'students') && (
+              <>
+                {/* Student Database */}
+                {(activeSubMenu === 'student-database' || activeTab === 'students') && (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-zinc-50">Student Database</h3>
               {(cohortFilter || attendanceSort) && (
                 <div className="mt-1 flex items-center gap-2 text-xs text-zinc-400">
                   {cohortFilter && (
@@ -2154,335 +2510,345 @@ export default function AdminDashboardPage() {
             )}
           </div>
         </div>
+                )}
 
-        {/* Assignment Submissions Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-zinc-50">Assignment Submissions</h2>
-            <div className="flex gap-2">
-              {(['all', 'submitted', 'graded'] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => {
-                    setSubmissionFilter(f);
-                    setTimeout(() => fetchSubmissions(), 0);
-                  }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                    submissionFilter === f
-                      ? 'bg-cyan-400 text-black'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)} (
-                  {submissions.filter((s) => {
-                    if (f === 'all') return true;
-                    return s.status === f;
-                  }).length})
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className="text-sm text-zinc-400 mb-6">
-            Review and grade student assignment submissions. Approve to award sats rewards.
-          </p>
-
-          {loadingSubmissions ? (
-            <div className="text-center py-8 text-zinc-400">Loading submissions...</div>
-          ) : submissions.length === 0 ? (
-            <div className="text-center py-8 text-zinc-400">No submissions found.</div>
-          ) : (
-            <div className="space-y-4">
-              {submissions
-                .filter((s) => {
-                  if (submissionFilter === 'all') return true;
-                  return s.status === submissionFilter;
-                })
-                .map((submission) => {
-                  const assignment = submission.assignments;
-                  const student = submission.profiles;
-                  return (
-                    <div
-                      key={submission.id}
-                      className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
-                    >
-                      <div className="mb-3 flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-zinc-50">
-                            {assignment?.title || 'Untitled Assignment'}
-                          </h3>
-                          <p className="text-xs text-zinc-400 mt-1">
-                            Chapter {assignment?.chapter_number || 'N/A'} • {student?.name || student?.email || 'Unknown Student'}
-                          </p>
-                          {assignment?.reward_sats && (
-                            <p className="text-xs text-cyan-400 mt-1">
-                              Reward: {assignment.reward_sats} sats
-                            </p>
-                          )}
-                        </div>
-                        <span
-                          className={`rounded-full border px-2 py-1 text-xs ${
-                            submission.status === 'graded'
-                              ? submission.is_correct
-                                ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                                : 'text-red-400 bg-red-500/10 border-red-500/30'
-                              : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
-                          }`}
-                        >
-                          {submission.status === 'graded'
-                            ? submission.is_correct
-                              ? 'Approved'
-                              : 'Rejected'
-                            : 'Pending Review'}
-                        </span>
-                      </div>
-
-                      {assignment?.question && (
-                        <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                          <p className="text-xs font-medium text-zinc-300 mb-1">Question:</p>
-                          <p className="text-sm text-zinc-200">{assignment.question}</p>
-                        </div>
-                      )}
-
-                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                        <p className="text-xs font-medium text-zinc-300 mb-1">Student Answer:</p>
-                        <p className="text-sm text-zinc-200 whitespace-pre-wrap">{submission.answer}</p>
-                      </div>
-
-                      {submission.feedback && (
-                        <div className="mb-3 rounded bg-blue-500/10 border border-blue-500/30 p-3">
-                          <p className="text-xs font-medium text-blue-300 mb-1">Feedback:</p>
-                          <p className="text-sm text-blue-200">{submission.feedback}</p>
-                        </div>
-                      )}
-
-                      <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                        <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
-                        {submission.graded_at && (
-                          <span>• Graded: {new Date(submission.graded_at).toLocaleString()}</span>
-                        )}
-                      </div>
-
-                      {submission.status === 'submitted' && (
-                        <div className="mt-4 space-y-2">
-                          <textarea
-                            placeholder="Optional feedback for student..."
-                            value={gradingFeedback[submission.id] || ''}
-                            onChange={(e) =>
-                              setGradingFeedback((prev) => ({
-                                ...prev,
-                                [submission.id]: e.target.value,
-                              }))
-                            }
-                            className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                            rows={2}
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleGradeSubmission(submission.id, true)}
-                              disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                            >
-                              {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleGradeSubmission(submission.id, false)}
-                              disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                            >
-                              {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </div>
-
-        {/* Blog Submissions Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
-            <div className="flex gap-2">
-              {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => {
-                    setBlogFilter(f);
-                    setTimeout(() => fetchBlogSubmissions(), 0);
-                  }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                    blogFilter === f
-                      ? 'bg-purple-400 text-black'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)} (
-                  {blogSubmissions.filter((s) => {
-                    if (f === 'all') return true;
-                    return s.status === f;
-                  }).length})
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className="text-sm text-zinc-400 mb-6">
-            Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
-          </p>
-
-          {loadingBlogSubmissions ? (
-            <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
-          ) : blogSubmissions.filter((s) => {
-              if (blogFilter === 'all') return true;
-              return s.status === blogFilter;
-            }).length === 0 ? (
-            <div className="text-center py-8 text-zinc-400">No blog submissions found.</div>
-          ) : (
-            <div className="space-y-4">
-              {blogSubmissions
-                .filter((s) => {
-                  if (blogFilter === 'all') return true;
-                  return s.status === blogFilter;
-                })
-                .map((submission) => (
-                  <div
-                    key={submission.id}
-                    className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
-                  >
-                    <div className="mb-3 flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-zinc-50">
-                          {submission.title}
-                        </h3>
-                        <p className="text-xs text-zinc-400 mt-1">
-                          {submission.author_name} • {submission.author_email}
-                          {submission.cohort && ` • ${submission.cohort}`}
-                        </p>
-                        <p className="text-xs text-purple-400 mt-1">
-                          Category: {submission.category}
-                        </p>
-                      </div>
-                      <span
-                        className={`rounded-full border px-2 py-1 text-xs ${
-                          submission.status === 'approved'
-                            ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                            : submission.status === 'rejected'
-                            ? 'text-red-400 bg-red-500/10 border-red-500/30'
-                            : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
-                        }`}
-                      >
-                        {submission.status === 'approved'
-                          ? 'Approved'
-                          : submission.status === 'rejected'
-                          ? 'Rejected'
-                          : 'Pending Review'}
-                      </span>
-                    </div>
-
-                    <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                      <p className="text-xs font-medium text-zinc-300 mb-1">Content Preview:</p>
-                      <p className="text-sm text-zinc-200 line-clamp-3">
-                        {submission.content.substring(0, 300)}...
-                      </p>
-                    </div>
-
-                    {expandedBlogId === submission.id && (
-                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                        <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
-                        <p className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                          {submission.content}
-                        </p>
-                      </div>
-                    )}
-
-                    {submission.rejection_reason && (
-                      <div className="mb-3 rounded bg-red-500/10 border border-red-500/30 p-3">
-                        <p className="text-xs font-medium text-red-300 mb-1">Rejection Reason:</p>
-                        <p className="text-sm text-red-200">{submission.rejection_reason}</p>
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                      <span>Submitted: {new Date(submission.created_at).toLocaleString()}</span>
-                      {submission.reviewed_at && (
-                        <span>• Reviewed: {new Date(submission.reviewed_at).toLocaleString()}</span>
-                      )}
-                    </div>
-
-                    {submission.status === 'pending' && (
-                      <div className="mt-4 space-y-2">
-                        <div className="flex gap-2">
+                {/* Assignment Submissions Section */}
+                {(activeSubMenu === 'assignments-submissions' || activeTab === 'assignments') && (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="text-xl font-semibold text-zinc-50">Assignment Submissions</h2>
+                      <div className="flex gap-2">
+                        {(['all', 'submitted', 'graded'] as const).map((f) => (
                           <button
-                            type="button"
-                            onClick={() => setExpandedBlogId(expandedBlogId === submission.id ? null : submission.id)}
-                            className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30 cursor-pointer"
-                          >
-                            {expandedBlogId === submission.id ? 'Hide Full Content' : 'View Full Content'}
-                          </button>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleApproveBlog(submission.id)}
-                            disabled={processingBlog === submission.id}
-                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                          >
-                            {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
-                          </button>
-                          <button
+                            key={f}
                             type="button"
                             onClick={() => {
-                              const reason = prompt('Rejection reason (optional):');
-                              if (reason !== null) {
-                                handleRejectBlog(submission.id, reason || undefined);
-                              }
+                              setSubmissionFilter(f);
+                              setTimeout(() => fetchSubmissions(), 0);
                             }}
-                            disabled={processingBlog === submission.id}
-                            className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                              submissionFilter === f
+                                ? 'bg-cyan-400 text-black'
+                                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                            }`}
                           >
-                            {processingBlog === submission.id ? 'Processing...' : '✗ Reject'}
+                            {f.charAt(0).toUpperCase() + f.slice(1)} (
+                            {submissions.filter((s) => {
+                              if (f === 'all') return true;
+                              return s.status === f;
+                            }).length})
                           </button>
-                        </div>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-zinc-400 mb-6">
+                      Review and grade student assignment submissions. Approve to award sats rewards.
+                    </p>
+
+                    {loadingSubmissions ? (
+                      <div className="text-center py-8 text-zinc-400">Loading submissions...</div>
+                    ) : submissions.length === 0 ? (
+                      <div className="text-center py-8 text-zinc-400">No submissions found.</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {submissions
+                          .filter((s) => {
+                            if (submissionFilter === 'all') return true;
+                            return s.status === submissionFilter;
+                          })
+                          .map((submission) => {
+                            const assignment = submission.assignments;
+                            const student = submission.profiles;
+                            return (
+                              <div
+                                key={submission.id}
+                                className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                              >
+                                <div className="mb-3 flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <h3 className="text-sm font-semibold text-zinc-50">
+                                      {assignment?.title || 'Untitled Assignment'}
+                                    </h3>
+                                    <p className="text-xs text-zinc-400 mt-1">
+                                      Chapter {assignment?.chapter_number || 'N/A'} • {student?.name || student?.email || 'Unknown Student'}
+                                    </p>
+                                    {assignment?.reward_sats && (
+                                      <p className="text-xs text-cyan-400 mt-1">
+                                        Reward: {assignment.reward_sats} sats
+                                      </p>
+                                    )}
+                                  </div>
+                                  <span
+                                    className={`rounded-full border px-2 py-1 text-xs ${
+                                      submission.status === 'graded'
+                                        ? submission.is_correct
+                                          ? 'text-green-400 bg-green-500/10 border-green-500/30'
+                                          : 'text-red-400 bg-red-500/10 border-red-500/30'
+                                        : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                                    }`}
+                                  >
+                                    {submission.status === 'graded'
+                                      ? submission.is_correct
+                                        ? 'Approved'
+                                        : 'Rejected'
+                                      : 'Pending Review'}
+                                  </span>
+                                </div>
+
+                                {assignment?.question && (
+                                  <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                                    <p className="text-xs font-medium text-zinc-300 mb-1">Question:</p>
+                                    <p className="text-sm text-zinc-200">{assignment.question}</p>
+                                  </div>
+                                )}
+
+                                <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                                  <p className="text-xs font-medium text-zinc-300 mb-1">Student Answer:</p>
+                                  <p className="text-sm text-zinc-200 whitespace-pre-wrap">{submission.answer}</p>
+                                </div>
+
+                                {submission.feedback && (
+                                  <div className="mb-3 rounded bg-blue-500/10 border border-blue-500/30 p-3">
+                                    <p className="text-xs font-medium text-blue-300 mb-1">Feedback:</p>
+                                    <p className="text-sm text-blue-200">{submission.feedback}</p>
+                                  </div>
+                                )}
+
+                                <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+                                  <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
+                                  {submission.graded_at && (
+                                    <span>• Graded: {new Date(submission.graded_at).toLocaleString()}</span>
+                                  )}
+                                </div>
+
+                                {submission.status === 'submitted' && (
+                                  <div className="mt-4 space-y-2">
+                                    <textarea
+                                      placeholder="Optional feedback for student..."
+                                      value={gradingFeedback[submission.id] || ''}
+                                      onChange={(e) =>
+                                        setGradingFeedback((prev) => ({
+                                          ...prev,
+                                          [submission.id]: e.target.value,
+                                        }))
+                                      }
+                                      className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                      rows={2}
+                                    />
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleGradeSubmission(submission.id, true)}
+                                        disabled={gradingSubmission === submission.id}
+                                        className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                      >
+                                        {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleGradeSubmission(submission.id, false)}
+                                        disabled={gradingSubmission === submission.id}
+                                        className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                      >
+                                        {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                       </div>
                     )}
                   </div>
-                ))}
-            </div>
-          )}
-        </div>
+                )}
 
-        {/* Exam Management Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <h2 className="text-xl font-semibold text-zinc-50 mb-4">Final Exam Management</h2>
-          <p className="text-sm text-zinc-400 mb-6">
-            Grant or revoke exam access for students who have completed Chapter 21.
-          </p>
+                {/* Blog Submissions Section */}
+                {(activeSubMenu === 'blog-submissions' || activeTab === 'overview') && (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
+                      <div className="flex gap-2">
+                        {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => {
+                              setBlogFilter(f);
+                              setTimeout(() => fetchBlogSubmissions(), 0);
+                            }}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                              blogFilter === f
+                                ? 'bg-purple-400 text-black'
+                                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                            }`}
+                          >
+                            {f.charAt(0).toUpperCase() + f.slice(1)} (
+                            {blogSubmissions.filter((s) => {
+                              if (f === 'all') return true;
+                              return s.status === f;
+                            }).length})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-zinc-400 mb-6">
+                      Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
+                    </p>
 
-          {loadingExamAccess ? (
-            <div className="text-center py-8 text-zinc-400">Loading exam access list...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-zinc-900 text-left text-zinc-300">
-                  <tr>
-                    <th className="px-3 py-2">Name</th>
-                    <th className="px-3 py-2">Email</th>
-                    <th className="px-3 py-2">Cohort</th>
-                    <th className="px-3 py-2">Chapter 21</th>
-                    <th className="px-3 py-2">Access</th>
-                    <th className="px-3 py-2">Exam Score</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {examAccessList
-                    .filter((student) => student.chapter21Completed)
+                    {loadingBlogSubmissions ? (
+                      <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
+                    ) : blogSubmissions.filter((s) => {
+                        if (blogFilter === 'all') return true;
+                        return s.status === blogFilter;
+                      }).length === 0 ? (
+                      <div className="text-center py-8 text-zinc-400">No blog submissions found.</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {blogSubmissions
+                          .filter((s) => {
+                            if (blogFilter === 'all') return true;
+                            return s.status === blogFilter;
+                          })
+                          .map((submission) => (
+                            <div
+                              key={submission.id}
+                              className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                            >
+                              <div className="mb-3 flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h3 className="text-sm font-semibold text-zinc-50">
+                                    {submission.title}
+                                  </h3>
+                                  <p className="text-xs text-zinc-400 mt-1">
+                                    {submission.author_name} • {submission.author_email}
+                                    {submission.cohort && ` • ${submission.cohort}`}
+                                  </p>
+                                  <p className="text-xs text-purple-400 mt-1">
+                                    Category: {submission.category}
+                                  </p>
+                                </div>
+                                <span
+                                  className={`rounded-full border px-2 py-1 text-xs ${
+                                    submission.status === 'approved'
+                                      ? 'text-green-400 bg-green-500/10 border-green-500/30'
+                                      : submission.status === 'rejected'
+                                      ? 'text-red-400 bg-red-500/10 border-red-500/30'
+                                      : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                                  }`}
+                                >
+                                  {submission.status === 'approved'
+                                    ? 'Approved'
+                                    : submission.status === 'rejected'
+                                    ? 'Rejected'
+                                    : 'Pending Review'}
+                                </span>
+                              </div>
+
+                              <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                                <p className="text-xs font-medium text-zinc-300 mb-1">Content Preview:</p>
+                                <p className="text-sm text-zinc-200 line-clamp-3">
+                                  {submission.content.substring(0, 300)}...
+                                </p>
+                              </div>
+
+                              {expandedBlogId === submission.id && (
+                                <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                                  <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
+                                  <p className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
+                                    {submission.content}
+                                  </p>
+                                </div>
+                              )}
+
+                              {submission.rejection_reason && (
+                                <div className="mb-3 rounded bg-red-500/10 border border-red-500/30 p-3">
+                                  <p className="text-xs font-medium text-red-300 mb-1">Rejection Reason:</p>
+                                  <p className="text-sm text-red-200">{submission.rejection_reason}</p>
+                                </div>
+                              )}
+
+                              <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+                                <span>Submitted: {new Date(submission.created_at).toLocaleString()}</span>
+                                {submission.reviewed_at && (
+                                  <span>• Reviewed: {new Date(submission.reviewed_at).toLocaleString()}</span>
+                                )}
+                              </div>
+
+                              {submission.status === 'pending' && (
+                                <div className="mt-4 space-y-2">
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedBlogId(expandedBlogId === submission.id ? null : submission.id)}
+                                      className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30 cursor-pointer"
+                                    >
+                                      {expandedBlogId === submission.id ? 'Hide Full Content' : 'View Full Content'}
+                                    </button>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApproveBlog(submission.id)}
+                                      disabled={processingBlog === submission.id}
+                                      className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                      {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const reason = prompt('Rejection reason (optional):');
+                                        if (reason !== null) {
+                                          handleRejectBlog(submission.id, reason || undefined);
+                                        }
+                                      }}
+                                      disabled={processingBlog === submission.id}
+                                      className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                      {processingBlog === submission.id ? 'Processing...' : '✗ Reject'}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Assessments Section - Final Exam Only */}
+            {(activeSubMenu === 'final-exam-submissions' || activeTab === 'exam') && (
+              <>
+                {/* Exam Management Section */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                  <h2 className="text-xl font-semibold text-zinc-50 mb-4">Final Exam Management</h2>
+                  <p className="text-sm text-zinc-400 mb-6">
+                    Grant or revoke exam access for students who have completed Chapter 21.
+                  </p>
+
+                  {loadingExamAccess ? (
+                    <div className="text-center py-8 text-zinc-400">Loading exam access list...</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-zinc-900 text-left text-zinc-300">
+                          <tr>
+                            <th className="px-3 py-2">Name</th>
+                            <th className="px-3 py-2">Email</th>
+                            <th className="px-3 py-2">Cohort</th>
+                            <th className="px-3 py-2">Chapter 21</th>
+                            <th className="px-3 py-2">Access</th>
+                            <th className="px-3 py-2">Exam Score</th>
+                            <th className="px-3 py-2">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {examAccessList
+                            .filter((student) => student.chapter21Completed)
                     .map((student) => (
                       <tr key={student.id} className="border-b border-zinc-800">
                         <td className="px-3 py-2 text-zinc-50">{student.name || '—'}</td>
@@ -2531,42 +2897,46 @@ export default function AdminDashboardPage() {
                           )}
                         </td>
                       </tr>
-                    ))}
-                </tbody>
-              </table>
-              {examAccessList.filter((s) => s.chapter21Completed).length === 0 && (
-                <p className="p-3 text-sm text-zinc-400 text-center">
-                  No students have completed Chapter 21 yet.
-                </p>
-              )}
+                            ))}
+                        </tbody>
+                      </table>
+                      {examAccessList.filter((s) => s.chapter21Completed).length === 0 && (
+                        <p className="p-3 text-sm text-zinc-400 text-center">
+                          No students have completed Chapter 21 yet.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
             </div>
-          )}
-        </div>
+          </div>
+        </main>
+
+        {/* Session Expired Modal - only show when session expired and admin is logged out */}
+        {showSessionExpired && !admin && (
+          <SessionExpiredModal
+            isOpen={showSessionExpired && !admin}
+            onClose={async () => {
+              // Logout and show login form
+              await handleLogout();
+              setShowSessionExpired(false);
+            }}
+            userType="admin"
+          />
+        )}
+
+        {/* Student Progress Modal */}
+        {selectedStudent && (
+          <StudentProgressModal
+            studentId={selectedStudent.id}
+            studentEmail={selectedStudent.email}
+            studentName={selectedStudent.name}
+            onClose={() => setSelectedStudent(null)}
+          />
+        )}
       </div>
-
-      {/* Session Expired Modal - only show when session expired and admin is logged out */}
-      {showSessionExpired && !admin && (
-      <SessionExpiredModal
-          isOpen={showSessionExpired && !admin}
-          onClose={async () => {
-            // Logout and show login form
-            await handleLogout();
-          setShowSessionExpired(false);
-        }}
-        userType="admin"
-      />
-      )}
-
-      {/* Student Progress Modal */}
-      {selectedStudent && (
-        <StudentProgressModal
-          studentId={selectedStudent.id}
-          studentEmail={selectedStudent.email}
-          studentName={selectedStudent.name}
-          onClose={() => setSelectedStudent(null)}
-        />
-      )}
-    </div>
-  );
-}
+    );
+  }
 
