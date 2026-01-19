@@ -336,7 +336,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
   };
 
   const handleEventUpdate = () => {
-    // Refresh events after update
+    // Refresh events and sessions after update
     const fetchEventsRefresh = async () => {
       try {
         setLoading(true);
@@ -373,6 +373,113 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
               description: event.description || '',
               cohortId: event.cohortId || event.cohort_id || null,
             }));
+        }
+        
+        // Fetch cohort sessions (same logic as main fetchEvents)
+        try {
+          let sessionsUrl: string | null = null;
+          
+          if (showCohorts) {
+            sessionsUrl = '/api/sessions?admin=true';
+          } else if (cohortId) {
+            sessionsUrl = `/api/sessions?cohortId=${encodeURIComponent(cohortId)}`;
+          } else if (email) {
+            sessionsUrl = `/api/sessions?email=${encodeURIComponent(email)}`;
+          }
+
+          if (sessionsUrl) {
+            const sessionsResponse = await fetch(sessionsUrl);
+            
+            if (sessionsResponse.ok) {
+              const sessionsData = await sessionsResponse.json();
+              
+              if (sessionsData.sessions && Array.isArray(sessionsData.sessions)) {
+                const newSessionsMap = new Map<string, any>();
+                
+                const sessionEvents: CalendarEvent[] = sessionsData.sessions
+                  .filter((session: any) => {
+                    if (!session.session_date) return false;
+                    const sessionDate = new Date(session.session_date);
+                    return !isNaN(sessionDate.getTime());
+                  })
+                  .map((session: any) => {
+                    const cohortName = session.cohorts?.name || 'Cohort';
+                    const sessionDate = new Date(session.session_date);
+                    sessionDate.setHours(0, 0, 0, 0);
+                    
+                    const sessionEventId = `session-${session.id}`;
+                    newSessionsMap.set(sessionEventId, session);
+                    
+                    return {
+                      id: sessionEventId,
+                      title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
+                      date: sessionDate,
+                      type: 'live-class' as const,
+                      time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
+                      link: session.link || '#',
+                      description: session.topic || `Cohort session ${session.session_number}`,
+                      duration: session.duration_minutes || 60,
+                    };
+                  });
+                
+                setSessionsMap(newSessionsMap);
+                transformedEvents = [...transformedEvents, ...sessionEvents];
+              }
+            }
+          }
+        } catch (sessionsErr: any) {
+          console.error('Error fetching sessions on refresh:', sessionsErr);
+          // Continue without session events
+        }
+
+        // If showCohorts is true, fetch and add cohort dates
+        if (showCohorts) {
+          try {
+            const cohortsResponse = await fetch('/api/cohorts');
+            if (cohortsResponse.ok) {
+              const cohortsData = await cohortsResponse.json();
+              if (cohortsData.cohorts && Array.isArray(cohortsData.cohorts)) {
+                const cohortEvents: CalendarEvent[] = [];
+                
+                cohortsData.cohorts.forEach((cohort: any) => {
+                  if (cohort.startDate) {
+                    const startDate = new Date(cohort.startDate);
+                    if (!isNaN(startDate.getTime())) {
+                      cohortEvents.push({
+                        id: `cohort-start-${cohort.id}`,
+                        title: `${cohort.name} - Start`,
+                        date: startDate,
+                        type: 'cohort',
+                        time: '',
+                        link: '#',
+                        description: `Cohort ${cohort.name} starts (${cohort.level || ''} - ${cohort.status || ''})`,
+                      });
+                    }
+                  }
+                  
+                  if (cohort.endDate) {
+                    const endDate = new Date(cohort.endDate);
+                    if (!isNaN(endDate.getTime())) {
+                      cohortEvents.push({
+                        id: `cohort-end-${cohort.id}`,
+                        title: `${cohort.name} - End`,
+                        date: endDate,
+                        type: 'cohort',
+                        time: '',
+                        link: '#',
+                        description: `Cohort ${cohort.name} ends`,
+                      });
+                    }
+                  }
+                });
+                
+                transformedEvents = [...transformedEvents, ...cohortEvents];
+              }
+            }
+          } catch (cohortsErr) {
+            console.warn('Error fetching cohorts on refresh:', cohortsErr);
+            // Continue without cohort events
+          }
         }
         
         setEvents(transformedEvents);

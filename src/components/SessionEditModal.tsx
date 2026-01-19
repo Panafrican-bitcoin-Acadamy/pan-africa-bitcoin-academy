@@ -69,11 +69,26 @@ export function SessionEditModal({ isOpen, onClose, session, onUpdate }: Session
       // The session.id is already the actual UUID from the database
       const sessionId = session.id;
 
+      // Validate session ID
+      if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
+        setError('Invalid session ID');
+        setLoading(false);
+        return;
+      }
+
+      // Validate duration
+      const duration = parseInt(formData.duration_minutes);
+      if (isNaN(duration) || duration < 1 || duration > 600) {
+        setError('Duration must be between 1 and 600 minutes');
+        setLoading(false);
+        return;
+      }
+
       const updateData: any = {
         session_date: formData.session_date,
         topic: formData.topic.trim() || null,
         instructor: formData.instructor.trim() || null,
-        duration_minutes: parseInt(formData.duration_minutes),
+        duration_minutes: duration,
         link: formData.link.trim() || null,
         recording_url: formData.recording_url.trim() || null,
         status: formData.status,
@@ -82,12 +97,23 @@ export function SessionEditModal({ isOpen, onClose, session, onUpdate }: Session
       const response = await fetch(`/api/sessions/${sessionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies for admin authentication
         body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update session');
+        let errorMessage = 'Failed to update session';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          if (errorData.details && process.env.NODE_ENV === 'development') {
+            errorMessage += `: ${errorData.details}`;
+          }
+        } catch (parseError) {
+          // If response is not JSON, use status text
+          errorMessage = `${errorMessage} (${response.status}: ${response.statusText})`;
+        }
+        throw new Error(errorMessage);
       }
 
       onUpdate();
