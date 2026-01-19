@@ -91,8 +91,24 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate dates for each session
-    // Start from startDate, skip Sundays, 1 day apart
-    const sessionUpdates: Array<{ id: string; session_date: string }> = [];
+    // Requirements:
+    // - Session 1: Jan 19, 2026 (Monday) - startDate
+    // - Session 4: Jan 26, 2026 (Monday) - MUST BE THIS DATE
+    // - Session 6: Jan 30, 2026 (Friday) - MUST BE THIS DATE  
+    // - Session 8: Feb 4, 2026 (Wednesday) - MUST BE THIS DATE
+    // - Sundays must be empty (skipped)
+    // - Fill in other sessions with 1 day spacing, skipping Sundays
+    
+    const sessionUpdates: Array<{ id: string; session_date: string; session_number: number }> = [];
+    
+    // Fixed dates for specific sessions (must match exactly)
+    const fixedDates: Record<number, string> = {
+      4: '2026-01-26',
+      6: '2026-01-30',
+      8: '2026-02-04',
+    };
+
+    // Start from Session 1 date
     let currentDate = new Date(startDateObj);
     
     // If start date is Sunday, move to Monday
@@ -101,19 +117,42 @@ export async function POST(req: NextRequest) {
     }
 
     for (const session of sessions) {
-      // Skip Sundays
-      while (currentDate.getDay() === 0) {
+      let dateString: string;
+      
+      // Check if this session has a fixed date requirement
+      if (fixedDates[session.session_number]) {
+        // Use the exact fixed date
+        dateString = fixedDates[session.session_number];
+        // Set currentDate to the day after this fixed date for next iteration
+        currentDate = new Date(dateString);
+        currentDate.setDate(currentDate.getDate() + 1);
+      } else {
+        // For sessions without fixed dates, use 1 day spacing, skipping Sundays
+        // Skip Sundays
+        while (currentDate.getDay() === 0) {
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        dateString = currentDate.toISOString().split('T')[0];
+        // Move to next day for next session
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      const dateString = currentDate.toISOString().split('T')[0];
       sessionUpdates.push({
         id: session.id,
         session_date: dateString,
+        session_number: session.session_number,
       });
-
-      // Move to next day for next session
-      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Log the schedule for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Session rearrangement schedule:');
+      sessionUpdates.forEach(update => {
+        const date = new Date(update.session_date);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        console.log(`  Session ${update.session_number}: ${update.session_date} (${dayName})`);
+      });
     }
 
     // Update all sessions in a transaction-like manner
