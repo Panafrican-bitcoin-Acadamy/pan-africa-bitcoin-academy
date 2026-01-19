@@ -26,6 +26,7 @@ interface SessionEditModalProps {
 export function SessionEditModal({ isOpen, onClose, session, onUpdate }: SessionEditModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updateMode, setUpdateMode] = useState<'single' | 'shift'>('single'); // 'single' = update only this session, 'shift' = shift all subsequent sessions
   const [formData, setFormData] = useState({
     session_date: '',
     topic: '',
@@ -54,6 +55,7 @@ export function SessionEditModal({ isOpen, onClose, session, onUpdate }: Session
         recording_url: session.recording_url || '',
         status: session.status || 'scheduled',
       });
+      setUpdateMode('single'); // Reset to default when modal opens
       setError(null);
     }
   }, [session, isOpen]);
@@ -92,6 +94,7 @@ export function SessionEditModal({ isOpen, onClose, session, onUpdate }: Session
         link: formData.link.trim() || null,
         recording_url: formData.recording_url.trim() || null,
         status: formData.status,
+        update_mode: updateMode, // Include update mode: 'single' or 'shift'
       };
 
       const response = await fetch(`/api/sessions/${sessionId}`, {
@@ -176,6 +179,55 @@ export function SessionEditModal({ isOpen, onClose, session, onUpdate }: Session
                 onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
               />
             </div>
+
+            {/* Update Mode Selection - Only show if date is being changed */}
+            {formData.session_date && session && (() => {
+              const sessionDate = new Date(session.session_date);
+              const year = sessionDate.getFullYear();
+              const month = String(sessionDate.getMonth() + 1).padStart(2, '0');
+              const day = String(sessionDate.getDate()).padStart(2, '0');
+              const originalDate = `${year}-${month}-${day}`;
+              return formData.session_date !== originalDate;
+            })() && (
+              <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3">
+                <label className="mb-2 block text-sm font-medium text-cyan-300">
+                  Update Mode
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="updateMode"
+                      value="single"
+                      checked={updateMode === 'single'}
+                      onChange={(e) => setUpdateMode(e.target.value as 'single' | 'shift')}
+                      className="text-cyan-500 focus:ring-cyan-500"
+                    />
+                    <span className="text-sm text-zinc-300">
+                      Update only this session
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="updateMode"
+                      value="shift"
+                      checked={updateMode === 'shift'}
+                      onChange={(e) => setUpdateMode(e.target.value as 'single' | 'shift')}
+                      className="text-cyan-500 focus:ring-cyan-500"
+                    />
+                    <span className="text-sm text-zinc-300">
+                      Update this session and shift all subsequent sessions by the same number of days
+                    </span>
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-zinc-400">
+                  {updateMode === 'shift' 
+                    ? 'All sessions after this one will be moved forward/backward by the same number of days.'
+                    : 'Only this session will be updated. Other sessions remain unchanged.'}
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="mb-1 block text-sm text-zinc-300">Topic (Optional)</label>

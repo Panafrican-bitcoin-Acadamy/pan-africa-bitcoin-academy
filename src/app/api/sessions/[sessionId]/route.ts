@@ -20,6 +20,9 @@ export async function PUT(
     const { sessionId } = await params;
     const body = await req.json();
 
+    // Extract update mode (default to 'single' if not provided)
+    const updateMode = body.update_mode || 'single'; // 'single' or 'shift'
+
     // Extract allowed fields for update
     const updateData: any = {};
     
@@ -138,7 +141,15 @@ export async function PUT(
 
     // Log update data for debugging (in development)
     if (process.env.NODE_ENV === 'development') {
-      console.log('Updating session with data:', updateData);
+      console.log('Updating session with data:', updateData, 'Mode:', updateMode);
+    }
+
+    // If updating session_date and mode is 'shift', calculate date difference
+    let dateDifference = 0;
+    if (updateData.session_date && updateMode === 'shift') {
+      const oldDate = new Date(existingSession.session_date);
+      const newDate = new Date(updateData.session_date);
+      dateDifference = Math.round((newDate.getTime() - oldDate.getTime()) / (1000 * 60 * 60 * 24)); // Difference in days
     }
 
     // Update the session
@@ -173,6 +184,53 @@ export async function PUT(
         { error: 'Failed to update session', details: updateError.message },
         { status: 500 }
       );
+    }
+
+    // If shift mode and date was changed, update all subsequent sessions
+    if (updateMode === 'shift' && dateDifference !== 0 && updateData.session_date) {
+      try {
+        // Get all subsequent sessions (higher session_number in same cohort)
+        const { data: subsequentSessions, error: fetchSubsequentError } = await supabaseAdmin
+          .from('cohort_sessions')
+          .select('id, session_number, session_date')
+          .eq('cohort_id', existingSession.cohort_id)
+          .gt('session_number', existingSession.session_number)
+          .order('session_number', { ascending: true });
+
+        if (fetchSubsequentError) {
+          console.error('Error fetching subsequent sessions:', fetchSubsequentError);
+          // Don't fail the update, just log the error
+        } else if (subsequentSessions && subsequentSessions.length > 0) {
+          // Update each subsequent session
+          const updates = subsequentSessions.map((session: any) => {
+            const currentDate = new Date(session.session_date);
+            const newDate = new Date(currentDate);
+            newDate.setDate(newDate.getDate() + dateDifference);
+            const newDateString = newDate.toISOString().split('T')[0];
+
+            return supabaseAdmin
+              .from('cohort_sessions')
+              .update({ session_date: newDateString })
+              .eq('id', session.id);
+          });
+
+          // Execute all updates
+          const updateResults = await Promise.allSettled(updates);
+          const failedUpdates = updateResults.filter((result) => result.status === 'rejected');
+          
+          if (failedUpdates.length > 0) {
+            console.error('Some subsequent sessions failed to update:', failedUpdates);
+            // Log but don't fail - the main session was updated successfully
+          }
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Shifted ${subsequentSessions.length} subsequent sessions by ${dateDifference} days`);
+          }
+        }
+      } catch (shiftError: any) {
+        console.error('Error shifting subsequent sessions:', shiftError);
+        // Don't fail the main update, just log the error
+      }
     }
 
     const res = NextResponse.json(
