@@ -838,7 +838,7 @@ export default function AdminDashboardPage() {
     const startDate = prompt(`Rearrange sessions for ${cohortName}?\n\nEnter start date for Session 1 (YYYY-MM-DD):\nDefault: 2026-01-19`, '2026-01-19');
     if (!startDate) return;
     
-    if (!confirm(`This will rearrange all sessions for ${cohortName} starting from ${startDate}.\nSessions will be spaced 1 day apart, skipping Sundays.\n\nContinue?`)) {
+    if (!confirm(`This will rearrange all sessions for ${cohortName} starting from ${startDate}.\n\nSchedule Pattern:\n- 3 working days per week: Monday, Wednesday, Friday\n- Sundays are always excluded\n- All sessions will be rescheduled (none removed)\n\nContinue?`)) {
       return;
     }
     
@@ -851,7 +851,18 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to rearrange sessions');
-      alert(`Sessions rearranged successfully! ${data.sessionsUpdated || 0} sessions updated.\nStart: ${data.startDate}\nEnd: ${data.endDate}`);
+      
+      // Show detailed schedule in alert
+      let scheduleText = `Sessions rearranged successfully!\n\n${data.sessionsUpdated || 0} sessions updated.\nStart: ${data.startDate}\nEnd: ${data.endDate}\n\nSchedule (first 15 sessions):\n`;
+      if (data.schedule && data.schedule.length > 0) {
+        data.schedule.slice(0, 15).forEach((s: any) => {
+          scheduleText += `Session ${s.session_number}: ${s.date} (${s.day})\n`;
+        });
+        if (data.schedule.length > 15) {
+          scheduleText += `... and ${data.schedule.length - 15} more sessions`;
+        }
+      }
+      alert(scheduleText);
       await fetchCohorts();
       await fetchOverview();
       // Refresh calendar if it's open
@@ -1495,7 +1506,22 @@ export default function AdminDashboardPage() {
 
           {/* Calendar - Events, Cohorts & Activities */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
-            <h2 className="text-lg font-semibold text-zinc-50 mb-2">Calendar</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-50">Calendar</h2>
+              <div className="flex items-center gap-3 text-xs text-zinc-400">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400"></span>
+                  Mon/Wed/Fri Only
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-400/50"></span>
+                  Sundays Excluded
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-400 mb-3">
+              Sessions follow a 3-day-per-week pattern (Monday, Wednesday, Friday). Sundays are never scheduled.
+            </p>
             <div className="rounded-lg">
               <Calendar cohortId={null} showCohorts={true} />
             </div>

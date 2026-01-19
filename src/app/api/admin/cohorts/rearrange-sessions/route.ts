@@ -92,21 +92,53 @@ export async function POST(req: NextRequest) {
 
     // Calculate dates for each session
     // Requirements:
-    // - Session 1: Jan 19, 2026 (Monday) - startDate
-    // - Session 4: Jan 26, 2026 (Monday) - MUST BE THIS DATE
-    // - Session 6: Jan 30, 2026 (Friday) - MUST BE THIS DATE  
-    // - Session 8: Feb 4, 2026 (Wednesday) - MUST BE THIS DATE
-    // - Sundays must be empty (skipped)
-    // - Fill in other sessions with 1 day spacing, skipping Sundays
+    // - Use only 3 working days per week: Monday, Wednesday, Friday
+    // - Sundays must never be used
+    // - Keep all sessions, only reschedule them
+    // - Start from Session 1 date (Jan 19, 2026)
+    // - Fixed dates: Session 4 = Jan 26, Session 6 = Jan 30, Session 8 = Feb 4
     
     const sessionUpdates: Array<{ id: string; session_date: string; session_number: number }> = [];
     
     // Fixed dates for specific sessions (must match exactly)
     const fixedDates: Record<number, string> = {
-      4: '2026-01-26',
-      6: '2026-01-30',
-      8: '2026-02-04',
+      4: '2026-01-26', // Monday
+      6: '2026-01-30', // Friday
+      8: '2026-02-04', // Wednesday
     };
+
+    // Define the 3-day pattern: Monday (1), Wednesday (3), Friday (5)
+    const workingDays = [1, 3, 5]; // 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+
+    // Helper function to get next working day in pattern
+    function getNextWorkingDay(current: Date, currentPatternIndex: number): { date: Date; patternIndex: number } {
+      // Move to next day in pattern: Mon -> Wed -> Fri -> Mon (next week)
+      const nextPatternIndex = (currentPatternIndex + 1) % 3;
+      const targetDay = workingDays[nextPatternIndex];
+      const currentDay = current.getDay();
+      
+      let nextDate = new Date(current);
+      
+      if (currentDay === targetDay) {
+        // Already on target day, move to next week's same day
+        nextDate.setDate(nextDate.getDate() + 7);
+      } else {
+        // Calculate days to next occurrence of target day
+        let days = (targetDay - currentDay + 7) % 7;
+        if (days === 0) {
+          days = 7; // Next week
+        }
+        nextDate.setDate(nextDate.getDate() + days);
+      }
+      
+      // Ensure we never land on Sunday
+      if (nextDate.getDay() === 0) {
+        nextDate.setDate(nextDate.getDate() + 1); // Move to Monday
+        return { date: nextDate, patternIndex: 0 };
+      }
+      
+      return { date: nextDate, patternIndex: nextPatternIndex };
+    }
 
     // Start from Session 1 date
     let currentDate = new Date(startDateObj);
@@ -115,6 +147,18 @@ export async function POST(req: NextRequest) {
     if (currentDate.getDay() === 0) {
       currentDate.setDate(currentDate.getDate() + 1);
     }
+    
+    // If start date is not a working day (Mon/Wed/Fri), move to the next working day
+    while (!workingDays.includes(currentDate.getDay())) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      // Skip Sunday if we hit it
+      if (currentDate.getDay() === 0) {
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+
+    // Track which day in the pattern we're on (0=Mon, 1=Wed, 2=Fri)
+    let patternIndex = workingDays.indexOf(currentDate.getDay());
 
     for (const session of sessions) {
       let dateString: string;
@@ -123,19 +167,35 @@ export async function POST(req: NextRequest) {
       if (fixedDates[session.session_number]) {
         // Use the exact fixed date
         dateString = fixedDates[session.session_number];
-        // Set currentDate to the day after this fixed date for next iteration
+        // Update currentDate and patternIndex to continue from this fixed date
         currentDate = new Date(dateString);
-        currentDate.setDate(currentDate.getDate() + 1);
+        patternIndex = workingDays.indexOf(currentDate.getDay());
+        // Move to next working day in pattern for next session
+        const next = getNextWorkingDay(currentDate, patternIndex);
+        currentDate = next.date;
+        patternIndex = next.patternIndex;
       } else {
-        // For sessions without fixed dates, use 1 day spacing, skipping Sundays
-        // Skip Sundays
-        while (currentDate.getDay() === 0) {
-          currentDate.setDate(currentDate.getDate() + 1);
+        // For sessions without fixed dates, use the 3-day pattern (Mon, Wed, Fri)
+        // Ensure we're on a working day
+        while (currentDate.getDay() === 0 || !workingDays.includes(currentDate.getDay())) {
+          if (currentDate.getDay() === 0) {
+            // Skip Sunday, move to Monday
+            currentDate.setDate(currentDate.getDate() + 1);
+            patternIndex = 0; // Reset to Monday
+          } else {
+            // Not a working day, move to next working day in pattern
+            const next = getNextWorkingDay(currentDate, patternIndex);
+            currentDate = next.date;
+            patternIndex = next.patternIndex;
+          }
         }
         
         dateString = currentDate.toISOString().split('T')[0];
-        // Move to next day for next session
-        currentDate.setDate(currentDate.getDate() + 1);
+        
+        // Move to next working day in pattern for next session
+        const next = getNextWorkingDay(currentDate, patternIndex);
+        currentDate = next.date;
+        patternIndex = next.patternIndex;
       }
 
       sessionUpdates.push({
@@ -147,10 +207,10 @@ export async function POST(req: NextRequest) {
     
     // Log the schedule for debugging
     if (process.env.NODE_ENV === 'development') {
-      console.log('Session rearrangement schedule:');
+      console.log('Session rearrangement schedule (3 days/week: Mon, Wed, Fri):');
       sessionUpdates.forEach(update => {
         const date = new Date(update.session_date);
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
         console.log(`  Session ${update.session_number}: ${update.session_date} (${dayName})`);
       });
     }
@@ -200,6 +260,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Prepare schedule details for response
+    const scheduleDetails = sessionUpdates.map(update => {
+      const date = new Date(update.session_date);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      return {
+        session_number: update.session_number,
+        date: update.session_date,
+        day: dayName,
+      };
+    });
+
     return NextResponse.json(
       {
         success: true,
@@ -207,6 +278,7 @@ export async function POST(req: NextRequest) {
         sessionsUpdated: sessionUpdates.length,
         startDate: startDate,
         endDate: sessionUpdates[sessionUpdates.length - 1]?.session_date,
+        schedule: scheduleDetails, // Include full schedule in response
       },
       { status: 200 }
     );
