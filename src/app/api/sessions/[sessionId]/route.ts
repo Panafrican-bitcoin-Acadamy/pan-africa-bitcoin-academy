@@ -134,8 +134,10 @@ export async function PUT(
 
       // Only check for conflicts if the date is actually changing
       if (normalizedDate !== existingDate) {
-        // In shift mode, we need to check conflicts differently
-        // We should exclude subsequent sessions that will be shifted
+        // In shift mode: Only check conflicts with sessions that WON'T be shifted
+        // (sessions with session_number <= current session, since only subsequent sessions will shift)
+        // In single mode: Check all sessions for conflicts
+        
         let conflictQuery = supabaseAdmin
           .from('cohort_sessions')
           .select('id, session_number')
@@ -143,14 +145,13 @@ export async function PUT(
           .eq('session_date', normalizedDate)
           .neq('id', sessionId); // Exclude the current session
 
-        // If in shift mode, only check conflicts with sessions that won't be shifted
-        // (i.e., sessions with session_number <= current session, since only subsequent sessions will shift)
-        // In single mode, check all sessions
         if (updateMode === 'shift') {
-          // Only check sessions with session_number <= current (these won't be shifted)
+          // In shift mode: Only block if conflict is with a session that won't be shifted
+          // (i.e., session_number <= current session_number)
+          // Sessions with higher session_number will be shifted, so conflicts with them are OK
           conflictQuery = conflictQuery.lte('session_number', existingSession.session_number);
         }
-        // In single mode, check all sessions (default behavior)
+        // In single mode: Check all sessions (default - no additional filter)
 
         const { data: conflictingSessions, error: conflictError } = await conflictQuery;
 
@@ -170,15 +171,26 @@ export async function PUT(
               conflictingSession,
               targetDate: normalizedDate,
               updateMode,
-              existingSessionNumber: existingSession.session_number
+              currentSessionNumber: existingSession.session_number,
+              conflictingSessionNumber: conflictingSession.session_number
             });
           }
-          return NextResponse.json(
-            { 
-              error: `Another session (Session ${conflictingSession.session_number}) already exists on this date for this cohort. Please choose a different date.` 
-            },
-            { status: 400 }
-          );
+          
+          // In shift mode, if conflict is with a subsequent session, it's OK (we'll shift it)
+          if (updateMode === 'shift' && conflictingSession.session_number > existingSession.session_number) {
+            // This shouldn't happen with our query, but just in case
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Shift mode: Conflict with subsequent session will be resolved by shifting');
+            }
+          } else {
+            // Real conflict - block the update
+            return NextResponse.json(
+              { 
+                error: `Another session (Session ${conflictingSession.session_number}) already exists on this date for this cohort. Please choose a different date.` 
+              },
+              { status: 400 }
+            );
+          }
         }
       }
     }
@@ -188,15 +200,73 @@ export async function PUT(
       console.log('Updating session with data:', updateData, 'Mode:', updateMode);
     }
 
-    // If updating session_date and mode is 'shift', calculate date difference
+    // If updating session_date and mode is 'shift', calculate date difference and shift FIRST
     let dateDifference = 0;
     if (updateData.session_date && updateMode === 'shift') {
       const oldDate = new Date(existingSession.session_date);
       const newDate = new Date(updateData.session_date);
       dateDifference = Math.round((newDate.getTime() - oldDate.getTime()) / (1000 * 60 * 60 * 24)); // Difference in days
+
+      // In shift mode, shift subsequent sessions FIRST to avoid conflicts
+      if (dateDifference !== 0) {
+        try {
+          // Get all subsequent sessions (higher session_number in same cohort)
+          const { data: subsequentSessions, error: fetchSubsequentError } = await supabaseAdmin
+            .from('cohort_sessions')
+            .select('id, session_number, session_date')
+            .eq('cohort_id', existingSession.cohort_id)
+            .gt('session_number', existingSession.session_number)
+            .order('session_number', { ascending: true });
+
+          if (fetchSubsequentError) {
+            console.error('Error fetching subsequent sessions:', fetchSubsequentError);
+            return NextResponse.json(
+              { error: 'Failed to fetch subsequent sessions for shifting', details: fetchSubsequentError.message },
+              { status: 500 }
+            );
+          }
+
+          if (subsequentSessions && subsequentSessions.length > 0) {
+            // Update each subsequent session FIRST (before updating current session)
+            const updates = subsequentSessions.map((session: any) => {
+              const currentDate = new Date(session.session_date);
+              const newDate = new Date(currentDate);
+              newDate.setDate(newDate.getDate() + dateDifference);
+              const newDateString = newDate.toISOString().split('T')[0];
+
+              return supabaseAdmin
+                .from('cohort_sessions')
+                .update({ session_date: newDateString })
+                .eq('id', session.id);
+            });
+
+            // Execute all updates
+            const updateResults = await Promise.allSettled(updates);
+            const failedUpdates = updateResults.filter((result) => result.status === 'rejected');
+            
+            if (failedUpdates.length > 0) {
+              console.error('Some subsequent sessions failed to update:', failedUpdates);
+              return NextResponse.json(
+                { error: 'Failed to shift some subsequent sessions. Please try again.', details: 'Some sessions could not be updated' },
+                { status: 500 }
+              );
+            }
+
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`Shifted ${subsequentSessions.length} subsequent sessions by ${dateDifference} days`);
+            }
+          }
+        } catch (shiftError: any) {
+          console.error('Error shifting subsequent sessions:', shiftError);
+          return NextResponse.json(
+            { error: 'Failed to shift subsequent sessions', details: shiftError.message },
+            { status: 500 }
+          );
+        }
+      }
     }
 
-    // Update the session
+    // Now update the current session (after shifting subsequent sessions in shift mode)
     const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('cohort_sessions')
       .update(updateData)
@@ -230,52 +300,8 @@ export async function PUT(
       );
     }
 
-    // If shift mode and date was changed, update all subsequent sessions
-    if (updateMode === 'shift' && dateDifference !== 0 && updateData.session_date) {
-      try {
-        // Get all subsequent sessions (higher session_number in same cohort)
-        const { data: subsequentSessions, error: fetchSubsequentError } = await supabaseAdmin
-          .from('cohort_sessions')
-          .select('id, session_number, session_date')
-          .eq('cohort_id', existingSession.cohort_id)
-          .gt('session_number', existingSession.session_number)
-          .order('session_number', { ascending: true });
-
-        if (fetchSubsequentError) {
-          console.error('Error fetching subsequent sessions:', fetchSubsequentError);
-          // Don't fail the update, just log the error
-        } else if (subsequentSessions && subsequentSessions.length > 0) {
-          // Update each subsequent session
-          const updates = subsequentSessions.map((session: any) => {
-            const currentDate = new Date(session.session_date);
-            const newDate = new Date(currentDate);
-            newDate.setDate(newDate.getDate() + dateDifference);
-            const newDateString = newDate.toISOString().split('T')[0];
-
-            return supabaseAdmin
-              .from('cohort_sessions')
-              .update({ session_date: newDateString })
-              .eq('id', session.id);
-          });
-
-          // Execute all updates
-          const updateResults = await Promise.allSettled(updates);
-          const failedUpdates = updateResults.filter((result) => result.status === 'rejected');
-          
-          if (failedUpdates.length > 0) {
-            console.error('Some subsequent sessions failed to update:', failedUpdates);
-            // Log but don't fail - the main session was updated successfully
-          }
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`Shifted ${subsequentSessions.length} subsequent sessions by ${dateDifference} days`);
-          }
-        }
-      } catch (shiftError: any) {
-        console.error('Error shifting subsequent sessions:', shiftError);
-        // Don't fail the main update, just log the error
-      }
-    }
+    // Note: Subsequent sessions were already shifted above in shift mode BEFORE updating the current session
+    // This prevents conflicts and ensures the update succeeds
 
     const res = NextResponse.json(
       { success: true, session: updatedSession },
