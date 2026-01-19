@@ -1341,6 +1341,7 @@ export default function DeveloperHubPage() {
                         <li>• <a href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji" target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:text-cyan-200 underline">WhatsApp Developer Group</a></li>
                         <li>• Contact us through our <Link href="/about" className="text-cyan-300 hover:text-cyan-200 underline">About page</Link></li>
                         <li>• Check our <Link href="/mentorship" className="text-cyan-300 hover:text-cyan-200 underline">Mentorship Program</Link> for direct mentor access</li>
+                        <li>• Contact our Educators <Link href="maile:admin@panafricanbitcoin.com" className="text-cyan-300 hover:text-cyan-200 underline">Admins</Link> directly</li>
                       </ul>
                       <p className="mt-2">Also use: Bitcoin Stack Exchange, developer mailing lists, Telegram groups, and IRC channels. Be respectful and do your research first. Our community is here to help!</p>
                     </div>
