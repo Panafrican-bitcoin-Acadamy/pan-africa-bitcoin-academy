@@ -6,6 +6,37 @@ import { useSession } from '@/hooks/useSession';
 import EmailComposer from '@/components/EmailComposer';
 import { StudentProgressModal } from '@/components/StudentProgressModal';
 
+// Cohort color palette - same as Calendar component
+const cohortColors = [
+  { bg: 'bg-blue-500/20', border: 'border-blue-500/50', text: 'text-blue-300', dot: 'bg-blue-500/50' },
+  { bg: 'bg-purple-500/20', border: 'border-purple-500/50', text: 'text-purple-300', dot: 'bg-purple-500/50' },
+  { bg: 'bg-cyan-500/20', border: 'border-cyan-500/50', text: 'text-cyan-300', dot: 'bg-cyan-500/50' },
+  { bg: 'bg-green-500/20', border: 'border-green-500/50', text: 'text-green-300', dot: 'bg-green-500/50' },
+  { bg: 'bg-yellow-500/20', border: 'border-yellow-500/50', text: 'text-yellow-300', dot: 'bg-yellow-500/50' },
+  { bg: 'bg-orange-500/20', border: 'border-orange-500/50', text: 'text-orange-300', dot: 'bg-orange-500/50' },
+  { bg: 'bg-pink-500/20', border: 'border-pink-500/50', text: 'text-pink-300', dot: 'bg-pink-500/50' },
+  { bg: 'bg-indigo-500/20', border: 'border-indigo-500/50', text: 'text-indigo-300', dot: 'bg-indigo-500/50' },
+  { bg: 'bg-teal-500/20', border: 'border-teal-500/50', text: 'text-teal-300', dot: 'bg-teal-500/50' },
+  { bg: 'bg-rose-500/20', border: 'border-rose-500/50', text: 'text-rose-300', dot: 'bg-rose-500/50' },
+];
+
+// Get consistent color for a cohort based on its ID
+function getCohortColor(cohortId: string | null | undefined): typeof cohortColors[0] {
+  if (!cohortId) {
+    return cohortColors[0]; // Default to first color
+  }
+  
+  // Simple hash function to get consistent index from cohort ID
+  let hash = 0;
+  for (let i = 0; i < cohortId.length; i++) {
+    hash = ((hash << 5) - hash) + cohortId.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  const index = Math.abs(hash) % cohortColors.length;
+  return cohortColors[index];
+}
+
 // Lazy load heavy admin components
 const SessionExpiredModal = dynamic(() => import('@/components/SessionExpiredModal').then(mod => ({ default: mod.SessionExpiredModal })), {
   ssr: false,
@@ -1767,6 +1798,10 @@ export default function AdminDashboardPage() {
                       const dayName = dayNames[sessionDate.getDay()];
                       const isPast = sessionDate < new Date();
                       const isToday = sessionDate.toDateString() === new Date().toDateString();
+                      
+                      // Get cohort color
+                      const cohortId = session.cohort_id || session.cohorts?.id;
+                      const cohortColor = getCohortColor(cohortId);
 
                       return (
                         <tr
@@ -1787,8 +1822,13 @@ export default function AdminDashboardPage() {
                             )}
                           </td>
                           <td className="px-3 py-2 text-zinc-400">{dayName}</td>
-                          <td className="px-3 py-2 text-zinc-300">
-                            {session.cohorts?.name || 'Unknown Cohort'}
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`h-2 w-2 rounded-full ${cohortColor.dot}`} title={session.cohorts?.name || 'Unknown Cohort'}></div>
+                              <span className={`text-zinc-300 ${cohortColor.text}`}>
+                                {session.cohorts?.name || 'Unknown Cohort'}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-3 py-2 text-zinc-300">
                             {session.topic || (

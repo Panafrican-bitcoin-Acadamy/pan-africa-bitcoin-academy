@@ -7,6 +7,37 @@ import { downloadICalFile } from '@/lib/icalExport';
 import { EventEditModal } from './EventEditModal';
 import { SessionEditModal } from './SessionEditModal';
 
+// Cohort color palette - distinct colors for different cohorts
+const cohortColors = [
+  { bg: 'bg-blue-500/20', border: 'border-blue-500/50', text: 'text-blue-300', dot: 'bg-blue-500/50' },
+  { bg: 'bg-purple-500/20', border: 'border-purple-500/50', text: 'text-purple-300', dot: 'bg-purple-500/50' },
+  { bg: 'bg-cyan-500/20', border: 'border-cyan-500/50', text: 'text-cyan-300', dot: 'bg-cyan-500/50' },
+  { bg: 'bg-green-500/20', border: 'border-green-500/50', text: 'text-green-300', dot: 'bg-green-500/50' },
+  { bg: 'bg-yellow-500/20', border: 'border-yellow-500/50', text: 'text-yellow-300', dot: 'bg-yellow-500/50' },
+  { bg: 'bg-orange-500/20', border: 'border-orange-500/50', text: 'text-orange-300', dot: 'bg-orange-500/50' },
+  { bg: 'bg-pink-500/20', border: 'border-pink-500/50', text: 'text-pink-300', dot: 'bg-pink-500/50' },
+  { bg: 'bg-indigo-500/20', border: 'border-indigo-500/50', text: 'text-indigo-300', dot: 'bg-indigo-500/50' },
+  { bg: 'bg-teal-500/20', border: 'border-teal-500/50', text: 'text-teal-300', dot: 'bg-teal-500/50' },
+  { bg: 'bg-rose-500/20', border: 'border-rose-500/50', text: 'text-rose-300', dot: 'bg-rose-500/50' },
+];
+
+// Get consistent color for a cohort based on its ID
+function getCohortColor(cohortId: string | null | undefined): typeof cohortColors[0] {
+  if (!cohortId) {
+    return cohortColors[0]; // Default to first color
+  }
+  
+  // Simple hash function to get consistent index from cohort ID
+  let hash = 0;
+  for (let i = 0; i < cohortId.length; i++) {
+    hash = ((hash << 5) - hash) + cohortId.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  const index = Math.abs(hash) % cohortColors.length;
+  return cohortColors[index];
+}
+
 interface CalendarEvent {
   id: string;
   title: string;
@@ -17,6 +48,7 @@ interface CalendarEvent {
   description?: string;
   duration?: number; // Duration in minutes for iCal export
   cohortId?: string | null; // For admin edit modal
+  cohortColor?: { bg: string; border: string; text: string; dot: string }; // Cohort-specific color
 }
 
 // No fallback events - show empty calendar if API fails
@@ -404,8 +436,12 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   })
                   .map((session: any) => {
                     const cohortName = session.cohorts?.name || 'Cohort';
+                    const cohortId = session.cohort_id || session.cohorts?.id;
                     const sessionDate = new Date(session.session_date);
                     sessionDate.setHours(0, 0, 0, 0);
+                    
+                    // Get cohort-specific color
+                    const cohortColor = getCohortColor(cohortId);
                     
                     const sessionEventId = `session-${session.id}`;
                     newSessionsMap.set(sessionEventId, session);
@@ -419,6 +455,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                       link: session.link || '#',
                       description: session.topic || `Cohort session ${session.session_number}`,
                       duration: session.duration_minutes || 60,
+                      cohortId: cohortId,
+                      cohortColor: cohortColor,
                     };
                   });
                 
@@ -719,15 +757,19 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                     <div className="text-center leading-none">{day}</div>
                     {dayEvents.length > 0 && (
                       <div className="mt-0.5 flex flex-wrap gap-0.5">
-                        {dayEvents.slice(0, 3).map((event) => (
-                          <div
-                            key={event.id}
-                            className={`h-0.5 w-full rounded ${
-                              eventTypeColors[event.type].split(' ')[0]
-                            }`}
-                            title={event.title}
-                          />
-                        ))}
+                        {dayEvents.slice(0, 3).map((event) => {
+                          // Use cohort color for sessions, otherwise use event type color
+                          const colorClass = event.id.startsWith('session-') && event.cohortColor
+                            ? event.cohortColor.bg
+                            : eventTypeColors[event.type].split(' ')[0];
+                          return (
+                            <div
+                              key={event.id}
+                              className={`h-0.5 w-full rounded ${colorClass}`}
+                              title={event.title}
+                            />
+                          );
+                        })}
                         {dayEvents.length > 3 && (
                           <div className="h-0.5 w-full rounded bg-zinc-600" title="More events" />
                         )}
@@ -758,10 +800,15 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                 </button>
               </div>
               <div className="space-y-0.5">
-                {getEventsForDate(selectedDate).map((event) => (
+                {getEventsForDate(selectedDate).map((event) => {
+                  // Use cohort color for sessions, otherwise use event type color
+                  const colorClasses = event.id.startsWith('session-') && event.cohortColor
+                    ? `${event.cohortColor.bg} ${event.cohortColor.border} ${event.cohortColor.text}`
+                    : eventTypeColors[event.type];
+                  return (
                   <div
                     key={event.id}
-                    className={`rounded border p-1 text-xs ${eventTypeColors[event.type]} ${
+                    className={`rounded border p-1 text-xs ${colorClasses} ${
                       showCohorts && !event.id.startsWith('session-') && !event.id.startsWith('cohort-')
                         ? 'cursor-pointer hover:brightness-110'
                         : ''
@@ -810,10 +857,15 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
       ) : (
         /* List View */
         <div className="space-y-1">
-          {getUpcomingEvents().map((event) => (
+          {getUpcomingEvents().map((event) => {
+            // Use cohort color for sessions, otherwise use event type color
+            const colorClasses = event.id.startsWith('session-') && event.cohortColor
+              ? `${event.cohortColor.bg} ${event.cohortColor.border} ${event.cohortColor.text}`
+              : eventTypeColors[event.type];
+            return (
             <div
               key={event.id}
-              className={`rounded border p-1.5 ${eventTypeColors[event.type]} ${
+              className={`rounded border p-1.5 ${colorClasses} ${
                 showCohorts && !event.id.startsWith('session-') && !event.id.startsWith('cohort-')
                   ? 'cursor-pointer hover:brightness-110'
                   : ''
@@ -868,7 +920,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                 </a>
               </div>
             </div>
-          ))}
+            );
+          })}
           {getUpcomingEvents().length === 0 && (
             <div className="rounded border border-zinc-700 bg-zinc-900/50 p-1.5 text-center text-xs text-zinc-400">
               No upcoming events
