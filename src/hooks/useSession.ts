@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { markActivity, hasExpired, clearActivity, setupCrossTabActivityListener, INACTIVITY_LIMIT_MS, ACTIVITY_KEY, UserType } from '@/lib/sessionClient';
+import { markActivity, hasExpired, clearActivity, setupCrossTabActivityListener, ACTIVITY_KEY, UserType } from '@/lib/sessionClient';
 
 interface UseSessionOptions {
   checkInterval?: number; // How often to check for expiration (default: 1 minute)

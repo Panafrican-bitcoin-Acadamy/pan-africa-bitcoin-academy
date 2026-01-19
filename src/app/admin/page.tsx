@@ -133,6 +133,11 @@ export default function AdminDashboardPage() {
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
   const [rearrangingSessions, setRearrangingSessions] = useState<string | null>(null);
+  const [allSessions, setAllSessions] = useState<any[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [sessionCohortFilter, setSessionCohortFilter] = useState<string | null>(null);
+  const [sessionStatusFilter, setSessionStatusFilter] = useState<string>('all');
+  const [sessionDateFilter, setSessionDateFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam' | 'assignments'>('overview');
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
@@ -222,6 +227,7 @@ export default function AdminDashboardPage() {
         fetchExamAccess(),
         fetchSubmissions(),
         fetchBlogSubmissions(),
+        fetchSessions(),
       ]);
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
@@ -253,6 +259,22 @@ export default function AdminDashboardPage() {
     } catch (err) {
       // Silently fail for cohorts - not critical
       setCohorts([]);
+    }
+  };
+
+  const fetchSessions = async () => {
+    try {
+      setLoadingSessions(true);
+      const res = await fetchWithAuth('/api/sessions?admin=true');
+      const data = await res.json();
+      if (data.sessions) {
+        setAllSessions(data.sessions || []);
+      }
+    } catch (err: any) {
+      console.error('Error fetching sessions:', err);
+      setAllSessions([]);
+    } finally {
+      setLoadingSessions(false);
     }
   };
 
@@ -827,6 +849,7 @@ export default function AdminDashboardPage() {
       alert(`Sessions regenerated successfully! ${data.sessionsGenerated || 0} sessions created.`);
       await fetchCohorts();
       await fetchOverview();
+      await fetchSessions();
     } catch (err: any) {
       alert(err.message || 'Failed to regenerate sessions');
     } finally {
@@ -835,7 +858,11 @@ export default function AdminDashboardPage() {
   };
 
   const rearrangeSessions = async (cohortId: string, cohortName: string) => {
-    const startDate = prompt(`Rearrange sessions for ${cohortName}?\n\nEnter start date for Session 1 (YYYY-MM-DD):\nDefault: 2026-01-19`, '2026-01-19');
+    // Get today's date as default, or use a reasonable default
+    const today = new Date();
+    const defaultDate = today.toISOString().split('T')[0];
+    
+    const startDate = prompt(`Rearrange sessions for ${cohortName}?\n\nEnter start date for Session 1 (YYYY-MM-DD):\nDefault: ${defaultDate}`, defaultDate);
     if (!startDate) return;
     
     if (!confirm(`This will rearrange all sessions for ${cohortName} starting from ${startDate}.\n\nSchedule Pattern:\n- 3 working days per week: Monday, Wednesday, Friday\n- Sundays are always excluded\n- All sessions will be rescheduled (none removed)\n\nContinue?`)) {
@@ -865,8 +892,7 @@ export default function AdminDashboardPage() {
       alert(scheduleText);
       await fetchCohorts();
       await fetchOverview();
-      // Refresh calendar if it's open
-      window.location.reload();
+      await fetchSessions();
     } catch (err: any) {
       alert(err.message || 'Failed to rearrange sessions');
     } finally {
@@ -1587,6 +1613,232 @@ export default function AdminDashboardPage() {
               <Calendar cohortId={null} showCohorts={true} />
             </div>
           </div>
+        </div>
+
+        {/* Sessions List/Table View */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-50">All Sessions</h3>
+              <p className="text-xs text-zinc-400 mt-1">
+                View and manage all cohort sessions in a structured format
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchSessions}
+              disabled={loadingSessions}
+              className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {loadingSessions ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <select
+              value={sessionCohortFilter || ''}
+              onChange={(e) => setSessionCohortFilter(e.target.value || null)}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+            >
+              <option value="">All Cohorts</option>
+              {cohorts.map((cohort) => (
+                <option key={cohort.id} value={cohort.id}>
+                  {cohort.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={sessionStatusFilter}
+              onChange={(e) => setSessionStatusFilter(e.target.value)}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+            >
+              <option value="all">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="rescheduled">Rescheduled</option>
+            </select>
+
+            <select
+              value={sessionDateFilter}
+              onChange={(e) => setSessionDateFilter(e.target.value as 'all' | 'upcoming' | 'past')}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+            >
+              <option value="all">All Dates</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="past">Past</option>
+            </select>
+          </div>
+
+          {/* Statistics */}
+          {allSessions.length > 0 && (
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                <div className="text-xs text-zinc-400">Total Sessions</div>
+                <div className="text-lg font-semibold text-zinc-50">{allSessions.length}</div>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                <div className="text-xs text-zinc-400">Scheduled</div>
+                <div className="text-lg font-semibold text-yellow-400">
+                  {allSessions.filter((s) => s.status === 'scheduled').length}
+                </div>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                <div className="text-xs text-zinc-400">Completed</div>
+                <div className="text-lg font-semibold text-green-400">
+                  {allSessions.filter((s) => s.status === 'completed').length}
+                </div>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                <div className="text-xs text-zinc-400">Upcoming</div>
+                <div className="text-lg font-semibold text-cyan-400">
+                  {allSessions.filter((s) => {
+                    const sessionDate = new Date(s.session_date);
+                    return sessionDate >= new Date() && s.status === 'scheduled';
+                  }).length}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sessions Table */}
+          {loadingSessions ? (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-8 text-center text-zinc-400">
+              Loading sessions...
+            </div>
+          ) : allSessions.length === 0 ? (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-8 text-center text-zinc-400">
+              No sessions found. Sessions will appear here once cohorts are created with start/end dates.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-900 text-left text-zinc-300">
+                  <tr>
+                    <th className="px-3 py-2">Session #</th>
+                    <th className="px-3 py-2">Date</th>
+                    <th className="px-3 py-2">Day</th>
+                    <th className="px-3 py-2">Cohort</th>
+                    <th className="px-3 py-2">Topic</th>
+                    <th className="px-3 py-2">Instructor</th>
+                    <th className="px-3 py-2">Duration</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Link</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800">
+                  {allSessions
+                    .filter((session) => {
+                      // Apply cohort filter
+                      if (sessionCohortFilter && session.cohort_id !== sessionCohortFilter) {
+                        return false;
+                      }
+                      // Apply status filter
+                      if (sessionStatusFilter !== 'all' && session.status !== sessionStatusFilter) {
+                        return false;
+                      }
+                      // Apply date filter
+                      if (sessionDateFilter !== 'all') {
+                        const sessionDate = new Date(session.session_date);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        sessionDate.setHours(0, 0, 0, 0);
+                        if (sessionDateFilter === 'upcoming' && sessionDate < today) {
+                          return false;
+                        }
+                        if (sessionDateFilter === 'past' && sessionDate >= today) {
+                          return false;
+                        }
+                      }
+                      return true;
+                    })
+                    .sort((a, b) => {
+                      // Sort by date, then by session number
+                      const dateA = new Date(a.session_date).getTime();
+                      const dateB = new Date(b.session_date).getTime();
+                      if (dateA !== dateB) return dateA - dateB;
+                      return (a.session_number || 0) - (b.session_number || 0);
+                    })
+                    .map((session) => {
+                      const sessionDate = new Date(session.session_date);
+                      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                      const dayName = dayNames[sessionDate.getDay()];
+                      const isPast = sessionDate < new Date();
+                      const isToday = sessionDate.toDateString() === new Date().toDateString();
+
+                      return (
+                        <tr
+                          key={session.id}
+                          className={`hover:bg-zinc-800/50 ${
+                            isToday ? 'bg-cyan-500/10' : isPast ? 'opacity-75' : ''
+                          }`}
+                        >
+                          <td className="px-3 py-2 text-zinc-300">{session.session_number || 'N/A'}</td>
+                          <td className="px-3 py-2 text-zinc-300">
+                            {sessionDate.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                            {isToday && (
+                              <span className="ml-1 text-xs text-cyan-400">(Today)</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-zinc-400">{dayName}</td>
+                          <td className="px-3 py-2 text-zinc-300">
+                            {session.cohorts?.name || 'Unknown Cohort'}
+                          </td>
+                          <td className="px-3 py-2 text-zinc-300">
+                            {session.topic || (
+                              <span className="text-zinc-500 italic">No topic</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-zinc-300">
+                            {session.instructor || (
+                              <span className="text-zinc-500 italic">TBD</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-zinc-300">
+                            {session.duration_minutes || 90} min
+                          </td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                                session.status === 'completed'
+                                  ? 'border-green-500/50 bg-green-500/20 text-green-400'
+                                  : session.status === 'cancelled'
+                                  ? 'border-red-500/50 bg-red-500/20 text-red-400'
+                                  : session.status === 'rescheduled'
+                                  ? 'border-yellow-500/50 bg-yellow-500/20 text-yellow-400'
+                                  : 'border-blue-500/50 bg-blue-500/20 text-blue-400'
+                              }`}
+                            >
+                              {session.status || 'scheduled'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            {session.link ? (
+                              <a
+                                href={session.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-cyan-400 hover:text-cyan-300 text-xs"
+                              >
+                                Join
+                              </a>
+                            ) : (
+                              <span className="text-zinc-500 text-xs">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Mentorship applications */}

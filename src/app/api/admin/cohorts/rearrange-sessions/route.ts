@@ -95,17 +95,14 @@ export async function POST(req: NextRequest) {
     // - Use only 3 working days per week: Monday, Wednesday, Friday
     // - Sundays must never be used
     // - Keep all sessions, only reschedule them
-    // - Start from Session 1 date (Jan 19, 2026)
-    // - Fixed dates: Session 4 = Jan 26, Session 6 = Jan 30, Session 8 = Feb 4
+    // - Start from Session 1 date (provided by user)
+    // - Follow Mon/Wed/Fri pattern consistently
     
     const sessionUpdates: Array<{ id: string; session_date: string; session_number: number }> = [];
     
-    // Fixed dates for specific sessions (must match exactly)
-    const fixedDates: Record<number, string> = {
-      4: '2026-01-26', // Monday
-      6: '2026-01-30', // Friday
-      8: '2026-02-04', // Wednesday
-    };
+    // Optional: Fixed dates can be passed in the request body for specific cohorts
+    // Format: { fixedDates: { session_number: "YYYY-MM-DD" } }
+    const fixedDates: Record<number, string> = body.fixedDates || {};
 
     // Define the 3-day pattern: Monday (1), Wednesday (3), Friday (5)
     const workingDays = [1, 3, 5]; // 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday

@@ -3,7 +3,14 @@
  * Handles cross-tab activity tracking and session expiration
  */
 
-export const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+// Inactivity limits - admin gets longer timeout
+const STUDENT_INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+const ADMIN_INACTIVITY_LIMIT_MS = 4 * 60 * 60 * 1000; // 4 hours (more than 3 hours as requested)
+
+export function getInactivityLimit(userType: UserType): number {
+  return userType === 'admin' ? ADMIN_INACTIVITY_LIMIT_MS : STUDENT_INACTIVITY_LIMIT_MS;
+}
+
 export const ACTIVITY_KEY = 'sessionLastActivityAt';
 export const ACTIVITY_CHANNEL = 'session-activity';
 
@@ -49,11 +56,13 @@ export function markActivity(userType: UserType) {
  */
 export function hasExpired(userType: UserType): boolean {
   try {
+    const inactivityLimit = getInactivityLimit(userType);
+    
     // Check current tab activity
     const currentTabActivity = localStorage.getItem(`${ACTIVITY_KEY}_${userType}`);
     if (currentTabActivity) {
       const lastTs = Number(currentTabActivity);
-      if (!Number.isNaN(lastTs) && Date.now() - lastTs <= INACTIVITY_LIMIT_MS) {
+      if (!Number.isNaN(lastTs) && Date.now() - lastTs <= inactivityLimit) {
         return false; // Current tab is active
       }
     }
@@ -62,7 +71,7 @@ export function hasExpired(userType: UserType): boolean {
     const sharedActivity = localStorage.getItem(ACTIVITY_KEY);
     if (sharedActivity) {
       const lastTs = Number(sharedActivity);
-      if (!Number.isNaN(lastTs) && Date.now() - lastTs <= INACTIVITY_LIMIT_MS) {
+      if (!Number.isNaN(lastTs) && Date.now() - lastTs <= inactivityLimit) {
         return false; // Some tab is active
       }
     }

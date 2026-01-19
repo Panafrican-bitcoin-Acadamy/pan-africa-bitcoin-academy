@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as crypto from 'crypto';
 
 // Unified session configuration
+// Student timeouts
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout (for non-remember me)
 const ABSOLUTE_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes absolute lifetime (for non-remember me)
 const REMEMBER_ME_IDLE_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days idle timeout (for remember me)
 const REMEMBER_ME_ABSOLUTE_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days absolute lifetime (for remember me)
+
+// Admin timeouts - longer than 3 hours
+const ADMIN_IDLE_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours idle timeout for admin
+const ADMIN_ABSOLUTE_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours absolute lifetime for admin
 const ADMIN_COOKIE_NAME = 'admin_session';
 const STUDENT_COOKIE_NAME = 'student_session';
 
@@ -60,9 +65,19 @@ export function verifySession(token: string | undefined): SessionPayload | null 
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString()) as SessionPayload;
     const now = Date.now();
 
-    // Use different timeouts based on rememberMe flag
-    const idleTimeout = payload.rememberMe ? REMEMBER_ME_IDLE_TIMEOUT_MS : IDLE_TIMEOUT_MS;
-    const absoluteTimeout = payload.rememberMe ? REMEMBER_ME_ABSOLUTE_TIMEOUT_MS : ABSOLUTE_TIMEOUT_MS;
+    // Use different timeouts based on user type and rememberMe flag
+    let idleTimeout: number;
+    let absoluteTimeout: number;
+    
+    if (payload.userType === 'admin') {
+      // Admin gets longer timeouts (more than 3 hours)
+      idleTimeout = ADMIN_IDLE_TIMEOUT_MS;
+      absoluteTimeout = ADMIN_ABSOLUTE_TIMEOUT_MS;
+    } else {
+      // Student uses rememberMe-based timeouts
+      idleTimeout = payload.rememberMe ? REMEMBER_ME_IDLE_TIMEOUT_MS : IDLE_TIMEOUT_MS;
+      absoluteTimeout = payload.rememberMe ? REMEMBER_ME_ABSOLUTE_TIMEOUT_MS : ABSOLUTE_TIMEOUT_MS;
+    }
 
     // Enforce idle timeout and absolute lifetime
     if (now - payload.lastActive > idleTimeout) return null;
@@ -81,10 +96,15 @@ function getCookieName(userType: UserType): string {
 export function setSessionCookie(res: NextResponse, payload: SessionPayload) {
   const token = signSession(payload);
   const cookieName = getCookieName(payload.userType);
-  // Use different maxAge based on rememberMe flag
-  const maxAge = payload.rememberMe 
-    ? Math.floor(REMEMBER_ME_ABSOLUTE_TIMEOUT_MS / 1000)
-    : Math.floor(ABSOLUTE_TIMEOUT_MS / 1000);
+  // Use different maxAge based on user type and rememberMe flag
+  let maxAge: number;
+  if (payload.userType === 'admin') {
+    maxAge = Math.floor(ADMIN_ABSOLUTE_TIMEOUT_MS / 1000);
+  } else {
+    maxAge = payload.rememberMe 
+      ? Math.floor(REMEMBER_ME_ABSOLUTE_TIMEOUT_MS / 1000)
+      : Math.floor(ABSOLUTE_TIMEOUT_MS / 1000);
+  }
   // Set secure session cookie with best security practices
   res.cookies.set(cookieName, token, {
     httpOnly: true, // Prevents JavaScript access (XSS protection)
