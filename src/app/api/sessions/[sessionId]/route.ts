@@ -106,19 +106,53 @@ export async function PUT(
       }
 
       // Normalize existing session date for comparison
-      const existingDate = existingSession.session_date instanceof Date
-        ? existingSession.session_date.toISOString().split('T')[0]
-        : String(existingSession.session_date).split('T')[0];
+      let existingDate: string;
+      if (existingSession.session_date instanceof Date) {
+        existingDate = existingSession.session_date.toISOString().split('T')[0];
+      } else {
+        // Handle string dates from database (could be in various formats)
+        const dateStr = String(existingSession.session_date);
+        const parsedDate = new Date(dateStr);
+        if (isNaN(parsedDate.getTime())) {
+          // If parsing fails, try to extract YYYY-MM-DD from string
+          const match = dateStr.match(/(\d{4}-\d{2}-\d{2})/);
+          existingDate = match ? match[1] : dateStr.split('T')[0];
+        } else {
+          existingDate = parsedDate.toISOString().split('T')[0];
+        }
+      }
+
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Date comparison:', {
+          normalizedDate,
+          existingDate,
+          areEqual: normalizedDate === existingDate,
+          updateMode
+        });
+      }
 
       // Only check for conflicts if the date is actually changing
       if (normalizedDate !== existingDate) {
-        const { data: conflictingSession, error: conflictError } = await supabaseAdmin
+        // In shift mode, we need to check conflicts differently
+        // We should exclude subsequent sessions that will be shifted
+        let conflictQuery = supabaseAdmin
           .from('cohort_sessions')
           .select('id, session_number')
           .eq('cohort_id', existingSession.cohort_id)
           .eq('session_date', normalizedDate)
-          .neq('id', sessionId) // Exclude the current session
-          .maybeSingle();
+          .neq('id', sessionId); // Exclude the current session
+
+        // If in shift mode, only check conflicts with sessions that won't be shifted
+        // (i.e., sessions with session_number <= current session, since only subsequent sessions will shift)
+        // In single mode, check all sessions
+        if (updateMode === 'shift') {
+          // Only check sessions with session_number <= current (these won't be shifted)
+          conflictQuery = conflictQuery.lte('session_number', existingSession.session_number);
+        }
+        // In single mode, check all sessions (default behavior)
+
+        const { data: conflictingSessions, error: conflictError } = await conflictQuery;
 
         if (conflictError) {
           console.error('Error checking for date conflicts:', conflictError);
@@ -128,7 +162,17 @@ export async function PUT(
           );
         }
 
-        if (conflictingSession) {
+        // Check if there are any conflicts
+        if (conflictingSessions && conflictingSessions.length > 0) {
+          const conflictingSession = conflictingSessions[0];
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Conflict detected:', {
+              conflictingSession,
+              targetDate: normalizedDate,
+              updateMode,
+              existingSessionNumber: existingSession.session_number
+            });
+          }
           return NextResponse.json(
             { 
               error: `Another session (Session ${conflictingSession.session_number}) already exists on this date for this cohort. Please choose a different date.` 
