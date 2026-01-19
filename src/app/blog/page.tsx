@@ -231,8 +231,8 @@ export default function BlogPage() {
         // Fetch all published posts
         const res = await fetch('/api/blog');
         if (!res.ok) {
-          throw new Error('Failed to fetch blog posts');
-        }
+          throw new Error('Connection Problems') ;          
+        } 
         const data = await res.json();
         const allPosts = data.posts || [];
 

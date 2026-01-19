@@ -58,7 +58,7 @@ export default function AboutPage() {
                   <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Our Core Identity</p>
                 </div>
                 <p className="text-xl font-semibold leading-relaxed text-cyan-100 sm:text-2xl lg:text-3xl">
-                  Pan-African Bitcoin Academy is an open-source Bitcoin education infrastructure that teaches Bitcoin from first principles and builds long-term technical and contributor capacity in underserved communities.
+                  Pan-African Bitcoin Academy is an open-source Bitcoin education infrastructure about Bitcoin from first principles and builds long-term technical and contributor capacity in underserved communities.
                 </p>
               </div>
             </section>
