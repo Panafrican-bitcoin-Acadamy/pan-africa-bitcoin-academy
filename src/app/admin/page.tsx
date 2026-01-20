@@ -1254,7 +1254,7 @@ export default function AdminDashboardPage() {
             )}
 
             {/* Overview cards - show on dashboard or when no specific sub-menu is selected */}
-            {(!activeSubMenu || activeSubMenu === 'cohort-list' || activeSubMenu === 'sessions' || activeSubMenu === 'cohort-analytics') && (
+            {(!activeSubMenu || (activeTab === 'overview' && !activeSubMenu)) && (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {overview && [
             { label: 'Applications', value: overview.totalApplications, accent: 'cyan' },
@@ -1625,8 +1625,8 @@ export default function AdminDashboardPage() {
           </div>
             )}
 
-            {/* Cohorts Section */}
-            {(activeSubMenu === 'cohort-list' || activeSubMenu === 'sessions' || activeSubMenu === 'cohort-analytics' || (!activeSubMenu && activeTab === 'overview')) && (
+            {/* Cohort List Sub-menu - Manage Cohorts, Create Cohort, Create Event */}
+            {activeSubMenu === 'cohort-list' && (
               <>
                 {/* Manage Cohorts Section */}
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
@@ -1830,60 +1830,62 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+              </>
+            )}
 
-                {/* Cohort Analytics Section */}
-                {activeSubMenu === 'cohort-analytics' && (
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-zinc-50">Cohort Analytics</h3>
-                      <p className="text-xs text-zinc-400 mt-1">Enrollment stats, completion rates, and participation metrics</p>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {cohorts.map((cohort) => {
-                        const cohortStudents = progress.filter(p => p.cohortId === cohort.id);
-                        const activeStudents = cohortStudents.filter(p => p.status === 'Active').length;
-                        const avgProgress = cohortStudents.length > 0
-                          ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.overallProgress || 0), 0) / cohortStudents.length)
-                          : 0;
-                        const avgAttendance = cohortStudents.length > 0
-                          ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.attendancePercent || 0), 0) / cohortStudents.length)
-                          : 0;
-                        
-                        return (
-                          <div key={cohort.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-                            <h4 className="text-sm font-semibold text-zinc-50 mb-3">{cohort.name}</h4>
-                            <div className="space-y-2 text-xs">
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Enrolled:</span>
-                                <span className="text-zinc-200 font-medium">{activeStudents}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Avg Progress:</span>
-                                <span className="text-yellow-300 font-medium">{avgProgress}%</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Avg Attendance:</span>
-                                <span className="text-blue-300 font-medium">{avgAttendance}%</span>
-                              </div>
-                              {cohort.seats && (
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-400">Capacity:</span>
-                                  <span className="text-zinc-200">{activeStudents}/{cohort.seats}</span>
-                                </div>
-                              )}
-                            </div>
+            {/* Cohort Analytics Sub-menu - Analytics Cards Only */}
+            {activeSubMenu === 'cohort-analytics' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">Cohort Analytics</h3>
+                  <p className="text-xs text-zinc-400 mt-1">Enrollment stats, completion rates, and participation metrics</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {cohorts.map((cohort) => {
+                    const cohortStudents = progress.filter(p => p.cohortId === cohort.id);
+                    const activeStudents = cohortStudents.filter(p => p.status === 'Active').length;
+                    const avgProgress = cohortStudents.length > 0
+                      ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.overallProgress || 0), 0) / cohortStudents.length)
+                      : 0;
+                    const avgAttendance = cohortStudents.length > 0
+                      ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.attendancePercent || 0), 0) / cohortStudents.length)
+                      : 0;
+                    
+                    return (
+                      <div key={cohort.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <h4 className="text-sm font-semibold text-zinc-50 mb-3">{cohort.name}</h4>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-zinc-400">Enrolled:</span>
+                            <span className="text-zinc-200 font-medium">{activeStudents}</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                    {cohorts.length === 0 && (
-                      <p className="p-3 text-sm text-zinc-400 text-center">No cohorts found.</p>
-                    )}
-                  </div>
+                          <div className="flex justify-between">
+                            <span className="text-zinc-400">Avg Progress:</span>
+                            <span className="text-yellow-300 font-medium">{avgProgress}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-zinc-400">Avg Attendance:</span>
+                            <span className="text-blue-300 font-medium">{avgAttendance}%</span>
+                          </div>
+                          {cohort.seats && (
+                            <div className="flex justify-between">
+                              <span className="text-zinc-400">Capacity:</span>
+                              <span className="text-zinc-200">{activeStudents}/{cohort.seats}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {cohorts.length === 0 && (
+                  <p className="p-3 text-sm text-zinc-400 text-center">No cohorts found.</p>
                 )}
+              </div>
+            )}
 
-                {/* Sessions List/Table View */}
-                {(activeSubMenu === 'sessions' || (!activeSubMenu && activeTab === 'overview')) && (
+            {/* Sessions Sub-menu - Sessions List/Table View Only */}
+            {activeSubMenu === 'sessions' && (
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -2115,10 +2117,8 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
-                  )}
-                </div>
-                )}
-              </>
+          )}
+        </div>
             )}
 
             {/* Communications Section */}
