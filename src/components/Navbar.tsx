@@ -491,9 +491,7 @@ export function Navbar() {
             >
               Donate
             </Link>
-            {loading || adminLoading ? (
-              <div className="h-12 w-full animate-pulse rounded-lg bg-zinc-800" />
-            ) : isAdminAuth ? (
+            {isAdminAuth ? (
               <div className="space-y-2 mt-3 border-t border-zinc-700 pt-3">
                 <div className="px-4 py-2 text-sm text-zinc-400 border-b border-zinc-700 pb-3">
                   <div className="font-medium text-zinc-300">Admin</div>

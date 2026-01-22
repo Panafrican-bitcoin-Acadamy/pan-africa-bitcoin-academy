@@ -65,7 +65,17 @@ export function useSession(userType: UserType, options: UseSessionOptions = {}) 
     try {
       setLoading(true);
       const endpoint = userType === 'admin' ? '/api/admin/me' : '/api/profile/me';
-      const res = await fetch(endpoint);
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const res = await fetch(endpoint, {
+        signal: controller.signal,
+        cache: 'no-store', // Prevent caching
+      });
+      
+      clearTimeout(timeoutId);
       
       if (res.ok) {
         const data = await res.json();
@@ -81,6 +91,7 @@ export function useSession(userType: UserType, options: UseSessionOptions = {}) 
           // Initialize activity tracking
           markActivity(userType);
           
+          setLoading(false);
           return true;
         }
       } else if (res.status === 401) {
@@ -101,19 +112,22 @@ export function useSession(userType: UserType, options: UseSessionOptions = {}) 
         setRole(null);
       }
       
+      setLoading(false);
       return false;
     } catch (err: any) {
-      console.error('Session check error:', err);
+      // Don't log timeout errors as they're expected
+      if (err.name !== 'AbortError') {
+        console.error('Session check error:', err);
+      }
       setIsAuthenticated(false);
       setEmail(null);
       setRole(null);
-      return false;
-    } finally {
       setLoading(false);
+      return false;
     }
   }, [userType]);
 
-  // Initial session check
+  // Initial session check - run immediately
   useEffect(() => {
     checkSession();
   }, [checkSession]);
