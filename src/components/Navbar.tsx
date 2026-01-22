@@ -34,7 +34,7 @@ export function Navbar() {
   const desktopDropdownRef = useRef<HTMLDivElement>(null);
   const tabletDropdownRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, profile, isRegistered, loading, logout, showSessionExpired, setShowSessionExpired } = useAuth();
-  const { isAuthenticated: isAdminAuth, email: adminEmail, logout: adminLogout } = useSession('admin');
+  const { isAuthenticated: isAdminAuth, email: adminEmail, logout: adminLogout, loading: adminLoading } = useSession('admin');
   const handleLogout = async () => {
     // Handle both student and admin logout
     if (isAdminAuth) {
@@ -491,13 +491,15 @@ export function Navbar() {
             >
               Donate
             </Link>
-            {loading ? (
+            {loading || adminLoading ? (
               <div className="h-12 w-full animate-pulse rounded-lg bg-zinc-800" />
-            ) : isAdminAuth && adminEmail ? (
+            ) : isAdminAuth ? (
               <div className="space-y-2 mt-3 border-t border-zinc-700 pt-3">
                 <div className="px-4 py-2 text-sm text-zinc-400 border-b border-zinc-700 pb-3">
                   <div className="font-medium text-zinc-300">Admin</div>
-                  <div className="text-xs text-zinc-500 mt-1 break-all">{adminEmail}</div>
+                  {adminEmail && (
+                    <div className="text-xs text-zinc-500 mt-1 break-all">{adminEmail}</div>
+                  )}
                 </div>
                 <Link
                   href="/admin"
@@ -560,6 +562,46 @@ export function Navbar() {
                   <Key className="h-5 w-5" />
                   Change Password
                 </button>
+                {isAdminAuth && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-4 py-3 min-h-[48px] text-base font-medium text-orange-300 active:from-orange-500/30 active:to-cyan-500/30 touch-target"
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    Admin Dashboard
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleLogout();
+                  }}
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Logout
+                </button>
+              </div>
+            ) : isAdminAuth ? (
+              // Fallback: Show logout if admin is authenticated but no profile
+              <div className="space-y-2 mt-3 border-t border-zinc-700 pt-3">
+                <div className="px-4 py-2 text-sm text-zinc-400 border-b border-zinc-700 pb-3">
+                  <div className="font-medium text-zinc-300">Admin</div>
+                  {adminEmail && (
+                    <div className="text-xs text-zinc-500 mt-1 break-all">{adminEmail}</div>
+                  )}
+                </div>
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-4 py-3 min-h-[48px] text-base font-medium text-orange-300 active:from-orange-500/30 active:to-cyan-500/30 touch-target"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                  Admin Dashboard
+                </Link>
                 <button
                   type="button"
                   onClick={(e) => {
