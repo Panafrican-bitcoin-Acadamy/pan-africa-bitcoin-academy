@@ -329,7 +329,7 @@ export default function AdminDashboardPage() {
 
   // Fetch sats rewards when sats-database submenu is active or filters change
   useEffect(() => {
-    if (admin && activeSubMenu === 'sats-database') {
+    if (admin && activeSubMenu === 'sats-database' && !loadingSats) {
       fetchSatsRewards();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -373,7 +373,8 @@ export default function AdminDashboardPage() {
         fetchSubmissions(),
         fetchBlogSubmissions(),
         fetchSessions(),
-        fetchSatsRewards(),
+        // Don't fetch sats rewards on initial load - only when submenu is active
+        // fetchSatsRewards(),
       ]);
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
@@ -2996,7 +2997,6 @@ export default function AdminDashboardPage() {
                       value={satsStatusFilter}
                       onChange={(e) => {
                         setSatsStatusFilter(e.target.value);
-                        setTimeout(() => fetchSatsRewards(), 100);
                       }}
                       className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
                     >
@@ -3010,7 +3010,6 @@ export default function AdminDashboardPage() {
                       value={satsTypeFilter}
                       onChange={(e) => {
                         setSatsTypeFilter(e.target.value);
-                        setTimeout(() => fetchSatsRewards(), 100);
                       }}
                       className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
                     >
