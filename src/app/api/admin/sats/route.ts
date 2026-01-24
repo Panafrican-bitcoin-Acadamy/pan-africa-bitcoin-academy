@@ -26,20 +26,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseAdmin
       .from('sats_rewards')
-      .select(`
-        *,
-        student:profiles!sats_rewards_student_id_fkey (
-          id,
-          name,
-          email,
-          student_id
-        ),
-        awarded_by_profile:profiles!sats_rewards_awarded_by_fkey (
-          id,
-          name,
-          email
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     // Apply filters
@@ -75,22 +62,54 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Calculate statistics
-    const totalPaid = (rewards || []).reduce(
+    // Fetch related profile data separately
+    const studentIds = [...new Set((rewards || []).map((r: any) => r.student_id).filter(Boolean))];
+    const awardedByIds = [...new Set((rewards || []).map((r: any) => r.awarded_by).filter(Boolean))];
+    const allProfileIds = [...new Set([...studentIds, ...awardedByIds])];
+
+    let profilesMap: Record<string, any> = {};
+    if (allProfileIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, name, email, student_id')
+        .in('id', allProfileIds);
+      
+      if (profiles) {
+        profilesMap = profiles.reduce((acc: any, profile: any) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {});
+      }
+    }
+
+    // Enrich rewards with profile data
+    const enrichedRewards = (rewards || []).map((reward: any) => ({
+      ...reward,
+      student: reward.student_id ? profilesMap[reward.student_id] || null : null,
+      awarded_by_profile: reward.awarded_by ? profilesMap[reward.awarded_by] || null : null,
+    }));
+
+    // Calculate statistics from ALL data (not filtered)
+    // Fetch all rewards for accurate statistics
+    const { data: allRewards } = await supabaseAdmin
+      .from('sats_rewards')
+      .select('amount_paid, amount_pending, status, reward_type');
+
+    const totalPaid = (allRewards || []).reduce(
       (sum: number, reward: any) => sum + (reward.amount_paid || 0),
       0
     );
-    const totalPending = (rewards || []).reduce(
+    const totalPending = (allRewards || []).reduce(
       (sum: number, reward: any) => sum + (reward.amount_pending || 0),
       0
     );
-    const totalRewards = (rewards || []).length;
-    const byStatus = (rewards || []).reduce((acc: any, reward: any) => {
+    const totalRewards = (allRewards || []).length;
+    const byStatus = (allRewards || []).reduce((acc: any, reward: any) => {
       const status = reward.status || 'unknown';
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {});
-    const byType = (rewards || []).reduce((acc: any, reward: any) => {
+    const byType = (allRewards || []).reduce((acc: any, reward: any) => {
       const type = reward.reward_type || 'other';
       acc[type] = (acc[type] || 0) + 1;
       return acc;
@@ -98,7 +117,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        rewards: rewards || [],
+        rewards: enrichedRewards,
         statistics: {
           totalPaid,
           totalPending,
