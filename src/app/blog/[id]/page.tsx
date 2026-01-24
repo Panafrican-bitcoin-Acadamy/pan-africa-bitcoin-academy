@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { ShareButtons } from "@/components/ShareButtons";
@@ -12,7 +13,12 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const { id } = await params;
   
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://panafricanbitcoin.com';
+    // Get base URL from headers or environment
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
+    
     const res = await fetch(`${baseUrl}/api/blog/${id}`, {
       cache: 'no-store',
     });
@@ -59,10 +65,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   
   let post;
   try {
-    // Try to fetch from API (works in production)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000';
+    // Get base URL from headers or environment
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
     
     const res = await fetch(`${baseUrl}/api/blog/${id}`, {
       cache: 'no-store',

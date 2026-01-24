@@ -45,6 +45,7 @@ interface CalendarEvent {
   type: 'live-class' | 'assignment' | 'community' | 'workshop' | 'deadline' | 'quiz' | 'cohort';
   time?: string;
   link?: string;
+  recordingUrl?: string; // Recording/replay URL for sessions
   description?: string;
   duration?: number; // Duration in minutes for iCal export
   cohortId?: string | null; // For admin edit modal
@@ -221,6 +222,9 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                     const sessionEventId = `session-${session.id}`;
                     newSessionsMap.set(sessionEventId, session);
                     
+                    const cohortId = session.cohort_id || session.cohorts?.id;
+                    const cohortColor = getCohortColor(cohortId);
+                    
                     return {
                       id: sessionEventId,
                       title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
@@ -228,8 +232,11 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                       type: 'live-class' as const,
                       time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
                       link: session.link || '#',
+                      recordingUrl: session.recording_url || undefined,
                       description: session.topic || `Cohort session ${session.session_number}`,
                       duration: session.duration_minutes || 60,
+                      cohortId: cohortId,
+                      cohortColor: cohortColor,
                     };
                   });
                 
@@ -453,6 +460,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                       type: 'live-class' as const,
                       time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
                       link: session.link || '#',
+                      recordingUrl: session.recording_url || undefined,
                       description: session.topic || `Cohort session ${session.session_number}`,
                       duration: session.duration_minutes || 60,
                       cohortId: cohortId,
@@ -542,14 +550,33 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
   const daysInMonth = lastDay.getDate();
   const startingDayOfWeek = firstDay.getDay();
 
-  // Get events for selected date
+  // Get events for selected date, sorted with recordings first
   const getEventsForDate = (date: Date) => {
-    return events.filter(
+    const dateEvents = events.filter(
       (event) =>
         event.date.getDate() === date.getDate() &&
         event.date.getMonth() === date.getMonth() &&
         event.date.getFullYear() === date.getFullYear()
     );
+    
+    // Sort: sessions with recordings first, then other sessions, then other events
+    return dateEvents.sort((a, b) => {
+      const aHasRecording = !!(a.id.startsWith('session-') && a.recordingUrl);
+      const bHasRecording = !!(b.id.startsWith('session-') && b.recordingUrl);
+      const aIsSession = a.id.startsWith('session-');
+      const bIsSession = b.id.startsWith('session-');
+      
+      // Sessions with recordings come first
+      if (aHasRecording && !bHasRecording) return -1;
+      if (!aHasRecording && bHasRecording) return 1;
+      
+      // Then other sessions
+      if (aIsSession && !bIsSession) return -1;
+      if (!aIsSession && bIsSession) return 1;
+      
+      // Then by date/time
+      return a.date.getTime() - b.date.getTime();
+    });
   };
 
   // Check if a date has a session (live-class event with session- prefix)
@@ -560,7 +587,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
     );
   };
 
-  // Get upcoming events (all future, sorted by date/time)
+  // Get upcoming events (all future, sorted with recordings first, then by date/time)
   const getUpcomingEvents = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -570,7 +597,23 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
         const eventDate = new Date(event.date);
         return eventDate.getTime() >= today.getTime();
       })
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .sort((a, b) => {
+        const aHasRecording = !!(a.id.startsWith('session-') && a.recordingUrl);
+        const bHasRecording = !!(b.id.startsWith('session-') && b.recordingUrl);
+        const aIsSession = a.id.startsWith('session-');
+        const bIsSession = b.id.startsWith('session-');
+        
+        // Sessions with recordings come first
+        if (aHasRecording && !bHasRecording) return -1;
+        if (!aHasRecording && bHasRecording) return 1;
+        
+        // Then other sessions
+        if (aIsSession && !bIsSession) return -1;
+        if (!aIsSession && bIsSession) return 1;
+        
+        // Then by date/time
+        return a.date.getTime() - b.date.getTime();
+      })
       .slice(0, 10);
   };
 
@@ -716,6 +759,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
                 const date = new Date(year, month, day);
+                const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+                const isSunday = dayOfWeek === 0;
                 const dayEvents = getEventsForDate(date);
                 const isToday =
                   date.getDate() === new Date().getDate() &&
@@ -728,9 +773,12 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   date.getFullYear() === selectedDate.getFullYear();
                 const hasSessionOnDate = hasSession(date);
 
-                // Build className with priority: Today > Selected > Session > Default
+                // Build className with priority: Sunday (disabled) > Today > Selected > Session > Default
                 let cellClassName = 'aspect-square rounded border p-0.5 text-[10px] transition ';
-                if (isToday) {
+                if (isSunday) {
+                  // Sunday: disabled/unusable
+                  cellClassName += 'border-zinc-800 bg-zinc-950/50 text-zinc-600 cursor-not-allowed opacity-50';
+                } else if (isToday) {
                   // Today with session: combine orange (today) with blue (session) accent
                   cellClassName += hasSessionOnDate
                     ? 'border-orange-500 bg-blue-500/30 text-orange-300 font-semibold'
@@ -751,8 +799,10 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                 return (
                   <button
                     key={day}
-                    onClick={() => setSelectedDate(date)}
+                    onClick={() => !isSunday && setSelectedDate(date)}
+                    disabled={isSunday}
                     className={cellClassName}
+                    title={isSunday ? 'Sundays are not available for scheduling' : undefined}
                   >
                     <div className="text-center leading-none">{day}</div>
                     {dayEvents.length > 0 && (
@@ -819,6 +869,20 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="truncate font-medium">{event.title}</span>
+                          {/* Show recording link first if available */}
+                          {event.type === 'live-class' && event.recordingUrl && event.recordingUrl.trim() !== '' && (
+                            <a
+                              href={event.recordingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-purple-300 bg-purple-500/20 border border-purple-500/50 hover:bg-purple-500/30 transition"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Watch Recording/Replay"
+                            >
+                              📹 Replay
+                            </a>
+                          )}
+                          {/* Then show live link if available */}
                           {event.type === 'live-class' && event.link && event.link !== '#' && event.link.trim() !== '' && (
                             <a
                               href={event.link}
@@ -893,6 +957,20 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-medium truncate">{event.title}</span>
+                    {/* Show recording link first if available */}
+                    {event.type === 'live-class' && event.recordingUrl && event.recordingUrl.trim() !== '' && (
+                      <a
+                        href={event.recordingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-purple-300 bg-purple-500/20 border border-purple-500/50 hover:bg-purple-500/30 transition"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Watch Recording/Replay"
+                      >
+                        📹 Replay
+                      </a>
+                    )}
+                    {/* Then show live link if available */}
                     {event.type === 'live-class' && event.link && event.link !== '#' && event.link.trim() !== '' && (
                       <a
                         href={event.link}

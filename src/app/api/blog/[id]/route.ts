@@ -25,8 +25,10 @@ export async function GET(
     // Check if id is UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(id)) {
+      // Try by UUID first
       query = query.eq('id', id);
     } else {
+      // Try by slug
       query = query.eq('slug', id);
     }
 
