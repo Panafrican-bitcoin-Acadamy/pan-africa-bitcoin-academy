@@ -110,7 +110,7 @@ export function Footer() {
             >
               GNU General Public License v3
             </a>
-            {" "}or (at your option) any later version.{" "}
+            .{" "}
             <a
               href="/LICENSE"
               target="_blank"

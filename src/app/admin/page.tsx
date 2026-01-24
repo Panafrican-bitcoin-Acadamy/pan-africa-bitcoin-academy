@@ -491,30 +491,57 @@ export default function AdminDashboardPage() {
   };
 
   const fetchSatsRewards = async () => {
+    if (!admin) {
+      console.log('[Sats DB] No admin, skipping fetch');
+      return;
+    }
+    
     try {
+      console.log('[Sats DB] Fetching rewards...', { satsStatusFilter, satsTypeFilter });
       setLoadingSats(true);
       setSatsError(null);
-      const params = new URLSearchParams();
-      if (satsStatusFilter !== 'all') params.append('status', satsStatusFilter);
-      if (satsTypeFilter !== 'all') params.append('reward_type', satsTypeFilter);
       
-      const res = await fetchWithAuth(`/api/admin/sats?${params.toString()}`);
+      const params = new URLSearchParams();
+      if (satsStatusFilter && satsStatusFilter !== 'all') {
+        params.append('status', satsStatusFilter);
+      }
+      if (satsTypeFilter && satsTypeFilter !== 'all') {
+        params.append('reward_type', satsTypeFilter);
+      }
+      
+      const url = `/api/admin/sats${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('[Sats DB] Fetching from:', url);
+      const res = await fetchWithAuth(url);
+      
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Failed to fetch sats rewards' }));
-        throw new Error(errorData.error || 'Failed to fetch sats rewards');
+        let errorMessage = 'Failed to fetch sats rewards';
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Use default error message
+        }
+        throw new Error(errorMessage);
       }
       
       const data = await res.json();
-      if (data.rewards) {
-        setSatsRewards(data.rewards);
-        setSatsStatistics(data.statistics);
+      console.log('[Sats DB] Received data:', { 
+        rewardsCount: data.rewards?.length || 0, 
+        hasStatistics: !!data.statistics 
+      });
+      
+      if (data && typeof data === 'object') {
+        setSatsRewards(Array.isArray(data.rewards) ? data.rewards : []);
+        setSatsStatistics(data.statistics || null);
+        console.log('[Sats DB] Data set successfully');
       } else {
+        console.warn('[Sats DB] Invalid data format:', data);
         setSatsRewards([]);
         setSatsStatistics(null);
       }
     } catch (err: any) {
-      console.error('Error fetching sats rewards:', err);
-      setSatsError(err.message || 'Failed to load sats rewards. Please try again.');
+      console.error('[Sats DB] Error fetching sats rewards:', err);
+      setSatsError(err?.message || 'Failed to load sats rewards. Please try again.');
       setSatsRewards([]);
       setSatsStatistics(null);
     } finally {
@@ -2964,7 +2991,16 @@ export default function AdminDashboardPage() {
             {activeSubMenu === 'sats-database' && (
               <>
                 {/* Sats Database Statistics */}
-                {!loadingSats && satsStatistics && (
+                {loadingSats ? (
+                  <div className="grid gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 animate-pulse">
+                        <div className="h-4 bg-zinc-700 rounded mb-2 w-20"></div>
+                        <div className="h-8 bg-zinc-700 rounded w-24"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : satsStatistics ? (
                   <div className="grid gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-xl border border-orange-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
                       <div className="text-xs text-orange-300 mb-1">Total Paid</div>
@@ -2991,7 +3027,7 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Sats Database Section */}
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
