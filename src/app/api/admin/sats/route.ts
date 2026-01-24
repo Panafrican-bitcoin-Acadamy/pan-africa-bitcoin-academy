@@ -69,13 +69,29 @@ export async function GET(request: NextRequest) {
 
     let profilesMap: Record<string, any> = {};
     if (allProfileIds.length > 0) {
-      const { data: profiles } = await supabaseAdmin
-        .from('profiles')
-        .select('id, name, email, student_id')
-        .in('id', allProfileIds);
+      // Supabase has a limit of 1000 items in .in() queries, so we need to batch if needed
+      const batchSize = 1000;
+      const batches = [];
+      for (let i = 0; i < allProfileIds.length; i += batchSize) {
+        batches.push(allProfileIds.slice(i, i + batchSize));
+      }
       
-      if (profiles) {
-        profilesMap = profiles.reduce((acc: any, profile: any) => {
+      const allProfiles: any[] = [];
+      for (const batch of batches) {
+        const { data: profiles, error: profilesError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, name, email, student_id')
+          .in('id', batch);
+        
+        if (profilesError) {
+          console.error('Error fetching profiles batch:', profilesError);
+        } else if (profiles) {
+          allProfiles.push(...profiles);
+        }
+      }
+      
+      if (allProfiles.length > 0) {
+        profilesMap = allProfiles.reduce((acc: any, profile: any) => {
           acc[profile.id] = profile;
           return acc;
         }, {});

@@ -280,6 +280,7 @@ export default function AdminDashboardPage() {
   const [satsRewards, setSatsRewards] = useState<any[]>([]);
   const [satsStatistics, setSatsStatistics] = useState<any>(null);
   const [loadingSats, setLoadingSats] = useState(false);
+  const [satsError, setSatsError] = useState<string | null>(null);
   const [satsStatusFilter, setSatsStatusFilter] = useState<string>('all');
   const [satsTypeFilter, setSatsTypeFilter] = useState<string>('all');
   const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
@@ -329,7 +330,7 @@ export default function AdminDashboardPage() {
 
   // Fetch sats rewards when sats-database submenu is active or filters change
   useEffect(() => {
-    if (admin && activeSubMenu === 'sats-database' && !loadingSats) {
+    if (admin && activeSubMenu === 'sats-database') {
       fetchSatsRewards();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -492,18 +493,30 @@ export default function AdminDashboardPage() {
   const fetchSatsRewards = async () => {
     try {
       setLoadingSats(true);
+      setSatsError(null);
       const params = new URLSearchParams();
       if (satsStatusFilter !== 'all') params.append('status', satsStatusFilter);
       if (satsTypeFilter !== 'all') params.append('reward_type', satsTypeFilter);
       
       const res = await fetchWithAuth(`/api/admin/sats?${params.toString()}`);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to fetch sats rewards' }));
+        throw new Error(errorData.error || 'Failed to fetch sats rewards');
+      }
+      
       const data = await res.json();
       if (data.rewards) {
         setSatsRewards(data.rewards);
         setSatsStatistics(data.statistics);
+      } else {
+        setSatsRewards([]);
+        setSatsStatistics(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching sats rewards:', err);
+      setSatsError(err.message || 'Failed to load sats rewards. Please try again.');
+      setSatsRewards([]);
+      setSatsStatistics(null);
     } finally {
       setLoadingSats(false);
     }
@@ -2951,7 +2964,7 @@ export default function AdminDashboardPage() {
             {activeSubMenu === 'sats-database' && (
               <>
                 {/* Sats Database Statistics */}
-                {satsStatistics && (
+                {!loadingSats && satsStatistics && (
                   <div className="grid gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-xl border border-orange-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
                       <div className="text-xs text-orange-300 mb-1">Total Paid</div>
@@ -3033,6 +3046,16 @@ export default function AdminDashboardPage() {
 
                   {loadingSats ? (
                     <div className="text-center py-8 text-zinc-400">Loading sats rewards...</div>
+                  ) : satsError ? (
+                    <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
+                      <div className="text-red-300 mb-2">{satsError}</div>
+                      <button
+                        onClick={fetchSatsRewards}
+                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20"
+                      >
+                        Retry
+                      </button>
+                    </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-sm">
@@ -3053,51 +3076,67 @@ export default function AdminDashboardPage() {
                           {satsRewards.length === 0 ? (
                             <tr>
                               <td colSpan={9} className="px-3 py-8 text-center text-zinc-400">
-                                No sats rewards found.
+                                {satsStatusFilter !== 'all' || satsTypeFilter !== 'all' 
+                                  ? 'No sats rewards found matching the selected filters.'
+                                  : 'No sats rewards found in the database.'}
                               </td>
                             </tr>
                           ) : (
-                            satsRewards.map((reward: any) => (
-                              <tr key={reward.id} className="border-b border-zinc-800">
-                                <td className="px-3 py-2 text-zinc-50">
-                                  {reward.student?.name || '—'}
-                                </td>
-                                <td className="px-3 py-2 text-zinc-400">
-                                  {reward.student?.email || '—'}
-                                </td>
-                                <td className="px-3 py-2">
-                                  <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-xs font-medium text-orange-300">
-                                    {reward.reward_type || 'other'}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-2 text-orange-300 font-medium">
-                                  {reward.amount_paid?.toLocaleString() || 0} sats
-                                </td>
-                                <td className="px-3 py-2 text-yellow-300 font-medium">
-                                  {reward.amount_pending?.toLocaleString() || 0} sats
-                                </td>
-                                <td className="px-3 py-2">
-                                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                    reward.status === 'paid' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                                    reward.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                                    reward.status === 'processing' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
-                                    reward.status === 'failed' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                                    'bg-zinc-500/20 text-zinc-300 border border-zinc-500/30'
-                                  }`}>
-                                    {reward.status || 'pending'}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-2 text-zinc-400 text-xs max-w-xs truncate">
-                                  {reward.reason || '—'}
-                                </td>
-                                <td className="px-3 py-2 text-zinc-400 text-xs">
-                                  {reward.awarded_by_profile?.name || reward.awarded_by || '—'}
-                                </td>
-                                <td className="px-3 py-2 text-zinc-400 text-xs">
-                                  {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : '—'}
-                                </td>
-                              </tr>
-                            ))
+                            satsRewards.map((reward: any) => {
+                              // Format reward type for display
+                              const formatRewardType = (type: string) => {
+                                return type
+                                  .split('_')
+                                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                  .join(' ');
+                              };
+                              
+                              return (
+                                <tr key={reward.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition">
+                                  <td className="px-3 py-2 text-zinc-50">
+                                    {reward.student?.name || '—'}
+                                  </td>
+                                  <td className="px-3 py-2 text-zinc-400">
+                                    {reward.student?.email || '—'}
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-xs font-medium text-orange-300">
+                                      {formatRewardType(reward.reward_type || 'other')}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-orange-300 font-medium">
+                                    {reward.amount_paid?.toLocaleString() || 0} sats
+                                  </td>
+                                  <td className="px-3 py-2 text-yellow-300 font-medium">
+                                    {reward.amount_pending?.toLocaleString() || 0} sats
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                      reward.status === 'paid' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                                      reward.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                                      reward.status === 'processing' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                                      reward.status === 'failed' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                                      'bg-zinc-500/20 text-zinc-300 border border-zinc-500/30'
+                                    }`}>
+                                      {reward.status ? reward.status.charAt(0).toUpperCase() + reward.status.slice(1) : 'Pending'}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-zinc-400 text-xs max-w-xs truncate" title={reward.reason || ''}>
+                                    {reward.reason || '—'}
+                                  </td>
+                                  <td className="px-3 py-2 text-zinc-400 text-xs">
+                                    {reward.awarded_by_profile?.name || (reward.awarded_by ? 'System' : '—')}
+                                  </td>
+                                  <td className="px-3 py-2 text-zinc-400 text-xs">
+                                    {reward.created_at ? new Date(reward.created_at).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    }) : '—'}
+                                  </td>
+                                </tr>
+                              );
+                            })
                           )}
                         </tbody>
                       </table>
