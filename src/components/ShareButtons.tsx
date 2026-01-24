@@ -14,8 +14,9 @@ export function ShareButtons({ title, slug, id }: ShareButtonsProps) {
   const handleShareX = () => {
     // Create a well-formatted tweet with title and URL
     // Use both text and url parameters for better Twitter card support
+    // Use x.com instead of twitter.com (Twitter rebranded to X)
     const tweetText = `${title}\n\n#Bitcoin #Africa #PanAfricaBitcoinAcademy #panABTC`;
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
+    const twitterUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
     window.open(twitterUrl, '_blank', 'width=550,height=420');
   };
 
