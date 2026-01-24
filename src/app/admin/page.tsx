@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession } from '@/hooks/useSession';
 import EmailComposer from '@/components/EmailComposer';
@@ -283,6 +283,10 @@ export default function AdminDashboardPage() {
   const [satsError, setSatsError] = useState<string | null>(null);
   const [satsStatusFilter, setSatsStatusFilter] = useState<string>('all');
   const [satsTypeFilter, setSatsTypeFilter] = useState<string>('all');
+  
+  // Ref to prevent duplicate fetches
+  const satsFetchingRef = useRef(false);
+  const satsLastFetchParamsRef = useRef<string>('');
   const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
   const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
   const [blogSubmissions, setBlogSubmissions] = useState<any[]>([]);
@@ -330,11 +334,14 @@ export default function AdminDashboardPage() {
 
   // Fetch sats rewards when sats-database submenu is active or filters change
   useEffect(() => {
-    if (admin && activeSubMenu === 'sats-database') {
-      fetchSatsRewards();
+    if (!admin || activeSubMenu !== 'sats-database') {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [admin, activeSubMenu, satsStatusFilter, satsTypeFilter]);
+    
+    // Reset fetch key to allow fresh fetch
+    satsLastFetchParamsRef.current = '';
+    fetchSatsRewards();
+  }, [admin, activeSubMenu, satsFilterParams, fetchSatsRewards]);
 
   // Auto-hide notification after 5 seconds
   useEffect(() => {
@@ -346,7 +353,7 @@ export default function AdminDashboardPage() {
     }
   }, [notification]);
 
-  const fetchWithAuth = async (url: string, options?: RequestInit) => {
+  const fetchWithAuth = useCallback(async (url: string, options?: RequestInit) => {
     const res = await fetch(url, options);
     if (res.status === 401) {
       // Session expired - trigger session check to properly handle logout
@@ -354,7 +361,7 @@ export default function AdminDashboardPage() {
       throw new Error('Unauthorized');
     }
     return res;
-  };
+  }, [checkSession]);
 
   const loadData = async () => {
     setLoading(true);
@@ -490,27 +497,61 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchSatsRewards = async () => {
+  // Memoize filter params to prevent unnecessary recalculations
+  const satsFilterParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (satsStatusFilter && satsStatusFilter !== 'all') {
+      params.append('status', satsStatusFilter);
+    }
+    if (satsTypeFilter && satsTypeFilter !== 'all') {
+      params.append('reward_type', satsTypeFilter);
+    }
+    return params.toString();
+  }, [satsStatusFilter, satsTypeFilter]);
+
+  // Memoize filter change handlers to prevent recreation
+  const handleSatsStatusFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSatsStatusFilter(e.target.value);
+  }, []);
+
+  const handleSatsTypeFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSatsTypeFilter(e.target.value);
+  }, []);
+
+  // Memoize computed statistics values
+  const satsTotalAmount = useMemo(() => {
+    if (!satsStatistics) return 0;
+    return (satsStatistics.totalPaid || 0) + (satsStatistics.totalPending || 0);
+  }, [satsStatistics]);
+
+  // Memoize formatRewardType function
+  const formatRewardType = useCallback((type: string) => {
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }, []);
+
+  // Memoize the fetch function to prevent recreation on every render
+  const fetchSatsRewards = useCallback(async () => {
     if (!admin) {
-      console.log('[Sats DB] No admin, skipping fetch');
       return;
     }
     
+    // Prevent duplicate fetches
+    const fetchKey = `${satsStatusFilter}-${satsTypeFilter}`;
+    if (satsFetchingRef.current || satsLastFetchParamsRef.current === fetchKey) {
+      return;
+    }
+    
+    satsFetchingRef.current = true;
+    satsLastFetchParamsRef.current = fetchKey;
+    
     try {
-      console.log('[Sats DB] Fetching rewards...', { satsStatusFilter, satsTypeFilter });
       setLoadingSats(true);
       setSatsError(null);
       
-      const params = new URLSearchParams();
-      if (satsStatusFilter && satsStatusFilter !== 'all') {
-        params.append('status', satsStatusFilter);
-      }
-      if (satsTypeFilter && satsTypeFilter !== 'all') {
-        params.append('reward_type', satsTypeFilter);
-      }
-      
-      const url = `/api/admin/sats${params.toString() ? `?${params.toString()}` : ''}`;
-      console.log('[Sats DB] Fetching from:', url);
+      const url = `/api/admin/sats${satsFilterParams ? `?${satsFilterParams}` : ''}`;
       const res = await fetchWithAuth(url);
       
       if (!res.ok) {
@@ -525,17 +566,11 @@ export default function AdminDashboardPage() {
       }
       
       const data = await res.json();
-      console.log('[Sats DB] Received data:', { 
-        rewardsCount: data.rewards?.length || 0, 
-        hasStatistics: !!data.statistics 
-      });
       
       if (data && typeof data === 'object') {
         setSatsRewards(Array.isArray(data.rewards) ? data.rewards : []);
         setSatsStatistics(data.statistics || null);
-        console.log('[Sats DB] Data set successfully');
       } else {
-        console.warn('[Sats DB] Invalid data format:', data);
         setSatsRewards([]);
         setSatsStatistics(null);
       }
@@ -544,10 +579,13 @@ export default function AdminDashboardPage() {
       setSatsError(err?.message || 'Failed to load sats rewards. Please try again.');
       setSatsRewards([]);
       setSatsStatistics(null);
+      // Reset fetch key on error so we can retry
+      satsLastFetchParamsRef.current = '';
     } finally {
       setLoadingSats(false);
+      satsFetchingRef.current = false;
     }
-  };
+  }, [admin, satsFilterParams, satsStatusFilter, satsTypeFilter, fetchWithAuth]);
 
   const fetchSubmissions = async () => {
     if (!admin) return;
@@ -3023,7 +3061,7 @@ export default function AdminDashboardPage() {
                     <div className="rounded-xl border border-purple-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
                       <div className="text-xs text-purple-300 mb-1">Total Amount</div>
                       <div className="text-2xl font-bold text-purple-200">
-                        {((satsStatistics.totalPaid || 0) + (satsStatistics.totalPending || 0)).toLocaleString()} sats
+                        {satsTotalAmount.toLocaleString()} sats
                       </div>
                     </div>
                   </div>
@@ -3044,9 +3082,7 @@ export default function AdminDashboardPage() {
                   <div className="mb-4 flex flex-wrap gap-3">
                     <select
                       value={satsStatusFilter}
-                      onChange={(e) => {
-                        setSatsStatusFilter(e.target.value);
-                      }}
+                      onChange={handleSatsStatusFilterChange}
                       className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
                     >
                       <option value="all">All Status</option>
@@ -3057,9 +3093,7 @@ export default function AdminDashboardPage() {
                     </select>
                     <select
                       value={satsTypeFilter}
-                      onChange={(e) => {
-                        setSatsTypeFilter(e.target.value);
-                      }}
+                      onChange={handleSatsTypeFilterChange}
                       className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
                     >
                       <option value="all">All Types</option>
@@ -3119,14 +3153,6 @@ export default function AdminDashboardPage() {
                             </tr>
                           ) : (
                             satsRewards.map((reward: any) => {
-                              // Format reward type for display
-                              const formatRewardType = (type: string) => {
-                                return type
-                                  .split('_')
-                                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                  .join(' ');
-                              };
-                              
                               return (
                                 <tr key={reward.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition">
                                   <td className="px-3 py-2 text-zinc-50">
