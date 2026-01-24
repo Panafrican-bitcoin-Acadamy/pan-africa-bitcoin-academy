@@ -12,8 +12,11 @@ export function ShareButtons({ title, slug, id }: ShareButtonsProps) {
     : `/blog/${slug || id}`;
 
   const handleShareX = () => {
-    const text = encodeURIComponent(`${title} - Pan-Africa Bitcoin Academy`);
-    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
+    // Create a well-formatted tweet with title and URL
+    // Use both text and url parameters for better Twitter card support
+    const tweetText = `${title}\n\n#Bitcoin #Africa #PanAfricaBitcoinAcademy #panABTC`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
+    window.open(twitterUrl, '_blank', 'width=550,height=420');
   };
 
   const handleShareNostr = () => {
