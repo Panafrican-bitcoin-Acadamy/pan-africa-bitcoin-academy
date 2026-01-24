@@ -217,6 +217,7 @@ export default function AdminDashboardPage() {
       icon: '📝',
       subMenus: [
         { id: 'final-exam-submissions', label: 'Final Exam Submissions' },
+        { id: 'sats-database', label: 'Sats Database' },
       ],
     },
   ];
@@ -276,6 +277,11 @@ export default function AdminDashboardPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'graded'>('submitted');
+  const [satsRewards, setSatsRewards] = useState<any[]>([]);
+  const [satsStatistics, setSatsStatistics] = useState<any>(null);
+  const [loadingSats, setLoadingSats] = useState(false);
+  const [satsStatusFilter, setSatsStatusFilter] = useState<string>('all');
+  const [satsTypeFilter, setSatsTypeFilter] = useState<string>('all');
   const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
   const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
   const [blogSubmissions, setBlogSubmissions] = useState<any[]>([]);
@@ -321,6 +327,14 @@ export default function AdminDashboardPage() {
     }
   }, [isAuthenticated, admin]);
 
+  // Fetch sats rewards when sats-database submenu is active or filters change
+  useEffect(() => {
+    if (admin && activeSubMenu === 'sats-database') {
+      fetchSatsRewards();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin, activeSubMenu, satsStatusFilter, satsTypeFilter]);
+
   // Auto-hide notification after 5 seconds
   useEffect(() => {
     if (notification) {
@@ -359,6 +373,7 @@ export default function AdminDashboardPage() {
         fetchSubmissions(),
         fetchBlogSubmissions(),
         fetchSessions(),
+        fetchSatsRewards(),
       ]);
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
@@ -470,6 +485,26 @@ export default function AdminDashboardPage() {
       console.error('Error fetching exam access:', err);
     } finally {
       setLoadingExamAccess(false);
+    }
+  };
+
+  const fetchSatsRewards = async () => {
+    try {
+      setLoadingSats(true);
+      const params = new URLSearchParams();
+      if (satsStatusFilter !== 'all') params.append('status', satsStatusFilter);
+      if (satsTypeFilter !== 'all') params.append('reward_type', satsTypeFilter);
+      
+      const res = await fetchWithAuth(`/api/admin/sats?${params.toString()}`);
+      const data = await res.json();
+      if (data.rewards) {
+        setSatsRewards(data.rewards);
+        setSatsStatistics(data.statistics);
+      }
+    } catch (err) {
+      console.error('Error fetching sats rewards:', err);
+    } finally {
+      setLoadingSats(false);
     }
   };
 
@@ -2905,6 +2940,168 @@ export default function AdminDashboardPage() {
                           No students have completed Chapter 21 yet.
                         </p>
                       )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Assessments Section - Sats Database */}
+            {activeSubMenu === 'sats-database' && (
+              <>
+                {/* Sats Database Statistics */}
+                {satsStatistics && (
+                  <div className="grid gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl border border-orange-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+                      <div className="text-xs text-orange-300 mb-1">Total Paid</div>
+                      <div className="text-2xl font-bold text-orange-200">
+                        {satsStatistics.totalPaid?.toLocaleString() || 0} sats
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-yellow-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
+                      <div className="text-xs text-yellow-300 mb-1">Total Pending</div>
+                      <div className="text-2xl font-bold text-yellow-200">
+                        {satsStatistics.totalPending?.toLocaleString() || 0} sats
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+                      <div className="text-xs text-cyan-300 mb-1">Total Rewards</div>
+                      <div className="text-2xl font-bold text-cyan-200">
+                        {satsStatistics.totalRewards?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-purple-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                      <div className="text-xs text-purple-300 mb-1">Total Amount</div>
+                      <div className="text-2xl font-bold text-purple-200">
+                        {((satsStatistics.totalPaid || 0) + (satsStatistics.totalPending || 0)).toLocaleString()} sats
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sats Database Section */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-semibold text-zinc-50 mb-2">Sats Rewards Database</h2>
+                      <p className="text-sm text-zinc-400">
+                        View and manage all sats rewards across the academy.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Filters */}
+                  <div className="mb-4 flex flex-wrap gap-3">
+                    <select
+                      value={satsStatusFilter}
+                      onChange={(e) => {
+                        setSatsStatusFilter(e.target.value);
+                        setTimeout(() => fetchSatsRewards(), 100);
+                      }}
+                      className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="paid">Paid</option>
+                      <option value="failed">Failed</option>
+                    </select>
+                    <select
+                      value={satsTypeFilter}
+                      onChange={(e) => {
+                        setSatsTypeFilter(e.target.value);
+                        setTimeout(() => fetchSatsRewards(), 100);
+                      }}
+                      className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="assignment">Assignment</option>
+                      <option value="chapter">Chapter</option>
+                      <option value="discussion">Discussion</option>
+                      <option value="peer_help">Peer Help</option>
+                      <option value="project">Project</option>
+                      <option value="attendance">Attendance</option>
+                      <option value="blog">Blog</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <button
+                      onClick={fetchSatsRewards}
+                      className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  {loadingSats ? (
+                    <div className="text-center py-8 text-zinc-400">Loading sats rewards...</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-zinc-900 text-left text-zinc-300">
+                          <tr>
+                            <th className="px-3 py-2">Student</th>
+                            <th className="px-3 py-2">Email</th>
+                            <th className="px-3 py-2">Type</th>
+                            <th className="px-3 py-2">Amount Paid</th>
+                            <th className="px-3 py-2">Amount Pending</th>
+                            <th className="px-3 py-2">Status</th>
+                            <th className="px-3 py-2">Reason</th>
+                            <th className="px-3 py-2">Awarded By</th>
+                            <th className="px-3 py-2">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {satsRewards.length === 0 ? (
+                            <tr>
+                              <td colSpan={9} className="px-3 py-8 text-center text-zinc-400">
+                                No sats rewards found.
+                              </td>
+                            </tr>
+                          ) : (
+                            satsRewards.map((reward: any) => (
+                              <tr key={reward.id} className="border-b border-zinc-800">
+                                <td className="px-3 py-2 text-zinc-50">
+                                  {reward.student?.name || '—'}
+                                </td>
+                                <td className="px-3 py-2 text-zinc-400">
+                                  {reward.student?.email || '—'}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-xs font-medium text-orange-300">
+                                    {reward.reward_type || 'other'}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-orange-300 font-medium">
+                                  {reward.amount_paid?.toLocaleString() || 0} sats
+                                </td>
+                                <td className="px-3 py-2 text-yellow-300 font-medium">
+                                  {reward.amount_pending?.toLocaleString() || 0} sats
+                                </td>
+                                <td className="px-3 py-2">
+                                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                    reward.status === 'paid' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                                    reward.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                                    reward.status === 'processing' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                                    reward.status === 'failed' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                                    'bg-zinc-500/20 text-zinc-300 border border-zinc-500/30'
+                                  }`}>
+                                    {reward.status || 'pending'}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-zinc-400 text-xs max-w-xs truncate">
+                                  {reward.reason || '—'}
+                                </td>
+                                <td className="px-3 py-2 text-zinc-400 text-xs">
+                                  {reward.awarded_by_profile?.name || reward.awarded_by || '—'}
+                                </td>
+                                <td className="px-3 py-2 text-zinc-400 text-xs">
+                                  {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : '—'}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
