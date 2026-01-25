@@ -349,6 +349,7 @@ export default function AdminDashboardPage() {
   const [blogFilter, setBlogFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [processingBlog, setProcessingBlog] = useState<string | null>(null);
   const [expandedBlogId, setExpandedBlogId] = useState<string | null>(null);
+  const [awardingSats, setAwardingSats] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [expandedApplicationId, setExpandedApplicationId] = useState<string | null>(null);
@@ -1360,6 +1361,59 @@ export default function AdminDashboardPage() {
       alert(err.message || 'Failed to approve blog');
     } finally {
       setProcessingBlog(null);
+    }
+  };
+
+  const handleAwardSatsRetroactively = async () => {
+    if (!admin) return;
+    
+    const confirmed = confirm(
+      'This will award sats to all students who have approved blog posts but don\'t have sats rewards yet.\n\n' +
+      'Do you want to continue?'
+    );
+    
+    if (!confirmed) return;
+    
+    setAwardingSats(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/blog/award-sats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to award sats');
+      }
+      
+      // Show detailed results
+      const message = 
+        `${data.message}\n\n` +
+        `Details:\n` +
+        `- Processed: ${data.processed} blog posts\n` +
+        `- Created: ${data.created} rewards\n` +
+        `- Skipped: ${data.skipped} (already have rewards or no profile)\n` +
+        (data.errors && data.errors.length > 0 
+          ? `\nErrors: ${data.errors.length}\n${data.errors.map((e: any) => `  • ${e.title}: ${e.error}`).join('\n')}`
+          : '');
+      
+      alert(message);
+      
+      // Refresh sats rewards if that section is active
+      if (activeSubMenu === 'student-sats-rewards') {
+        satsLastFetchKeyRef.current = '';
+        satsFetchingRef.current = false;
+        setTimeout(() => {
+          fetchStudentSatsRewards();
+          fetchBlogRewardsSummary();
+        }, 500);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to award sats retroactively');
+    } finally {
+      setAwardingSats(false);
     }
   };
 
@@ -3531,9 +3585,9 @@ export default function AdminDashboardPage() {
         {/* Blog Submissions Section */}
                 {(activeSubMenu === 'blog-submissions' || activeTab === 'overview') && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
                 <button
                   key={f}
@@ -3555,10 +3609,20 @@ export default function AdminDashboardPage() {
                   }).length})
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={handleAwardSatsRetroactively}
+                disabled={awardingSats}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Award sats to students who have approved blog posts but don't have sats rewards yet"
+              >
+                {awardingSats ? 'Awarding...' : '💰 Award Sats Retroactively'}
+              </button>
             </div>
           </div>
           <p className="text-sm text-zinc-400 mb-6">
             Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
+            Use "Award Sats Retroactively" to give sats to students who submitted blogs before the reward system was implemented.
           </p>
 
           {loadingBlogSubmissions ? (
