@@ -676,6 +676,15 @@ export default function AdminDashboardPage() {
     }
   }, [admin, activeSubMenu, fetchWithAuth]);
 
+  // Fetch blog submissions when submenu becomes active
+  useEffect(() => {
+    if (admin && activeSubMenu === 'blog-submissions') {
+      console.log('[Blog Submissions] Submenu activated, fetching submissions');
+      fetchBlogSubmissions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin, activeSubMenu]);
+
   // Fetch students list and blog summary when submenu becomes active (only once)
   useEffect(() => {
     // Only fetch if submenu actually changed to 'student-sats-rewards'
@@ -1273,11 +1282,38 @@ export default function AdminDashboardPage() {
     if (!admin) return;
     try {
       setLoadingBlogSubmissions(true);
-      const res = await fetchWithAuth(`/api/admin/blog?type=submissions&status=${blogFilter === 'all' ? '' : blogFilter}`);
+      // Fetch all submissions, then filter client-side
+      const res = await fetchWithAuth('/api/admin/blog?type=submissions');
+      
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch blog submissions';
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Use default error message
+        }
+        console.error('[Blog Submissions] API error:', res.status, errorMessage);
+        setBlogSubmissions([]);
+        return;
+      }
+      
       const data = await res.json();
-      if (data.submissions) setBlogSubmissions(data.submissions);
-    } catch (err) {
-      console.error('Error fetching blog submissions:', err);
+      console.log('[Blog Submissions] Received data:', {
+        hasSubmissions: Array.isArray(data.submissions),
+        count: Array.isArray(data.submissions) ? data.submissions.length : 0,
+        dataKeys: Object.keys(data || {})
+      });
+      
+      if (data && Array.isArray(data.submissions)) {
+        setBlogSubmissions(data.submissions);
+      } else {
+        console.warn('[Blog Submissions] Invalid data format:', data);
+        setBlogSubmissions([]);
+      }
+    } catch (err: any) {
+      console.error('[Blog Submissions] Error:', err);
+      setBlogSubmissions([]);
     } finally {
       setLoadingBlogSubmissions(false);
     }
@@ -1298,8 +1334,28 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to approve blog');
-      alert(data.message || 'Blog approved and published!');
+      
+      // Show success message with sats reward info
+      let message = data.message || 'Blog approved and published!';
+      if (data.satsAwarded) {
+        message += `\n\n✓ ${data.satsAmount || 2000} sats awarded to author (pending payment)`;
+      } else if (data.satsError) {
+        message += `\n\n⚠ Warning: ${data.satsError}`;
+      }
+      alert(message);
+      
+      // Refresh blog submissions list
       await fetchBlogSubmissions();
+      
+      // Also refresh sats rewards if that section is active
+      if (activeSubMenu === 'student-sats-rewards') {
+        satsLastFetchKeyRef.current = '';
+        satsFetchingRef.current = false;
+        setTimeout(() => {
+          fetchStudentSatsRewards();
+          fetchBlogRewardsSummary();
+        }, 500);
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to approve blog');
     } finally {

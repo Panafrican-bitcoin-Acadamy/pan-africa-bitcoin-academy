@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from '@/components/AuthModal';
 
 interface Cohort {
   id: string;
@@ -10,49 +11,54 @@ interface Cohort {
 
 export default function SubmitBlogPage() {
   const { isAuthenticated, profile, loading: authLoading } = useAuth();
-  const [cohorts, setCohorts] = useState<Cohort[]>([]);
-  const [cohortsLoading, setCohortsLoading] = useState(true);
-  const [cohortOtherText, setCohortOtherText] = useState("");
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    cohort: "",
-    cohortId: "",
     title: "",
     category: "",
     content: "",
-    bio: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userProfileData, setUserProfileData] = useState<{
+    name: string;
+    email: string;
+    cohort: string;
+    cohortId: string;
+    bio: string;
+  } | null>(null);
+  const [studentPosts, setStudentPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
 
-  // Fetch cohorts from database
+  // Fetch student blog posts (always fetch, even when not authenticated)
   useEffect(() => {
-    const fetchCohorts = async () => {
+    const fetchStudentPosts = async () => {
       try {
-        const res = await fetch('/api/cohorts');
+        setLoadingPosts(true);
+        const res = await fetch('/api/blog?limit=6');
         if (res.ok) {
           const data = await res.json();
-          setCohorts(data.cohorts || []);
+          // Filter to show only posts from students (academy students)
+          const posts = (data.posts || []).filter((post: any) => 
+            post.isAcademyStudent || post.isGraduate
+          );
+          setStudentPosts(posts.slice(0, 6)); // Show up to 6 recent posts
         }
       } catch (error) {
-        console.error('Error fetching cohorts:', error);
+        console.error('Error fetching student posts:', error);
       } finally {
-        setCohortsLoading(false);
+        setLoadingPosts(false);
       }
     };
-    fetchCohorts();
+    
+    fetchStudentPosts();
   }, []);
 
-  // Auto-populate form if user is authenticated
+  // Fetch user profile data when authenticated
   useEffect(() => {
     if (isAuthenticated && profile && !authLoading) {
-      setFormData(prev => ({
-        ...prev,
-        name: profile.name || "",
-        email: profile.email || "",
-      }));
-
+      // Close login modal if open
+      setShowLoginModal(false);
+      
       // Fetch user's full profile data including cohort
       const fetchUserData = async () => {
         try {
@@ -65,25 +71,53 @@ export default function SubmitBlogPage() {
           
           if (res.ok) {
             const data = await res.json();
-            if (data.profile?.cohort_id && data.cohort?.name) {
-              setFormData(prev => ({
-                ...prev,
-                cohort: data.cohort.name,
-                cohortId: data.profile.cohort_id,
-              }));
-            }
+            setUserProfileData({
+              name: profile.name || "",
+              email: profile.email || "",
+              cohort: data.cohort?.name || "",
+              cohortId: data.profile?.cohort_id || "",
+              bio: data.profile?.bio || "",
+            });
+          } else {
+            // Fallback to basic profile data
+            setUserProfileData({
+              name: profile.name || "",
+              email: profile.email || "",
+              cohort: "",
+              cohortId: "",
+              bio: "",
+            });
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
+          // Fallback to basic profile data
+          setUserProfileData({
+            name: profile.name || "",
+            email: profile.email || "",
+            cohort: "",
+            cohortId: "",
+            bio: "",
+          });
         }
       };
       
       fetchUserData();
+    } else if (!isAuthenticated && !authLoading) {
+      // Show login modal if not authenticated
+      setShowLoginModal(true);
+      setUserProfileData(null);
     }
   }, [isAuthenticated, profile, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Ensure user is authenticated and has profile data
+    if (!isAuthenticated || !userProfileData) {
+      setShowLoginModal(true);
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -93,11 +127,11 @@ export default function SubmitBlogPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          authorName: formData.name,
-          authorEmail: formData.email,
-          cohort: formData.cohort,
-          cohortId: formData.cohortId || null,
-          authorBio: formData.bio,
+          authorName: userProfileData.name,
+          authorEmail: userProfileData.email,
+          cohort: userProfileData.cohort,
+          cohortId: userProfileData.cohortId || null,
+          authorBio: userProfileData.bio,
           title: formData.title,
           category: formData.category,
           content: formData.content,
@@ -110,44 +144,15 @@ export default function SubmitBlogPage() {
         throw new Error(data.error || 'Failed to submit blog post');
       }
 
-      // Show success message with warning if needed
-      let message = data.message || "Thank you for your submission! We'll review it and get back to you within 5-7 business days.";
+      // Show success message
+      alert(data.message || "Thank you for your submission! We'll review it and get back to you within 5-7 business days.");
       
-      if (data.warning && !data.profileExists) {
-        // User doesn't have a profile - offer to sign up
-        const shouldSignUp = confirm(
-          message + '\n\n⚠️ ' + data.warning.trim() + '\n\nWould you like to sign up now to receive sats rewards when your blog is approved?'
-        );
-        if (shouldSignUp) {
-          window.location.href = '/apply';
-          return; // Don't reset form if redirecting
-        }
-      } else {
-        alert(message);
-      }
-      
-      // Reset form (keep user data if authenticated)
-      if (isAuthenticated && profile) {
-        setFormData(prev => ({
-          ...prev,
-          title: "",
-          category: "",
-          content: "",
-        }));
-        setCohortOtherText("");
-      } else {
-        setFormData({
-          name: "",
-          email: "",
-          cohort: "",
-          cohortId: "",
-          title: "",
-          category: "",
-          content: "",
-          bio: "",
-        });
-        setCohortOtherText("");
-      }
+      // Reset form (keep user data)
+      setFormData({
+        title: "",
+        category: "",
+        content: "",
+      });
     } catch (error: any) {
       console.error('Error submitting blog post:', error);
       alert(error.message || 'Failed to submit blog post. Please try again.');
@@ -155,6 +160,150 @@ export default function SubmitBlogPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="relative min-h-screen w-full overflow-x-hidden">
+        <div className="relative z-10 w-full bg-black/95">
+          <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+            <div className="text-center text-zinc-400">Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if not authenticated (login modal will be shown)
+  if (!isAuthenticated) {
+    return (
+      <>
+        <div className="relative min-h-screen w-full overflow-x-hidden">
+          <div className="relative z-10 w-full bg-black/95">
+            <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+              <div className="mb-12">
+                <div className="rounded-xl border border-yellow-500/25 bg-yellow-500/10 p-8 text-center">
+                  <h1 className="text-3xl font-bold text-yellow-200 mb-4">
+                    Sign In Required
+                  </h1>
+                  <p className="text-lg text-zinc-300 mb-6">
+                    You must be signed in to submit a blog post. This ensures that we can properly track submissions and award sats rewards when your blog is approved.
+                  </p>
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="rounded-lg bg-cyan-500 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              </div>
+
+              {/* Student Blog Posts */}
+              <div className="mt-12">
+                <h2 className="text-2xl font-semibold text-zinc-50 mb-6 text-center sm:text-left">
+                  Recent Posts from Students
+                </h2>
+                
+                {loadingPosts ? (
+                  <div className="text-center py-8 text-zinc-400">Loading posts...</div>
+                ) : studentPosts.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">
+                    No student posts yet. Be the first to submit!
+                  </div>
+                ) : (
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {studentPosts.map((post) => (
+                      <a
+                        key={post.id}
+                        href={`/blog/${post.slug || post.id}`}
+                        className="group relative flex flex-col rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                      >
+                        {post.isAcademyStudent && (
+                          <div className="absolute -top-2 -right-2 rounded-full border border-cyan-400/30 bg-cyan-500/20 px-2 py-1 text-[10px] font-bold text-cyan-300">
+                            🎓 Academy Student
+                          </div>
+                        )}
+                        {post.isGraduate && !post.isAcademyStudent && (
+                          <div className="absolute -top-2 -right-2 rounded-full border border-cyan-400/30 bg-cyan-500/20 px-2 py-1 text-[10px] font-bold text-cyan-300">
+                            🎓 Graduate
+                          </div>
+                        )}
+                        <div className="mb-4 flex items-center justify-between">
+                          <span className="text-2xl">{post.image || '📝'}</span>
+                          <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300">
+                            {post.category || 'Blog'}
+                          </span>
+                        </div>
+                        <h3 className="mb-3 text-lg font-semibold text-zinc-50 group-hover:text-cyan-200 transition line-clamp-2">
+                          {post.title}
+                        </h3>
+                        <p className="mb-4 flex-1 text-sm leading-relaxed text-zinc-400 line-clamp-3">
+                          {post.excerpt}
+                        </p>
+                        <div className="mt-auto space-y-2 border-t border-cyan-400/10 pt-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20">
+                              <span className="text-xs">👤</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-zinc-300 truncate">{post.author}</p>
+                              <p className="text-[10px] text-zinc-500 truncate">
+                                {post.country ? `${post.country} • ` : ''}{post.authorRole || 'Student'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-zinc-500">
+                            <span>{post.date}</span>
+                            <div className="flex items-center gap-2">
+                              <span>{post.readTime}</span>
+                              {post.sats && post.sats !== '0' && (
+                                <span className="flex items-center gap-1 rounded-lg bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300">
+                                  ⚡ {post.sats}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+                
+                {studentPosts.length > 0 && (
+                  <div className="mt-8 text-center">
+                    <a
+                      href="/blog"
+                      className="inline-block rounded-lg border border-cyan-400/50 bg-transparent px-6 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
+                    >
+                      View All Blog Posts →
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <AuthModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          mode="signin"
+        />
+      </>
+    );
+  }
+
+  // Wait for profile data to load
+  if (!userProfileData) {
+    return (
+      <div className="relative min-h-screen w-full overflow-x-hidden">
+        <div className="relative z-10 w-full bg-black/95">
+          <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+            <div className="text-center text-zinc-400">Loading your profile...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
@@ -172,128 +321,37 @@ export default function SubmitBlogPage() {
 
           {/* Submission Form */}
           <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Author Information */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-cyan-200">Author Information</h2>
-                
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      Full Name <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                      placeholder="Your name as it should appear"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      Email <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      disabled={isAuthenticated}
-                      className={`w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
-                        isAuthenticated ? 'opacity-70 cursor-not-allowed' : ''
-                      }`}
-                      placeholder="your@email.com"
-                    />
-                    {isAuthenticated && (
-                      <p className="mt-1 text-xs text-zinc-400">Email from your account</p>
-                    )}
-                  </div>
-                </div>
-
+            {/* Author Info Display (Read-only from profile) */}
+            <div className="mb-6 rounded-lg border border-cyan-400/20 bg-cyan-500/5 p-4">
+              <h3 className="text-sm font-semibold text-cyan-200 mb-3">Author Information</h3>
+              <div className="grid gap-2 text-sm">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-zinc-300">
-                    Cohort / Status <span className="text-red-400">*</span>
-                  </label>
-                  {cohortsLoading ? (
-                    <div className="text-sm text-zinc-400">Loading cohorts...</div>
-                  ) : (
-                    <>
-                      <select
-                        required
-                        value={formData.cohort === "Other" ? "Other" : formData.cohortId}
-                        onChange={(e) => {
-                          if (e.target.value === "Other") {
-                            setFormData({ ...formData, cohort: "Other", cohortId: "" });
-                            setCohortOtherText("");
-                          } else if (e.target.value === "") {
-                            setFormData({ ...formData, cohort: "", cohortId: "" });
-                            setCohortOtherText("");
-                          } else {
-                            const selectedCohort = cohorts.find(c => c.id === e.target.value);
-                            setFormData({ 
-                              ...formData, 
-                              cohort: selectedCohort?.name || "", 
-                              cohortId: e.target.value 
-                            });
-                            setCohortOtherText("");
-                          }
-                        }}
-                        disabled={!!(isAuthenticated && formData.cohortId && formData.cohort !== "Other")}
-                        className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer ${
-                          isAuthenticated && formData.cohortId && formData.cohort !== "Other" ? 'opacity-70 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <option value="" className="bg-zinc-950 text-zinc-400">
-                          {formData.category === "pre-education" ? "Select or choose Other" : "Select a cohort"}
-                        </option>
-                        {cohorts.map((cohort) => (
-                          <option key={cohort.id} value={cohort.id} className="bg-zinc-950 text-zinc-50">
-                            {cohort.name}
-                          </option>
-                        ))}
-                        <option value="Other" className="bg-zinc-950 text-zinc-50">Other</option>
-                      </select>
-                      {formData.cohort === "Other" && (
-                        <input
-                          type="text"
-                          required
-                          value={cohortOtherText}
-                          onChange={(e) => {
-                            setCohortOtherText(e.target.value);
-                            setFormData({ ...formData, cohort: e.target.value });
-                          }}
-                          className="mt-2 w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                          placeholder="Enter your cohort/status (e.g., Prospective Student, Not Yet Enrolled)"
-                        />
-                      )}
-                      {isAuthenticated && formData.cohortId && formData.cohort !== "Other" && (
-                        <p className="mt-1 text-xs text-zinc-400">Your assigned cohort</p>
-                      )}
-                      {formData.category === "pre-education" && (
-                        <p className="mt-1 text-xs text-zinc-400">
-                          Optional: If you're planning to enroll, select "Other" and mention it. Otherwise, you can leave this blank or write "Prospective Student".
-                        </p>
-                      )}
-                    </>
-                  )}
+                  <span className="text-zinc-400">Name:</span>{' '}
+                  <span className="text-zinc-200">{userProfileData.name}</span>
                 </div>
-
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-zinc-300">
-                    Short Bio (optional)
-                  </label>
-                  <textarea
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    rows={2}
-                    className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                    placeholder="A brief introduction about yourself (1-2 sentences)"
-                  />
+                  <span className="text-zinc-400">Email:</span>{' '}
+                  <span className="text-zinc-200">{userProfileData.email}</span>
                 </div>
+                {userProfileData.cohort && (
+                  <div>
+                    <span className="text-zinc-400">Cohort:</span>{' '}
+                    <span className="text-zinc-200">{userProfileData.cohort}</span>
+                  </div>
+                )}
+                {userProfileData.bio && (
+                  <div>
+                    <span className="text-zinc-400">Bio:</span>{' '}
+                    <span className="text-zinc-200">{userProfileData.bio}</span>
+                  </div>
+                )}
               </div>
+              <p className="mt-3 text-xs text-zinc-400">
+                This information is from your profile. To update it, visit your profile settings.
+              </p>
+            </div>
 
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Blog Post Information */}
               <div className="space-y-4 border-t border-cyan-400/10 pt-6">
                 <h2 className="text-xl font-semibold text-cyan-200">Blog Post Details</h2>
