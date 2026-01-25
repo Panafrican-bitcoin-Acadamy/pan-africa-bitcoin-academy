@@ -10,9 +10,10 @@ interface AuthModalProps {
   onClose: () => void;
   mode: 'signin' | 'signup';
   onForgotPassword?: (email: string) => void;
+  redirectAfterLogin?: string | null; // If null, don't redirect. If string, redirect to that URL. If undefined, default to /dashboard
 }
 
-export function AuthModal({ isOpen, onClose, mode, onForgotPassword }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAfterLogin }: AuthModalProps) {
   const [isSignIn, setIsSignIn] = useState(mode === 'signin');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -135,8 +136,17 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword }: AuthModal
               // ignore
             }
             onClose();
-            // Redirect to dashboard after successful sign-in
-            window.location.href = '/dashboard';
+            // Redirect based on redirectAfterLogin prop
+            if (redirectAfterLogin === null) {
+              // Don't redirect - stay on current page
+              // The auth state will update and the page will re-render
+            } else if (redirectAfterLogin) {
+              // Redirect to specified URL
+              window.location.href = redirectAfterLogin;
+            } else {
+              // Default behavior: redirect to dashboard
+              window.location.href = '/dashboard';
+            }
           } else {
             setServerError(data.error || 'Invalid credentials. Please try again.');
           }

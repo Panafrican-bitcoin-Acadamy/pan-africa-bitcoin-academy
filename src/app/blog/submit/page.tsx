@@ -287,6 +287,7 @@ export default function SubmitBlogPage() {
           isOpen={showLoginModal}
           onClose={() => setShowLoginModal(false)}
           mode="signin"
+          redirectAfterLogin={null}
         />
       </>
     );

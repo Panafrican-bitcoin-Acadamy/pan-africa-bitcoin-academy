@@ -132,6 +132,45 @@ export function useSession(userType: UserType, options: UseSessionOptions = {}) 
     checkSession();
   }, [checkSession]);
 
+  // Listen for storage events (e.g., when user logs in via AuthModal)
+  useEffect(() => {
+    const handleStorageEvent = (e: Event) => {
+      // Check if this is a StorageEvent (from other tabs) or custom event (from AuthModal)
+      const isStorageEvent = 'key' in e && 'newValue' in e;
+      
+      if (userType === 'student' && !isAuthenticated) {
+        let shouldCheck = false;
+        
+        if (isStorageEvent) {
+          // Actual StorageEvent from another tab
+          const storageEvent = e as StorageEvent;
+          if (storageEvent.key === 'profileEmail' && storageEvent.newValue) {
+            shouldCheck = true;
+          }
+        } else {
+          // Custom event from AuthModal in same tab - check localStorage directly
+          const profileEmail = localStorage.getItem('profileEmail');
+          if (profileEmail) {
+            shouldCheck = true;
+          }
+        }
+        
+        if (shouldCheck) {
+          // Small delay to ensure session cookie is set
+          setTimeout(() => {
+            checkSession();
+          }, 200);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+    };
+  }, [checkSession, userType, isAuthenticated]);
+
   // Activity listeners and inactivity checking
   useEffect(() => {
     if (!isAuthenticated) return;
