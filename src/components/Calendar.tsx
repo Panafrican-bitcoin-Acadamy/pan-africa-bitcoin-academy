@@ -813,11 +813,11 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                             ? event.cohortColor.bg
                             : eventTypeColors[event.type].split(' ')[0];
                           return (
-                            <div
-                              key={event.id}
+                          <div
+                            key={event.id}
                               className={`h-0.5 w-full rounded ${colorClass}`}
-                              title={event.title}
-                            />
+                            title={event.title}
+                          />
                           );
                         })}
                         {dayEvents.length > 3 && (

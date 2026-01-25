@@ -174,6 +174,7 @@ export default function AdminDashboardPage() {
   
   // Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   
@@ -217,7 +218,7 @@ export default function AdminDashboardPage() {
       icon: '📝',
       subMenus: [
         { id: 'final-exam-submissions', label: 'Final Exam Submissions' },
-        { id: 'sats-database', label: 'Sats Database' },
+        { id: 'student-sats-rewards', label: 'Student Sats Rewards' },
       ],
     },
   ];
@@ -274,19 +275,73 @@ export default function AdminDashboardPage() {
   };
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
   const [loadingExamAccess, setLoadingExamAccess] = useState(false);
-  const [submissions, setSubmissions] = useState<any[]>([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
-  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'graded'>('submitted');
-  const [satsRewards, setSatsRewards] = useState<any[]>([]);
+  
+  // Student Sats Rewards state
+  const [studentSatsRewards, setStudentSatsRewards] = useState<any[]>([]);
+  const [allSatsRewards, setAllSatsRewards] = useState<any[]>([]); // Store all fetched rewards for client-side filtering
   const [satsStatistics, setSatsStatistics] = useState<any>(null);
-  const [loadingSats, setLoadingSats] = useState(false);
+  const [loadingSatsRewards, setLoadingSatsRewards] = useState(false);
   const [satsError, setSatsError] = useState<string | null>(null);
   const [satsStatusFilter, setSatsStatusFilter] = useState<string>('all');
   const [satsTypeFilter, setSatsTypeFilter] = useState<string>('all');
+  const [satsStudentFilter, setSatsStudentFilter] = useState<string>('all');
+  const [studentsList, setStudentsList] = useState<any[]>([]);
+  const [loadingStudentsList, setLoadingStudentsList] = useState(false);
   
-  // Ref to prevent duplicate fetches
+  // Blog rewards summary state
+  const [blogRewardsSummary, setBlogRewardsSummary] = useState<{
+    totalRewards: number;
+    totalSats: number;
+    uniqueStudents: number;
+  }>({
+    totalRewards: 0,
+    totalSats: 0,
+    uniqueStudents: 0,
+  });
+  const [blogRewardsList, setBlogRewardsList] = useState<any[]>([]);
+  const [loadingBlogSummary, setLoadingBlogSummary] = useState(false);
+  
+  // Edit/Create reward modal state
+  const [editingReward, setEditingReward] = useState<any | null>(null);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [rewardForm, setRewardForm] = useState({
+    student_id: '',
+    amount_paid: '',
+    amount_pending: '',
+    reward_type: 'other',
+    reason: '',
+    status: 'pending',
+  });
+  const [savingReward, setSavingReward] = useState(false);
+  
+  // Refs to prevent duplicate fetches
   const satsFetchingRef = useRef(false);
-  const satsLastFetchParamsRef = useRef<string>('');
+  const satsLastFetchKeyRef = useRef<string>('');
+  const studentsListFetchedRef = useRef(false);
+  const blogSummaryFetchedRef = useRef(false);
+  const lastFetchTimeRef = useRef<number>(0);
+  const lastStudentsListFetchTimeRef = useRef<number>(0);
+  const lastBlogSummaryFetchTimeRef = useRef<number>(0);
+  const lastActiveSubMenuRef = useRef<string>('');
+  const studentsListFetchingRef = useRef(false);
+  const blogSummaryFetchingRef = useRef(false);
+  const MIN_FETCH_INTERVAL = 1000; // Minimum 1 second between fetches
+  
+  // Refs to store current filter values (to avoid including them in callback dependencies)
+  const satsStatusFilterRef = useRef<string>(satsStatusFilter);
+  const satsTypeFilterRef = useRef<string>(satsTypeFilter);
+  const satsStudentFilterRef = useRef<string>(satsStudentFilter);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    satsStatusFilterRef.current = satsStatusFilter;
+    satsTypeFilterRef.current = satsTypeFilter;
+    satsStudentFilterRef.current = satsStudentFilter;
+  }, [satsStatusFilter, satsTypeFilter, satsStudentFilter]);
+  
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'graded'>('submitted');
   const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
   const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
   const [blogSubmissions, setBlogSubmissions] = useState<any[]>([]);
@@ -332,16 +387,6 @@ export default function AdminDashboardPage() {
     }
   }, [isAuthenticated, admin]);
 
-  // Fetch sats rewards when sats-database submenu is active or filters change
-  useEffect(() => {
-    if (!admin || activeSubMenu !== 'sats-database') {
-      return;
-    }
-    
-    // Reset fetch key to allow fresh fetch
-    satsLastFetchParamsRef.current = '';
-    fetchSatsRewards();
-  }, [admin, activeSubMenu, satsFilterParams, fetchSatsRewards]);
 
   // Auto-hide notification after 5 seconds
   useEffect(() => {
@@ -354,14 +399,696 @@ export default function AdminDashboardPage() {
   }, [notification]);
 
   const fetchWithAuth = useCallback(async (url: string, options?: RequestInit) => {
-    const res = await fetch(url, options);
-    if (res.status === 401) {
-      // Session expired - trigger session check to properly handle logout
-      await checkSession();
-      throw new Error('Unauthorized');
+    try {
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        credentials: 'include',
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (res.status === 401) {
+        // Session expired - trigger session check to properly handle logout
+        await checkSession();
+        throw new Error('Unauthorized');
+      }
+      return res;
+    } catch (error: any) {
+      // Handle network errors, timeouts, and connection failures
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout. Please check your connection and try again.');
+      }
+      if (error.message === 'Failed to fetch' || error.message.includes('NetworkError') || error.message.includes('network')) {
+        throw new Error('Unable to connect to the server. Please check your internet connection.');
+      }
+      if (error.message === 'Unauthorized') {
+        throw error; // Re-throw auth errors
+      }
+      // Generic error
+      throw new Error(error.message || 'Connection error. Please try again.');
     }
-    return res;
   }, [checkSession]);
+
+  // Fetch students list for dropdown
+  const fetchStudentsList = useCallback(async () => {
+    if (!admin || activeSubMenu !== 'student-sats-rewards') {
+      return;
+    }
+    
+    // Prevent duplicate fetches - check if already fetched or currently fetching
+    if (studentsListFetchedRef.current || studentsListFetchingRef.current) {
+      return;
+    }
+    
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastStudentsListFetchTimeRef.current < MIN_FETCH_INTERVAL) {
+      return;
+    }
+    
+    studentsListFetchedRef.current = true;
+    studentsListFetchingRef.current = true;
+    lastStudentsListFetchTimeRef.current = now;
+    
+    try {
+      setLoadingStudentsList(true);
+      
+      // Fetch only students who have received sats (pending or paid)
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      let res: Response;
+      try {
+        res = await fetch('/api/admin/students?from_sats=true', {
+          credentials: 'include',
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timeout. Please check your connection and try again.');
+        }
+        if (fetchError.message === 'Failed to fetch' || fetchError.message.includes('NetworkError')) {
+          throw new Error('Unable to connect to the server. Please check your internet connection.');
+        }
+        throw fetchError;
+      }
+      
+      // Handle unauthorized access - don't expose data
+      if (res.status === 401) {
+        console.error('[Sats Rewards] Unauthorized access - admin session may have expired');
+        setStudentsList([]);
+        // Don't try fallback for unauthorized - security risk
+        return;
+      }
+      
+      // If 404, try using the progress endpoint as fallback (only if authorized)
+      if (res.status === 404) {
+        console.warn('[Sats Rewards] Admin students endpoint not found, using progress endpoint as fallback');
+        res = await fetchWithAuth('/api/admin/students/progress');
+        if (res.status === 401) {
+          console.error('[Sats Rewards] Unauthorized access to progress endpoint');
+          setStudentsList([]);
+          return;
+        }
+        if (res.ok) {
+          const progressData = await res.json();
+          // Extract unique students from progress data - only minimal fields
+          const uniqueStudents = new Map();
+          if (Array.isArray(progressData)) {
+            progressData.forEach((item: any) => {
+              if (item.id && !uniqueStudents.has(item.id)) {
+                uniqueStudents.set(item.id, {
+                  id: item.id,
+                  name: item.name || '',
+                  email: item.email || '',
+                  status: item.status || 'New',
+                  // Explicitly exclude sensitive data like completedChapters, etc.
+                });
+              }
+            });
+          }
+          setStudentsList(Array.from(uniqueStudents.values()));
+          return;
+        }
+      }
+      
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch students list';
+        let errorDetails = null;
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+          errorDetails = errorData.details || null;
+        } catch {
+          // Use default error message
+        }
+        console.error('[Sats Rewards] Failed to fetch students list:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorMessage,
+          details: errorDetails,
+        });
+        // Don't throw - just set empty list and continue
+        setStudentsList([]);
+        return;
+      }
+      
+      const data = await res.json();
+      if (data && Array.isArray(data.students)) {
+        setStudentsList(data.students);
+      } else {
+        console.warn('[Sats Rewards] Unexpected data format:', data);
+        setStudentsList([]);
+      }
+    } catch (err: any) {
+      // Handle Unauthorized error from fetchWithAuth
+      if (err.message === 'Unauthorized') {
+        console.error('[Sats Rewards] Unauthorized - session may have expired');
+      } else {
+        console.error('[Sats Rewards] Error fetching students list:', err);
+      }
+      setStudentsList([]);
+    } finally {
+      setLoadingStudentsList(false);
+      studentsListFetchingRef.current = false;
+    }
+  }, [admin, activeSubMenu, fetchWithAuth]);
+
+  // Fetch blog rewards summary
+  const fetchBlogRewardsSummary = useCallback(async () => {
+    if (!admin || activeSubMenu !== 'student-sats-rewards') {
+      return;
+    }
+    
+    // Prevent duplicate fetches - check if already fetched or currently fetching
+    if (blogSummaryFetchedRef.current || blogSummaryFetchingRef.current) {
+      return;
+    }
+    
+    // Rate limiting - don't fetch if we just fetched recently
+    const now = Date.now();
+    if (now - lastBlogSummaryFetchTimeRef.current < MIN_FETCH_INTERVAL) {
+      return;
+    }
+    
+    blogSummaryFetchedRef.current = true;
+    blogSummaryFetchingRef.current = true;
+    lastBlogSummaryFetchTimeRef.current = now;
+    
+    try {
+      setLoadingBlogSummary(true);
+      
+      // Use fetchWithAuth to ensure admin authentication is included
+      const res = await fetchWithAuth('/api/admin/sats?reward_type=blog');
+      
+      // Handle rate limiting
+      if (res.status === 429) {
+        const errorData = await res.json().catch(() => ({}));
+        console.warn('[Blog Summary] Rate limited:', errorData.error || 'Too many requests');
+        blogSummaryFetchedRef.current = false;
+        return;
+      }
+      
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch blog rewards';
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Use default error message
+        }
+        console.error('[Blog Summary] API error:', res.status, errorMessage);
+        blogSummaryFetchedRef.current = false;
+        return;
+      }
+      
+      const data = await res.json();
+      console.log('[Blog Summary] Received data:', {
+        hasRewards: Array.isArray(data.rewards),
+        rewardsCount: Array.isArray(data.rewards) ? data.rewards.length : 0,
+        dataKeys: Object.keys(data || {})
+      });
+      
+      if (data && typeof data === 'object' && Array.isArray(data.rewards)) {
+        const blogRewards = data.rewards;
+        console.log('[Blog Summary] Processing', blogRewards.length, 'blog rewards');
+        
+        const totalSats = blogRewards.reduce((sum: number, r: any) => 
+          sum + (Number(r.amount_paid) || 0) + (Number(r.amount_pending) || 0), 0
+        );
+        const uniqueStudents = new Set(blogRewards.map((r: any) => r.student_id).filter(Boolean)).size;
+        
+        console.log('[Blog Summary] Calculated:', {
+          totalRewards: blogRewards.length,
+          totalSats,
+          uniqueStudents
+        });
+        
+        // Store the list of blog rewards
+        setBlogRewardsList(blogRewards);
+        
+        setBlogRewardsSummary({
+          totalRewards: blogRewards.length,
+          totalSats,
+          uniqueStudents,
+        });
+      } else {
+        console.warn('[Blog Summary] Invalid data format:', data);
+        // Set empty summary if no valid data
+        setBlogRewardsSummary({
+          totalRewards: 0,
+          totalSats: 0,
+          uniqueStudents: 0,
+        });
+        setBlogRewardsList([]);
+      }
+    } catch (err: any) {
+      console.error('[Blog Summary] Error:', err);
+      
+      // Provide user-friendly error messages
+      if (err?.message) {
+        if (err.message.includes('Unable to connect') || err.message.includes('Connection error')) {
+          console.error('[Blog Summary] Connection error');
+        } else if (err.message.includes('timeout')) {
+          console.error('[Blog Summary] Request timeout');
+        }
+      }
+      
+      blogSummaryFetchedRef.current = false;
+      // Set empty summary on error
+      setBlogRewardsSummary({
+        totalRewards: 0,
+        totalSats: 0,
+        uniqueStudents: 0,
+      });
+      setBlogRewardsList([]);
+    } finally {
+      setLoadingBlogSummary(false);
+      blogSummaryFetchingRef.current = false;
+    }
+  }, [admin, activeSubMenu, fetchWithAuth]);
+
+  // Fetch students list and blog summary when submenu becomes active (only once)
+  useEffect(() => {
+    // Only fetch if submenu actually changed to 'student-sats-rewards'
+    if (admin && activeSubMenu === 'student-sats-rewards') {
+      // Only reset and fetch if this is a new submenu (not the same one)
+      if (lastActiveSubMenuRef.current !== 'student-sats-rewards') {
+        // Reset fetch flags when submenu changes
+        studentsListFetchedRef.current = false;
+        blogSummaryFetchedRef.current = false;
+        // Reset sats fetch key to ensure it fetches
+        satsLastFetchKeyRef.current = '';
+        satsFetchingRef.current = false;
+        lastActiveSubMenuRef.current = 'student-sats-rewards';
+        
+        console.log('[Sats Rewards] Submenu activated, resetting fetch flags');
+        
+        // Stagger the fetches to avoid hitting rate limits
+        fetchStudentsList();
+        // Delay blog summary fetch slightly
+        setTimeout(() => {
+          fetchBlogRewardsSummary();
+        }, 500);
+        // Note: fetchStudentSatsRewards will be triggered by the separate useEffect below
+      }
+    } else {
+      // Reset flags when submenu is not active
+      if (lastActiveSubMenuRef.current === 'student-sats-rewards') {
+        studentsListFetchedRef.current = false;
+        blogSummaryFetchedRef.current = false;
+        lastActiveSubMenuRef.current = activeSubMenu || '';
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin, activeSubMenu]);
+
+  // Apply filters to rewards (client-side filtering)
+  const applyFiltersToRewards = useCallback((rewards: any[]) => {
+    if (!rewards || rewards.length === 0) {
+      setStudentSatsRewards([]);
+      return;
+    }
+    
+    let filtered = [...rewards];
+    
+    // Apply status filter
+    const statusFilter = satsStatusFilterRef.current;
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter((r: any) => r.status === statusFilter);
+    }
+    
+    // Apply type filter
+    const typeFilter = satsTypeFilterRef.current;
+    if (typeFilter && typeFilter !== 'all') {
+      filtered = filtered.filter((r: any) => r.reward_type === typeFilter);
+    }
+    
+    // Apply student filter
+    const studentFilter = satsStudentFilterRef.current;
+    if (studentFilter && studentFilter !== 'all') {
+      filtered = filtered.filter((r: any) => r.student_id === studentFilter);
+    }
+    
+    setStudentSatsRewards(filtered);
+  }, []);
+
+  // Memoize filter change handlers - update both state and refs, then apply filters to existing data
+  const handleSatsStatusFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSatsStatusFilter(value);
+    satsStatusFilterRef.current = value;
+    // Apply filter to already-fetched data (no new API call)
+    applyFiltersToRewards(allSatsRewards);
+  }, [allSatsRewards, applyFiltersToRewards]);
+
+  const handleSatsTypeFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSatsTypeFilter(value);
+    satsTypeFilterRef.current = value;
+    // Apply filter to already-fetched data (no new API call)
+    applyFiltersToRewards(allSatsRewards);
+  }, [allSatsRewards, applyFiltersToRewards]);
+
+  const handleSatsStudentFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSatsStudentFilter(value);
+    satsStudentFilterRef.current = value;
+    // Apply filter to already-fetched data (no new API call)
+    applyFiltersToRewards(allSatsRewards);
+  }, [allSatsRewards, applyFiltersToRewards]);
+
+  // Memoize computed statistics values
+  const satsTotalAmount = useMemo(() => {
+    if (!satsStatistics) return 0;
+    return (satsStatistics.totalPaid || 0) + (satsStatistics.totalPending || 0);
+  }, [satsStatistics]);
+
+  // Memoize formatRewardType function
+  const formatRewardType = useCallback((type: string) => {
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }, []);
+
+  // Fetch student sats rewards - simplified and working version
+  const fetchStudentSatsRewards = useCallback(async () => {
+    // Only fetch when admin is logged in and submenu is active
+    if (!admin || activeSubMenu !== 'student-sats-rewards') {
+      return;
+    }
+    
+    // Prevent duplicate fetches
+    if (satsFetchingRef.current) {
+      return;
+    }
+    
+    // Check if we already fetched (only fetch once unless manually refreshed)
+    // But allow refresh if data is empty (might have been cleared)
+    if (satsLastFetchKeyRef.current === 'fetched') {
+      // Data already fetched, just apply current filters
+      if (allSatsRewards.length > 0) {
+        applyFiltersToRewards(allSatsRewards);
+      }
+      return;
+    }
+    
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < MIN_FETCH_INTERVAL) {
+      return;
+    }
+    
+    satsFetchingRef.current = true;
+    lastFetchTimeRef.current = now;
+    
+    try {
+      setLoadingSatsRewards(true);
+      setSatsError(null);
+      
+      // Fetch all rewards (no filters in API call - filter client-side)
+      const url = '/api/admin/sats';
+      const res = await fetchWithAuth(url);
+      
+      // Handle rate limiting
+      if (res.status === 429) {
+        const errorData = await res.json().catch(() => ({}));
+        setSatsError(errorData.error || 'Too many requests. Please wait a moment and try again.');
+        satsFetchingRef.current = false;
+        setTimeout(() => {
+          satsFetchingRef.current = false;
+        }, 2000);
+        return;
+      }
+      
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch sats rewards';
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Use default error message
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const data = await res.json();
+      
+      if (data && typeof data === 'object' && Array.isArray(data.rewards)) {
+        const rewards = data.rewards;
+        
+        // Store all rewards
+        setAllSatsRewards(rewards);
+        
+        // Apply filters to show filtered results
+        applyFiltersToRewards(rewards);
+        
+        // Store statistics
+        setSatsStatistics(data.statistics || null);
+        
+        // Mark as fetched
+        satsLastFetchKeyRef.current = 'fetched';
+      } else {
+        // No data or invalid format
+        setAllSatsRewards([]);
+        setStudentSatsRewards([]);
+        setSatsStatistics(null);
+        satsLastFetchKeyRef.current = 'fetched';
+      }
+    } catch (err: any) {
+      console.error('[Sats Rewards] Error:', err);
+      
+      let errorMessage = 'Failed to load sats rewards. Please try again.';
+      if (err?.message) {
+        if (err.message.includes('Unable to connect') || err.message.includes('Connection error')) {
+          errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+        } else if (err.message.includes('timeout')) {
+          errorMessage = 'Request timeout. Please check your connection and try again.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setSatsError(errorMessage);
+      setAllSatsRewards([]);
+      setStudentSatsRewards([]);
+      setSatsStatistics(null);
+      satsLastFetchKeyRef.current = '';
+    } finally {
+      setLoadingSatsRewards(false);
+      satsFetchingRef.current = false;
+    }
+  }, [admin, activeSubMenu, fetchWithAuth, applyFiltersToRewards]);
+
+  // Manual refresh function
+  const handleRefreshSatsRewards = useCallback(() => {
+    // Reset fetch flags to force fresh fetch
+    satsLastFetchKeyRef.current = '';
+    satsFetchingRef.current = false;
+    // Clear existing data to show loading state
+    setAllSatsRewards([]);
+    setStudentSatsRewards([]);
+    // Fetch fresh data
+    fetchStudentSatsRewards();
+  }, [fetchStudentSatsRewards]);
+
+  // Fetch data when submenu becomes active (only once)
+  useEffect(() => {
+    if (!admin || activeSubMenu !== 'student-sats-rewards') {
+      // Reset when submenu is not active
+      if (lastActiveSubMenuRef.current === 'student-sats-rewards') {
+        satsLastFetchKeyRef.current = '';
+      }
+      return;
+    }
+    
+    // Only fetch when submenu first becomes active
+    if (lastActiveSubMenuRef.current !== 'student-sats-rewards') {
+      lastActiveSubMenuRef.current = 'student-sats-rewards';
+      // Reset fetch flags
+      satsLastFetchKeyRef.current = '';
+      satsFetchingRef.current = false;
+      
+      // Fetch data after a short delay
+      const timeoutId = setTimeout(() => {
+        fetchStudentSatsRewards();
+      }, 200);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [admin, activeSubMenu, fetchStudentSatsRewards]);
+
+  // Handle opening edit modal
+  const handleEditReward = useCallback((reward: any) => {
+    setEditingReward(reward);
+    setRewardForm({
+      student_id: reward.student_id || '',
+      amount_paid: reward.amount_paid?.toString() || '0',
+      amount_pending: reward.amount_pending?.toString() || '0',
+      reward_type: reward.reward_type || 'other',
+      reason: reward.reason || '',
+      status: reward.status || 'pending',
+    });
+    setShowRewardModal(true);
+  }, []);
+
+  // Handle opening create modal
+  const handleCreateReward = useCallback(() => {
+    setEditingReward(null);
+    setRewardForm({
+      student_id: satsStudentFilter !== 'all' ? satsStudentFilter : '',
+      amount_paid: '',
+      amount_pending: '',
+      reward_type: 'other',
+      reason: '',
+      status: 'pending',
+    });
+    setShowRewardModal(true);
+  }, [satsStudentFilter]);
+
+  // Handle saving reward (create or update)
+  const handleSaveReward = useCallback(async () => {
+    if (!rewardForm.student_id) {
+      setNotification({ type: 'error', message: 'Please select a student' });
+      return;
+    }
+
+    if (!rewardForm.amount_paid && !rewardForm.amount_pending) {
+      setNotification({ type: 'error', message: 'Please enter at least one amount' });
+      return;
+    }
+
+    setSavingReward(true);
+    try {
+      const payload = {
+        student_id: rewardForm.student_id,
+        amount_paid: parseInt(rewardForm.amount_paid) || 0,
+        amount_pending: parseInt(rewardForm.amount_pending) || 0,
+        reward_type: rewardForm.reward_type,
+        reason: rewardForm.reason,
+        status: rewardForm.status,
+      };
+
+      let res;
+      if (editingReward) {
+        // Update existing reward
+        res = await fetchWithAuth(`/api/admin/sats/${editingReward.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // Create new reward
+        res = await fetchWithAuth('/api/admin/sats/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to save reward');
+      }
+
+      setNotification({
+        type: 'success',
+        message: editingReward ? 'Reward updated successfully' : 'Reward created successfully',
+      });
+      setShowRewardModal(false);
+      // Refresh data after mutation
+      satsLastFetchKeyRef.current = '';
+      satsFetchingRef.current = false;
+      setTimeout(() => {
+        fetchStudentSatsRewards();
+      }, 500);
+    } catch (err: any) {
+      console.error('Error saving reward:', err);
+      setNotification({
+        type: 'error',
+        message: err.message || 'Failed to save reward. Please try again.',
+      });
+    } finally {
+      setSavingReward(false);
+    }
+  }, [rewardForm, editingReward, fetchWithAuth, fetchStudentSatsRewards]);
+
+  // Handle quick status update
+  const handleQuickStatusUpdate = useCallback(async (rewardId: string, newStatus: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/sats/${rewardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update status');
+      }
+
+      setNotification({
+        type: 'success',
+        message: 'Status updated successfully',
+      });
+      // Refresh data to get updated status
+      satsLastFetchKeyRef.current = '';
+      satsFetchingRef.current = false;
+      setTimeout(() => {
+        fetchStudentSatsRewards();
+      }, 300);
+    } catch (err: any) {
+      console.error('Error updating status:', err);
+      setNotification({
+        type: 'error',
+        message: err.message || 'Failed to update status. Please try again.',
+      });
+    }
+  }, [fetchWithAuth, fetchStudentSatsRewards]);
+
+  // Handle delete reward
+  const handleDeleteReward = useCallback(async (rewardId: string) => {
+    if (!confirm('Are you sure you want to delete this reward? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const res = await fetchWithAuth(`/api/admin/sats/${rewardId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete reward');
+      }
+
+      setNotification({
+        type: 'success',
+        message: 'Reward deleted successfully',
+      });
+      // Refresh data after deletion
+      satsLastFetchKeyRef.current = '';
+      satsFetchingRef.current = false;
+      setTimeout(() => {
+        fetchStudentSatsRewards();
+      }, 300);
+    } catch (err: any) {
+      console.error('Error deleting reward:', err);
+      setNotification({
+        type: 'error',
+        message: err.message || 'Failed to delete reward. Please try again.',
+      });
+    }
+  }, [fetchWithAuth, fetchStudentSatsRewards]);
 
   const loadData = async () => {
     setLoading(true);
@@ -497,95 +1224,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Memoize filter params to prevent unnecessary recalculations
-  const satsFilterParams = useMemo(() => {
-    const params = new URLSearchParams();
-    if (satsStatusFilter && satsStatusFilter !== 'all') {
-      params.append('status', satsStatusFilter);
-    }
-    if (satsTypeFilter && satsTypeFilter !== 'all') {
-      params.append('reward_type', satsTypeFilter);
-    }
-    return params.toString();
-  }, [satsStatusFilter, satsTypeFilter]);
-
-  // Memoize filter change handlers to prevent recreation
-  const handleSatsStatusFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSatsStatusFilter(e.target.value);
-  }, []);
-
-  const handleSatsTypeFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSatsTypeFilter(e.target.value);
-  }, []);
-
-  // Memoize computed statistics values
-  const satsTotalAmount = useMemo(() => {
-    if (!satsStatistics) return 0;
-    return (satsStatistics.totalPaid || 0) + (satsStatistics.totalPending || 0);
-  }, [satsStatistics]);
-
-  // Memoize formatRewardType function
-  const formatRewardType = useCallback((type: string) => {
-    return type
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }, []);
-
-  // Memoize the fetch function to prevent recreation on every render
-  const fetchSatsRewards = useCallback(async () => {
-    if (!admin) {
-      return;
-    }
-    
-    // Prevent duplicate fetches
-    const fetchKey = `${satsStatusFilter}-${satsTypeFilter}`;
-    if (satsFetchingRef.current || satsLastFetchParamsRef.current === fetchKey) {
-      return;
-    }
-    
-    satsFetchingRef.current = true;
-    satsLastFetchParamsRef.current = fetchKey;
-    
-    try {
-      setLoadingSats(true);
-      setSatsError(null);
-      
-      const url = `/api/admin/sats${satsFilterParams ? `?${satsFilterParams}` : ''}`;
-      const res = await fetchWithAuth(url);
-      
-      if (!res.ok) {
-        let errorMessage = 'Failed to fetch sats rewards';
-        try {
-          const errorData = await res.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Use default error message
-        }
-        throw new Error(errorMessage);
-      }
-      
-      const data = await res.json();
-      
-      if (data && typeof data === 'object') {
-        setSatsRewards(Array.isArray(data.rewards) ? data.rewards : []);
-        setSatsStatistics(data.statistics || null);
-      } else {
-        setSatsRewards([]);
-        setSatsStatistics(null);
-      }
-    } catch (err: any) {
-      console.error('[Sats DB] Error fetching sats rewards:', err);
-      setSatsError(err?.message || 'Failed to load sats rewards. Please try again.');
-      setSatsRewards([]);
-      setSatsStatistics(null);
-      // Reset fetch key on error so we can retry
-      satsLastFetchParamsRef.current = '';
-    } finally {
-      setLoadingSats(false);
-      satsFetchingRef.current = false;
-    }
-  }, [admin, satsFilterParams, satsStatusFilter, satsTypeFilter, fetchWithAuth]);
 
   const fetchSubmissions = async () => {
     if (!admin) return;
@@ -1226,25 +1864,49 @@ export default function AdminDashboardPage() {
     );
   }
   return (
-    <div className="min-h-screen bg-black flex">
+    <div className="min-h-screen bg-black flex flex-col lg:flex-row">
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-zinc-900 border-r border-zinc-800 flex flex-col transition-all duration-300 ease-in-out flex-shrink-0`}>
+      <aside className={`
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'} 
+        w-64
+        fixed lg:static
+        bg-zinc-900 border-r border-zinc-800 flex flex-col transition-all duration-300 ease-in-out flex-shrink-0 z-50 h-screen
+      `}>
         {/* Sidebar Header */}
         <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
           {!sidebarCollapsed && (
-            <div>
+          <div>
               <h2 className="text-lg font-semibold text-zinc-50">Admin Panel</h2>
               <p className="text-xs text-zinc-500 truncate">{admin.email}</p>
-            </div>
+          </div>
           )}
-          <button
-            type="button"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {sidebarCollapsed ? '→' : '←'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="lg:hidden p-1.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Close menu"
+            >
+              ✕
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden lg:flex p-1.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? '→' : '←'}
+            </button>
+          </div>
         </div>
         
         {/* Sidebar Navigation */}
@@ -1286,13 +1948,16 @@ export default function AdminDashboardPage() {
                 </button>
                 
                 {/* Sub-menus */}
-                {!sidebarCollapsed && isSectionActive && (
+                {(!sidebarCollapsed || mobileMenuOpen) && isSectionActive && (
                   <div className="mt-1 ml-4 space-y-0.5 border-l border-zinc-800 pl-3">
                     {section.subMenus.map((subMenu) => (
                       <button
                         key={subMenu.id}
                         type="button"
-                        onClick={() => handleSidebarNavigation(section.id, subMenu.id)}
+                        onClick={() => {
+                          handleSidebarNavigation(section.id, subMenu.id);
+                          setMobileMenuOpen(false);
+                        }}
                         className={`w-full text-left px-3 py-2 rounded text-xs transition ${
                           activeSubMenu === subMenu.id
                             ? 'bg-cyan-500/20 text-cyan-300 border-l-2 border-cyan-500'
@@ -1326,13 +1991,43 @@ export default function AdminDashboardPage() {
       </aside>
       
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 sm:p-8">
-          <div className="mx-auto max-w-7xl space-y-6">
-            {/* Breadcrumbs */}
-            <nav className="flex items-center gap-2 text-sm text-zinc-500">
+      <main className="flex-1 overflow-y-auto w-full">
+        {/* Mobile Header */}
+        <div className="lg:hidden sticky top-0 z-30 bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+          >
+            ☰
+          </button>
+          <div className="flex-1 text-center">
+            <h1 className="text-lg font-semibold text-zinc-50 truncate">
+              {activeSubMenu && activeSection
+                ? (() => {
+                    const section = sidebarSections.find(s => s.id === activeSection);
+                    const subMenu = section?.subMenus?.find(sm => sm.id === activeSubMenu);
+                    return subMenu?.label || 'Admin';
+                  })()
+                : 'Admin'}
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="p-2 rounded hover:bg-red-500/10 text-zinc-400 hover:text-red-300 transition"
+            title="Logout"
+          >
+            🚪
+          </button>
+        </div>
+
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+            {/* Breadcrumbs - Hidden on mobile */}
+            <nav className="hidden sm:flex items-center gap-2 text-sm text-zinc-500 overflow-x-auto">
               {getBreadcrumbs().map((crumb, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="flex items-center gap-2 flex-shrink-0">
                   {index > 0 && <span>›</span>}
                   <span className={index === getBreadcrumbs().length - 1 ? 'text-zinc-300 font-medium' : ''}>
                     {crumb.label}
@@ -1341,10 +2036,10 @@ export default function AdminDashboardPage() {
               ))}
             </nav>
             
-            {/* Page Header */}
-            <div className="flex items-center justify-between">
+            {/* Page Header - Desktop only */}
+            <div className="hidden lg:flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-zinc-50">
+                <h1 className="text-2xl lg:text-3xl font-bold text-zinc-50">
                   {activeSubMenu && activeSection
                     ? (() => {
                         const section = sidebarSections.find(s => s.id === activeSection);
@@ -1359,13 +2054,13 @@ export default function AdminDashboardPage() {
                   </p>
                 )}
               </div>
-            </div>
+        </div>
 
-            {error && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-200">
-                {error}
-              </div>
-            )}
+        {error && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-200">
+            {error}
+          </div>
+        )}
 
             {/* Overview cards - show on dashboard or when no specific sub-menu is selected */}
             {(!activeSubMenu || (activeTab === 'overview' && !activeSubMenu)) && (
@@ -1387,12 +2082,12 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           ))}
-            </div>
+        </div>
             )}
 
             {/* Students Section - Pending/Rejected Students */}
             {(activeSubMenu === 'pending-students' || activeSubMenu === 'rejected-students' || (activeTab === 'applications' && (filter === 'pending' || filter === 'rejected'))) && (
-              <div className="space-y-4">
+        <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
@@ -1801,13 +2496,13 @@ export default function AdminDashboardPage() {
                       ))}
                     </div>
                   )}
-                </div>
+          </div>
 
-                {/* Create Cohort and Create Event - Side by Side */}
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-                    <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
-                    <div className="mt-3 space-y-3">
+        {/* Create Cohort and Create Event - Side by Side */}
+        <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+              <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
+              <div className="mt-3 space-y-3">
                 <input
                   className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
                   placeholder="Cohort name"
@@ -2239,23 +2934,23 @@ export default function AdminDashboardPage() {
             {(activeSubMenu === 'email-composition' || activeSubMenu === 'calendar') && (
               <>
                 {/* Email Composition and Calendar */}
-                <div className="grid gap-6 lg:grid-cols-2">
-                  {/* Email Composition Interface */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Email Composition Interface */}
                   {activeSubMenu === 'email-composition' && (
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
-                      <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
-                      <p className="text-xs text-zinc-400 mb-3">
-                        Send professional emails to students, applicants, or other recipients.
-                      </p>
-                      <div className="rounded-lg">
-                        <EmailComposer />
-                      </div>
-                    </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+            <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
+            <p className="text-xs text-zinc-400 mb-3">
+              Send professional emails to students, applicants, or other recipients.
+            </p>
+            <div className="rounded-lg">
+              <EmailComposer />
+            </div>
+          </div>
                   )}
 
-                  {/* Calendar - Events, Cohorts & Activities */}
+          {/* Calendar - Events, Cohorts & Activities */}
                   {activeSubMenu === 'calendar' && (
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
                       <div className="mb-3 flex items-center justify-between">
                         <h2 className="text-lg font-semibold text-zinc-50">Calendar</h2>
                         <div className="flex items-center gap-3 text-xs text-zinc-400">
@@ -2272,21 +2967,21 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-zinc-400 mb-3">
                         Sessions follow a 3-day-per-week pattern (Monday, Wednesday, Friday). Sundays are never scheduled.
                       </p>
-                      <div className="rounded-lg">
-                        <Calendar cohortId={null} showCohorts={true} />
-                      </div>
-                    </div>
+            <div className="rounded-lg">
+              <Calendar cohortId={null} showCohorts={true} />
+            </div>
+          </div>
                   )}
-                </div>
+        </div>
               </>
             )}
 
                 {/* Mentorship applications - Show in overview or cohorts section */}
                 {(!activeSubMenu || activeSubMenu === 'cohort-list' || activeSubMenu === 'cohort-analytics') && (
                   <>
-                    {/* Mentorship applications */}
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-                      <h3 className="mb-3 text-lg font-semibold text-zinc-50">Mentorship Applications</h3>
+        {/* Mentorship applications */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Mentorship Applications</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-zinc-900 text-left text-zinc-300">
@@ -2338,12 +3033,12 @@ export default function AdminDashboardPage() {
             {mentorships.length === 0 && (
               <p className="p-3 text-sm text-zinc-400">No mentorship applications yet.</p>
             )}
-                    </div>
-                  </div>
+          </div>
+        </div>
 
-                  {/* Attendance Upload */}
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-                    <h3 className="mb-3 text-lg font-semibold text-zinc-50">Upload Attendance (Google Meet CSV)</h3>
+        {/* Attendance Upload */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Upload Attendance (Google Meet CSV)</h3>
           <form onSubmit={handleAttendanceUpload} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
@@ -2383,7 +3078,7 @@ export default function AdminDashboardPage() {
               CSV should include: Email, Name, Join Time, Leave Time, Duration (minutes)
             </p>
           </form>
-                  </div>
+        </div>
                   </>
                 )}
 
@@ -2451,12 +3146,12 @@ export default function AdminDashboardPage() {
             {/* Student Database Section */}
             {(activeSubMenu === 'student-database' || activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || activeTab === 'students') && (
               <>
-                {/* Student Database */}
+        {/* Student Database */}
                 {(activeSubMenu === 'student-database' || activeTab === 'students') && (
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-zinc-50">Student Database</h3>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-50">Student Database</h3>
               {(cohortFilter || attendanceSort) && (
                 <div className="mt-1 flex items-center gap-2 text-xs text-zinc-400">
                   {cohortFilter && (
@@ -2626,310 +3321,310 @@ export default function AdminDashboardPage() {
         </div>
                 )}
 
-                {/* Assignment Submissions Section */}
+        {/* Assignment Submissions Section */}
                 {(activeSubMenu === 'assignments-submissions' || activeTab === 'assignments') && (
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="text-xl font-semibold text-zinc-50">Assignment Submissions</h2>
-                      <div className="flex gap-2">
-                        {(['all', 'submitted', 'graded'] as const).map((f) => (
-                          <button
-                            key={f}
-                            type="button"
-                            onClick={() => {
-                              setSubmissionFilter(f);
-                              setTimeout(() => fetchSubmissions(), 0);
-                            }}
-                            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                              submissionFilter === f
-                                ? 'bg-cyan-400 text-black'
-                                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                            }`}
-                          >
-                            {f.charAt(0).toUpperCase() + f.slice(1)} (
-                            {submissions.filter((s) => {
-                              if (f === 'all') return true;
-                              return s.status === f;
-                            }).length})
-                          </button>
-                        ))}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-zinc-50">Assignment Submissions</h2>
+            <div className="flex gap-2">
+              {(['all', 'submitted', 'graded'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => {
+                    setSubmissionFilter(f);
+                    setTimeout(() => fetchSubmissions(), 0);
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                    submissionFilter === f
+                      ? 'bg-cyan-400 text-black'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  }`}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)} (
+                  {submissions.filter((s) => {
+                    if (f === 'all') return true;
+                    return s.status === f;
+                  }).length})
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-sm text-zinc-400 mb-6">
+            Review and grade student assignment submissions. Approve to award sats rewards.
+          </p>
+
+          {loadingSubmissions ? (
+            <div className="text-center py-8 text-zinc-400">Loading submissions...</div>
+          ) : submissions.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">No submissions found.</div>
+          ) : (
+            <div className="space-y-4">
+              {submissions
+                .filter((s) => {
+                  if (submissionFilter === 'all') return true;
+                  return s.status === submissionFilter;
+                })
+                .map((submission) => {
+                  const assignment = submission.assignments;
+                  const student = submission.profiles;
+                  return (
+                    <div
+                      key={submission.id}
+                      className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                    >
+                      <div className="mb-3 flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold text-zinc-50">
+                            {assignment?.title || 'Untitled Assignment'}
+                          </h3>
+                          <p className="text-xs text-zinc-400 mt-1">
+                            Chapter {assignment?.chapter_number || 'N/A'} • {student?.name || student?.email || 'Unknown Student'}
+                          </p>
+                          {assignment?.reward_sats && (
+                            <p className="text-xs text-cyan-400 mt-1">
+                              Reward: {assignment.reward_sats} sats
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          className={`rounded-full border px-2 py-1 text-xs ${
+                            submission.status === 'graded'
+                              ? submission.is_correct
+                                ? 'text-green-400 bg-green-500/10 border-green-500/30'
+                                : 'text-red-400 bg-red-500/10 border-red-500/30'
+                              : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                          }`}
+                        >
+                          {submission.status === 'graded'
+                            ? submission.is_correct
+                              ? 'Approved'
+                              : 'Rejected'
+                            : 'Pending Review'}
+                        </span>
                       </div>
+
+                      {assignment?.question && (
+                        <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                          <p className="text-xs font-medium text-zinc-300 mb-1">Question:</p>
+                          <p className="text-sm text-zinc-200">{assignment.question}</p>
+                        </div>
+                      )}
+
+                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                        <p className="text-xs font-medium text-zinc-300 mb-1">Student Answer:</p>
+                        <p className="text-sm text-zinc-200 whitespace-pre-wrap">{submission.answer}</p>
+                      </div>
+
+                      {submission.feedback && (
+                        <div className="mb-3 rounded bg-blue-500/10 border border-blue-500/30 p-3">
+                          <p className="text-xs font-medium text-blue-300 mb-1">Feedback:</p>
+                          <p className="text-sm text-blue-200">{submission.feedback}</p>
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+                        <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
+                        {submission.graded_at && (
+                          <span>• Graded: {new Date(submission.graded_at).toLocaleString()}</span>
+                        )}
+                      </div>
+
+                      {submission.status === 'submitted' && (
+                        <div className="mt-4 space-y-2">
+                          <textarea
+                            placeholder="Optional feedback for student..."
+                            value={gradingFeedback[submission.id] || ''}
+                            onChange={(e) =>
+                              setGradingFeedback((prev) => ({
+                                ...prev,
+                                [submission.id]: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleGradeSubmission(submission.id, true)}
+                              disabled={gradingSubmission === submission.id}
+                              className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                            >
+                              {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleGradeSubmission(submission.id, false)}
+                              disabled={gradingSubmission === submission.id}
+                              className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                            >
+                              {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-zinc-400 mb-6">
-                      Review and grade student assignment submissions. Approve to award sats rewards.
-                    </p>
-
-                    {loadingSubmissions ? (
-                      <div className="text-center py-8 text-zinc-400">Loading submissions...</div>
-                    ) : submissions.length === 0 ? (
-                      <div className="text-center py-8 text-zinc-400">No submissions found.</div>
-                    ) : (
-                      <div className="space-y-4">
-                        {submissions
-                          .filter((s) => {
-                            if (submissionFilter === 'all') return true;
-                            return s.status === submissionFilter;
-                          })
-                          .map((submission) => {
-                            const assignment = submission.assignments;
-                            const student = submission.profiles;
-                            return (
-                              <div
-                                key={submission.id}
-                                className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
-                              >
-                                <div className="mb-3 flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <h3 className="text-sm font-semibold text-zinc-50">
-                                      {assignment?.title || 'Untitled Assignment'}
-                                    </h3>
-                                    <p className="text-xs text-zinc-400 mt-1">
-                                      Chapter {assignment?.chapter_number || 'N/A'} • {student?.name || student?.email || 'Unknown Student'}
-                                    </p>
-                                    {assignment?.reward_sats && (
-                                      <p className="text-xs text-cyan-400 mt-1">
-                                        Reward: {assignment.reward_sats} sats
-                                      </p>
-                                    )}
-                                  </div>
-                                  <span
-                                    className={`rounded-full border px-2 py-1 text-xs ${
-                                      submission.status === 'graded'
-                                        ? submission.is_correct
-                                          ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                                          : 'text-red-400 bg-red-500/10 border-red-500/30'
-                                        : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
-                                    }`}
-                                  >
-                                    {submission.status === 'graded'
-                                      ? submission.is_correct
-                                        ? 'Approved'
-                                        : 'Rejected'
-                                      : 'Pending Review'}
-                                  </span>
-                                </div>
-
-                                {assignment?.question && (
-                                  <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                                    <p className="text-xs font-medium text-zinc-300 mb-1">Question:</p>
-                                    <p className="text-sm text-zinc-200">{assignment.question}</p>
-                                  </div>
-                                )}
-
-                                <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                                  <p className="text-xs font-medium text-zinc-300 mb-1">Student Answer:</p>
-                                  <p className="text-sm text-zinc-200 whitespace-pre-wrap">{submission.answer}</p>
-                                </div>
-
-                                {submission.feedback && (
-                                  <div className="mb-3 rounded bg-blue-500/10 border border-blue-500/30 p-3">
-                                    <p className="text-xs font-medium text-blue-300 mb-1">Feedback:</p>
-                                    <p className="text-sm text-blue-200">{submission.feedback}</p>
-                                  </div>
-                                )}
-
-                                <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                                  <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
-                                  {submission.graded_at && (
-                                    <span>• Graded: {new Date(submission.graded_at).toLocaleString()}</span>
-                                  )}
-                                </div>
-
-                                {submission.status === 'submitted' && (
-                                  <div className="mt-4 space-y-2">
-                                    <textarea
-                                      placeholder="Optional feedback for student..."
-                                      value={gradingFeedback[submission.id] || ''}
-                                      onChange={(e) =>
-                                        setGradingFeedback((prev) => ({
-                                          ...prev,
-                                          [submission.id]: e.target.value,
-                                        }))
-                                      }
-                                      className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                                      rows={2}
-                                    />
-                                    <div className="flex gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleGradeSubmission(submission.id, true)}
-                                        disabled={gradingSubmission === submission.id}
-                                        className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                                      >
-                                        {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleGradeSubmission(submission.id, false)}
-                                        disabled={gradingSubmission === submission.id}
-                                        className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                                      >
-                                        {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                      </div>
-                    )}
-                  </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
                 )}
 
-                {/* Blog Submissions Section */}
+        {/* Blog Submissions Section */}
                 {(activeSubMenu === 'blog-submissions' || activeTab === 'overview') && (
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
-                      <div className="flex gap-2">
-                        {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
+            <div className="flex gap-2">
+              {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => {
+                    setBlogFilter(f);
+                    setTimeout(() => fetchBlogSubmissions(), 0);
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                    blogFilter === f
+                      ? 'bg-purple-400 text-black'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  }`}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)} (
+                  {blogSubmissions.filter((s) => {
+                    if (f === 'all') return true;
+                    return s.status === f;
+                  }).length})
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-sm text-zinc-400 mb-6">
+            Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
+          </p>
+
+          {loadingBlogSubmissions ? (
+            <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
+          ) : blogSubmissions.filter((s) => {
+              if (blogFilter === 'all') return true;
+              return s.status === blogFilter;
+            }).length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">No blog submissions found.</div>
+          ) : (
+            <div className="space-y-4">
+              {blogSubmissions
+                .filter((s) => {
+                  if (blogFilter === 'all') return true;
+                  return s.status === blogFilter;
+                })
+                .map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                  >
+                    <div className="mb-3 flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-zinc-50">
+                          {submission.title}
+                        </h3>
+                        <p className="text-xs text-zinc-400 mt-1">
+                          {submission.author_name} • {submission.author_email}
+                          {submission.cohort && ` • ${submission.cohort}`}
+                        </p>
+                        <p className="text-xs text-purple-400 mt-1">
+                          Category: {submission.category}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full border px-2 py-1 text-xs ${
+                          submission.status === 'approved'
+                            ? 'text-green-400 bg-green-500/10 border-green-500/30'
+                            : submission.status === 'rejected'
+                            ? 'text-red-400 bg-red-500/10 border-red-500/30'
+                            : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                        }`}
+                      >
+                        {submission.status === 'approved'
+                          ? 'Approved'
+                          : submission.status === 'rejected'
+                          ? 'Rejected'
+                          : 'Pending Review'}
+                      </span>
+                    </div>
+
+                    <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                      <p className="text-xs font-medium text-zinc-300 mb-1">Content Preview:</p>
+                      <p className="text-sm text-zinc-200 line-clamp-3">
+                        {submission.content.substring(0, 300)}...
+                      </p>
+                    </div>
+
+                    {expandedBlogId === submission.id && (
+                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                        <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
+                        <p className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
+                          {submission.content}
+                        </p>
+                      </div>
+                    )}
+
+                    {submission.rejection_reason && (
+                      <div className="mb-3 rounded bg-red-500/10 border border-red-500/30 p-3">
+                        <p className="text-xs font-medium text-red-300 mb-1">Rejection Reason:</p>
+                        <p className="text-sm text-red-200">{submission.rejection_reason}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+                      <span>Submitted: {new Date(submission.created_at).toLocaleString()}</span>
+                      {submission.reviewed_at && (
+                        <span>• Reviewed: {new Date(submission.reviewed_at).toLocaleString()}</span>
+                      )}
+                    </div>
+
+                    {submission.status === 'pending' && (
+                      <div className="mt-4 space-y-2">
+                        <div className="flex gap-2">
                           <button
-                            key={f}
+                            type="button"
+                            onClick={() => setExpandedBlogId(expandedBlogId === submission.id ? null : submission.id)}
+                            className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30 cursor-pointer"
+                          >
+                            {expandedBlogId === submission.id ? 'Hide Full Content' : 'View Full Content'}
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleApproveBlog(submission.id)}
+                            disabled={processingBlog === submission.id}
+                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                          >
+                            {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
+                          </button>
+                          <button
                             type="button"
                             onClick={() => {
-                              setBlogFilter(f);
-                              setTimeout(() => fetchBlogSubmissions(), 0);
+                              const reason = prompt('Rejection reason (optional):');
+                              if (reason !== null) {
+                                handleRejectBlog(submission.id, reason || undefined);
+                              }
                             }}
-                            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                              blogFilter === f
-                                ? 'bg-purple-400 text-black'
-                                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                            }`}
+                            disabled={processingBlog === submission.id}
+                            className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                           >
-                            {f.charAt(0).toUpperCase() + f.slice(1)} (
-                            {blogSubmissions.filter((s) => {
-                              if (f === 'all') return true;
-                              return s.status === f;
-                            }).length})
+                            {processingBlog === submission.id ? 'Processing...' : '✗ Reject'}
                           </button>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm text-zinc-400 mb-6">
-                      Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
-                    </p>
-
-                    {loadingBlogSubmissions ? (
-                      <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
-                    ) : blogSubmissions.filter((s) => {
-                        if (blogFilter === 'all') return true;
-                        return s.status === blogFilter;
-                      }).length === 0 ? (
-                      <div className="text-center py-8 text-zinc-400">No blog submissions found.</div>
-                    ) : (
-                      <div className="space-y-4">
-                        {blogSubmissions
-                          .filter((s) => {
-                            if (blogFilter === 'all') return true;
-                            return s.status === blogFilter;
-                          })
-                          .map((submission) => (
-                            <div
-                              key={submission.id}
-                              className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
-                            >
-                              <div className="mb-3 flex items-start justify-between">
-                                <div className="flex-1">
-                                  <h3 className="text-sm font-semibold text-zinc-50">
-                                    {submission.title}
-                                  </h3>
-                                  <p className="text-xs text-zinc-400 mt-1">
-                                    {submission.author_name} • {submission.author_email}
-                                    {submission.cohort && ` • ${submission.cohort}`}
-                                  </p>
-                                  <p className="text-xs text-purple-400 mt-1">
-                                    Category: {submission.category}
-                                  </p>
-                                </div>
-                                <span
-                                  className={`rounded-full border px-2 py-1 text-xs ${
-                                    submission.status === 'approved'
-                                      ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                                      : submission.status === 'rejected'
-                                      ? 'text-red-400 bg-red-500/10 border-red-500/30'
-                                      : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
-                                  }`}
-                                >
-                                  {submission.status === 'approved'
-                                    ? 'Approved'
-                                    : submission.status === 'rejected'
-                                    ? 'Rejected'
-                                    : 'Pending Review'}
-                                </span>
-                              </div>
-
-                              <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                                <p className="text-xs font-medium text-zinc-300 mb-1">Content Preview:</p>
-                                <p className="text-sm text-zinc-200 line-clamp-3">
-                                  {submission.content.substring(0, 300)}...
-                                </p>
-                              </div>
-
-                              {expandedBlogId === submission.id && (
-                                <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                                  <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
-                                  <p className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                                    {submission.content}
-                                  </p>
-                                </div>
-                              )}
-
-                              {submission.rejection_reason && (
-                                <div className="mb-3 rounded bg-red-500/10 border border-red-500/30 p-3">
-                                  <p className="text-xs font-medium text-red-300 mb-1">Rejection Reason:</p>
-                                  <p className="text-sm text-red-200">{submission.rejection_reason}</p>
-                                </div>
-                              )}
-
-                              <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                                <span>Submitted: {new Date(submission.created_at).toLocaleString()}</span>
-                                {submission.reviewed_at && (
-                                  <span>• Reviewed: {new Date(submission.reviewed_at).toLocaleString()}</span>
-                                )}
-                              </div>
-
-                              {submission.status === 'pending' && (
-                                <div className="mt-4 space-y-2">
-                                  <div className="flex gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpandedBlogId(expandedBlogId === submission.id ? null : submission.id)}
-                                      className="flex-1 rounded-lg bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 transition hover:bg-blue-500/30 cursor-pointer"
-                                    >
-                                      {expandedBlogId === submission.id ? 'Hide Full Content' : 'View Full Content'}
-                                    </button>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleApproveBlog(submission.id)}
-                                      disabled={processingBlog === submission.id}
-                                      className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                                    >
-                                      {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const reason = prompt('Rejection reason (optional):');
-                                        if (reason !== null) {
-                                          handleRejectBlog(submission.id, reason || undefined);
-                                        }
-                                      }}
-                                      disabled={processingBlog === submission.id}
-                                      className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                                    >
-                                      {processingBlog === submission.id ? 'Processing...' : '✗ Reject'}
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
+                ))}
+            </div>
+          )}
+        </div>
                 )}
               </>
             )}
@@ -2937,32 +3632,32 @@ export default function AdminDashboardPage() {
             {/* Assessments Section - Final Exam Only */}
             {(activeSubMenu === 'final-exam-submissions' || activeTab === 'exam') && (
               <>
-                {/* Exam Management Section */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-                  <h2 className="text-xl font-semibold text-zinc-50 mb-4">Final Exam Management</h2>
-                  <p className="text-sm text-zinc-400 mb-6">
-                    Grant or revoke exam access for students who have completed Chapter 21.
-                  </p>
+        {/* Exam Management Section */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <h2 className="text-xl font-semibold text-zinc-50 mb-4">Final Exam Management</h2>
+          <p className="text-sm text-zinc-400 mb-6">
+            Grant or revoke exam access for students who have completed Chapter 21.
+          </p>
 
-                  {loadingExamAccess ? (
-                    <div className="text-center py-8 text-zinc-400">Loading exam access list...</div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm">
-                        <thead className="bg-zinc-900 text-left text-zinc-300">
-                          <tr>
-                            <th className="px-3 py-2">Name</th>
-                            <th className="px-3 py-2">Email</th>
-                            <th className="px-3 py-2">Cohort</th>
-                            <th className="px-3 py-2">Chapter 21</th>
-                            <th className="px-3 py-2">Access</th>
-                            <th className="px-3 py-2">Exam Score</th>
-                            <th className="px-3 py-2">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {examAccessList
-                            .filter((student) => student.chapter21Completed)
+          {loadingExamAccess ? (
+            <div className="text-center py-8 text-zinc-400">Loading exam access list...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-900 text-left text-zinc-300">
+                  <tr>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Email</th>
+                    <th className="px-3 py-2">Cohort</th>
+                    <th className="px-3 py-2">Chapter 21</th>
+                    <th className="px-3 py-2">Access</th>
+                    <th className="px-3 py-2">Exam Score</th>
+                    <th className="px-3 py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {examAccessList
+                    .filter((student) => student.chapter21Completed)
                     .map((student) => (
                       <tr key={student.id} className="border-b border-zinc-800">
                         <td className="px-3 py-2 text-zinc-50">{student.name || '—'}</td>
@@ -3011,229 +3706,651 @@ export default function AdminDashboardPage() {
                           )}
                         </td>
                       </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                      {examAccessList.filter((s) => s.chapter21Completed).length === 0 && (
-                        <p className="p-3 text-sm text-zinc-400 text-center">
-                          No students have completed Chapter 21 yet.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    ))}
+                </tbody>
+              </table>
+              {examAccessList.filter((s) => s.chapter21Completed).length === 0 && (
+                <p className="p-3 text-sm text-zinc-400 text-center">
+                  No students have completed Chapter 21 yet.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
               </>
             )}
 
-            {/* Assessments Section - Sats Database */}
-            {activeSubMenu === 'sats-database' && (
+            {/* Assessments Section - Student Sats Rewards */}
+            {activeSubMenu === 'student-sats-rewards' && (
               <>
-                {/* Sats Database Statistics */}
-                {loadingSats ? (
-                  <div className="grid gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Blog Rewards Quick Summary */}
+                {loadingBlogSummary ? (
+                  <div className="mb-4 sm:mb-6 rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 sm:p-5">
+                    <div className="animate-pulse">
+                      <div className="h-4 bg-purple-500/20 rounded w-48 mb-3"></div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
+                            <div className="h-3 bg-purple-500/20 rounded w-20 mb-2"></div>
+                            <div className="h-6 bg-purple-500/20 rounded w-16"></div>
+      </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4 sm:mb-6 rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                      <div>
+                        <h3 className="text-base sm:text-lg font-semibold text-purple-200 mb-1 flex items-center gap-2">
+                          <span>📝</span>
+                          <span>Blog Rewards Summary</span>
+                        </h3>
+                        <p className="text-xs sm:text-sm text-purple-300/80">
+                          Students who have received sats rewards for approved blog posts
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSatsTypeFilter('blog');
+                          setSatsStatusFilter('all');
+                          setSatsStudentFilter('all');
+                          // Update refs immediately
+                          satsTypeFilterRef.current = 'blog';
+                          satsStatusFilterRef.current = 'all';
+                          satsStudentFilterRef.current = 'all';
+                          // Apply filters immediately
+                          if (allSatsRewards.length > 0) {
+                            applyFiltersToRewards(allSatsRewards);
+                          }
+                        }}
+                        className="rounded-lg border border-purple-400/30 bg-purple-500/20 px-4 py-2 text-sm font-medium text-purple-200 transition hover:bg-purple-500/30 flex items-center gap-2"
+                      >
+                        <span>View All Blog Rewards</span>
+                        <span>→</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
+                        <div className="text-xs text-purple-300/80 mb-1">Total Blog Rewards</div>
+                        <div className="text-lg sm:text-xl font-bold text-purple-200">
+                          {blogRewardsSummary.totalRewards.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-purple-300/60 mt-1">approved posts</div>
+                      </div>
+                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
+                        <div className="text-xs text-purple-300/80 mb-1">Total Blog Sats</div>
+                        <div className="text-lg sm:text-xl font-bold text-purple-200">
+                          {blogRewardsSummary.totalSats.toLocaleString()} <span className="text-xs">sats</span>
+                        </div>
+                        <div className="text-xs text-purple-300/60 mt-1">
+                          {blogRewardsSummary.totalSats > 0 
+                            ? `${(blogRewardsSummary.totalSats / 2000).toFixed(0)} × 2000 sats`
+                            : 'No rewards yet'}
+                        </div>
+                      </div>
+                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20 col-span-2 sm:col-span-1">
+                        <div className="text-xs text-purple-300/80 mb-1">Students with Blogs</div>
+                        <div className="text-lg sm:text-xl font-bold text-purple-200">
+                          {blogRewardsSummary.uniqueStudents}
+                        </div>
+                        <div className="text-xs text-purple-300/60 mt-1">unique authors</div>
+                      </div>
+                    </div>
+                    
+                    {/* Blog Rewards List */}
+                    {blogRewardsList.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-purple-500/20">
+                        <h4 className="text-sm font-semibold text-purple-200 mb-3">Recent Blog Rewards</h4>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {blogRewardsList.slice(0, 10).map((reward: any) => {
+                            const totalAmount = (reward.amount_paid || 0) + (reward.amount_pending || 0);
+                            return (
+                              <div
+                                key={reward.id}
+                                className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-purple-500/10 hover:bg-black/30 transition"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium text-purple-200 truncate">
+                                    {reward.student?.name || reward.student?.email || 'Unknown Student'}
+                                  </div>
+                                  {reward.reason && (
+                                    <div className="text-xs text-purple-300/60 truncate mt-0.5">
+                                      {reward.reason}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 ml-3">
+                                  <div className="text-right">
+                                    <div className="text-xs font-semibold text-purple-200">
+                                      {totalAmount.toLocaleString()} sats
+                                    </div>
+                                    <div className={`text-xs ${
+                                      reward.status === 'paid' ? 'text-green-400' :
+                                      reward.status === 'pending' ? 'text-yellow-400' :
+                                      'text-zinc-400'
+                                    }`}>
+                                      {reward.status || 'pending'}
+                                    </div>
+                                  </div>
+                                  {reward.created_at && (
+                                    <div className="text-xs text-purple-300/50 whitespace-nowrap">
+                                      {new Date(reward.created_at).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric'
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {blogRewardsList.length > 10 && (
+                          <div className="mt-3 text-center">
+                            <button
+                              onClick={() => {
+                                setSatsTypeFilter('blog');
+                                setSatsStatusFilter('all');
+                                setSatsStudentFilter('all');
+                                // Update refs immediately
+                                satsTypeFilterRef.current = 'blog';
+                                satsStatusFilterRef.current = 'all';
+                                satsStudentFilterRef.current = 'all';
+                                // Apply filters immediately
+                                if (allSatsRewards.length > 0) {
+                                  applyFiltersToRewards(allSatsRewards);
+                                }
+                              }}
+                              className="text-xs text-purple-300 hover:text-purple-200 underline"
+                            >
+                              View all {blogRewardsList.length} blog rewards →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sats Rewards Statistics */}
+                {loadingSatsRewards ? (
+                  <div className="grid gap-3 sm:gap-4 mb-4 sm:mb-6 grid-cols-2 lg:grid-cols-4">
                     {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 animate-pulse">
-                        <div className="h-4 bg-zinc-700 rounded mb-2 w-20"></div>
-                        <div className="h-8 bg-zinc-700 rounded w-24"></div>
+                      <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 animate-pulse">
+                        <div className="h-3 sm:h-4 bg-zinc-700 rounded mb-2 w-16 sm:w-20"></div>
+                        <div className="h-6 sm:h-8 bg-zinc-700 rounded w-20 sm:w-24"></div>
                       </div>
                     ))}
                   </div>
                 ) : satsStatistics ? (
-                  <div className="grid gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-xl border border-orange-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+                  <div className="grid gap-3 sm:gap-4 mb-4 sm:mb-6 grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl border border-orange-500/25 bg-black/80 p-3 sm:p-4 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
                       <div className="text-xs text-orange-300 mb-1">Total Paid</div>
-                      <div className="text-2xl font-bold text-orange-200">
-                        {satsStatistics.totalPaid?.toLocaleString() || 0} sats
+                      <div className="text-lg sm:text-2xl font-bold text-orange-200">
+                        {satsStatistics.totalPaid?.toLocaleString() || 0} <span className="text-sm sm:text-base">sats</span>
                       </div>
                     </div>
-                    <div className="rounded-xl border border-yellow-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
+                    <div className="rounded-xl border border-yellow-500/25 bg-black/80 p-3 sm:p-4 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
                       <div className="text-xs text-yellow-300 mb-1">Total Pending</div>
-                      <div className="text-2xl font-bold text-yellow-200">
-                        {satsStatistics.totalPending?.toLocaleString() || 0} sats
+                      <div className="text-lg sm:text-2xl font-bold text-yellow-200">
+                        {satsStatistics.totalPending?.toLocaleString() || 0} <span className="text-sm sm:text-base">sats</span>
                       </div>
                     </div>
-                    <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+                    <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-3 sm:p-4 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
                       <div className="text-xs text-cyan-300 mb-1">Total Rewards</div>
-                      <div className="text-2xl font-bold text-cyan-200">
+                      <div className="text-lg sm:text-2xl font-bold text-cyan-200">
                         {satsStatistics.totalRewards?.toLocaleString() || 0}
                       </div>
                     </div>
-                    <div className="rounded-xl border border-purple-500/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                    <div className="rounded-xl border border-purple-500/25 bg-black/80 p-3 sm:p-4 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
                       <div className="text-xs text-purple-300 mb-1">Total Amount</div>
-                      <div className="text-2xl font-bold text-purple-200">
-                        {satsTotalAmount.toLocaleString()} sats
+                      <div className="text-lg sm:text-2xl font-bold text-purple-200">
+                        {satsTotalAmount.toLocaleString()} <span className="text-sm sm:text-base">sats</span>
                       </div>
                     </div>
                   </div>
                 ) : null}
 
-                {/* Sats Database Section */}
+                {/* Student Sats Rewards Section */}
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-                  <div className="mb-4 flex items-center justify-between">
+                  <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
                     <div>
-                      <h2 className="text-xl font-semibold text-zinc-50 mb-2">Sats Rewards Database</h2>
-                      <p className="text-sm text-zinc-400">
-                        View and manage all sats rewards across the academy.
+                      <h2 className="text-lg sm:text-xl font-semibold text-zinc-50 mb-1">Student Sats Rewards</h2>
+                      <p className="text-xs sm:text-sm text-zinc-400">
+                        View and manage all sats rewards for students across the academy.
                       </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      {!loadingSatsRewards && (
+                        <div className="text-xs sm:text-sm text-zinc-400">
+                          {studentSatsRewards.length > 0 ? (
+                            <>
+                              Showing <span className="text-cyan-300 font-medium">{studentSatsRewards.length}</span> of <span className="text-cyan-300 font-medium">{allSatsRewards.length}</span> reward{allSatsRewards.length !== 1 ? 's' : ''}
+                            </>
+                          ) : allSatsRewards.length > 0 ? (
+                            <>
+                              <span className="text-yellow-300">No rewards match filters</span> ({allSatsRewards.length} total)
+                            </>
+                          ) : (
+                            'No rewards found'
+                          )}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleRefreshSatsRewards}
+                          disabled={loadingSatsRewards}
+                          className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 sm:px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          title="Refresh sats rewards data from database"
+                        >
+                          {loadingSatsRewards ? (
+                            <>
+                              <span className="animate-spin">⟳</span>
+                              <span className="hidden sm:inline">Refreshing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>⟳</span>
+                              <span className="hidden sm:inline">Refresh</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={handleCreateReward}
+                          className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-300 transition hover:bg-green-500/20 flex items-center justify-center gap-2"
+                        >
+                          <span>+</span>
+                          <span className="hidden sm:inline">New Reward</span>
+                          <span className="sm:hidden">New</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
                   {/* Filters */}
-                  <div className="mb-4 flex flex-wrap gap-3">
-                    <select
-                      value={satsStatusFilter}
-                      onChange={handleSatsStatusFilterChange}
-                      className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="paid">Paid</option>
-                      <option value="failed">Failed</option>
-                    </select>
-                    <select
-                      value={satsTypeFilter}
-                      onChange={handleSatsTypeFilterChange}
-                      className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="assignment">Assignment</option>
-                      <option value="chapter">Chapter</option>
-                      <option value="discussion">Discussion</option>
-                      <option value="peer_help">Peer Help</option>
-                      <option value="project">Project</option>
-                      <option value="attendance">Attendance</option>
-                      <option value="blog">Blog</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <button
-                      onClick={fetchSatsRewards}
-                      className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20"
-                    >
-                      Refresh
-                    </button>
+                  <div className="mb-6 p-3 sm:p-4 rounded-lg border border-zinc-800 bg-zinc-900/30">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="sm:col-span-2 lg:col-span-1">
+                        <label className="block text-xs text-zinc-400 mb-1.5">Student</label>
+                        <select
+                          value={satsStudentFilter}
+                          onChange={handleSatsStudentFilterChange}
+                          disabled={loadingStudentsList}
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                        >
+                          <option value="all">All Students</option>
+                          {loadingStudentsList ? (
+                            <option disabled>Loading students...</option>
+                          ) : studentsList.length === 0 ? (
+                            <option disabled>No students found</option>
+                          ) : (
+                            studentsList.map((student: any) => (
+                              <option key={student.id} value={student.id}>
+                                {student.name || student.email} {student.email ? `(${student.email})` : ''}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-400 mb-1.5">Status</label>
+                        <select
+                          value={satsStatusFilter}
+                          onChange={handleSatsStatusFilterChange}
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                        >
+                          <option value="all">All Status</option>
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="paid">Paid</option>
+                          <option value="failed">Failed</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-400 mb-1.5">Type</label>
+                        <select
+                          value={satsTypeFilter}
+                          onChange={handleSatsTypeFilterChange}
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                        >
+                          <option value="all">All Types</option>
+                          <option value="assignment">Assignment</option>
+                          <option value="chapter">Chapter</option>
+                          <option value="discussion">Discussion</option>
+                          <option value="peer_help">Peer Help</option>
+                          <option value="project">Project</option>
+                          <option value="attendance">Attendance</option>
+                          <option value="blog">Blog</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
-                  {loadingSats ? (
-                    <div className="text-center py-8 text-zinc-400">Loading sats rewards...</div>
+                  {loadingSatsRewards ? (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 animate-pulse">
+                          <div className="h-4 bg-zinc-700 rounded mb-3 w-3/4"></div>
+                          <div className="h-6 bg-zinc-700 rounded mb-2 w-1/2"></div>
+                          <div className="h-3 bg-zinc-700 rounded w-2/3"></div>
+                        </div>
+                      ))}
+                    </div>
                   ) : satsError ? (
-                    <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center">
-                      <div className="text-red-300 mb-2">{satsError}</div>
+                    <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center">
+                      <div className="text-red-300 mb-3 text-lg font-medium">{satsError}</div>
+                      {satsError.includes('Too many requests') ? (
+                        <div className="text-sm text-red-300/80 mb-3">
+                          Please wait a few seconds before trying again.
+                        </div>
+                      ) : null}
                       <button
-                        onClick={fetchSatsRewards}
-                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20"
+                        onClick={() => {
+                          // Reset fetch key and wait a bit before retrying
+                          satsLastFetchKeyRef.current = '';
+                          setTimeout(() => {
+                            fetchStudentSatsRewards();
+                          }, 2000);
+                        }}
+                        disabled={loadingSatsRewards}
+                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Retry
+                        {loadingSatsRewards ? 'Retrying...' : 'Retry'}
                       </button>
                     </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm">
-                        <thead className="bg-zinc-900 text-left text-zinc-300">
-                          <tr>
-                            <th className="px-3 py-2">Student</th>
-                            <th className="px-3 py-2">Email</th>
-                            <th className="px-3 py-2">Type</th>
-                            <th className="px-3 py-2">Amount Paid</th>
-                            <th className="px-3 py-2">Amount Pending</th>
-                            <th className="px-3 py-2">Status</th>
-                            <th className="px-3 py-2">Reason</th>
-                            <th className="px-3 py-2">Awarded By</th>
-                            <th className="px-3 py-2">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {satsRewards.length === 0 ? (
-                            <tr>
-                              <td colSpan={9} className="px-3 py-8 text-center text-zinc-400">
-                                {satsStatusFilter !== 'all' || satsTypeFilter !== 'all' 
-                                  ? 'No sats rewards found matching the selected filters.'
-                                  : 'No sats rewards found in the database.'}
-                              </td>
-                            </tr>
-                          ) : (
-                            satsRewards.map((reward: any) => {
-                              return (
-                                <tr key={reward.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition">
-                                  <td className="px-3 py-2 text-zinc-50">
-                                    {reward.student?.name || '—'}
-                                  </td>
-                                  <td className="px-3 py-2 text-zinc-400">
-                                    {reward.student?.email || '—'}
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-xs font-medium text-orange-300">
-                                      {formatRewardType(reward.reward_type || 'other')}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2 text-orange-300 font-medium">
-                                    {reward.amount_paid?.toLocaleString() || 0} sats
-                                  </td>
-                                  <td className="px-3 py-2 text-yellow-300 font-medium">
-                                    {reward.amount_pending?.toLocaleString() || 0} sats
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                      reward.status === 'paid' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                                      reward.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                                      reward.status === 'processing' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
-                                      reward.status === 'failed' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                                      'bg-zinc-500/20 text-zinc-300 border border-zinc-500/30'
-                                    }`}>
-                                      {reward.status ? reward.status.charAt(0).toUpperCase() + reward.status.slice(1) : 'Pending'}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2 text-zinc-400 text-xs max-w-xs truncate" title={reward.reason || ''}>
-                                    {reward.reason || '—'}
-                                  </td>
-                                  <td className="px-3 py-2 text-zinc-400 text-xs">
+                  ) : !loadingSatsRewards && studentSatsRewards.length === 0 && allSatsRewards.length === 0 ? (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-12 text-center">
+                      <div className="text-4xl mb-4">📭</div>
+                      <div className="text-zinc-300 text-lg font-medium mb-2">
+                        No sats rewards yet
+                      </div>
+                      <div className="text-zinc-500 text-sm">
+                        Sats rewards will appear here once students start earning them.
+                      </div>
+                    </div>
+                  ) : !loadingSatsRewards && studentSatsRewards.length === 0 && allSatsRewards.length > 0 ? (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-12 text-center">
+                      <div className="text-4xl mb-4">🔍</div>
+                      <div className="text-zinc-300 text-lg font-medium mb-2">
+                        No rewards match your filters
+                      </div>
+                      <div className="text-zinc-500 text-sm">
+                        Try adjusting your filters to see more results. ({allSatsRewards.length} total rewards available)
+                      </div>
+                    </div>
+                  ) : studentSatsRewards.length > 0 ? (
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {studentSatsRewards.map((reward: any) => {
+                        const totalAmount = (reward.amount_paid || 0) + (reward.amount_pending || 0);
+                        const statusColors = {
+                          paid: 'bg-green-500/20 text-green-300 border-green-500/30',
+                          pending: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+                          processing: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+                          failed: 'bg-red-500/20 text-red-300 border-red-500/30',
+                        };
+                        const statusColor = statusColors[reward.status as keyof typeof statusColors] || 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30';
+                        
+                        return (
+                          <div
+                            key={reward.id}
+                            className="group rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-5 hover:border-zinc-700 hover:bg-zinc-900/70 transition-all duration-200"
+                          >
+                            {/* Header */}
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-semibold text-zinc-50 truncate mb-1">
+                                  {reward.student?.name || 'Unknown Student'}
+                                </div>
+                                <div className="text-xs text-zinc-400 truncate">
+                                  {reward.student?.email || '—'}
+                                </div>
+                              </div>
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-medium border flex-shrink-0 ml-2 ${statusColor}`}>
+                                {reward.status ? reward.status.charAt(0).toUpperCase() + reward.status.slice(1) : 'Pending'}
+                              </span>
+                            </div>
+
+                            {/* Amount Display */}
+                            <div className="mb-3 sm:mb-4">
+                              <div className="flex items-baseline gap-2 mb-2">
+                                <span className="text-xl sm:text-2xl font-bold text-cyan-300">
+                                  {totalAmount.toLocaleString()}
+                                </span>
+                                <span className="text-xs sm:text-sm text-zinc-400">sats</span>
+                              </div>
+                              <div className="flex gap-4 text-xs">
+                                {reward.amount_paid > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                    <span className="text-green-400">Paid: {reward.amount_paid.toLocaleString()}</span>
+                                  </div>
+                                )}
+                                {reward.amount_pending > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                    <span className="text-yellow-400">Pending: {reward.amount_pending.toLocaleString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Type Badge */}
+                            <div className="mb-4">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-300">
+                                <span>🎯</span>
+                                {formatRewardType(reward.reward_type || 'other')}
+                              </span>
+                            </div>
+
+                            {/* Details */}
+                            <div className="space-y-2 pt-3 border-t border-zinc-800">
+                              {reward.reason && (
+                                <div className="text-xs text-zinc-400 line-clamp-2" title={reward.reason}>
+                                  <span className="text-zinc-500">Reason:</span> {reward.reason}
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="text-zinc-500">
+                                  <span className="text-zinc-500">Awarded by:</span>{' '}
+                                  <span className="text-zinc-300">
                                     {reward.awarded_by_profile?.name || (reward.awarded_by ? 'System' : '—')}
-                                  </td>
-                                  <td className="px-3 py-2 text-zinc-400 text-xs">
-                                    {reward.created_at ? new Date(reward.created_at).toLocaleDateString('en-US', {
-                                      year: 'numeric',
+                                  </span>
+                                </div>
+                                {reward.created_at && (
+                                  <div className="text-zinc-500">
+                                    {new Date(reward.created_at).toLocaleDateString('en-US', {
                                       month: 'short',
-                                      day: 'numeric'
-                                    }) : '—'}
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="mt-3 sm:mt-4 pt-3 border-t border-zinc-800 flex flex-wrap items-center gap-2">
+                              <button
+                                onClick={() => handleEditReward(reward)}
+                                className="flex-1 min-w-[80px] rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 sm:px-3 py-1.5 text-xs font-medium text-cyan-300 transition hover:bg-cyan-500/20"
+                              >
+                                Edit
+                              </button>
+                              {reward.status === 'pending' && (
+                                <button
+                                  onClick={() => handleQuickStatusUpdate(reward.id, 'paid')}
+                                  className="flex-1 min-w-[100px] rounded-lg border border-green-500/30 bg-green-500/10 px-2 sm:px-3 py-1.5 text-xs font-medium text-green-300 transition hover:bg-green-500/20"
+                                  title="Mark as Paid"
+                                >
+                                  <span className="hidden sm:inline">Mark Paid</span>
+                                  <span className="sm:hidden">Paid</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeleteReward(reward.id)}
+                                className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 sm:px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/20"
+                                title="Delete"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+
+                  {/* Edit/Create Reward Modal */}
+                  {showRewardModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-zinc-50">
+                            {editingReward ? 'Edit Reward' : 'Create New Reward'}
+                          </h3>
+                          <button
+                            onClick={() => setShowRewardModal(false)}
+                            className="text-zinc-400 hover:text-zinc-300"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm text-zinc-300 mb-1.5">Student</label>
+                            <select
+                              value={rewardForm.student_id}
+                              onChange={(e) => setRewardForm({ ...rewardForm, student_id: e.target.value })}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                            >
+                              <option value="">Select a student</option>
+                              {studentsList.map((student: any) => (
+                                <option key={student.id} value={student.id}>
+                                  {student.name || student.email} {student.email ? `(${student.email})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-sm text-zinc-300 mb-1.5">Amount Paid</label>
+                              <input
+                                type="number"
+                                value={rewardForm.amount_paid}
+                                onChange={(e) => setRewardForm({ ...rewardForm, amount_paid: e.target.value })}
+                                placeholder="0"
+                                className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm text-zinc-300 mb-1.5">Amount Pending</label>
+                              <input
+                                type="number"
+                                value={rewardForm.amount_pending}
+                                onChange={(e) => setRewardForm({ ...rewardForm, amount_pending: e.target.value })}
+                                placeholder="0"
+                                className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm text-zinc-300 mb-1.5">Reward Type</label>
+                            <select
+                              value={rewardForm.reward_type}
+                              onChange={(e) => setRewardForm({ ...rewardForm, reward_type: e.target.value })}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                            >
+                              <option value="assignment">Assignment</option>
+                              <option value="chapter">Chapter</option>
+                              <option value="discussion">Discussion</option>
+                              <option value="peer_help">Peer Help</option>
+                              <option value="project">Project</option>
+                              <option value="attendance">Attendance</option>
+                              <option value="blog">Blog</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm text-zinc-300 mb-1.5">Status</label>
+                            <select
+                              value={rewardForm.status}
+                              onChange={(e) => setRewardForm({ ...rewardForm, status: e.target.value })}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="processing">Processing</option>
+                              <option value="paid">Paid</option>
+                              <option value="failed">Failed</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm text-zinc-300 mb-1.5">Reason</label>
+                            <textarea
+                              value={rewardForm.reason}
+                              onChange={(e) => setRewardForm({ ...rewardForm, reason: e.target.value })}
+                              placeholder="Enter reason for this reward..."
+                              rows={3}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+                            />
+                          </div>
+
+                          <div className="flex gap-3 pt-2">
+                            <button
+                              onClick={handleSaveReward}
+                              disabled={savingReward}
+                              className="flex-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {savingReward ? 'Saving...' : editingReward ? 'Update' : 'Create'}
+                            </button>
+                            <button
+                              onClick={() => setShowRewardModal(false)}
+                              className="rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </>
             )}
+
             </div>
           </div>
         </main>
 
-        {/* Session Expired Modal - only show when session expired and admin is logged out */}
-        {showSessionExpired && !admin && (
-          <SessionExpiredModal
-            isOpen={showSessionExpired && !admin}
-            onClose={async () => {
-              // Logout and show login form
-              await handleLogout();
-              setShowSessionExpired(false);
-            }}
-            userType="admin"
-          />
-        )}
+      {/* Session Expired Modal - only show when session expired and admin is logged out */}
+      {showSessionExpired && !admin && (
+      <SessionExpiredModal
+          isOpen={showSessionExpired && !admin}
+          onClose={async () => {
+            // Logout and show login form
+            await handleLogout();
+          setShowSessionExpired(false);
+        }}
+        userType="admin"
+      />
+      )}
 
-        {/* Student Progress Modal */}
-        {selectedStudent && (
-          <StudentProgressModal
-            studentId={selectedStudent.id}
-            studentEmail={selectedStudent.email}
-            studentName={selectedStudent.name}
-            onClose={() => setSelectedStudent(null)}
-          />
-        )}
-      </div>
-    );
-  }
+      {/* Student Progress Modal */}
+      {selectedStudent && (
+        <StudentProgressModal
+          studentId={selectedStudent.id}
+          studentEmail={selectedStudent.email}
+          studentName={selectedStudent.name}
+          onClose={() => setSelectedStudent(null)}
+        />
+      )}
+    </div>
+  );
+}
 

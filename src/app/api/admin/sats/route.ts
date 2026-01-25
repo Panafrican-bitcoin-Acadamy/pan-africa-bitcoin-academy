@@ -13,10 +13,15 @@ import { requireAdmin } from '@/lib/adminSession';
  */
 export async function GET(request: NextRequest) {
   try {
+    // Strict admin authentication check
     const session = requireAdmin(request);
     if (!session) {
+      console.warn('[Admin Sats API] Unauthorized access attempt from:', request.headers.get('x-forwarded-for') || 'unknown');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Log access for security auditing
+    console.log(`[Admin Sats API] Authorized access by admin: ${session.email} (${session.adminId})`);
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
@@ -67,6 +72,8 @@ export async function GET(request: NextRequest) {
     const awardedByIds = [...new Set((rewards || []).map((r: any) => r.awarded_by).filter(Boolean))];
     const allProfileIds = [...new Set([...studentIds, ...awardedByIds])];
 
+    console.log(`[Admin Sats API] Fetching profiles for ${allProfileIds.length} unique IDs (${studentIds.length} students, ${awardedByIds.length} awarded_by)`);
+
     let profilesMap: Record<string, any> = {};
     if (allProfileIds.length > 0) {
       // Supabase has a limit of 1000 items in .in() queries, so we need to batch if needed
@@ -84,9 +91,10 @@ export async function GET(request: NextRequest) {
           .in('id', batch);
         
         if (profilesError) {
-          console.error('Error fetching profiles batch:', profilesError);
+          console.error('[Admin Sats API] Error fetching profiles batch:', profilesError);
         } else if (profiles) {
           allProfiles.push(...profiles);
+          console.log(`[Admin Sats API] Fetched ${profiles.length} profiles from batch`);
         }
       }
       
@@ -95,7 +103,12 @@ export async function GET(request: NextRequest) {
           acc[profile.id] = profile;
           return acc;
         }, {});
+        console.log(`[Admin Sats API] Created profiles map with ${Object.keys(profilesMap).length} entries`);
+      } else {
+        console.warn('[Admin Sats API] No profiles found for student IDs');
       }
+    } else {
+      console.warn('[Admin Sats API] No profile IDs to fetch');
     }
 
     // Enrich rewards with profile data
@@ -131,7 +144,11 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {});
 
-    return NextResponse.json(
+    // Security: Log data access for auditing
+    console.log(`[Admin Sats API] Returning ${enrichedRewards.length} rewards to admin: ${session.email}`);
+    
+    // Return response with security headers
+    const response = NextResponse.json(
       {
         rewards: enrichedRewards,
         statistics: {
@@ -144,6 +161,11 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
+    
+    // Add security headers
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'DENY');
+    return response;
   } catch (error: any) {
     console.error('Error in admin sats API:', error);
     return NextResponse.json(
