@@ -361,6 +361,55 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       </p>
                     </div>
                   </div>
+                ) : section.heading === "5.1 The 2008 Financial Crisis Context" ? (
+                  // Special rendering for Bitcoin vs Gold vs Fiat comparison table
+                  <div className="mt-6">
+                    <h4 className="mb-4 text-base font-semibold text-cyan-200">Bitcoin vs Gold vs Fiat/Cash Comparison</h4>
+                    <div className="overflow-x-auto rounded-lg border border-cyan-400/25 bg-zinc-950/70">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-cyan-400/30 bg-cyan-500/10">
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Quality</th>
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Bitcoin</th>
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Gold</th>
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Fiat / Cash</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-zinc-300">
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Scarcity</td>
+                            <td className="px-4 py-3">21 Million coins (fixed Supply)</td>
+                            <td className="px-4 py-3">Limited but new gold found</td>
+                            <td className="px-4 py-3">Unlimited supply, central banks can print more</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Portability</td>
+                            <td className="px-4 py-3">Digital, accessible on phone</td>
+                            <td className="px-4 py-3">Heavy, physical asset</td>
+                            <td className="px-4 py-3">Physical bills/coins are harder to move large amounts across borders</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Durability</td>
+                            <td className="px-4 py-3">Digital, no wear or tear</td>
+                            <td className="px-4 py-3">Physical can degrade over time</td>
+                            <td className="px-4 py-3">Physical cash can get damaged, lost, or destroyed</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Divisibility</td>
+                            <td className="px-4 py-3">Fractional transactions possible</td>
+                            <td className="px-4 py-3">Hard to divide without loss</td>
+                            <td className="px-4 py-3">Limited divisibility (usually to cents)</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Acceptance</td>
+                            <td className="px-4 py-3">Growing globally, especially in Africa</td>
+                            <td className="px-4 py-3">Accepted worldwide historically</td>
+                            <td className="px-4 py-3">Universally accepted by governments, businesses, and people</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 ) : section.heading === "13.2 Halving Schedule and Fixed Supply (Declining Inflation)" ? (
                   // Special rendering for halving periods table
                   <div className="mt-6">
