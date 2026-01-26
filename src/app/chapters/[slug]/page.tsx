@@ -163,6 +163,60 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                     {p}
                   </p>
                 ))}
+                {section.heading === "What Are Sats?" ? (
+                  // Special rendering for sats conversion table
+                  <div className="mt-6">
+                    <h4 className="mb-4 text-base font-semibold text-cyan-200">Sats → BTC Conversion Examples</h4>
+                    <div className="overflow-x-auto rounded-lg border border-cyan-400/25 bg-zinc-950/70">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-cyan-400/30 bg-cyan-500/10">
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Sats</th>
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">BTC</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-zinc-300">
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">1 sat</td>
+                            <td className="px-4 py-3 font-mono">0.00000001 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">10 sats</td>
+                            <td className="px-4 py-3 font-mono">0.00000010 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">100 sats</td>
+                            <td className="px-4 py-3 font-mono">0.00000100 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">1,000 sats</td>
+                            <td className="px-4 py-3 font-mono">0.00001000 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">10,000 sats</td>
+                            <td className="px-4 py-3 font-mono">0.00010000 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">100,000 sats</td>
+                            <td className="px-4 py-3 font-mono">0.00100000 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">1,000,000 sats</td>
+                            <td className="px-4 py-3 font-mono">0.01000000 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">10,000,000 sats</td>
+                            <td className="px-4 py-3 font-mono">0.10000000 BTC</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-mono">100,000,000 sats</td>
+                            <td className="px-4 py-3 font-mono">1.00000000 BTC</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : null}
                 {section.seedPhrase && section.seedPhrase.length > 0 ? (
                   <SeedPhraseGrid words={section.seedPhrase} columns={4} />
                 ) : null}

@@ -628,6 +628,18 @@ export const chaptersContent: ChapterContent[] = [
           "Scarcity — only 21 million bitcoins will ever exist, making it immune to the endless money-printing that causes inflation.",
         ],
       },
+      {
+        heading: "What Are Sats?",
+        paragraphs: [
+          "A sat, short for satoshi, is the smallest unit of Bitcoin. Just like a dollar can be divided into cents, one bitcoin can be divided into smaller pieces. The smallest possible piece is called a satoshi.",
+          "One bitcoin equals 100,000,000 sats.",
+          "This means Bitcoin is highly divisible. Even though one whole bitcoin may seem expensive, people do not need to buy or use an entire bitcoin. They can own and spend very small amounts instead.",
+          "The idea of sats helps people understand that Bitcoin is practical for everyday use. You don't buy \"a Bitcoin\" the way you buy a bar of gold. You use Bitcoin the way you use money — in small units.",
+          "Sats make Bitcoin usable for everyone, not just wealthy people. As Bitcoin becomes more valuable, using whole bitcoins would become impractical. Sats solve this problem by allowing Bitcoin to function as everyday money, even at very high prices.",
+          "Sats also change how people think psychologically. Saying \"I own 0.002 Bitcoin\" feels abstract, but saying \"I own 200,000 sats\" feels concrete and understandable.",
+          "In the long term, most people are expected to think in sats, not in whole bitcoins.",
+        ],
+      },
     ],
     activities: [
       "Activity: Reading a Simplified Whitepaper Excerpt",
