@@ -13,6 +13,7 @@ import { Chapter8Assignment } from "@/components/Chapter8Assignment";
 import { Chapter18Assignment } from "@/components/Chapter18Assignment";
 import { ChapterUTXOAssignment } from "@/components/ChapterUTXOAssignment";
 import { Chapter14HalvingPuzzle } from "@/components/Chapter14HalvingPuzzle";
+import { SeedPhraseGrid } from "@/components/SeedPhraseGrid";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -162,6 +163,9 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                     {p}
                   </p>
                 ))}
+                {section.seedPhrase && section.seedPhrase.length > 0 ? (
+                  <SeedPhraseGrid words={section.seedPhrase} columns={4} />
+                ) : null}
                 {section.bullets ? (
                   <ul className="mt-4 list-disc space-y-2 pl-5 text-zinc-200 leading-relaxed">
                     {section.bullets.map((b) => (
