@@ -6,13 +6,39 @@ export function BtcSatsConverter() {
   const [btcInput, setBtcInput] = useState<string>('');
   const [satsInput, setSatsInput] = useState<string>('');
 
+  // Format number with commas
+  const formatWithCommas = (value: string): string => {
+    // Remove all non-digit characters except decimal point
+    const cleaned = value.replace(/[^\d.]/g, '');
+    
+    // Split by decimal point
+    const parts = cleaned.split('.');
+    
+    // Format the integer part with commas
+    if (parts[0]) {
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    
+    // Rejoin with decimal point if there was one
+    return parts.length > 1 ? parts.join('.') : parts[0];
+  };
+
+  // Parse number removing commas
+  const parseNumber = (value: string): number => {
+    return parseFloat(value.replace(/,/g, ''));
+  };
+
   const handleBtcChange = (value: string) => {
-    setBtcInput(value);
-    if (value === '') {
+    // Format with commas as user types
+    const formatted = formatWithCommas(value);
+    setBtcInput(formatted);
+    
+    if (value === '' || value === '.') {
       setSatsInput('');
       return;
     }
-    const btc = parseFloat(value);
+    
+    const btc = parseNumber(value);
     if (!isNaN(btc) && btc >= 0) {
       const sats = Math.round(btc * 100000000);
       setSatsInput(sats.toLocaleString());
@@ -22,19 +48,27 @@ export function BtcSatsConverter() {
   };
 
   const handleSatsChange = (value: string) => {
-    setSatsInput(value);
+    // Format with commas as user types
+    const formatted = formatWithCommas(value);
+    setSatsInput(formatted);
+    
     if (value === '') {
       setBtcInput('');
       return;
     }
+    
     // Remove commas for parsing
-    const satsString = value.replace(/,/g, '');
-    const sats = parseInt(satsString, 10);
+    const sats = parseInt(value.replace(/,/g, ''), 10);
     if (!isNaN(sats) && sats >= 0) {
       const btc = sats / 100000000;
-      // Format BTC to show up to 8 decimal places
-      const btcFormatted = btc.toFixed(8).replace(/\.?0+$/, '');
-      setBtcInput(btcFormatted);
+      // Format BTC to show up to 8 decimal places, then format with commas
+      const btcValue = btc.toFixed(8).replace(/\.?0+$/, '');
+      // Format the integer part with commas if it's a large number
+      const btcParts = btcValue.split('.');
+      if (btcParts[0]) {
+        btcParts[0] = btcParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
+      setBtcInput(btcParts.join('.'));
     } else {
       setBtcInput('');
     }
@@ -61,9 +95,8 @@ export function BtcSatsConverter() {
           <div className="flex gap-2">
             <input
               id="btc-input"
-              type="number"
-              step="any"
-              min="0"
+              type="text"
+              inputMode="decimal"
               value={btcInput}
               onChange={(e) => handleBtcChange(e.target.value)}
               placeholder="Enter BTC amount"
@@ -90,6 +123,7 @@ export function BtcSatsConverter() {
             <input
               id="sats-input"
               type="text"
+              inputMode="numeric"
               value={satsInput}
               onChange={(e) => handleSatsChange(e.target.value)}
               placeholder="Enter sats amount"
