@@ -634,11 +634,6 @@ export const chaptersContent: ChapterContent[] = [
           "In traditional systems, money can be created endlessly, which often leads to inflation and loss of purchasing power. Bitcoin's scarcity is predictable and transparent. New bitcoins are released at a decreasing rate, making the supply increasingly hard to obtain over time.",
           "Because of this enforced scarcity, Bitcoin is often compared to digital gold. Its value is not based on promises, but on mathematical certainty. Scarcity encourages long-term thinking and protects the system from arbitrary expansion.",
         ],
-        bullets: [
-          "Decentralization — no central bank or company controls it.",
-          "Transparency — every transaction is recorded publicly.",
-          "Scarcity — only 21 million bitcoins will ever exist, making it immune to the endless money-printing that causes inflation.",
-        ],
       },
       {
         heading: "What Are Sats?",
