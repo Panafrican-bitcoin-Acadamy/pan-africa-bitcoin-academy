@@ -838,7 +838,7 @@ export default async function Home() {
                 {
                   name: "Facebook",
                   icon: Facebook,
-                  url: "https://www.facebook.com/profile.php?id=61585070968194",
+                  url: "https://www.facebook.com/profile.php?id=61586743276906",
                   color: "hover:bg-blue-500/20",
                 },
                 {
@@ -1030,7 +1030,7 @@ export default async function Home() {
             'https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji',
             'https://jumble.social/users/npub1q659nzy6j3mn8nr8ljznzumplesd40276tefj6gjz72npmqqg5cqmh70vv',
             'https://discord.gg/4G4TUAP7',
-            'https://www.facebook.com/profile.php?id=61585070968194',
+            'https://www.facebook.com/profile.php?id=61586743276906',
             'https://x.com/panafricanbtc',
             'https://www.instagram.com/panafricanbitcoin/',
             'https://www.tiktok.com/@panafricanbitcoin',
