@@ -159,11 +159,26 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 <h3 className="text-lg font-bold text-zinc-100 sm:text-xl mb-3 pb-2 border-b border-zinc-800/50">
                   {section.heading}
                 </h3>
-                {section.paragraphs?.map((p) => (
-                  <p key={p} className="mt-3 text-zinc-200 leading-relaxed">
-                    {p}
-                  </p>
-                ))}
+                {section.paragraphs?.map((p, pIdx) => {
+                  // Check if this paragraph is a subsection heading
+                  const isSubHeading = p === "Decentralization Explained" || 
+                                       p === "Transparency Without Identity" || 
+                                       p === "Scarcity";
+                  
+                  if (isSubHeading) {
+                    return (
+                      <h4 key={p} className="mt-6 mb-3 text-base font-bold text-cyan-200 sm:text-lg">
+                        {p}
+                      </h4>
+                    );
+                  }
+                  
+                  return (
+                    <p key={`${p}-${pIdx}`} className="mt-3 text-zinc-200 leading-relaxed">
+                      {p}
+                    </p>
+                  );
+                })}
                 {section.heading === "What Are Sats?" ? (
                   // Special rendering for sats conversion table and converter
                   <div className="mt-6 space-y-6">
