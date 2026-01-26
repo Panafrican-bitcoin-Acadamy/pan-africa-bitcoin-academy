@@ -117,7 +117,7 @@ export function useSession(userType: UserType, options: UseSessionOptions = {}) 
     } catch (err: any) {
       // Don't log timeout errors as they're expected
       if (err.name !== 'AbortError') {
-        console.error('Session check error:', err);
+      console.error('Session check error:', err);
       }
       setIsAuthenticated(false);
       setEmail(null);

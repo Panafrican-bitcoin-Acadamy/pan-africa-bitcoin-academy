@@ -413,12 +413,12 @@ export default function AdminDashboardPage() {
       
       clearTimeout(timeoutId);
       
-      if (res.status === 401) {
-        // Session expired - trigger session check to properly handle logout
-        await checkSession();
-        throw new Error('Unauthorized');
-      }
-      return res;
+    if (res.status === 401) {
+      // Session expired - trigger session check to properly handle logout
+      await checkSession();
+      throw new Error('Unauthorized');
+    }
+    return res;
     } catch (error: any) {
       // Handle network errors, timeouts, and connection failures
       if (error.name === 'AbortError') {
@@ -3915,8 +3915,8 @@ export default function AdminDashboardPage() {
                           {blogRewardsSummary.uniqueStudents}
                         </div>
                         <div className="text-xs text-purple-300/60 mt-1">unique authors</div>
-                      </div>
-                    </div>
+        </div>
+      </div>
                     
                     {/* Blog Rewards List */}
                     {blogRewardsList.length > 0 && (
