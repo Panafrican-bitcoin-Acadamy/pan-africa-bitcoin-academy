@@ -3594,7 +3594,6 @@ export default function AdminDashboardPage() {
                   type="button"
                   onClick={() => {
                     setBlogFilter(f);
-                    setTimeout(() => fetchBlogSubmissions(), 0);
                   }}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                     blogFilter === f
@@ -3603,10 +3602,10 @@ export default function AdminDashboardPage() {
                   }`}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)} (
-                  {blogSubmissions.filter((s) => {
+                  {Array.isArray(blogSubmissions) ? blogSubmissions.filter((s) => {
                     if (f === 'all') return true;
-                    return s.status === f;
-                  }).length})
+                    return s?.status === f;
+                  }).length : 0})
                 </button>
               ))}
               <button
@@ -3627,19 +3626,18 @@ export default function AdminDashboardPage() {
 
           {loadingBlogSubmissions ? (
             <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
-          ) : blogSubmissions.filter((s) => {
-              if (blogFilter === 'all') return true;
-              return s.status === blogFilter;
-            }).length === 0 ? (
+          ) : !Array.isArray(blogSubmissions) || blogSubmissions.length === 0 ? (
             <div className="text-center py-8 text-zinc-400">No blog submissions found.</div>
-          ) : (
-            <div className="space-y-4">
-              {blogSubmissions
-                .filter((s) => {
-                  if (blogFilter === 'all') return true;
-                  return s.status === blogFilter;
-                })
-                .map((submission) => (
+          ) : (() => {
+            const filteredSubmissions = blogSubmissions.filter((s) => {
+              if (blogFilter === 'all') return true;
+              return s?.status === blogFilter;
+            });
+            return filteredSubmissions.length === 0 ? (
+              <div className="text-center py-8 text-zinc-400">No {blogFilter} blog submissions found.</div>
+            ) : (
+              <div className="space-y-4">
+                {filteredSubmissions.map((submission) => (
                   <div
                     key={submission.id}
                     className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
@@ -3677,7 +3675,7 @@ export default function AdminDashboardPage() {
                     <div className="mb-3 rounded bg-zinc-800/50 p-3">
                       <p className="text-xs font-medium text-zinc-300 mb-1">Content Preview:</p>
                       <p className="text-sm text-zinc-200 line-clamp-3">
-                        {submission.content.substring(0, 300)}...
+                        {submission.content ? (submission.content.length > 300 ? submission.content.substring(0, 300) + '...' : submission.content) : 'No content available'}
                       </p>
                     </div>
 
@@ -3742,8 +3740,9 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
                 ))}
-            </div>
-          )}
+              </div>
+            );
+          })()}
         </div>
                 )}
               </>
