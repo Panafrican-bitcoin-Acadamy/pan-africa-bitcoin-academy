@@ -78,6 +78,7 @@ export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const lastBlockHeightRef = useRef<number | null>(null);
+  const fetchBlockDataRef = useRef<((isInitial?: boolean) => Promise<void>) | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -90,27 +91,21 @@ export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) 
         }
         setError(null);
 
-        // Fetch both endpoints in parallel with timeout
-        const fetchWithTimeout = (url: string, timeout = 10000) => {
-          return Promise.race([
-            fetch(url),
-            new Promise<Response>((_, reject) =>
-              setTimeout(() => reject(new Error('Request timeout')), timeout)
-            ),
-          ]);
-        };
+        // Use our API proxy endpoint to avoid CORS issues
+        const response = await fetch('/api/blockchain/data?type=all', {
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
 
-        const [mempoolResponse, blocksResponse] = await Promise.all([
-          fetchWithTimeout('https://mempool.space/api/v1/fees/mempool-blocks'),
-          fetchWithTimeout('https://mempool.space/api/blocks'),
-        ]);
-
-        if (!mempoolResponse.ok || !blocksResponse.ok) {
-          throw new Error('Failed to fetch blockchain data');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to fetch blockchain data' }));
+          throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch blockchain data`);
         }
 
-        const mempoolData: MempoolBlock[] = await mempoolResponse.json();
-        const blocksData: ConfirmedBlock[] = await blocksResponse.json();
+        const data = await response.json();
+        const mempoolData: MempoolBlock[] = data.mempoolBlocks || [];
+        const blocksData: ConfirmedBlock[] = data.blocks || [];
 
         if (!isMounted) return;
 
@@ -139,25 +134,27 @@ export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) 
             }
 
             try {
-              const blockDetailResponse = await fetch(`https://mempool.space/api/block/${block.id}`, {
-                signal: AbortSignal.timeout(5000), // 5 second timeout
-              });
+              // Use our API proxy endpoint
+              const blockDetailResponse = await fetch(`/api/blockchain/data?type=block-detail&blockId=${block.id}`);
               
               if (blockDetailResponse.ok) {
-                const blockDetail = await blockDetailResponse.json();
-                return {
-                  ...block,
-                  pool: blockDetail?.pool || block.pool,
-                  extras: blockDetail?.extras || block.extras || {
-                    feeRange: blockDetail?.feeRange || [],
-                    avgFee: blockDetail?.avgFee || block.fee || 0,
-                    totalFees: blockDetail?.fees || block.fees || 0,
-                  },
-                };
+                const blockDetailData = await blockDetailResponse.json();
+                const blockDetail = blockDetailData.blockDetail;
+                if (blockDetail) {
+                  return {
+                    ...block,
+                    pool: blockDetail?.pool || block.pool,
+                    extras: blockDetail?.extras || block.extras || {
+                      feeRange: blockDetail?.feeRange || [],
+                      avgFee: blockDetail?.avgFee || block.fee || 0,
+                      totalFees: blockDetail?.fees || block.fees || 0,
+                    },
+                  };
+                }
               }
             } catch (err) {
               // Silently fail and use original block data
-              if (err instanceof Error && err.name !== 'AbortError') {
+              if (err instanceof Error) {
                 console.error('Error fetching block detail:', err);
               }
             }
@@ -187,6 +184,9 @@ export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) 
       }
     };
 
+    // Store fetch function in ref so it can be called from retry button
+    fetchBlockDataRef.current = fetchBlockData;
+
     // Initial fetch
     fetchBlockData(true);
 
@@ -215,8 +215,20 @@ export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) 
   if (error) {
     return (
       <div className={`rounded-lg border border-red-400/30 bg-red-500/10 p-6 ${className}`}>
-        <p className="text-red-200">Error: {error}</p>
-        <p className="text-sm text-red-300 mt-2">Unable to load live blockchain data</p>
+        <p className="text-red-200 font-medium">Error: {error}</p>
+        <p className="text-sm text-red-300 mt-2 mb-4">Unable to load live blockchain data. This may be due to network issues or the mempool.space API being temporarily unavailable.</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            if (fetchBlockDataRef.current) {
+              fetchBlockDataRef.current(true);
+            }
+          }}
+          className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/30 border border-red-500/30 cursor-pointer"
+        >
+          Retry
+        </button>
       </div>
     );
   }
