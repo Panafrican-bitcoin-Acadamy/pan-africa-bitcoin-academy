@@ -849,13 +849,6 @@ export const chaptersContent: ChapterContent[] = [
             content: "Think of hashes like a fingerprint: even a tiny change creates a completely different hash, making tampering immediately obvious.",
           },
         ],
-        images: [
-          {
-            src: "/images/hash-fingerprint.png",
-            alt: "Diagram showing how a tiny change in data creates a completely different hash",
-            caption: "Hashes are like fingerprints - tiny changes create completely different results",
-          },
-        ],
       },
       {
         heading: "7.2 Why It's Called a Chain",

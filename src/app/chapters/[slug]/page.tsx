@@ -346,7 +346,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         <p className="text-xs text-orange-300 mb-3">Keep this secret and secure - never share it!</p>
                         <div className="bg-zinc-900 rounded-lg p-4 border border-orange-400/20">
                           <p className="text-xs text-orange-100 font-mono break-all">
-                            5KJvsngHeMooDxQjypVsHmNi6yFcd2PHYVvHdY8kVoDBNswkdXmi
+                            L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6
                           </p>
                         </div>
                         <p className="text-xs text-orange-400 mt-2 italic">Or in hex format:</p>
@@ -356,6 +356,17 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           </p>
                         </div>
                       </div>
+                    </div>
+                    {/* Lightning Invoice Example */}
+                    <div className="rounded-lg border border-purple-400/30 bg-purple-500/10 p-5">
+                      <h4 className="text-base font-semibold text-purple-200 mb-3">Lightning Network Invoice Example</h4>
+                      <p className="text-xs text-purple-300 mb-3">A Lightning invoice is a payment request for fast, low-fee Bitcoin transactions on the Lightning Network</p>
+                      <div className="bg-zinc-900 rounded-lg p-4 border border-purple-400/20">
+                        <p className="text-xs text-purple-100 font-mono break-all">
+                          lnbc20u1p5cpmx0dqqpp5d5mzfqk3kjv46ujecwtkr0337gm7nlw43n69rlyd0uvlg8tx0sxqsp56wh3phhm0vkpxxtyhxt6u3fm0pfec5nvqy8qz4vp9y5lp0jz033s9qrsgqcqpjnp4q0plte0wjhr4t478uwp02wvl2gra39jamke83jfh8506kjd0dg0gyxqyz5vqrzjqt07ejxdllcugwyqydh5j3m3wgxlqew3ywmfgljfv0u99ssumtxuzqqqqqqqqqqqqgqqqqqqqqqqqqqqrcftdaunftydx463n9chlj6j3dd3hp570hz725nd773hmna2cq9q655djym8ph86wyvdqeta37p5lycaksk9xsfgs3rlnezwx7m8tfsqqq9a2mfy
+                        </p>
+                      </div>
+                      <p className="text-xs text-purple-400 mt-2 italic">Lightning invoices enable instant, low-cost payments and are used for everyday Bitcoin transactions</p>
                     </div>
                   </div>
                 ) : section.heading === "7.4 Why Blockchain Matters" ? (
