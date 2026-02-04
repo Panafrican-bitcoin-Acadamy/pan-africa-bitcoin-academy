@@ -6,6 +6,7 @@ import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Learn Bitcoin - First Eritrea Based Bitcoin Academy",
@@ -1046,6 +1047,7 @@ export default async function Home() {
           },
         }}
       />
+      <Analytics />
     </div>
   );
 }
