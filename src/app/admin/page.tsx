@@ -490,14 +490,24 @@ export default function AdminDashboardPage() {
     sessions: '',
   });
 
-  // Load data once when authenticated (no auto-refresh)
-  const hasLoadedRef = useRef(false);
+  // Load only essential data when authenticated
+  const hasLoadedEssentialRef = useRef(false);
   useEffect(() => {
-    if (isAuthenticated && admin && !hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-      loadData();
+    if (isAuthenticated && admin && !hasLoadedEssentialRef.current) {
+      hasLoadedEssentialRef.current = true;
+      loadEssentialData();
     }
   }, [isAuthenticated, admin]);
+  
+  // Load section-specific data when section becomes active
+  useEffect(() => {
+    if (!admin || !activeTab) return;
+    
+    // Map activeTab to section and load appropriate data
+    if (loadSectionDataRef.current) {
+      loadSectionDataRef.current(activeTab, activeSubMenu || undefined);
+    }
+  }, [admin, activeTab, activeSubMenu]);
 
 
   // Auto-hide notification after 5 seconds
@@ -1387,34 +1397,35 @@ export default function AdminDashboardPage() {
     }
   }, [fetchWithAuth, fetchStudentSatsRewards]);
 
-  const loadData = async () => {
+  // Track which data has been loaded to prevent duplicate fetches
+  const dataLoadedRef = useRef<Set<string>>(new Set());
+  
+  // Load only essential data on initial authentication (overview, cohorts for navigation)
+  const loadEssentialData = async () => {
+    if (dataLoadedRef.current.has('essential')) {
+      return; // Already loaded
+    }
+    
     setLoading(true);
     setError(null);
     try {
-      // Use Promise.allSettled to prevent one failure from blocking others
-      // No error messages - if data doesn't load, user can refresh manually
+      // Only fetch essential data needed for navigation and overview
       await Promise.allSettled([
-        fetchApplications(),
-        fetchCohorts(),
         fetchOverview(),
-        fetchEvents(),
-        fetchProgress(),
-        fetchLiveClassEvents(),
-        fetchMentorships(),
-        fetchExamAccess(),
-        fetchSubmissions(),
-        // Don't fetch blog submissions on initial load - only when submenu is active
-        // fetchBlogSubmissions(),
-        fetchSessions(),
-        // Don't fetch sats rewards on initial load - only when submenu is active
-        // fetchSatsRewards(),
+        fetchCohorts(), // Needed for cohort filters across sections
       ]);
+      dataLoadedRef.current.add('essential');
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
+      console.error('[Admin] Error loading essential data:', err);
     } finally {
       setLoading(false);
     }
   };
+  
+  // Load section-specific data only when section becomes active
+  // This function will be defined after fetch functions are available
+  const loadSectionDataRef = useRef<((section: string, subMenu?: string) => Promise<void>) | null>(null);
 
   const fetchOverview = async () => {
     const res = await fetchWithAuth('/api/admin/overview');
@@ -1530,6 +1541,7 @@ export default function AdminDashboardPage() {
       const res = await fetchWithAuth(`/api/admin/assignments/submissions?email=${encodeURIComponent(admin.email)}&status=${submissionFilter === 'all' ? 'all' : submissionFilter}`);
       const data = await res.json();
       if (data.submissions) setSubmissions(data.submissions);
+      dataLoadedRef.current.add('assignments-submissions');
     } catch (err) {
       console.error('Error fetching submissions:', err);
     } finally {
@@ -2273,6 +2285,174 @@ export default function AdminDashboardPage() {
     const data = await res.json();
     if (data.events) setLiveClassEvents(data.events);
   };
+  
+  // Define loadSectionData after all fetch functions are available
+  const loadSectionData = async (section: string, subMenu?: string) => {
+    const dataKey = subMenu ? `${section}-${subMenu}` : section;
+    
+    // Skip if already loaded
+    if (dataLoadedRef.current.has(dataKey)) {
+      return;
+    }
+    
+    try {
+      switch (section) {
+        case 'overview':
+          if (!dataLoadedRef.current.has('overview')) {
+            await fetchOverview();
+            dataLoadedRef.current.add('overview');
+          }
+          break;
+          
+        case 'applications':
+          if (!dataLoadedRef.current.has('applications')) {
+            await fetchApplications();
+            dataLoadedRef.current.add('applications');
+          }
+          break;
+          
+        case 'students':
+          // Student data is loaded by specific submenu hooks (approved-students, student-database, etc.)
+          // These are handled by the useEffect hooks that watch activeSubMenu
+          break;
+          
+        case 'events':
+          if (!dataLoadedRef.current.has('events')) {
+            await fetchEvents();
+            dataLoadedRef.current.add('events');
+          }
+          break;
+          
+        case 'mentorships':
+          if (!dataLoadedRef.current.has('mentorships')) {
+            await fetchMentorships();
+            dataLoadedRef.current.add('mentorships');
+          }
+          break;
+          
+        case 'attendance':
+          if (!dataLoadedRef.current.has('progress')) {
+            await fetchProgress();
+            dataLoadedRef.current.add('progress');
+          }
+          break;
+          
+        case 'exam':
+          if (!dataLoadedRef.current.has('exam-access')) {
+            await fetchExamAccess();
+            dataLoadedRef.current.add('exam-access');
+          }
+          break;
+          
+        case 'assignments':
+          if (subMenu === 'assignments-submissions') {
+            if (!dataLoadedRef.current.has('assignments-submissions')) {
+              await fetchSubmissions();
+            }
+          }
+          break;
+          
+        case 'cohorts':
+          if (subMenu === 'sessions') {
+            if (!dataLoadedRef.current.has('sessions')) {
+              await fetchSessions();
+              dataLoadedRef.current.add('sessions');
+            }
+          }
+          break;
+      }
+    } catch (err: any) {
+      console.error(`[Admin] Error loading ${dataKey}:`, err);
+      // Don't mark as loaded on error so it can retry
+    }
+  };
+  
+  // Store in ref for useEffect
+  loadSectionDataRef.current = loadSectionData;
+  
+  // Define loadSectionData after all fetch functions are available
+  const loadSectionData = async (section: string, subMenu?: string) => {
+    const dataKey = subMenu ? `${section}-${subMenu}` : section;
+    
+    // Skip if already loaded
+    if (dataLoadedRef.current.has(dataKey)) {
+      return;
+    }
+    
+    try {
+      switch (section) {
+        case 'overview':
+          if (!dataLoadedRef.current.has('overview')) {
+            await fetchOverview();
+            dataLoadedRef.current.add('overview');
+          }
+          break;
+          
+        case 'applications':
+          if (!dataLoadedRef.current.has('applications')) {
+            await fetchApplications();
+            dataLoadedRef.current.add('applications');
+          }
+          break;
+          
+        case 'students':
+          // Student data is loaded by specific submenu hooks (approved-students, student-database, etc.)
+          // These are handled by the useEffect hooks that watch activeSubMenu
+          break;
+          
+        case 'events':
+          if (!dataLoadedRef.current.has('events')) {
+            await fetchEvents();
+            dataLoadedRef.current.add('events');
+          }
+          break;
+          
+        case 'mentorships':
+          if (!dataLoadedRef.current.has('mentorships')) {
+            await fetchMentorships();
+            dataLoadedRef.current.add('mentorships');
+          }
+          break;
+          
+        case 'attendance':
+          if (!dataLoadedRef.current.has('progress')) {
+            await fetchProgress();
+            dataLoadedRef.current.add('progress');
+          }
+          break;
+          
+        case 'exam':
+          if (!dataLoadedRef.current.has('exam-access')) {
+            await fetchExamAccess();
+            dataLoadedRef.current.add('exam-access');
+          }
+          break;
+          
+        case 'assignments':
+          if (subMenu === 'assignments-submissions') {
+            if (!dataLoadedRef.current.has('assignments-submissions')) {
+              await fetchSubmissions();
+            }
+          }
+          break;
+          
+        case 'cohorts':
+          if (subMenu === 'sessions') {
+            if (!dataLoadedRef.current.has('sessions')) {
+              await fetchSessions();
+              dataLoadedRef.current.add('sessions');
+            }
+          }
+          break;
+      }
+    } catch (err: any) {
+      console.error(`[Admin] Error loading ${dataKey}:`, err);
+      // Don't mark as loaded on error so it can retry
+    }
+  };
+  
+  // Store in ref for useEffect
+  loadSectionDataRef.current = loadSectionData;
 
   const handleAttendanceUpload = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
