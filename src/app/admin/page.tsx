@@ -415,6 +415,17 @@ export default function AdminDashboardPage() {
   const allStudentsFetchedRef = useRef(false);
   const allStudentsFetchingRef = useRef(false);
   
+  // Flags to prevent duplicate simultaneous fetches for main sections
+  const overviewFetchingRef = useRef(false);
+  const applicationsFetchingRef = useRef(false);
+  const cohortsFetchingRef = useRef(false);
+  const sessionsFetchingRef = useRef(false);
+  const eventsFetchingRef = useRef(false);
+  const progressFetchingRef = useRef(false);
+  const mentorshipsFetchingRef = useRef(false);
+  const examAccessFetchingRef = useRef(false);
+  const submissionsFetchingRef = useRef(false);
+  
   // Refs to track if data has been fetched for each submenu (prevent duplicate fetches)
   const achievementsFetchedRef = useRef(false);
   const achievementsFetchingRef = useRef(false);
@@ -499,13 +510,34 @@ export default function AdminDashboardPage() {
     }
   }, [isAuthenticated, admin]);
   
+  // Track previous activeTab/activeSubMenu to only load when actually changing
+  const prevActiveTabRef = useRef<string | null>(null);
+  const prevActiveSubMenuRefForSection = useRef<string | null>(null);
+  
   // Load section-specific data when section becomes active
   useEffect(() => {
-    if (!admin || !activeTab) return;
+    if (!admin || !activeTab) {
+      prevActiveTabRef.current = null;
+      prevActiveSubMenuRefForSection.current = null;
+      return;
+    }
     
-    // Map activeTab to section and load appropriate data
-    if (loadSectionDataRef.current) {
-      loadSectionDataRef.current(activeTab, activeSubMenu || undefined);
+    // Only load if section actually changed (not on every render)
+    const sectionChanged = prevActiveTabRef.current !== activeTab;
+    const subMenuChanged = prevActiveSubMenuRefForSection.current !== activeSubMenu;
+    
+    if (sectionChanged || subMenuChanged) {
+      prevActiveTabRef.current = activeTab;
+      prevActiveSubMenuRefForSection.current = activeSubMenu;
+      
+      // Use setTimeout to ensure function is defined (runs after render)
+      const timeoutId = setTimeout(() => {
+        if (loadSectionDataRef.current) {
+          loadSectionDataRef.current(activeTab, activeSubMenu || undefined);
+        }
+      }, 0);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [admin, activeTab, activeSubMenu]);
 
@@ -1414,7 +1446,10 @@ export default function AdminDashboardPage() {
         fetchOverview(),
         fetchCohorts(), // Needed for cohort filters across sections
       ]);
+      // Mark both essential flag and individual sections as loaded
       dataLoadedRef.current.add('essential');
+      dataLoadedRef.current.add('overview'); // Overview is part of essential data
+      // Note: cohorts don't need tracking as they're used across all sections
     } catch (err: any) {
       // Silently fail - user can refresh page if needed
       console.error('[Admin] Error loading essential data:', err);
@@ -1428,33 +1463,67 @@ export default function AdminDashboardPage() {
   const loadSectionDataRef = useRef<((section: string, subMenu?: string) => Promise<void>) | null>(null);
 
   const fetchOverview = async () => {
-    const res = await fetchWithAuth('/api/admin/overview');
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to load overview');
-    setOverview(data.summary);
+    // Prevent duplicate simultaneous fetches
+    if (overviewFetchingRef.current) {
+      return;
+    }
+    
+    try {
+      overviewFetchingRef.current = true;
+      const res = await fetchWithAuth('/api/admin/overview');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load overview');
+      setOverview(data.summary);
+    } finally {
+      overviewFetchingRef.current = false;
+    }
   };
 
   const fetchApplications = async () => {
-    const res = await fetchWithAuth('/api/admin/applications');
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to fetch applications');
-    setApplications(data.applications || []);
+    // Prevent duplicate simultaneous fetches
+    if (applicationsFetchingRef.current) {
+      return;
+    }
+    
+    try {
+      applicationsFetchingRef.current = true;
+      const res = await fetchWithAuth('/api/admin/applications');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch applications');
+      setApplications(data.applications || []);
+    } finally {
+      applicationsFetchingRef.current = false;
+    }
   };
 
   const fetchCohorts = async () => {
+    // Prevent duplicate simultaneous fetches
+    if (cohortsFetchingRef.current) {
+      return;
+    }
+    
     try {
-    const res = await fetchWithAuth('/api/cohorts');
-    const data = await res.json();
-    if (data.cohorts) setCohorts(data.cohorts);
+      cohortsFetchingRef.current = true;
+      const res = await fetchWithAuth('/api/cohorts');
+      const data = await res.json();
+      if (data.cohorts) setCohorts(data.cohorts);
       // Don't throw if cohorts missing - it's not critical
     } catch (err) {
       // Silently fail for cohorts - not critical
       setCohorts([]);
+    } finally {
+      cohortsFetchingRef.current = false;
     }
   };
 
   const fetchSessions = async () => {
+    // Prevent duplicate simultaneous fetches
+    if (sessionsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      sessionsFetchingRef.current = true;
       setLoadingSessions(true);
       const res = await fetchWithAuth('/api/sessions?admin=true');
       const data = await res.json();
@@ -1466,23 +1535,38 @@ export default function AdminDashboardPage() {
       setAllSessions([]);
     } finally {
       setLoadingSessions(false);
+      sessionsFetchingRef.current = false;
     }
   };
 
   const fetchEvents = async () => {
+    // Prevent duplicate simultaneous fetches
+    if (eventsFetchingRef.current) {
+      return;
+    }
+    
     try {
-    const res = await fetchWithAuth('/api/events');
-    const data = await res.json();
-    if (data.events) setEvents(data.events);
+      eventsFetchingRef.current = true;
+      const res = await fetchWithAuth('/api/events');
+      const data = await res.json();
+      if (data.events) setEvents(data.events);
       // Don't throw if events missing - it's not critical
     } catch (err) {
       // Silently fail for events - not critical
       setEvents([]);
+    } finally {
+      eventsFetchingRef.current = false;
     }
   };
 
   const fetchProgress = async () => {
+    // Prevent duplicate simultaneous fetches
+    if (progressFetchingRef.current) {
+      return;
+    }
+    
     try {
+      progressFetchingRef.current = true;
       const res = await fetchWithAuth('/api/admin/students/progress');
       const data = await res.json();
       if (!res.ok) {
@@ -1511,17 +1595,35 @@ export default function AdminDashboardPage() {
     } catch (err: any) {
       console.error('[Admin] Error fetching student progress:', err);
       setProgress([]);
+    } finally {
+      progressFetchingRef.current = false;
     }
   };
 
   const fetchMentorships = async () => {
-    const res = await fetchWithAuth('/api/admin/mentorships');
-    const data = await res.json();
-    if (data.applications) setMentorships(data.applications);
+    // Prevent duplicate simultaneous fetches
+    if (mentorshipsFetchingRef.current) {
+      return;
+    }
+    
+    try {
+      mentorshipsFetchingRef.current = true;
+      const res = await fetchWithAuth('/api/admin/mentorships');
+      const data = await res.json();
+      if (data.applications) setMentorships(data.applications);
+    } finally {
+      mentorshipsFetchingRef.current = false;
+    }
   };
 
   const fetchExamAccess = async () => {
+    // Prevent duplicate simultaneous fetches
+    if (examAccessFetchingRef.current) {
+      return;
+    }
+    
     try {
+      examAccessFetchingRef.current = true;
       setLoadingExamAccess(true);
       const res = await fetchWithAuth('/api/admin/exam/access-list');
       const data = await res.json();
@@ -1530,13 +1632,21 @@ export default function AdminDashboardPage() {
       console.error('Error fetching exam access:', err);
     } finally {
       setLoadingExamAccess(false);
+      examAccessFetchingRef.current = false;
     }
   };
 
 
   const fetchSubmissions = async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (submissionsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      submissionsFetchingRef.current = true;
       setLoadingSubmissions(true);
       const res = await fetchWithAuth(`/api/admin/assignments/submissions?email=${encodeURIComponent(admin.email)}&status=${submissionFilter === 'all' ? 'all' : submissionFilter}`);
       const data = await res.json();
@@ -1546,6 +1656,7 @@ export default function AdminDashboardPage() {
       console.error('Error fetching submissions:', err);
     } finally {
       setLoadingSubmissions(false);
+      submissionsFetchingRef.current = false;
     }
   };
 
@@ -2288,6 +2399,8 @@ export default function AdminDashboardPage() {
   
   // Define loadSectionData after all fetch functions are available
   const loadSectionData = async (section: string, subMenu?: string) => {
+    if (!admin) return; // Don't load if not authenticated
+    
     const dataKey = subMenu ? `${section}-${subMenu}` : section;
     
     // Skip if already loaded
@@ -2298,17 +2411,13 @@ export default function AdminDashboardPage() {
     try {
       switch (section) {
         case 'overview':
-          if (!dataLoadedRef.current.has('overview')) {
-            await fetchOverview();
-            dataLoadedRef.current.add('overview');
-          }
+          await fetchOverview();
+          dataLoadedRef.current.add('overview');
           break;
           
         case 'applications':
-          if (!dataLoadedRef.current.has('applications')) {
-            await fetchApplications();
-            dataLoadedRef.current.add('applications');
-          }
+          await fetchApplications();
+          dataLoadedRef.current.add('applications');
           break;
           
         case 'students':
@@ -2317,46 +2426,47 @@ export default function AdminDashboardPage() {
           break;
           
         case 'events':
-          if (!dataLoadedRef.current.has('events')) {
-            await fetchEvents();
-            dataLoadedRef.current.add('events');
-          }
+          await fetchEvents();
+          dataLoadedRef.current.add('events');
           break;
           
         case 'mentorships':
-          if (!dataLoadedRef.current.has('mentorships')) {
-            await fetchMentorships();
-            dataLoadedRef.current.add('mentorships');
-          }
+          await fetchMentorships();
+          dataLoadedRef.current.add('mentorships');
           break;
           
         case 'attendance':
-          if (!dataLoadedRef.current.has('progress')) {
-            await fetchProgress();
-            dataLoadedRef.current.add('progress');
-          }
+          await fetchProgress();
+          dataLoadedRef.current.add('progress');
           break;
           
         case 'exam':
-          if (!dataLoadedRef.current.has('exam-access')) {
-            await fetchExamAccess();
-            dataLoadedRef.current.add('exam-access');
-          }
+          await fetchExamAccess();
+          dataLoadedRef.current.add('exam-access');
           break;
           
         case 'assignments':
           if (subMenu === 'assignments-submissions') {
-            if (!dataLoadedRef.current.has('assignments-submissions')) {
-              await fetchSubmissions();
-            }
+            await fetchSubmissions();
+            // fetchSubmissions already adds 'assignments-submissions' to dataLoadedRef
           }
           break;
           
         case 'cohorts':
+          // Ensure cohorts are loaded (they're in essential data, but refresh if needed)
+          if (!dataLoadedRef.current.has('cohorts')) {
+            await fetchCohorts();
+            dataLoadedRef.current.add('cohorts');
+          }
           if (subMenu === 'sessions') {
-            if (!dataLoadedRef.current.has('sessions')) {
-              await fetchSessions();
-              dataLoadedRef.current.add('sessions');
+            await fetchSessions();
+            dataLoadedRef.current.add('sessions');
+          }
+          // cohort-analytics needs both cohorts and progress data
+          if (subMenu === 'cohort-analytics') {
+            if (!dataLoadedRef.current.has('progress')) {
+              await fetchProgress();
+              dataLoadedRef.current.add('progress');
             }
           }
           break;
@@ -2367,91 +2477,7 @@ export default function AdminDashboardPage() {
     }
   };
   
-  // Store in ref for useEffect
-  loadSectionDataRef.current = loadSectionData;
-  
-  // Define loadSectionData after all fetch functions are available
-  const loadSectionData = async (section: string, subMenu?: string) => {
-    const dataKey = subMenu ? `${section}-${subMenu}` : section;
-    
-    // Skip if already loaded
-    if (dataLoadedRef.current.has(dataKey)) {
-      return;
-    }
-    
-    try {
-      switch (section) {
-        case 'overview':
-          if (!dataLoadedRef.current.has('overview')) {
-            await fetchOverview();
-            dataLoadedRef.current.add('overview');
-          }
-          break;
-          
-        case 'applications':
-          if (!dataLoadedRef.current.has('applications')) {
-            await fetchApplications();
-            dataLoadedRef.current.add('applications');
-          }
-          break;
-          
-        case 'students':
-          // Student data is loaded by specific submenu hooks (approved-students, student-database, etc.)
-          // These are handled by the useEffect hooks that watch activeSubMenu
-          break;
-          
-        case 'events':
-          if (!dataLoadedRef.current.has('events')) {
-            await fetchEvents();
-            dataLoadedRef.current.add('events');
-          }
-          break;
-          
-        case 'mentorships':
-          if (!dataLoadedRef.current.has('mentorships')) {
-            await fetchMentorships();
-            dataLoadedRef.current.add('mentorships');
-          }
-          break;
-          
-        case 'attendance':
-          if (!dataLoadedRef.current.has('progress')) {
-            await fetchProgress();
-            dataLoadedRef.current.add('progress');
-          }
-          break;
-          
-        case 'exam':
-          if (!dataLoadedRef.current.has('exam-access')) {
-            await fetchExamAccess();
-            dataLoadedRef.current.add('exam-access');
-          }
-          break;
-          
-        case 'assignments':
-          if (subMenu === 'assignments-submissions') {
-            if (!dataLoadedRef.current.has('assignments-submissions')) {
-              await fetchSubmissions();
-            }
-          }
-          break;
-          
-        case 'cohorts':
-          if (subMenu === 'sessions') {
-            if (!dataLoadedRef.current.has('sessions')) {
-              await fetchSessions();
-              dataLoadedRef.current.add('sessions');
-            }
-          }
-          break;
-      }
-    } catch (err: any) {
-      console.error(`[Admin] Error loading ${dataKey}:`, err);
-      // Don't mark as loaded on error so it can retry
-    }
-  };
-  
-  // Store in ref for useEffect
+  // Store in ref for useEffect (already defined above at line 2290)
   loadSectionDataRef.current = loadSectionData;
 
   const handleAttendanceUpload = async (e: React.FormEvent<HTMLFormElement>) => {
