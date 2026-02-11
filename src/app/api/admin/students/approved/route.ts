@@ -124,8 +124,8 @@ export async function GET(request: NextRequest) {
           if (!existing || new Date(app.created_at) > new Date(existing.created_at)) {
             applicationsMap.set(emailLower, app);
           }
-        });
-      }
+        }
+      });
     }
 
     // Combine and format the data - ONLY include students with approved applications
