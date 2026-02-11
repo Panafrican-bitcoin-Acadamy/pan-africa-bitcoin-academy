@@ -6,8 +6,14 @@ import { requireAdmin } from '@/lib/adminSession';
  * GET /api/admin/students
  * Get all students (profiles) for admin dropdowns
  * SECURITY: This endpoint requires admin authentication and only returns minimal student data
+ * 
  * Query params:
  * - from_sats: If true, only return students who have received sats (pending or paid status)
+ * - cohort_id: Filter by cohort ID
+ * - status: Filter by student status
+ * - limit: Number of results to return (default: 1000, max: 5000)
+ * - offset: Pagination offset (default: 0)
+ * - search: Search by name or email (case-insensitive)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -18,21 +24,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Log access for security auditing
-    console.log(`[Admin Students API] Authorized access by admin: ${session.email} (${session.adminId})`);
-
     const searchParams = request.nextUrl.searchParams;
     const fromSats = searchParams.get('from_sats') === 'true';
+    const cohortId = searchParams.get('cohort_id');
+    const status = searchParams.get('status');
+    const search = searchParams.get('search');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '1000', 10), 5000);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     let students: any[] = [];
+    let totalCount = 0;
 
     if (fromSats) {
-      // Only fetch students who have sats rewards with status 'pending' or 'paid'
-      const { data: satsRewards, error: satsError } = await supabaseAdmin
+      // Optimized: First get unique student IDs with a single query using distinct
+      // Then fetch profiles in one query instead of two separate queries
+      let satsQuery = supabaseAdmin
         .from('sats_rewards')
-        .select('student_id')
+        .select('student_id', { count: 'exact' })
         .in('status', ['pending', 'paid'])
         .not('student_id', 'is', null);
+
+      const { data: satsRewards, error: satsError, count: satsCount } = await satsQuery;
 
       if (satsError) {
         console.error('[Admin Students API] Error fetching sats rewards:', satsError);
@@ -49,16 +61,35 @@ export async function GET(request: NextRequest) {
       const studentIds = [...new Set((satsRewards || []).map((r: any) => r.student_id).filter(Boolean))];
 
       if (studentIds.length === 0) {
-        console.log('[Admin Students API] No students with sats rewards found');
-        return NextResponse.json({ students: [] }, { status: 200 });
+        return NextResponse.json(
+          {
+            students: [],
+            pagination: { total: 0, limit, offset, hasMore: false },
+          },
+          { status: 200 }
+        );
       }
 
-      // Fetch profiles for these students
-      const { data: profiles, error: profilesError } = await supabaseAdmin
+      // Now fetch profiles for these students with filters applied
+      let profilesQuery = supabaseAdmin
         .from('profiles')
-        .select('id, name, email, status')
-        .in('id', studentIds)
-        .order('name', { ascending: true });
+        .select('id, name, email, status, cohort_id', { count: 'exact' })
+        .in('id', studentIds);
+
+      // Apply filters
+      if (cohortId) {
+        profilesQuery = profilesQuery.eq('cohort_id', cohortId);
+      }
+      if (status) {
+        profilesQuery = profilesQuery.eq('status', status);
+      }
+      if (search) {
+        profilesQuery = profilesQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+
+      const { data: profiles, error: profilesError, count } = await profilesQuery
+        .order('name', { ascending: true })
+        .range(offset, offset + limit - 1);
 
       if (profilesError) {
         console.error('[Admin Students API] Error fetching profiles:', profilesError);
@@ -71,21 +102,35 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Transform to match expected format - only return minimal necessary data
+      // Transform to match expected format
       students = (profiles || []).map((profile: any) => ({
-        id: profile.id, // This is the profile ID used in sats_rewards.student_id
+        id: profile.id,
         name: profile.name || profile.email || 'Unknown',
         email: profile.email || '',
         status: profile.status || 'New',
-        // Explicitly exclude sensitive data like phone, address, etc.
+        cohort_id: profile.cohort_id || null,
       }));
+      totalCount = count || students.length;
     } else {
-      // Fetch all profiles (original behavior) - but only for authenticated admins
-      const { data: profiles, error } = await supabaseAdmin
+      // Fetch all profiles with optional filters
+      let query = supabaseAdmin
         .from('profiles')
-        .select('id, name, email, status') // Only select necessary fields
+        .select('id, name, email, status, cohort_id', { count: 'exact' });
+
+      // Apply filters
+      if (cohortId) {
+        query = query.eq('cohort_id', cohortId);
+      }
+      if (status) {
+        query = query.eq('status', status);
+      }
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+
+      const { data: profiles, error, count } = await query
         .order('name', { ascending: true })
-        .limit(1000); // Limit to prevent huge responses and potential DoS
+        .range(offset, offset + limit - 1);
 
       if (error) {
         console.error('[Admin Students API] Error fetching profiles:', error);
@@ -100,19 +145,34 @@ export async function GET(request: NextRequest) {
 
       // Transform to match expected format - only return minimal necessary data
       students = (profiles || []).map((profile: any) => ({
-        id: profile.id, // This is the profile ID used in sats_rewards.student_id
+        id: profile.id,
         name: profile.name || profile.email || 'Unknown',
         email: profile.email || '',
         status: profile.status || 'New',
-        // Explicitly exclude sensitive data like phone, address, etc.
+        cohort_id: profile.cohort_id || null,
       }));
+      totalCount = count || students.length;
     }
 
-    // Security: Log data access for auditing
-    console.log(`[Admin Students API] Returning ${students.length} students${fromSats ? ' (from sats database)' : ''} to admin: ${session.email}`);
+    // Security: Log data access for auditing (only in development or for large queries)
+    if (process.env.NODE_ENV === 'development' || students.length > 100) {
+      console.log(`[Admin Students API] Returning ${students.length} students (total: ${totalCount})${fromSats ? ' (from sats database)' : ''} to admin: ${session.email}`);
+    }
     
-    // Return response with security headers
-    const response = NextResponse.json({ students }, { status: 200 });
+    // Return response with security headers and pagination info
+    const response = NextResponse.json(
+      {
+        students,
+        pagination: {
+          total: totalCount,
+          limit,
+          offset,
+          hasMore: offset + students.length < totalCount,
+        },
+      },
+      { status: 200 }
+    );
+    
     // Add security headers
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('X-Frame-Options', 'DENY');

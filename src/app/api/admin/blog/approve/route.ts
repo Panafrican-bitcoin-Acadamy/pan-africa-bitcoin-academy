@@ -140,8 +140,11 @@ export async function POST(request: NextRequest) {
     let satsAwarded = false;
     let satsError = null;
     
-    if (submission.author_email) {
-      // Find author by email
+    // Try to find author by author_id first (more reliable)
+    let profileId = submission.author_id;
+    
+    if (!profileId && submission.author_email) {
+      // Fallback to finding by email if author_id is not available
       const { data: authorProfile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('id')
@@ -155,9 +158,28 @@ export async function POST(request: NextRequest) {
         // Author doesn't exist in profiles - they need to sign up first
         satsError = 'Author not found in database. Please ask them to sign up first.';
       } else {
-        // Author exists - award sats
-        const profileId = authorProfile.id;
+        profileId = authorProfile.id;
+      }
+    }
 
+    if (profileId) {
+      // Check if a reward already exists for this blog post (prevent duplicates)
+      const { data: existingReward, error: checkError } = await supabaseAdmin
+        .from('sats_rewards')
+        .select('id')
+        .eq('student_id', profileId)
+        .eq('related_entity_type', 'blog')
+        .eq('related_entity_id', blogPost.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing reward:', checkError);
+        satsError = 'Failed to check existing rewards';
+      } else if (existingReward) {
+        // Reward already exists
+        console.log('Sats reward already exists for this blog post');
+        satsAwarded = true; // Consider it awarded since it already exists
+      } else {
         // Create a new sats_rewards record for this blog post approval
         // This allows tracking each blog post separately while still summing totals
         const { error: insertRewardError } = await supabaseAdmin
@@ -175,11 +197,14 @@ export async function POST(request: NextRequest) {
 
         if (insertRewardError) {
           console.error('Error creating sats reward:', insertRewardError);
-          satsError = 'Failed to create sats reward';
+          satsError = `Failed to create sats reward: ${insertRewardError.message}`;
         } else {
           satsAwarded = true;
+          console.log(`Successfully awarded ${BLOG_POST_REWARD_SATS} sats to profile ${profileId} for blog post ${blogPost.id}`);
         }
       }
+    } else if (!satsError) {
+      satsError = 'Author ID or email not found. Cannot award sats.';
     }
 
     return NextResponse.json(

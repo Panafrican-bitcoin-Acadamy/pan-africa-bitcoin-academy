@@ -155,6 +155,28 @@ export default function AdminDashboardPage() {
   const [liveClassEvents, setLiveClassEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // New state for additional database tables
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [loadingAchievements, setLoadingAchievements] = useState(false);
+  const [developerResources, setDeveloperResources] = useState<any[]>([]);
+  const [loadingDeveloperResources, setLoadingDeveloperResources] = useState(false);
+  const [developerEvents, setDeveloperEvents] = useState<any[]>([]);
+  const [loadingDeveloperEvents, setLoadingDeveloperEvents] = useState(false);
+  const [sponsorships, setSponsorships] = useState<any[]>([]);
+  const [loadingSponsorships, setLoadingSponsorships] = useState(false);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(false);
+  const [mentors, setMentors] = useState<any[]>([]);
+  const [loadingMentors, setLoadingMentors] = useState(false);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  
+  // Blog rewards modal state
+  const [showBlogRewardsModal, setShowBlogRewardsModal] = useState(false);
+  const [blogRewardsList, setBlogRewardsList] = useState<any[]>([]);
+  const [loadingBlogRewardsList, setLoadingBlogRewardsList] = useState(false);
+  
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [processing, setProcessing] = useState<string | null>(null);
   const [cohortFilter, setCohortFilter] = useState<string | null>(null); // Filter by cohort
@@ -191,6 +213,7 @@ export default function AdminDashboardPage() {
         { id: 'student-database', label: 'Student Database' },
         { id: 'assignments-submissions', label: 'Assignment Submissions' },
         { id: 'blog-submissions', label: 'Blog Submissions' },
+        { id: 'blog-posts', label: 'Blog Posts' },
       ],
     },
     {
@@ -201,6 +224,27 @@ export default function AdminDashboardPage() {
         { id: 'cohort-list', label: 'Cohort List' },
         { id: 'sessions', label: 'Sessions' },
         { id: 'cohort-analytics', label: 'Cohort Analytics' },
+      ],
+    },
+    {
+      id: 'content',
+      label: 'Content & Resources',
+      icon: '📖',
+      subMenus: [
+        { id: 'assignments', label: 'Assignments' },
+        { id: 'developer-resources', label: 'Developer Resources' },
+        { id: 'developer-events', label: 'Developer Events' },
+        { id: 'testimonials', label: 'Testimonials' },
+      ],
+    },
+    {
+      id: 'community',
+      label: 'Community',
+      icon: '🤝',
+      subMenus: [
+        { id: 'mentors', label: 'Mentors' },
+        { id: 'sponsorships', label: 'Sponsorships' },
+        { id: 'achievements', label: 'Achievements' },
       ],
     },
     {
@@ -256,6 +300,7 @@ export default function AdminDashboardPage() {
       'student-database': 'students',
       'assignments-submissions': 'assignments',
       'blog-submissions': 'overview',
+      'blog-posts': 'overview',
       'cohort-list': 'overview',
       'sessions': 'overview',
       'cohort-analytics': 'overview',
@@ -288,31 +333,34 @@ export default function AdminDashboardPage() {
   const [studentsList, setStudentsList] = useState<any[]>([]);
   const [loadingStudentsList, setLoadingStudentsList] = useState(false);
   
-  // Blog rewards summary state
-  const [blogRewardsSummary, setBlogRewardsSummary] = useState<{
-    totalRewards: number;
-    totalSats: number;
-    uniqueStudents: number;
-  }>({
-    totalRewards: 0,
-    totalSats: 0,
-    uniqueStudents: 0,
-  });
-  const [blogRewardsList, setBlogRewardsList] = useState<any[]>([]);
+  // Blog summary state (for blog posts with authors and sats)
+  const [blogSummary, setBlogSummary] = useState<{
+    blogs: any[];
+    authors: any[];
+    summary: {
+      totalBlogs: number;
+      totalAuthors: number;
+      totalSats: number;
+      categories: Record<string, number>;
+      featuredBlogs: number;
+      blogOfMonth: number;
+    };
+  } | null>(null);
   const [loadingBlogSummary, setLoadingBlogSummary] = useState(false);
   
   // Edit/Create reward modal state
   const [editingReward, setEditingReward] = useState<any | null>(null);
   const [showRewardModal, setShowRewardModal] = useState(false);
   const [rewardForm, setRewardForm] = useState({
+    cohort_id: '',
     student_id: '',
-    amount_paid: '',
-    amount_pending: '',
+    amount: '',
     reward_type: 'other',
     reason: '',
     status: 'pending',
   });
   const [savingReward, setSavingReward] = useState(false);
+  const [filteredStudentsByCohort, setFilteredStudentsByCohort] = useState<any[]>([]);
   
   // Refs to prevent duplicate fetches
   const satsFetchingRef = useRef(false);
@@ -325,7 +373,42 @@ export default function AdminDashboardPage() {
   const lastActiveSubMenuRef = useRef<string>('');
   const studentsListFetchingRef = useRef(false);
   const blogSummaryFetchingRef = useRef(false);
+  const blogSummaryInitialLoadRef = useRef(true); // Use ref instead of state to prevent re-renders
+  const fetchBlogSummaryRef = useRef<((forceRefresh?: boolean) => Promise<void>) | null>(null);
   const MIN_FETCH_INTERVAL = 1000; // Minimum 1 second between fetches
+  
+  // AbortControllers for canceling in-flight requests
+  const blogSubmissionsAbortControllerRef = useRef<AbortController | null>(null);
+  const blogPostsAbortControllerRef = useRef<AbortController | null>(null);
+  
+  // Flags to prevent duplicate simultaneous fetches
+  const blogSubmissionsFetchingRef = useRef(false);
+  const blogPostsFetchingRef = useRef(false);
+  const blogPostsFetchedRef = useRef(false);
+  const lastBlogSubmissionsFetchRef = useRef<number>(0);
+  const lastBlogPostsFetchRef = useRef<number>(0);
+  
+  // Refs to store fetch functions to prevent useEffect dependency issues
+  const fetchBlogSubmissionsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchBlogPostsRef = useRef<(() => Promise<void>) | null>(null);
+  
+  // Refs to store fetch functions to prevent useEffect loops
+  const fetchAchievementsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchDeveloperResourcesRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchDeveloperEventsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchSponsorshipsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchTestimonialsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchMentorsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchAssignmentsRef = useRef<(() => Promise<void>) | null>(null);
+  
+  // Refs to track if data has been fetched for each submenu (prevent duplicate fetches)
+  const achievementsFetchedRef = useRef(false);
+  const developerResourcesFetchedRef = useRef(false);
+  const developerEventsFetchedRef = useRef(false);
+  const sponsorshipsFetchedRef = useRef(false);
+  const testimonialsFetchedRef = useRef(false);
+  const mentorsFetchedRef = useRef(false);
+  const assignmentsFetchedRef = useRef(false);
   
   // Refs to store current filter values (to avoid including them in callback dependencies)
   const satsStatusFilterRef = useRef<string>(satsStatusFilter);
@@ -346,6 +429,13 @@ export default function AdminDashboardPage() {
   const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
   const [blogSubmissions, setBlogSubmissions] = useState<any[]>([]);
   const [loadingBlogSubmissions, setLoadingBlogSubmissions] = useState(false);
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [loadingBlogPosts, setLoadingBlogPosts] = useState(false);
+  const [blogPostsFilter, setBlogPostsFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
+  const [blogPostsSearch, setBlogPostsSearch] = useState('');
+  const [blogPostsCategoryFilter, setBlogPostsCategoryFilter] = useState<string>('all');
+  const [expandedBlogPostId, setExpandedBlogPostId] = useState<string | null>(null);
+  const [processingBlogPost, setProcessingBlogPost] = useState<string | null>(null);
   const [blogFilter, setBlogFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [processingBlog, setProcessingBlog] = useState<string | null>(null);
   const [expandedBlogId, setExpandedBlogId] = useState<string | null>(null);
@@ -402,12 +492,23 @@ export default function AdminDashboardPage() {
   const fetchWithAuth = useCallback(async (url: string, options?: RequestInit) => {
     try {
       // Add timeout to prevent hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutController = new AbortController();
+      const timeoutId = setTimeout(() => timeoutController.abort(), 30000); // 30 second timeout
+      
+      // Merge signals if one is provided in options
+      let finalSignal = timeoutController.signal;
+      if (options?.signal) {
+        // Create a merged signal that aborts if either signal aborts
+        const mergedController = new AbortController();
+        const abort = () => mergedController.abort();
+        timeoutController.signal.addEventListener('abort', abort);
+        options.signal.addEventListener('abort', abort);
+        finalSignal = mergedController.signal;
+      }
       
       const res = await fetch(url, {
         ...options,
-        signal: controller.signal,
+        signal: finalSignal,
         credentials: 'include',
       });
       
@@ -435,7 +536,7 @@ export default function AdminDashboardPage() {
     }
   }, [checkSession]);
 
-  // Fetch students list for dropdown
+  // Fetch students list for dropdown - now uses blog authors API instead of students API
   const fetchStudentsList = useCallback(async () => {
     if (!admin || activeSubMenu !== 'student-sats-rewards') {
       return;
@@ -443,15 +544,18 @@ export default function AdminDashboardPage() {
     
     // Prevent duplicate fetches - check if already fetched or currently fetching
     if (studentsListFetchedRef.current || studentsListFetchingRef.current) {
+      console.log('[Sats Rewards] Skipping fetchStudentsList - already fetched or fetching');
       return;
     }
     
     // Rate limiting
     const now = Date.now();
     if (now - lastStudentsListFetchTimeRef.current < MIN_FETCH_INTERVAL) {
+      console.log('[Sats Rewards] Skipping fetchStudentsList - rate limited');
       return;
     }
     
+    console.log('[Sats Rewards] Starting fetchStudentsList - using blog authors API');
     studentsListFetchedRef.current = true;
     studentsListFetchingRef.current = true;
     lastStudentsListFetchTimeRef.current = now;
@@ -459,92 +563,44 @@ export default function AdminDashboardPage() {
     try {
       setLoadingStudentsList(true);
       
-      // Fetch only students who have received sats (pending or paid)
-      // Add timeout to prevent hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      // Use the new blog authors API instead of students API
+      // This fetches only students who have written published blog posts
+      const res = await fetchWithAuth('/api/admin/blog/authors');
       
-      let res: Response;
-      try {
-        res = await fetch('/api/admin/students?from_sats=true', {
-          credentials: 'include',
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-      } catch (fetchError: any) {
-        clearTimeout(timeoutId);
-        if (fetchError.name === 'AbortError') {
-          throw new Error('Request timeout. Please check your connection and try again.');
-        }
-        if (fetchError.message === 'Failed to fetch' || fetchError.message.includes('NetworkError')) {
-          throw new Error('Unable to connect to the server. Please check your internet connection.');
-        }
-        throw fetchError;
-      }
-      
-      // Handle unauthorized access - don't expose data
+      // Handle unauthorized access
       if (res.status === 401) {
         console.error('[Sats Rewards] Unauthorized access - admin session may have expired');
         setStudentsList([]);
-        // Don't try fallback for unauthorized - security risk
         return;
       }
       
-      // If 404, try using the progress endpoint as fallback (only if authorized)
-      if (res.status === 404) {
-        console.warn('[Sats Rewards] Admin students endpoint not found, using progress endpoint as fallback');
-        res = await fetchWithAuth('/api/admin/students/progress');
-        if (res.status === 401) {
-          console.error('[Sats Rewards] Unauthorized access to progress endpoint');
-          setStudentsList([]);
-          return;
-        }
-        if (res.ok) {
-          const progressData = await res.json();
-          // Extract unique students from progress data - only minimal fields
-          const uniqueStudents = new Map();
-          if (Array.isArray(progressData)) {
-            progressData.forEach((item: any) => {
-              if (item.id && !uniqueStudents.has(item.id)) {
-                uniqueStudents.set(item.id, {
-                  id: item.id,
-                  name: item.name || '',
-                  email: item.email || '',
-                  status: item.status || 'New',
-                  // Explicitly exclude sensitive data like completedChapters, etc.
-                });
-              }
-            });
-          }
-          setStudentsList(Array.from(uniqueStudents.values()));
-          return;
-        }
-      }
-      
       if (!res.ok) {
-        let errorMessage = 'Failed to fetch students list';
-        let errorDetails = null;
+        let errorMessage = 'Failed to fetch blog authors';
         try {
           const errorData = await res.json();
           errorMessage = errorData.error || errorMessage;
-          errorDetails = errorData.details || null;
         } catch {
           // Use default error message
         }
-        console.error('[Sats Rewards] Failed to fetch students list:', {
+        console.error('[Sats Rewards] Failed to fetch blog authors:', {
           status: res.status,
           statusText: res.statusText,
           error: errorMessage,
-          details: errorDetails,
         });
-        // Don't throw - just set empty list and continue
         setStudentsList([]);
         return;
       }
       
       const data = await res.json();
-      if (data && Array.isArray(data.students)) {
-        setStudentsList(data.students);
+      if (data && Array.isArray(data.authors)) {
+        console.log(`[Sats Rewards] Successfully fetched ${data.authors.length} blog authors`);
+        // Transform authors to match students format for compatibility
+        setStudentsList(data.authors.map((author: any) => ({
+          id: author.id,
+          name: author.name,
+          email: author.email,
+          status: author.status,
+        })));
       } else {
         console.warn('[Sats Rewards] Unexpected data format:', data);
         setStudentsList([]);
@@ -554,136 +610,242 @@ export default function AdminDashboardPage() {
       if (err.message === 'Unauthorized') {
         console.error('[Sats Rewards] Unauthorized - session may have expired');
       } else {
-        console.error('[Sats Rewards] Error fetching students list:', err);
+        console.error('[Sats Rewards] Error fetching blog authors:', err);
       }
       setStudentsList([]);
+      // Reset fetched flag on error so it can retry
+      studentsListFetchedRef.current = false;
     } finally {
       setLoadingStudentsList(false);
       studentsListFetchingRef.current = false;
     }
   }, [admin, activeSubMenu, fetchWithAuth]);
 
-  // Fetch blog rewards summary
-  const fetchBlogRewardsSummary = useCallback(async () => {
+  // Fetch blog summary (blog posts with authors and sats) - separated from UI to prevent flickering
+  const fetchBlogSummary = useCallback(async (forceRefresh: boolean = false) => {
+    // Only fetch if submenu is active
     if (!admin || activeSubMenu !== 'student-sats-rewards') {
+      console.log('[Blog Summary] Skipping - submenu not active');
       return;
     }
     
-    // Prevent duplicate fetches - check if already fetched or currently fetching
-    if (blogSummaryFetchedRef.current || blogSummaryFetchingRef.current) {
-      return;
-    }
-    
-    // Rate limiting - don't fetch if we just fetched recently
-    const now = Date.now();
-    if (now - lastBlogSummaryFetchTimeRef.current < MIN_FETCH_INTERVAL) {
-      return;
-    }
-    
-    blogSummaryFetchedRef.current = true;
-    blogSummaryFetchingRef.current = true;
-    lastBlogSummaryFetchTimeRef.current = now;
-    
-    try {
-      setLoadingBlogSummary(true);
-      
-      // Use fetchWithAuth to ensure admin authentication is included
-      const res = await fetchWithAuth('/api/admin/sats?reward_type=blog');
-      
-      // Handle rate limiting
-      if (res.status === 429) {
-        const errorData = await res.json().catch(() => ({}));
-        console.warn('[Blog Summary] Rate limited:', errorData.error || 'Too many requests');
-        blogSummaryFetchedRef.current = false;
+    // Prevent duplicate fetches unless forced refresh
+    if (!forceRefresh) {
+      if (blogSummaryFetchedRef.current) {
+        console.log('[Blog Summary] Already fetched, skipping');
         return;
       }
       
-      if (!res.ok) {
-        let errorMessage = 'Failed to fetch blog rewards';
-        try {
-          const errorData = await res.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Use default error message
-        }
-        console.error('[Blog Summary] API error:', res.status, errorMessage);
-        blogSummaryFetchedRef.current = false;
+      if (blogSummaryFetchingRef.current) {
+        console.log('[Blog Summary] Already fetching, skipping');
         return;
+      }
+    }
+    
+    // Rate limiting - don't fetch if we just fetched recently (unless forced)
+    if (!forceRefresh) {
+      const now = Date.now();
+      if (now - lastBlogSummaryFetchTimeRef.current < MIN_FETCH_INTERVAL) {
+        console.log('[Blog Summary] Rate limited, skipping');
+        return;
+      }
+    }
+    
+    console.log('[Blog Summary] Starting fetch', forceRefresh ? '(forced refresh)' : '');
+    
+    // Mark as fetching
+    blogSummaryFetchingRef.current = true;
+    lastBlogSummaryFetchTimeRef.current = Date.now();
+    
+    // Only show loading on initial load (prevents flickering on refetches)
+    if (blogSummaryInitialLoadRef.current && !forceRefresh) {
+      setLoadingBlogSummary(true);
+    }
+    
+    try {
+      // Fetch blog summary from API
+      const res = await fetchWithAuth('/api/admin/blog/summary');
+      
+      if (!res.ok) {
+        if (res.status === 429) {
+          console.warn('[Blog Summary] Rate limited');
+          blogSummaryFetchingRef.current = false;
+          if (blogSummaryInitialLoadRef.current) {
+            setLoadingBlogSummary(false);
+          }
+          return;
+        }
+        
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch blog summary (${res.status})`);
       }
       
       const data = await res.json();
-      console.log('[Blog Summary] Received data:', {
-        hasRewards: Array.isArray(data.rewards),
-        rewardsCount: Array.isArray(data.rewards) ? data.rewards.length : 0,
-        dataKeys: Object.keys(data || {})
-      });
       
-      if (data && typeof data === 'object' && Array.isArray(data.rewards)) {
-        const blogRewards = data.rewards;
-        console.log('[Blog Summary] Processing', blogRewards.length, 'blog rewards');
-        
-        const totalSats = blogRewards.reduce((sum: number, r: any) => 
-          sum + (Number(r.amount_paid) || 0) + (Number(r.amount_pending) || 0), 0
-        );
-        const uniqueStudents = new Set(blogRewards.map((r: any) => r.student_id).filter(Boolean)).size;
-        
-        console.log('[Blog Summary] Calculated:', {
-          totalRewards: blogRewards.length,
-          totalSats,
-          uniqueStudents
+      if (data && typeof data === 'object') {
+        // Update state atomically to prevent flickering
+        setBlogSummary({
+          blogs: data.blogs || [],
+          authors: data.authors || [],
+          summary: data.summary || {
+            totalBlogs: 0,
+            totalAuthors: 0,
+            totalSats: 0,
+            categories: {},
+            featuredBlogs: 0,
+            blogOfMonth: 0,
+          },
         });
         
-        // Store the list of blog rewards
-        setBlogRewardsList(blogRewards);
+        // Mark as fetched and initial load complete
+        blogSummaryFetchedRef.current = true;
+        blogSummaryInitialLoadRef.current = false;
         
-        setBlogRewardsSummary({
-          totalRewards: blogRewards.length,
-          totalSats,
-          uniqueStudents,
+        console.log('[Blog Summary] Successfully fetched:', {
+          totalBlogs: data.summary?.totalBlogs || 0,
+          totalAuthors: data.summary?.totalAuthors || 0,
+          totalSats: data.summary?.totalSats || 0,
         });
       } else {
-        console.warn('[Blog Summary] Invalid data format:', data);
-        // Set empty summary if no valid data
-        setBlogRewardsSummary({
-          totalRewards: 0,
-          totalSats: 0,
-          uniqueStudents: 0,
-        });
-        setBlogRewardsList([]);
+        console.warn('[Blog Summary] Invalid data format');
+        setBlogSummary(null);
+        blogSummaryFetchedRef.current = true;
+        blogSummaryInitialLoadRef.current = false;
       }
     } catch (err: any) {
-      console.error('[Blog Summary] Error:', err);
+      console.error('[Blog Summary] Error:', err.message || err);
       
-      // Provide user-friendly error messages
-      if (err?.message) {
-        if (err.message.includes('Unable to connect') || err.message.includes('Connection error')) {
-          console.error('[Blog Summary] Connection error');
-        } else if (err.message.includes('timeout')) {
-          console.error('[Blog Summary] Request timeout');
-        }
+      // Only reset fetched flag on error if it's a critical error
+      if (err.message?.includes('Unauthorized') || err.message?.includes('401')) {
+        blogSummaryFetchedRef.current = false;
       }
       
-      blogSummaryFetchedRef.current = false;
       // Set empty summary on error
-      setBlogRewardsSummary({
-        totalRewards: 0,
-        totalSats: 0,
-        uniqueStudents: 0,
-      });
-      setBlogRewardsList([]);
+      setBlogSummary(null);
+      blogSummaryInitialLoadRef.current = false;
     } finally {
       setLoadingBlogSummary(false);
       blogSummaryFetchingRef.current = false;
     }
   }, [admin, activeSubMenu, fetchWithAuth]);
 
+  // Store the latest fetchBlogSummary in a ref so useEffect can use it without dependencies
+  useEffect(() => {
+    fetchBlogSummaryRef.current = fetchBlogSummary;
+  }, [fetchBlogSummary]);
+
   // Fetch blog submissions when submenu becomes active
   useEffect(() => {
-    if (admin && activeSubMenu === 'blog-submissions') {
-      console.log('[Blog Submissions] Submenu activated, fetching submissions');
-      fetchBlogSubmissions();
+    if (!admin || activeSubMenu !== 'blog-submissions') {
+      // Cancel any in-flight request when leaving submenu or logging out
+      if (blogSubmissionsAbortControllerRef.current) {
+        blogSubmissionsAbortControllerRef.current.abort();
+        blogSubmissionsAbortControllerRef.current = null;
+      }
+      // Reset fetching flag
+      blogSubmissionsFetchingRef.current = false;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    // Only fetch if not already fetching
+    if (!blogSubmissionsFetchingRef.current && fetchBlogSubmissionsRef.current) {
+      fetchBlogSubmissionsRef.current();
+    }
+    
+    // Cleanup: cancel request if component unmounts or submenu changes
+    return () => {
+      if (blogSubmissionsAbortControllerRef.current) {
+        blogSubmissionsAbortControllerRef.current.abort();
+        blogSubmissionsAbortControllerRef.current = null;
+      }
+      blogSubmissionsFetchingRef.current = false;
+    };
+  }, [admin, activeSubMenu]);
+
+  // Fetch blog posts when submenu becomes active
+  useEffect(() => {
+    if (!admin || activeSubMenu !== 'blog-posts') {
+      // Cancel any in-flight request when leaving submenu or logging out
+      if (blogPostsAbortControllerRef.current) {
+        blogPostsAbortControllerRef.current.abort();
+        blogPostsAbortControllerRef.current = null;
+      }
+      // Reset fetching flag
+      blogPostsFetchingRef.current = false;
+      return;
+    }
+    
+    // Only fetch if not already fetching
+    if (!blogPostsFetchingRef.current) {
+      // Use a small delay to ensure the ref is set (in case useEffect ordering is an issue)
+      const timeoutId = setTimeout(() => {
+        if (fetchBlogPostsRef.current && !blogPostsFetchingRef.current) {
+          console.log('[Blog Posts] Triggering fetch via ref');
+          fetchBlogPostsRef.current();
+        } else if (!fetchBlogPostsRef.current) {
+          console.warn('[Blog Posts] fetchBlogPostsRef.current is null, fetch may not work');
+        }
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
+    }
+    
+    // Cleanup: cancel request if component unmounts or submenu changes
+    return () => {
+      if (blogPostsAbortControllerRef.current) {
+        blogPostsAbortControllerRef.current.abort();
+        blogPostsAbortControllerRef.current = null;
+      }
+      blogPostsFetchingRef.current = false;
+    };
+  }, [admin, activeSubMenu]);
+
+  // Fetch new data when submenus become active (using refs to prevent loops)
+  useEffect(() => {
+    if (!admin) {
+      // Reset all fetch flags when admin logs out
+      achievementsFetchedRef.current = false;
+      developerResourcesFetchedRef.current = false;
+      developerEventsFetchedRef.current = false;
+      sponsorshipsFetchedRef.current = false;
+      testimonialsFetchedRef.current = false;
+      mentorsFetchedRef.current = false;
+      assignmentsFetchedRef.current = false;
+      return;
+    }
+    
+    // Only fetch if submenu changed and data hasn't been fetched yet
+    if (activeSubMenu === 'achievements' && !achievementsFetchedRef.current && fetchAchievementsRef.current) {
+      achievementsFetchedRef.current = true;
+      fetchAchievementsRef.current();
+    } else if (activeSubMenu === 'developer-resources' && !developerResourcesFetchedRef.current && fetchDeveloperResourcesRef.current) {
+      developerResourcesFetchedRef.current = true;
+      fetchDeveloperResourcesRef.current();
+    } else if (activeSubMenu === 'developer-events' && !developerEventsFetchedRef.current && fetchDeveloperEventsRef.current) {
+      developerEventsFetchedRef.current = true;
+      fetchDeveloperEventsRef.current();
+    } else if (activeSubMenu === 'sponsorships' && !sponsorshipsFetchedRef.current && fetchSponsorshipsRef.current) {
+      sponsorshipsFetchedRef.current = true;
+      fetchSponsorshipsRef.current();
+    } else if (activeSubMenu === 'testimonials' && !testimonialsFetchedRef.current && fetchTestimonialsRef.current) {
+      testimonialsFetchedRef.current = true;
+      fetchTestimonialsRef.current();
+    } else if (activeSubMenu === 'mentors' && !mentorsFetchedRef.current && fetchMentorsRef.current) {
+      mentorsFetchedRef.current = true;
+      fetchMentorsRef.current();
+    } else if (activeSubMenu === 'assignments' && !assignmentsFetchedRef.current && fetchAssignmentsRef.current) {
+      assignmentsFetchedRef.current = true;
+      fetchAssignmentsRef.current();
+    }
+    
+    // Reset fetch flags when switching away from a submenu
+    if (activeSubMenu !== 'achievements') achievementsFetchedRef.current = false;
+    if (activeSubMenu !== 'developer-resources') developerResourcesFetchedRef.current = false;
+    if (activeSubMenu !== 'developer-events') developerEventsFetchedRef.current = false;
+    if (activeSubMenu !== 'sponsorships') sponsorshipsFetchedRef.current = false;
+    if (activeSubMenu !== 'testimonials') testimonialsFetchedRef.current = false;
+    if (activeSubMenu !== 'mentors') mentorsFetchedRef.current = false;
+    if (activeSubMenu !== 'assignments') assignmentsFetchedRef.current = false;
   }, [admin, activeSubMenu]);
 
   // Fetch students list and blog summary when submenu becomes active (only once)
@@ -692,29 +854,48 @@ export default function AdminDashboardPage() {
     if (admin && activeSubMenu === 'student-sats-rewards') {
       // Only reset and fetch if this is a new submenu (not the same one)
       if (lastActiveSubMenuRef.current !== 'student-sats-rewards') {
+        console.log('[Sats Rewards] Submenu activated, resetting fetch flags');
+        
         // Reset fetch flags when submenu changes
         studentsListFetchedRef.current = false;
+        studentsListFetchingRef.current = false;
+        blogSummaryFetchedRef.current = false;
+        blogSummaryFetchingRef.current = false;
+        // Reset initial load flag to show loading on first fetch
+        blogSummaryInitialLoadRef.current = true;
         blogSummaryFetchedRef.current = false;
         // Reset sats fetch key to ensure it fetches
         satsLastFetchKeyRef.current = '';
         satsFetchingRef.current = false;
         lastActiveSubMenuRef.current = 'student-sats-rewards';
         
-        console.log('[Sats Rewards] Submenu activated, resetting fetch flags');
-        
-        // Stagger the fetches to avoid hitting rate limits
+        // Fetch students list first
         fetchStudentsList();
-        // Delay blog summary fetch slightly
-        setTimeout(() => {
-          fetchBlogRewardsSummary();
+        
+        // Fetch blog summary after a short delay (only once)
+        const blogSummaryTimeout = setTimeout(() => {
+          if (fetchBlogSummaryRef.current) {
+            fetchBlogSummaryRef.current(false); // false = don't force refresh
+          }
         }, 500);
+        
         // Note: fetchStudentSatsRewards will be triggered by the separate useEffect below
+        
+        // Cleanup timeout if component unmounts or submenu changes
+        return () => {
+          clearTimeout(blogSummaryTimeout);
+        };
+      } else {
+        console.log('[Sats Rewards] Submenu already active, skipping fetch');
       }
     } else {
       // Reset flags when submenu is not active
       if (lastActiveSubMenuRef.current === 'student-sats-rewards') {
+        console.log('[Sats Rewards] Submenu deactivated, resetting flags');
         studentsListFetchedRef.current = false;
+        studentsListFetchingRef.current = false;
         blogSummaryFetchedRef.current = false;
+        blogSummaryFetchingRef.current = false;
         lastActiveSubMenuRef.current = activeSubMenu || '';
       }
     }
@@ -899,6 +1080,12 @@ export default function AdminDashboardPage() {
     }
   }, [admin, activeSubMenu, fetchWithAuth, applyFiltersToRewards]);
 
+  // Store fetchStudentSatsRewards in a ref to prevent useEffect loops
+  const fetchStudentSatsRewardsRef = useRef<(() => Promise<void>) | null>(null);
+  useEffect(() => {
+    fetchStudentSatsRewardsRef.current = fetchStudentSatsRewards;
+  }, [fetchStudentSatsRewards]);
+
   // Manual refresh function
   const handleRefreshSatsRewards = useCallback(() => {
     // Reset fetch flags to force fresh fetch
@@ -908,8 +1095,10 @@ export default function AdminDashboardPage() {
     setAllSatsRewards([]);
     setStudentSatsRewards([]);
     // Fetch fresh data
-    fetchStudentSatsRewards();
-  }, [fetchStudentSatsRewards]);
+    if (fetchStudentSatsRewardsRef.current) {
+      fetchStudentSatsRewardsRef.current();
+    }
+  }, []);
 
   // Fetch data when submenu becomes active (only once)
   useEffect(() => {
@@ -930,40 +1119,95 @@ export default function AdminDashboardPage() {
       
       // Fetch data after a short delay
       const timeoutId = setTimeout(() => {
-        fetchStudentSatsRewards();
+        if (fetchStudentSatsRewardsRef.current) {
+          fetchStudentSatsRewardsRef.current();
+        }
       }, 200);
       
       return () => clearTimeout(timeoutId);
     }
-  }, [admin, activeSubMenu, fetchStudentSatsRewards]);
+  }, [admin, activeSubMenu]);
 
   // Handle opening edit modal
   const handleEditReward = useCallback((reward: any) => {
     setEditingReward(reward);
+    const totalAmount = (reward.amount_paid || 0) + (reward.amount_pending || 0);
+    
+    // For editing, we'll start with no cohort filter - user can select if needed
     setRewardForm({
+      cohort_id: '',
       student_id: reward.student_id || '',
-      amount_paid: reward.amount_paid?.toString() || '0',
-      amount_pending: reward.amount_pending?.toString() || '0',
+      amount: totalAmount > 0 ? totalAmount.toString() : '',
       reward_type: reward.reward_type || 'other',
       reason: reward.reason || '',
       status: reward.status || 'pending',
     });
+    
+    // Show all students initially
+    setFilteredStudentsByCohort(studentsList);
     setShowRewardModal(true);
-  }, []);
+  }, [studentsList]);
 
   // Handle opening create modal
   const handleCreateReward = useCallback(() => {
     setEditingReward(null);
     setRewardForm({
+      cohort_id: '',
       student_id: satsStudentFilter !== 'all' ? satsStudentFilter : '',
-      amount_paid: '',
-      amount_pending: '',
+      amount: '',
       reward_type: 'other',
       reason: '',
       status: 'pending',
     });
+    setFilteredStudentsByCohort([]);
     setShowRewardModal(true);
   }, [satsStudentFilter]);
+
+  // Filter students by cohort
+  const filterStudentsByCohort = useCallback((cohortId: string) => {
+    if (!cohortId || cohortId === 'all') {
+      setFilteredStudentsByCohort(studentsList);
+      return;
+    }
+
+    // Fetch students for this cohort
+    const fetchCohortStudents = async () => {
+      try {
+        setLoadingStudentsList(true);
+        // Get cohort enrollment for this cohort
+        const res = await fetchWithAuth(`/api/admin/students/progress`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            // Filter students by cohort_id
+            const cohortStudents = data.filter((student: any) => {
+              // Check if student is enrolled in this cohort
+              const enrollments = student.cohort_enrollment || [];
+              return enrollments.some((e: any) => e.cohort_id === cohortId);
+            });
+            setFilteredStudentsByCohort(cohortStudents.map((s: any) => ({
+              id: s.id,
+              name: s.name || '',
+              email: s.email || '',
+            })));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching cohort students:', err);
+        setFilteredStudentsByCohort([]);
+      } finally {
+        setLoadingStudentsList(false);
+      }
+    };
+
+    fetchCohortStudents();
+  }, [studentsList, fetchWithAuth]);
+
+  // Handle cohort selection change
+  const handleCohortChange = useCallback((cohortId: string) => {
+    setRewardForm({ ...rewardForm, cohort_id: cohortId, student_id: '' });
+    filterStudentsByCohort(cohortId);
+  }, [rewardForm, filterStudentsByCohort]);
 
   // Handle saving reward (create or update)
   const handleSaveReward = useCallback(async () => {
@@ -972,17 +1216,23 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    if (!rewardForm.amount_paid && !rewardForm.amount_pending) {
-      setNotification({ type: 'error', message: 'Please enter at least one amount' });
+    if (!rewardForm.amount || parseInt(rewardForm.amount) <= 0) {
+      setNotification({ type: 'error', message: 'Please enter a valid amount' });
+      return;
+    }
+
+    if (!rewardForm.reason) {
+      setNotification({ type: 'error', message: 'Please select a reason' });
       return;
     }
 
     setSavingReward(true);
     try {
+      const amount = parseInt(rewardForm.amount) || 0;
       const payload = {
         student_id: rewardForm.student_id,
-        amount_paid: parseInt(rewardForm.amount_paid) || 0,
-        amount_pending: parseInt(rewardForm.amount_pending) || 0,
+        amount_paid: rewardForm.status === 'paid' ? amount : 0,
+        amount_pending: rewardForm.status === 'pending' ? amount : 0,
         reward_type: rewardForm.reward_type,
         reason: rewardForm.reason,
         status: rewardForm.status,
@@ -1116,7 +1366,8 @@ export default function AdminDashboardPage() {
         fetchMentorships(),
         fetchExamAccess(),
         fetchSubmissions(),
-        fetchBlogSubmissions(),
+        // Don't fetch blog submissions on initial load - only when submenu is active
+        // fetchBlogSubmissions(),
         fetchSessions(),
         // Don't fetch sats rewards on initial load - only when submenu is active
         // fetchSatsRewards(),
@@ -1279,32 +1530,202 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchBlogSubmissions = async () => {
+  // Fetch functions for new database tables
+  const fetchAchievements = useCallback(async () => {
     if (!admin) return;
     try {
+      setLoadingAchievements(true);
+      const res = await fetchWithAuth('/api/admin/achievements');
+      if (!res.ok) throw new Error('Failed to fetch achievements');
+      const data = await res.json();
+      setAchievements(data.achievements || []);
+    } catch (err: any) {
+      console.error('[Achievements] Error:', err.message || err);
+      setAchievements([]);
+    } finally {
+      setLoadingAchievements(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  const fetchDeveloperResources = useCallback(async () => {
+    if (!admin) return;
+    try {
+      setLoadingDeveloperResources(true);
+      const res = await fetchWithAuth('/api/admin/developer-resources');
+      if (!res.ok) throw new Error('Failed to fetch developer resources');
+      const data = await res.json();
+      setDeveloperResources(data.resources || []);
+    } catch (err: any) {
+      console.error('[Developer Resources] Error:', err.message || err);
+      setDeveloperResources([]);
+    } finally {
+      setLoadingDeveloperResources(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  const fetchDeveloperEvents = useCallback(async () => {
+    if (!admin) return;
+    try {
+      setLoadingDeveloperEvents(true);
+      const res = await fetchWithAuth('/api/admin/developer-events');
+      if (!res.ok) throw new Error('Failed to fetch developer events');
+      const data = await res.json();
+      setDeveloperEvents(data.events || []);
+    } catch (err: any) {
+      console.error('[Developer Events] Error:', err.message || err);
+      setDeveloperEvents([]);
+    } finally {
+      setLoadingDeveloperEvents(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  const fetchSponsorships = useCallback(async () => {
+    if (!admin) return;
+    try {
+      setLoadingSponsorships(true);
+      const res = await fetchWithAuth('/api/admin/sponsorships');
+      if (!res.ok) throw new Error('Failed to fetch sponsorships');
+      const data = await res.json();
+      setSponsorships(data.sponsorships || []);
+    } catch (err: any) {
+      console.error('[Sponsorships] Error:', err.message || err);
+      setSponsorships([]);
+    } finally {
+      setLoadingSponsorships(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  const fetchTestimonials = useCallback(async () => {
+    if (!admin) return;
+    try {
+      setLoadingTestimonials(true);
+      const res = await fetchWithAuth('/api/admin/testimonials');
+      if (!res.ok) throw new Error('Failed to fetch testimonials');
+      const data = await res.json();
+      setTestimonials(data.testimonials || []);
+    } catch (err: any) {
+      console.error('[Testimonials] Error:', err.message || err);
+      setTestimonials([]);
+    } finally {
+      setLoadingTestimonials(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  const fetchMentors = useCallback(async () => {
+    if (!admin) return;
+    try {
+      setLoadingMentors(true);
+      const res = await fetchWithAuth('/api/admin/mentors');
+      if (!res.ok) throw new Error('Failed to fetch mentors');
+      const data = await res.json();
+      setMentors(data.mentors || []);
+    } catch (err: any) {
+      console.error('[Mentors] Error:', err.message || err);
+      setMentors([]);
+    } finally {
+      setLoadingMentors(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  const fetchAssignments = useCallback(async () => {
+    if (!admin) return;
+    try {
+      setLoadingAssignments(true);
+      const res = await fetchWithAuth('/api/admin/assignments');
+      if (!res.ok) throw new Error('Failed to fetch assignments');
+      const data = await res.json();
+      setAssignments(data.assignments || []);
+    } catch (err: any) {
+      console.error('[Assignments] Error:', err.message || err);
+      setAssignments([]);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  // Store fetch functions in refs to prevent useEffect loops (must be after function definitions)
+  useEffect(() => {
+    fetchAchievementsRef.current = fetchAchievements;
+    fetchDeveloperResourcesRef.current = fetchDeveloperResources;
+    fetchDeveloperEventsRef.current = fetchDeveloperEvents;
+    fetchSponsorshipsRef.current = fetchSponsorships;
+    fetchTestimonialsRef.current = fetchTestimonials;
+    fetchMentorsRef.current = fetchMentors;
+    fetchAssignmentsRef.current = fetchAssignments;
+  }, [fetchAchievements, fetchDeveloperResources, fetchDeveloperEvents, fetchSponsorships, fetchTestimonials, fetchMentors, fetchAssignments]);
+
+  const fetchBlogSubmissions = useCallback(async () => {
+    if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    const now = Date.now();
+    if (blogSubmissionsFetchingRef.current) {
+      console.log('[Blog Submissions] Already fetching, skipping duplicate call');
+      return;
+    }
+    
+    // Rate limiting - don't fetch if we just fetched recently (within 2 seconds)
+    if (lastBlogSubmissionsFetchRef.current > 0 && (now - lastBlogSubmissionsFetchRef.current) < 2000) {
+      console.log('[Blog Submissions] Rate limited, skipping (last fetch was', now - lastBlogSubmissionsFetchRef.current, 'ms ago)');
+      return;
+    }
+    
+    // Mark as fetching
+    blogSubmissionsFetchingRef.current = true;
+    lastBlogSubmissionsFetchRef.current = now;
+    
+    // Cancel any in-flight request
+    if (blogSubmissionsAbortControllerRef.current) {
+      blogSubmissionsAbortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    blogSubmissionsAbortControllerRef.current = abortController;
+    
+    try {
       setLoadingBlogSubmissions(true);
+      
       // Fetch all submissions, then filter client-side
-      const res = await fetchWithAuth('/api/admin/blog?type=submissions');
+      const res = await fetchWithAuth('/api/admin/blog?type=submissions', {
+        signal: abortController.signal,
+      });
+      
+      // Check if request was aborted
+      if (abortController.signal.aborted) {
+        blogSubmissionsFetchingRef.current = false;
+        return;
+      }
       
       if (!res.ok) {
         let errorMessage = 'Failed to fetch blog submissions';
+        let errorDetails: any = null;
         try {
           const errorData = await res.json();
           errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Use default error message
+          errorDetails = errorData;
+        } catch (parseError) {
+          // Response might not be JSON
+          console.error('[Blog Submissions] Failed to parse error response:', parseError);
         }
-        console.error('[Blog Submissions] API error:', res.status, errorMessage);
+        console.error('[Blog Submissions] API error:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorMessage,
+          details: errorDetails,
+        });
         setBlogSubmissions([]);
+        blogSubmissionsFetchingRef.current = false;
         return;
       }
       
       const data = await res.json();
-      console.log('[Blog Submissions] Received data:', {
-        hasSubmissions: Array.isArray(data.submissions),
-        count: Array.isArray(data.submissions) ? data.submissions.length : 0,
-        dataKeys: Object.keys(data || {})
-      });
+      
+      // Check again if request was aborted after async operations
+      if (abortController.signal.aborted) {
+        blogSubmissionsFetchingRef.current = false;
+        return;
+      }
       
       if (data && Array.isArray(data.submissions)) {
         setBlogSubmissions(data.submissions);
@@ -1313,12 +1734,141 @@ export default function AdminDashboardPage() {
         setBlogSubmissions([]);
       }
     } catch (err: any) {
+      // Ignore abort errors
+      if (err.name === 'AbortError' || abortController.signal.aborted) {
+        blogSubmissionsFetchingRef.current = false;
+        return;
+      }
       console.error('[Blog Submissions] Error:', err);
       setBlogSubmissions([]);
     } finally {
-      setLoadingBlogSubmissions(false);
+      // Only update loading state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setLoadingBlogSubmissions(false);
+      }
+      // Clear the abort controller if it's the current one
+      if (blogSubmissionsAbortControllerRef.current === abortController) {
+        blogSubmissionsAbortControllerRef.current = null;
+      }
+      // Clear fetching flag
+      blogSubmissionsFetchingRef.current = false;
     }
-  };
+  }, [admin, fetchWithAuth]);
+
+  const fetchBlogPosts = useCallback(async () => {
+    if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    const now = Date.now();
+    if (blogPostsFetchingRef.current) {
+      console.log('[Blog Posts] Already fetching, skipping duplicate call');
+      return;
+    }
+    
+    // Rate limiting - don't fetch if we just fetched recently (within 2 seconds)
+    if (lastBlogPostsFetchRef.current > 0 && (now - lastBlogPostsFetchRef.current) < 2000) {
+      console.log('[Blog Posts] Rate limited, skipping (last fetch was', now - lastBlogPostsFetchRef.current, 'ms ago)');
+      return;
+    }
+    
+    // Mark as fetching
+    blogPostsFetchingRef.current = true;
+    lastBlogPostsFetchRef.current = now;
+    
+    // Cancel any in-flight request
+    if (blogPostsAbortControllerRef.current) {
+      blogPostsAbortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    blogPostsAbortControllerRef.current = abortController;
+    
+    try {
+      setLoadingBlogPosts(true);
+      console.log('[Blog Posts] Starting fetch to /api/admin/blog?type=posts');
+      const res = await fetchWithAuth('/api/admin/blog?type=posts', {
+        signal: abortController.signal,
+      });
+      
+      console.log('[Blog Posts] Response received. Status:', res.status, 'OK:', res.ok);
+      
+      // Check if request was aborted
+      if (abortController.signal.aborted) {
+        console.log('[Blog Posts] Request was aborted');
+        blogPostsFetchingRef.current = false;
+        return;
+      }
+      
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch blog posts';
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('[Blog Posts] Failed to parse error response:', parseError);
+        }
+        console.error('[Blog Posts] API error:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorMessage,
+        });
+        setBlogPosts([]);
+        blogPostsFetchingRef.current = false;
+        return;
+      }
+      
+      const data = await res.json();
+      console.log('[Blog Posts] Parsed JSON data:', data);
+      
+      // Check again if request was aborted after async operations
+      if (abortController.signal.aborted) {
+        console.log('[Blog Posts] Request was aborted after JSON parse');
+        blogPostsFetchingRef.current = false;
+        return;
+      }
+      
+      if (data && Array.isArray(data.posts)) {
+        console.log('[Blog Posts] Successfully fetched', data.posts.length, 'posts');
+        setBlogPosts(data.posts);
+        blogPostsFetchedRef.current = true;
+      } else {
+        console.warn('[Blog Posts] Invalid data format. Expected data.posts array.');
+        console.warn('[Blog Posts] Received data:', data);
+        console.warn('[Blog Posts] Data type:', typeof data);
+        console.warn('[Blog Posts] Data keys:', data ? Object.keys(data) : 'null');
+        setBlogPosts([]);
+      }
+    } catch (err: any) {
+      // Ignore abort errors
+      if (err.name === 'AbortError' || abortController.signal.aborted) {
+        blogPostsFetchingRef.current = false;
+        return;
+      }
+      console.error('[Blog Posts] Error:', err);
+      setBlogPosts([]);
+    } finally {
+      // Only update loading state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setLoadingBlogPosts(false);
+      }
+      // Clear the abort controller if it's the current one
+      if (blogPostsAbortControllerRef.current === abortController) {
+        blogPostsAbortControllerRef.current = null;
+      }
+      // Clear fetching flag
+      blogPostsFetchingRef.current = false;
+    }
+  }, [admin, fetchWithAuth]);
+
+  // Store fetch functions in refs to prevent useEffect dependency issues
+  useEffect(() => {
+    fetchBlogSubmissionsRef.current = fetchBlogSubmissions;
+  }, [fetchBlogSubmissions]);
+
+  useEffect(() => {
+    fetchBlogPostsRef.current = fetchBlogPosts;
+  }, [fetchBlogPosts]);
 
   const handleApproveBlog = async (submissionId: string) => {
     if (!admin) return;
@@ -1345,22 +1895,53 @@ export default function AdminDashboardPage() {
       }
       alert(message);
       
-      // Refresh blog submissions list
+      // Refresh blog submissions list (force refresh to bypass guards)
+      blogSubmissionsFetchingRef.current = false;
+      lastBlogSubmissionsFetchRef.current = 0;
       await fetchBlogSubmissions();
+      
+      // Refresh blog posts list to show the newly created post
+      blogPostsFetchingRef.current = false;
+      lastBlogPostsFetchRef.current = 0;
+      await fetchBlogPosts();
       
       // Also refresh sats rewards if that section is active
       if (activeSubMenu === 'student-sats-rewards') {
         satsLastFetchKeyRef.current = '';
         satsFetchingRef.current = false;
+        // Force refresh blog summary after blog approval
         setTimeout(() => {
           fetchStudentSatsRewards();
-          fetchBlogRewardsSummary();
+          fetchBlogSummary(true); // true = force refresh
         }, 500);
       }
     } catch (err: any) {
       alert(err.message || 'Failed to approve blog');
     } finally {
       setProcessingBlog(null);
+    }
+  };
+
+  const handleUpdateBlogPost = async (postId: string, updates: any) => {
+    if (!admin) return;
+    setProcessingBlogPost(postId);
+    try {
+      const res = await fetchWithAuth('/api/admin/blog/update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update blog post');
+      
+      alert(data.message || 'Blog post updated successfully!');
+      
+      // Refresh blog posts list
+      await fetchBlogPosts();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update blog post');
+    } finally {
+      setProcessingBlogPost(null);
     }
   };
 
@@ -1405,9 +1986,10 @@ export default function AdminDashboardPage() {
       if (activeSubMenu === 'student-sats-rewards') {
         satsLastFetchKeyRef.current = '';
         satsFetchingRef.current = false;
+        // Force refresh blog summary after awarding sats
         setTimeout(() => {
           fetchStudentSatsRewards();
-          fetchBlogRewardsSummary();
+          fetchBlogSummary(true); // true = force refresh
         }, 500);
       }
     } catch (err: any) {
@@ -1435,6 +2017,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to reject blog');
       alert(data.message || 'Blog rejected.');
+      // Refresh blog submissions list
       await fetchBlogSubmissions();
     } catch (err: any) {
       alert(err.message || 'Failed to reject blog');
@@ -1535,22 +2118,52 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginForm),
       });
-      const data = await res.json();
+      
+      // Check if response has content before parsing JSON
+      const contentType = res.headers.get('content-type');
+      let data: any = {};
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const text = await res.text();
+          if (text) {
+            data = JSON.parse(text);
+          }
+        } catch (parseError) {
+          console.error('Failed to parse login response:', parseError);
+          setAuthError('Invalid response from server. Please try again.');
+          return;
+        }
+      }
+      
       if (!res.ok) {
-        const errorMsg = data.error || 'Login failed';
+        const errorMsg = data.error || `Login failed (${res.status} ${res.statusText})`;
         const errorDetails = data.details ? `: ${data.details}` : '';
         setAuthError(`${errorMsg}${errorDetails}`);
-        console.error('Admin login error:', data);
+        
+        // Only log if there's actual error data
+        if (Object.keys(data).length > 0) {
+          console.error('Admin login error:', data);
+        } else {
+          console.error('Admin login error: Empty response', { status: res.status, statusText: res.statusText });
+        }
         return;
       }
-      setLoginForm({ email: '', password: '' }); // Clear form
-      // Session is managed by useSession hook - check session to mark activity
-      // Wait a bit for cookie to be set, then check session
-      setTimeout(() => {
-        checkSession();
-      }, 100);
+      
+      // Check if login was successful
+      if (data.success) {
+        setLoginForm({ email: '', password: '' }); // Clear form
+        // Session is managed by useSession hook - check session to mark activity
+        // Wait a bit for cookie to be set, then check session
+        setTimeout(() => {
+          checkSession();
+        }, 100);
+      } else {
+        setAuthError(data.error || 'Login failed');
+      }
     } catch (err: any) {
-      setAuthError(err.message || 'Login failed');
+      console.error('Login request error:', err);
+      setAuthError(err.message || 'Network error. Please check your connection and try again.');
     } finally {
       setLoginLoading(false);
     }
@@ -3583,10 +4196,16 @@ export default function AdminDashboardPage() {
                 )}
 
         {/* Blog Submissions Section */}
-                {(activeSubMenu === 'blog-submissions' || activeTab === 'overview') && (
+                {activeSubMenu === 'blog-submissions' && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-zinc-50">📝 Blog Submissions</h2>
+              <p className="text-sm text-zinc-400 mt-1">
+                Review and approve blog submissions from students. 
+                <span className="text-zinc-500"> When approved, they automatically become "Blog Posts" (published on the website).</span>
+              </p>
+            </div>
             <div className="flex gap-2 flex-wrap">
               {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
                 <button
@@ -3608,21 +4227,58 @@ export default function AdminDashboardPage() {
                   }).length : 0})
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={handleAwardSatsRetroactively}
-                disabled={awardingSats}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Award sats to students who have approved blog posts but don't have sats rewards yet"
-              >
-                {awardingSats ? 'Awarding...' : '💰 Award Sats Retroactively'}
-              </button>
             </div>
           </div>
-          <p className="text-sm text-zinc-400 mb-6">
-            Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
-            Use "Award Sats Retroactively" to give sats to students who submitted blogs before the reward system was implemented.
-          </p>
+          <div className="mb-6 space-y-4">
+            <p className="text-sm text-zinc-400">
+              Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
+            </p>
+            
+            {/* Workflow Explanation */}
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+              <h3 className="text-sm font-semibold text-zinc-200 mb-3">📋 Blog Submission Workflow</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Pending Status */}
+                <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-yellow-400 text-lg">⏳</span>
+                    <span className="text-sm font-semibold text-yellow-300">Pending Review</span>
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Submission is waiting for admin review. No action has been taken yet.
+                  </p>
+                </div>
+                
+                {/* Approved Status */}
+                <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-green-400 text-lg">✓</span>
+                    <span className="text-sm font-semibold text-green-300">Approved</span>
+                  </div>
+                  <ul className="text-xs text-zinc-400 space-y-1">
+                    <li>• Blog post created and published</li>
+                    <li>• Author receives 2,000 sats (pending payment)</li>
+                    <li>• Post visible on blog page</li>
+                    <li>• Submission marked as approved</li>
+                  </ul>
+                </div>
+                
+                {/* Rejected Status */}
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-red-400 text-lg">✗</span>
+                    <span className="text-sm font-semibold text-red-300">Rejected</span>
+                  </div>
+                  <ul className="text-xs text-zinc-400 space-y-1">
+                    <li>• No blog post created</li>
+                    <li>• No sats awarded</li>
+                    <li>• Rejection reason recorded</li>
+                    <li>• Submission marked as rejected</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {loadingBlogSubmissions ? (
             <div className="text-center py-8 text-zinc-400">Loading blog submissions...</div>
@@ -3688,17 +4344,66 @@ export default function AdminDashboardPage() {
                       </div>
                     )}
 
-                    {submission.rejection_reason && (
-                      <div className="mb-3 rounded bg-red-500/10 border border-red-500/30 p-3">
-                        <p className="text-xs font-medium text-red-300 mb-1">Rejection Reason:</p>
-                        <p className="text-sm text-red-200">{submission.rejection_reason}</p>
+                    {/* Status-specific information boxes */}
+                    {submission.status === 'approved' && (
+                      <div className="mb-3 rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-400 text-lg">✓</span>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-green-300 mb-2">This submission was approved</p>
+                            <ul className="text-xs text-green-200/80 space-y-1">
+                              <li>• Blog post created and published on the website</li>
+                              <li>• Author received 2,000 sats (pending payment)</li>
+                              <li>• Post is now visible to all visitors</li>
+                              <li>• Submission marked as approved</li>
+                            </ul>
+                            <div className="mt-2 pt-2 border-t border-green-500/20 flex items-center justify-between">
+                              <p className="text-xs text-green-300/60">
+                                View published post in the "Blog Posts" section
+                              </p>
+                              <a
+                                href="/blog"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-green-400 hover:text-green-300 underline"
+                              >
+                                View Blog →
+                              </a>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
+
+                    {submission.status === 'rejected' && (
+                      <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                        <div className="flex items-start gap-2">
+                          <span className="text-red-400 text-lg">✗</span>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-red-300 mb-2">This submission was rejected</p>
+                            <ul className="text-xs text-red-200/80 space-y-1">
+                              <li>• No blog post was created</li>
+                              <li>• No sats were awarded</li>
+                              <li>• Submission marked as rejected</li>
+                              {submission.rejection_reason && (
+                                <li className="mt-2 pt-2 border-t border-red-500/20">
+                                  <span className="font-medium">Rejection Reason:</span> {submission.rejection_reason}
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
 
                     <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
                       <span>Submitted: {new Date(submission.created_at).toLocaleString()}</span>
                       {submission.reviewed_at && (
                         <span>• Reviewed: {new Date(submission.reviewed_at).toLocaleString()}</span>
+                      )}
+                      {submission.reviewed_by && (
+                        <span>• Reviewed by: Admin</span>
                       )}
                     </div>
 
@@ -3738,6 +4443,319 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+                )}
+
+        {/* Blog Posts Section */}
+                {activeSubMenu === 'blog-posts' && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-zinc-50">📝 Blog Posts</h2>
+              <p className="text-sm text-zinc-400 mt-1">
+                Published blog posts (created when submissions are approved). 
+                <span className="text-zinc-500"> Note: This is different from "Blog Submissions" which shows pending/awaiting review posts.</span>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchBlogPosts}
+              disabled={loadingBlogPosts}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingBlogPosts ? 'Refreshing...' : '⟳ Refresh'}
+            </button>
+          </div>
+
+          {/* Search and Filters */}
+          {Array.isArray(blogPosts) && blogPosts.length > 0 && (
+            <div className="mb-6 space-y-3">
+              <div className="flex gap-3 flex-wrap">
+                <input
+                  type="text"
+                  placeholder="Search by title, author, or content..."
+                  value={blogPostsSearch}
+                  onChange={(e) => setBlogPostsSearch(e.target.value)}
+                  className="flex-1 min-w-[200px] rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+                <select
+                  value={blogPostsCategoryFilter}
+                  onChange={(e) => setBlogPostsCategoryFilter(e.target.value)}
+                  className="rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                >
+                  <option value="all">All Categories</option>
+                  {Array.from(new Set(blogPosts.map((p: any) => p.category).filter(Boolean))).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {(['all', 'published', 'draft', 'archived'] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setBlogPostsFilter(f)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                      blogPostsFilter === f
+                        ? 'bg-purple-400 text-black'
+                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)} (
+                    {blogPosts.filter((p) => {
+                      if (f === 'all') return true;
+                      return p?.status === f;
+                    }).length})
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {loadingBlogPosts ? (
+            <div className="text-center py-12 text-zinc-400">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mb-2"></div>
+              <p>Loading blog posts...</p>
+            </div>
+          ) : !Array.isArray(blogPosts) || blogPosts.length === 0 ? (
+            <div className="text-center py-12 text-zinc-400">
+              <div className="max-w-md mx-auto">
+                <p className="text-lg mb-2 font-semibold text-zinc-300">No blog posts found</p>
+                <p className="text-sm mb-4">Blog posts are created automatically when you approve a submission in the "Blog Submissions" section.</p>
+                <div className="mt-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-left">
+                  <p className="text-xs font-semibold text-blue-300 mb-2">📋 Difference between Blog Submissions and Blog Posts:</p>
+                  <div className="text-xs text-blue-200/80 space-y-2">
+                    <div>
+                      <p className="font-medium text-blue-300">Blog Submissions:</p>
+                      <p className="pl-2">• Posts waiting for your review (pending/approved/rejected)</p>
+                      <p className="pl-2">• Students submit here</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-blue-300">Blog Posts:</p>
+                      <p className="pl-2">• Published posts (created when you approve a submission)</p>
+                      <p className="pl-2">• These appear on the public website</p>
+                    </div>
+                  </div>
+                </div>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveSubMenu('blog-submissions');
+                  }}
+                  className="mt-4 inline-block text-sm text-cyan-400 hover:text-cyan-300 underline"
+                >
+                  Go to Blog Submissions →
+                </a>
+              </div>
+            </div>
+          ) : (() => {
+            // Apply filters
+            let filteredPosts = blogPosts.filter((p) => {
+              // Status filter
+              if (blogPostsFilter !== 'all' && p?.status !== blogPostsFilter) return false;
+              
+              // Category filter
+              if (blogPostsCategoryFilter !== 'all' && p?.category !== blogPostsCategoryFilter) return false;
+              
+              // Search filter
+              if (blogPostsSearch.trim()) {
+                const searchLower = blogPostsSearch.toLowerCase();
+                const matchesTitle = p?.title?.toLowerCase().includes(searchLower);
+                const matchesAuthor = p?.author_name?.toLowerCase().includes(searchLower) || 
+                                     p?.author_email?.toLowerCase().includes(searchLower);
+                const matchesContent = p?.content?.toLowerCase().includes(searchLower) ||
+                                      p?.excerpt?.toLowerCase().includes(searchLower);
+                if (!matchesTitle && !matchesAuthor && !matchesContent) return false;
+              }
+              
+              return true;
+            });
+
+            return filteredPosts.length === 0 ? (
+              <div className="text-center py-12 text-zinc-400">
+                <p className="text-lg mb-2">No blog posts match your filters</p>
+                <p className="text-sm">Try adjusting your search or filter criteria.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-xs text-zinc-400 mb-2">
+                  Showing {filteredPosts.length} of {blogPosts.length} blog posts
+                </div>
+                {filteredPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-5 hover:bg-zinc-900/60 transition"
+                  >
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <h3 className="text-base font-semibold text-zinc-50 break-words">
+                            {post.title}
+                          </h3>
+                          {post.is_featured && (
+                            <span className="rounded-full border px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30 whitespace-nowrap">
+                              ⭐ Featured
+                            </span>
+                          )}
+                          {post.is_blog_of_month && (
+                            <span className="rounded-full border px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 border-purple-500/30 whitespace-nowrap">
+                              🏆 Blog of Month
+                            </span>
+                          )}
+                          {post._isFromSubmission && (
+                            <span className="rounded-full border px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30 whitespace-nowrap" title="This post came from an approved submission">
+                              📝 From Submission
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap mt-2">
+                          <span className="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            {post.category}
+                          </span>
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs ${
+                              post.status === 'published'
+                                ? 'text-green-400 bg-green-500/10 border-green-500/30'
+                                : post.status === 'archived'
+                                ? 'text-gray-400 bg-gray-500/10 border-gray-500/30'
+                                : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                            }`}
+                          >
+                            {post.status === 'published' ? 'Published' : post.status === 'archived' ? 'Archived' : 'Draft'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-2">
+                          <span className="font-medium text-zinc-300">{post.author_name}</span>
+                          {post.author_email && ` • ${post.author_email}`}
+                          {post.author_role && ` • ${post.author_role}`}
+                          {post.author_country && ` • ${post.author_country}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {post.excerpt && (
+                      <div className="mb-4 rounded bg-zinc-800/50 p-3">
+                        <p className="text-xs font-medium text-zinc-300 mb-1">Excerpt:</p>
+                        <p className="text-sm text-zinc-200">
+                          {expandedBlogPostId === post.id ? post.excerpt : (post.excerpt.length > 200 ? post.excerpt.substring(0, 200) + '...' : post.excerpt)}
+                        </p>
+                      </div>
+                    )}
+
+                    {expandedBlogPostId === post.id && (
+                      <div className="mb-4 rounded bg-zinc-800/50 p-3">
+                        <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
+                        <div className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
+                          {post.content}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-4 text-xs text-zinc-400 flex-wrap">
+                        <span>Created: {new Date(post.created_at).toLocaleString()}</span>
+                        {post.published_at && (
+                          <span>• Published: {new Date(post.published_at).toLocaleString()}</span>
+                        )}
+                        {post.updated_at && (
+                          <span>• Updated: {new Date(post.updated_at).toLocaleString()}</span>
+                        )}
+                      </div>
+                      {post.slug && !post._isFromSubmission && (
+                        <a
+                          href={`/blog/${post.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+                        >
+                          View Post →
+                        </a>
+                      )}
+                      {post._isFromSubmission && (
+                        <div className="text-xs text-blue-400">
+                          <span className="text-zinc-500">Note: </span>
+                          This post is from an approved submission. A blog post entry will be created when you approve it, or it may need to be manually created.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Management Actions */}
+                    <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedBlogPostId(expandedBlogPostId === post.id ? null : post.id)}
+                          className="rounded-lg bg-blue-500/20 px-3 py-1.5 text-xs font-medium text-blue-400 transition hover:bg-blue-500/30 cursor-pointer"
+                        >
+                          {expandedBlogPostId === post.id ? '▼ Hide Content' : '▶ View Full Content'}
+                        </button>
+                        
+                        {/* Status Management */}
+                        {post.status !== 'published' && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateBlogPost(post.id, { status: 'published' })}
+                            disabled={processingBlogPost === post.id}
+                            className="rounded-lg bg-green-500/20 px-3 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                          >
+                            {processingBlogPost === post.id ? '...' : '✓ Publish'}
+                          </button>
+                        )}
+                        {post.status !== 'draft' && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateBlogPost(post.id, { status: 'draft' })}
+                            disabled={processingBlogPost === post.id}
+                            className="rounded-lg bg-yellow-500/20 px-3 py-1.5 text-xs font-medium text-yellow-400 transition hover:bg-yellow-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                          >
+                            {processingBlogPost === post.id ? '...' : '📝 Draft'}
+                          </button>
+                        )}
+                        {post.status !== 'archived' && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateBlogPost(post.id, { status: 'archived' })}
+                            disabled={processingBlogPost === post.id}
+                            className="rounded-lg bg-gray-500/20 px-3 py-1.5 text-xs font-medium text-gray-400 transition hover:bg-gray-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                          >
+                            {processingBlogPost === post.id ? '...' : '📦 Archive'}
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateBlogPost(post.id, { is_featured: !post.is_featured })}
+                          disabled={processingBlogPost === post.id}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed ${
+                            post.is_featured
+                              ? 'bg-yellow-500/30 text-yellow-300 hover:bg-yellow-500/40'
+                              : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                          }`}
+                        >
+                          {processingBlogPost === post.id ? '...' : post.is_featured ? '⭐ Unfeature' : '⭐ Feature'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateBlogPost(post.id, { is_blog_of_month: !post.is_blog_of_month })}
+                          disabled={processingBlogPost === post.id}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed ${
+                            post.is_blog_of_month
+                              ? 'bg-purple-500/30 text-purple-300 hover:bg-purple-500/40'
+                              : 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
+                          }`}
+                        >
+                          {processingBlogPost === post.id ? '...' : post.is_blog_of_month ? '🏆 Remove BOM' : '🏆 Set BOM'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -3842,8 +4860,8 @@ export default function AdminDashboardPage() {
             {/* Assessments Section - Student Sats Rewards */}
             {activeSubMenu === 'student-sats-rewards' && (
               <>
-                {/* Blog Rewards Quick Summary */}
-                {loadingBlogSummary ? (
+                {/* Blog Summary Section */}
+                {loadingBlogSummary && blogSummaryInitialLoadRef.current ? (
                   <div className="mb-4 sm:mb-6 rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 sm:p-5">
                     <div className="animate-pulse">
                       <div className="h-4 bg-purple-500/20 rounded w-48 mb-3"></div>
@@ -3852,145 +4870,186 @@ export default function AdminDashboardPage() {
                           <div key={i} className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
                             <div className="h-3 bg-purple-500/20 rounded w-20 mb-2"></div>
                             <div className="h-6 bg-purple-500/20 rounded w-16"></div>
-      </div>
+                          </div>
                         ))}
                       </div>
                     </div>
                   </div>
-                ) : (
+                ) : blogSummary ? (
                   <div className="mb-4 sm:mb-6 rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 sm:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <div>
                         <h3 className="text-base sm:text-lg font-semibold text-purple-200 mb-1 flex items-center gap-2">
                           <span>📝</span>
-                          <span>Blog Rewards Summary</span>
+                          <span>Blog Summary</span>
                         </h3>
                         <p className="text-xs sm:text-sm text-purple-300/80">
-                          Students who have received sats rewards for approved blog posts
+                          Students who have written and published blog posts
                         </p>
                       </div>
                       <button
-                        onClick={() => {
-                          setSatsTypeFilter('blog');
-                          setSatsStatusFilter('all');
-                          setSatsStudentFilter('all');
-                          // Update refs immediately
-                          satsTypeFilterRef.current = 'blog';
-                          satsStatusFilterRef.current = 'all';
-                          satsStudentFilterRef.current = 'all';
-                          // Apply filters immediately
-                          if (allSatsRewards.length > 0) {
-                            applyFiltersToRewards(allSatsRewards);
+                        onClick={async () => {
+                          setShowBlogRewardsModal(true);
+                          setLoadingBlogRewardsList(true);
+                          try {
+                            const res = await fetchWithAuth('/api/admin/sats?reward_type=blog');
+                            if (res.ok) {
+                              const data = await res.json();
+                              setBlogRewardsList(data.rewards || []);
+                            } else {
+                              setBlogRewardsList([]);
+                            }
+                          } catch (err) {
+                            console.error('Error fetching blog rewards:', err);
+                            setBlogRewardsList([]);
+                          } finally {
+                            setLoadingBlogRewardsList(false);
                           }
                         }}
-                        className="rounded-lg border border-purple-400/30 bg-purple-500/20 px-4 py-2 text-sm font-medium text-purple-200 transition hover:bg-purple-500/30 flex items-center gap-2"
+                        className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-purple-300 transition hover:bg-purple-500/20 flex items-center gap-2"
                       >
+                        <span>💰</span>
                         <span>View All Blog Rewards</span>
-                        <span>→</span>
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+
+                    {/* Summary Statistics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                       <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
-                        <div className="text-xs text-purple-300/80 mb-1">Total Blog Rewards</div>
+                        <div className="text-xs text-purple-300/80 mb-1">Total Blogs</div>
                         <div className="text-lg sm:text-xl font-bold text-purple-200">
-                          {blogRewardsSummary.totalRewards.toLocaleString()}
+                          {blogSummary.summary.totalBlogs}
                         </div>
-                        <div className="text-xs text-purple-300/60 mt-1">approved posts</div>
                       </div>
                       <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
-                        <div className="text-xs text-purple-300/80 mb-1">Total Blog Sats</div>
+                        <div className="text-xs text-purple-300/80 mb-1">Total Authors</div>
                         <div className="text-lg sm:text-xl font-bold text-purple-200">
-                          {blogRewardsSummary.totalSats.toLocaleString()} <span className="text-xs">sats</span>
-                        </div>
-                        <div className="text-xs text-purple-300/60 mt-1">
-                          {blogRewardsSummary.totalSats > 0 
-                            ? `${(blogRewardsSummary.totalSats / 2000).toFixed(0)} × 2000 sats`
-                            : 'No rewards yet'}
+                          {blogSummary.summary.totalAuthors}
                         </div>
                       </div>
-                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20 col-span-2 sm:col-span-1">
-                        <div className="text-xs text-purple-300/80 mb-1">Students with Blogs</div>
+                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
+                        <div className="text-xs text-purple-300/80 mb-1">Total Sats</div>
                         <div className="text-lg sm:text-xl font-bold text-purple-200">
-                          {blogRewardsSummary.uniqueStudents}
+                          {blogSummary.summary.totalSats.toLocaleString()}
                         </div>
-                        <div className="text-xs text-purple-300/60 mt-1">unique authors</div>
-        </div>
-      </div>
-                    
-                    {/* Blog Rewards List */}
-                    {blogRewardsList.length > 0 && (
+                      </div>
+                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
+                        <div className="text-xs text-purple-300/80 mb-1">Featured</div>
+                        <div className="text-lg sm:text-xl font-bold text-purple-200">
+                          {blogSummary.summary.featuredBlogs}
+                        </div>
+                      </div>
+                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
+                        <div className="text-xs text-purple-300/80 mb-1">Blog of Month</div>
+                        <div className="text-lg sm:text-xl font-bold text-purple-200">
+                          {blogSummary.summary.blogOfMonth}
+                        </div>
+                      </div>
+                      <div className="bg-black/40 rounded-lg p-3 border border-purple-500/20">
+                        <div className="text-xs text-purple-300/80 mb-1">Categories</div>
+                        <div className="text-lg sm:text-xl font-bold text-purple-200">
+                          {Object.keys(blogSummary.summary.categories).length}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Authors List */}
+                    {blogSummary.authors.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-purple-500/20">
-                        <h4 className="text-sm font-semibold text-purple-200 mb-3">Recent Blog Rewards</h4>
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                          {blogRewardsList.slice(0, 10).map((reward: any) => {
-                            const totalAmount = (reward.amount_paid || 0) + (reward.amount_pending || 0);
-                            return (
-                              <div
-                                key={reward.id}
-                                className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-purple-500/10 hover:bg-black/30 transition"
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-medium text-purple-200 truncate">
-                                    {reward.student?.name || reward.student?.email || 'Unknown Student'}
+                        <h4 className="text-sm font-semibold text-purple-200 mb-3">Blog Authors</h4>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {blogSummary.authors.map((author: any) => (
+                            <div
+                              key={author.author_id}
+                              className="flex items-start justify-between p-3 rounded-lg bg-black/20 border border-purple-500/10 hover:bg-black/30 transition"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="text-sm font-medium text-purple-200">
+                                    {author.author_name}
                                   </div>
-                                  {reward.reason && (
-                                    <div className="text-xs text-purple-300/60 truncate mt-0.5">
-                                      {reward.reason}
-                                    </div>
+                                  {author.author_role && (
+                                    <span className="text-xs text-purple-300/60">({author.author_role})</span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-3 ml-3">
-                                  <div className="text-right">
-                                    <div className="text-xs font-semibold text-purple-200">
-                                      {totalAmount.toLocaleString()} sats
-                                    </div>
-                                    <div className={`text-xs ${
-                                      reward.status === 'paid' ? 'text-green-400' :
-                                      reward.status === 'pending' ? 'text-yellow-400' :
-                                      'text-zinc-400'
-                                    }`}>
-                                      {reward.status || 'pending'}
-                                    </div>
+                                {author.author_email && (
+                                  <div className="text-xs text-purple-300/60 mb-2">
+                                    {author.author_email}
                                   </div>
-                                  {reward.created_at && (
-                                    <div className="text-xs text-purple-300/50 whitespace-nowrap">
-                                      {new Date(reward.created_at).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric'
-                                      })}
-                                    </div>
+                                )}
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  <span className="text-xs text-purple-300/80">
+                                    {author.total_blogs} blog{author.total_blogs !== 1 ? 's' : ''}
+                                  </span>
+                                  {author.categories && author.categories.length > 0 && (
+                                    <>
+                                      <span className="text-purple-500/50">•</span>
+                                      <div className="flex flex-wrap gap-1">
+                                        {author.categories.map((cat: string, idx: number) => (
+                                          <span
+                                            key={idx}
+                                            className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                          >
+                                            {cat}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </>
                                   )}
                                 </div>
                               </div>
-                            );
-                          })}
+                              <div className="flex flex-col items-end gap-1 ml-3">
+                                <div className="text-right">
+                                  <div className="text-sm font-semibold text-purple-200">
+                                    {author.sats_total.toLocaleString()} sats
+                                  </div>
+                                  <div className="text-xs text-purple-300/60">
+                                    {author.sats_paid > 0 && (
+                                      <span className="text-green-400">{author.sats_paid.toLocaleString()} paid</span>
+                                    )}
+                                    {author.sats_paid > 0 && author.sats_pending > 0 && <span> / </span>}
+                                    {author.sats_pending > 0 && (
+                                      <span className="text-yellow-400">{author.sats_pending.toLocaleString()} pending</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {author.latest_blog_date && (
+                                  <div className="text-xs text-purple-300/50 whitespace-nowrap">
+                                    {new Date(author.latest_blog_date).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        {blogRewardsList.length > 10 && (
-                          <div className="mt-3 text-center">
-                            <button
-                              onClick={() => {
-                                setSatsTypeFilter('blog');
-                                setSatsStatusFilter('all');
-                                setSatsStudentFilter('all');
-                                // Update refs immediately
-                                satsTypeFilterRef.current = 'blog';
-                                satsStatusFilterRef.current = 'all';
-                                satsStudentFilterRef.current = 'all';
-                                // Apply filters immediately
-                                if (allSatsRewards.length > 0) {
-                                  applyFiltersToRewards(allSatsRewards);
-                                }
-                              }}
-                              className="text-xs text-purple-300 hover:text-purple-200 underline"
-                            >
-                              View all {blogRewardsList.length} blog rewards →
-                            </button>
-                          </div>
-                        )}
+                      </div>
+                    )}
+
+                    {/* Categories Breakdown */}
+                    {Object.keys(blogSummary.summary.categories).length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-purple-500/20">
+                        <h4 className="text-sm font-semibold text-purple-200 mb-3">Blogs by Category</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(blogSummary.summary.categories)
+                            .sort(([, a], [, b]) => (b as number) - (a as number))
+                            .map(([category, count]) => (
+                              <div
+                                key={category}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/40 border border-purple-500/20"
+                              >
+                                <span className="text-xs font-medium text-purple-200">{category}</span>
+                                <span className="text-xs text-purple-300/60">({count})</span>
+                              </div>
+                            ))}
+                        </div>
                       </div>
                     )}
                   </div>
-                )}
+                ) : null}
 
                 {/* Sats Rewards Statistics */}
                 {loadingSatsRewards ? (
@@ -4270,23 +5329,56 @@ export default function AdminDashboardPage() {
                                   <span className="text-zinc-500">Reason:</span> {reward.reason}
                                 </div>
                               )}
-                              <div className="flex items-center justify-between text-xs">
+                              {reward.related_entity_type && (
+                                <div className="text-xs text-zinc-400">
+                                  <span className="text-zinc-500">Related:</span>{' '}
+                                  <span className="text-zinc-300 capitalize">
+                                    {reward.related_entity_type}
+                                    {reward.related_entity_id && ` (${reward.related_entity_id.substring(0, 8)}...)`}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between text-xs flex-wrap gap-2">
                                 <div className="text-zinc-500">
                                   <span className="text-zinc-500">Awarded by:</span>{' '}
                                   <span className="text-zinc-300">
                                     {reward.awarded_by_profile?.name || (reward.awarded_by ? 'System' : '—')}
                                   </span>
                                 </div>
+                                {reward.payment_date && (
+                                  <div className="text-zinc-500">
+                                    <span className="text-zinc-500">Paid:</span>{' '}
+                                    <span className="text-green-400">
+                                      {new Date(reward.payment_date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                )}
                                 {reward.created_at && (
                                   <div className="text-zinc-500">
-                                    {new Date(reward.created_at).toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      year: 'numeric'
-                                    })}
+                                    <span className="text-zinc-500">Created:</span>{' '}
+                                    <span className="text-zinc-300">
+                                      {new Date(reward.created_at).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                      })}
+                                    </span>
                                   </div>
                                 )}
                               </div>
+                              {reward.updated_at && reward.updated_at !== reward.created_at && (
+                                <div className="text-xs text-zinc-500">
+                                  Updated: {new Date(reward.updated_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </div>
+                              )}
                             </div>
 
                             {/* Action Buttons */}
@@ -4339,14 +5431,31 @@ export default function AdminDashboardPage() {
 
                         <div className="space-y-4">
                           <div>
+                            <label className="block text-sm text-zinc-300 mb-1.5">Cohort</label>
+                            <select
+                              value={rewardForm.cohort_id}
+                              onChange={(e) => handleCohortChange(e.target.value)}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                            >
+                              <option value="">All Cohorts</option>
+                              {cohorts.map((cohort: any) => (
+                                <option key={cohort.id} value={cohort.id}>
+                                  {cohort.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
                             <label className="block text-sm text-zinc-300 mb-1.5">Student</label>
                             <select
                               value={rewardForm.student_id}
                               onChange={(e) => setRewardForm({ ...rewardForm, student_id: e.target.value })}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                              disabled={loadingStudentsList}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <option value="">Select a student</option>
-                              {studentsList.map((student: any) => (
+                              <option value="">{loadingStudentsList ? 'Loading students...' : 'Select a student'}</option>
+                              {(rewardForm.cohort_id ? filteredStudentsByCohort : studentsList).map((student: any) => (
                                 <option key={student.id} value={student.id}>
                                   {student.name || student.email} {student.email ? `(${student.email})` : ''}
                                 </option>
@@ -4354,27 +5463,30 @@ export default function AdminDashboardPage() {
                             </select>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-sm text-zinc-300 mb-1.5">Amount Paid</label>
-                              <input
-                                type="number"
-                                value={rewardForm.amount_paid}
-                                onChange={(e) => setRewardForm({ ...rewardForm, amount_paid: e.target.value })}
-                                placeholder="0"
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm text-zinc-300 mb-1.5">Amount Pending</label>
-                              <input
-                                type="number"
-                                value={rewardForm.amount_pending}
-                                onChange={(e) => setRewardForm({ ...rewardForm, amount_pending: e.target.value })}
-                                placeholder="0"
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                              />
-                            </div>
+                          <div>
+                            <label className="block text-sm text-zinc-300 mb-1.5">Amount (sats)</label>
+                            <input
+                              type="number"
+                              value={rewardForm.amount}
+                              onChange={(e) => setRewardForm({ ...rewardForm, amount: e.target.value })}
+                              placeholder="0"
+                              min="0"
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm text-zinc-300 mb-1.5">Status</label>
+                            <select
+                              value={rewardForm.status}
+                              onChange={(e) => setRewardForm({ ...rewardForm, status: e.target.value })}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                            >
+                              <option value="pending">Pending (Not sent yet)</option>
+                              <option value="paid">Paid (Sent)</option>
+                              <option value="processing">Processing</option>
+                              <option value="failed">Failed</option>
+                            </select>
                           </div>
 
                           <div>
@@ -4396,28 +5508,23 @@ export default function AdminDashboardPage() {
                           </div>
 
                           <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">Status</label>
-                            <select
-                              value={rewardForm.status}
-                              onChange={(e) => setRewardForm({ ...rewardForm, status: e.target.value })}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="processing">Processing</option>
-                              <option value="paid">Paid</option>
-                              <option value="failed">Failed</option>
-                            </select>
-                          </div>
-
-                          <div>
                             <label className="block text-sm text-zinc-300 mb-1.5">Reason</label>
-                            <textarea
+                            <select
                               value={rewardForm.reason}
                               onChange={(e) => setRewardForm({ ...rewardForm, reason: e.target.value })}
-                              placeholder="Enter reason for this reward..."
-                              rows={3}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
-                            />
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                            >
+                              <option value="">Select a reason</option>
+                              <option value="Assignment completion">Assignment completion</option>
+                              <option value="Chapter completion">Chapter completion</option>
+                              <option value="Blog post approval">Blog post approval</option>
+                              <option value="Attendance bonus">Attendance bonus</option>
+                              <option value="Peer help contribution">Peer help contribution</option>
+                              <option value="Project submission">Project submission</option>
+                              <option value="Discussion participation">Discussion participation</option>
+                              <option value="Special achievement">Special achievement</option>
+                              <option value="Other">Other</option>
+                            </select>
                           </div>
 
                           <div className="flex gap-3 pt-2">
@@ -4441,6 +5548,313 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
               </>
+            )}
+
+            {/* Content & Resources Section */}
+            {activeSubMenu === 'assignments' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">📝 Assignments</h3>
+                  <button
+                    onClick={fetchAssignments}
+                    disabled={loadingAssignments}
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
+                  >
+                    {loadingAssignments ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {loadingAssignments ? (
+                  <div className="text-center py-8 text-zinc-400">Loading assignments...</div>
+                ) : assignments.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No assignments found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {assignments.map((assignment: any) => (
+                      <div key={assignment.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-zinc-50 mb-2">{assignment.title}</h4>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                              {assignment.chapter_number && <span>Chapter {assignment.chapter_number}</span>}
+                              {assignment.cohorts && <span>• {assignment.cohorts.name}</span>}
+                              {assignment.status && <span className={`px-2 py-0.5 rounded ${assignment.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>{assignment.status}</span>}
+                              {assignment.points && <span>• {assignment.points} points</span>}
+                            </div>
+                            {assignment.description && <p className="text-xs text-zinc-400 mt-2">{assignment.description}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeSubMenu === 'developer-resources' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">📚 Developer Resources</h3>
+                  <button
+                    onClick={fetchDeveloperResources}
+                    disabled={loadingDeveloperResources}
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
+                  >
+                    {loadingDeveloperResources ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {loadingDeveloperResources ? (
+                  <div className="text-center py-8 text-zinc-400">Loading resources...</div>
+                ) : developerResources.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No developer resources found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {developerResources.map((resource: any) => (
+                      <div key={resource.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-zinc-50 mb-2">{resource.title}</h4>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                              {resource.category && <span>{resource.category}</span>}
+                              {resource.level && <span>• {resource.level}</span>}
+                            </div>
+                            {resource.description && <p className="text-xs text-zinc-400 mt-2">{resource.description}</p>}
+                            {resource.url && (
+                              <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 mt-2 inline-block">
+                                View Resource →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeSubMenu === 'developer-events' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">📅 Developer Events</h3>
+                  <button
+                    onClick={fetchDeveloperEvents}
+                    disabled={loadingDeveloperEvents}
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
+                  >
+                    {loadingDeveloperEvents ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {loadingDeveloperEvents ? (
+                  <div className="text-center py-8 text-zinc-400">Loading events...</div>
+                ) : developerEvents.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No developer events found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {developerEvents.map((event: any) => (
+                      <div key={event.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-zinc-50 mb-2">{event.name}</h4>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                              {event.type && <span>{event.type}</span>}
+                              {event.start_time && <span>• {new Date(event.start_time).toLocaleString()}</span>}
+                              {event.location && <span>• {event.location}</span>}
+                            </div>
+                            {event.description && <p className="text-xs text-zinc-400 mt-2">{event.description}</p>}
+                            {event.link && (
+                              <a href={event.link} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 mt-2 inline-block">
+                                View Event →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeSubMenu === 'testimonials' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">💬 Testimonials</h3>
+                  <button
+                    onClick={fetchTestimonials}
+                    disabled={loadingTestimonials}
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
+                  >
+                    {loadingTestimonials ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {loadingTestimonials ? (
+                  <div className="text-center py-8 text-zinc-400">Loading testimonials...</div>
+                ) : testimonials.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No testimonials found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {testimonials.map((testimonial: any) => (
+                      <div key={testimonial.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-sm font-semibold text-zinc-50">{testimonial.profiles?.name || 'Unknown'}</h4>
+                              <span className={`text-xs px-2 py-0.5 rounded ${testimonial.is_approved ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                {testimonial.is_approved ? 'Approved' : 'Pending'}
+                              </span>
+                              {testimonial.is_featured && <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">Featured</span>}
+                            </div>
+                            <p className="text-sm text-zinc-300">{testimonial.testimonial}</p>
+                            <div className="text-xs text-zinc-400 mt-2">
+                              {testimonial.profiles?.email && <span>{testimonial.profiles.email}</span>}
+                              {testimonial.created_at && <span> • {new Date(testimonial.created_at).toLocaleDateString()}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Community Section */}
+            {activeSubMenu === 'mentors' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">🤝 Mentors</h3>
+                  <button
+                    onClick={fetchMentors}
+                    disabled={loadingMentors}
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
+                  >
+                    {loadingMentors ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {loadingMentors ? (
+                  <div className="text-center py-8 text-zinc-400">Loading mentors...</div>
+                ) : mentors.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No mentors found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {mentors.map((mentor: any) => (
+                      <div key={mentor.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-sm font-semibold text-zinc-50">{mentor.name}</h4>
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{mentor.type}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${mentor.is_active ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
+                                {mentor.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            {mentor.role && <p className="text-xs text-zinc-400 mb-2">{mentor.role}</p>}
+                            {mentor.description && <p className="text-sm text-zinc-300 mb-2">{mentor.description}</p>}
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                              {mentor.github && <a href={mentor.github} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300">GitHub</a>}
+                              {mentor.twitter && <a href={mentor.twitter} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300">Twitter</a>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeSubMenu === 'sponsorships' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">💰 Sponsorships</h3>
+                  <button
+                    onClick={fetchSponsorships}
+                    disabled={loadingSponsorships}
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
+                  >
+                    {loadingSponsorships ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {loadingSponsorships ? (
+                  <div className="text-center py-8 text-zinc-400">Loading sponsorships...</div>
+                ) : sponsorships.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No sponsorships found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {sponsorships.map((sponsorship: any) => (
+                      <div key={sponsorship.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-sm font-semibold text-zinc-50">
+                                {sponsorship.sponsor_anonymous ? 'Anonymous Sponsor' : sponsorship.sponsor_name || 'Unknown'}
+                              </h4>
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                sponsorship.status === 'confirmed' ? 'bg-green-500/20 text-green-400' :
+                                sponsorship.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-zinc-500/20 text-zinc-400'
+                              }`}>
+                                {sponsorship.status}
+                              </span>
+                            </div>
+                            {sponsorship.profiles && <p className="text-xs text-zinc-400 mb-2">Student: {sponsorship.profiles.name} ({sponsorship.profiles.email})</p>}
+                            {sponsorship.amount_sats && <p className="text-sm text-zinc-300 mb-2">{sponsorship.amount_sats.toLocaleString()} sats</p>}
+                            {sponsorship.message && <p className="text-sm text-zinc-300">{sponsorship.message}</p>}
+                            <div className="text-xs text-zinc-400 mt-2">
+                              {sponsorship.created_at && <span>{new Date(sponsorship.created_at).toLocaleDateString()}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeSubMenu === 'achievements' && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-zinc-50">🏆 Achievements</h3>
+                  <button
+                    onClick={fetchAchievements}
+                    disabled={loadingAchievements}
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
+                  >
+                    {loadingAchievements ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {loadingAchievements ? (
+                  <div className="text-center py-8 text-zinc-400">Loading achievements...</div>
+                ) : achievements.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No achievements found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {achievements.map((achievement: any) => (
+                      <div key={achievement.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-sm font-semibold text-zinc-50">{achievement.badge_name}</h4>
+                              {achievement.points && <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400">{achievement.points} points</span>}
+                            </div>
+                            {achievement.profiles && (
+                              <p className="text-xs text-zinc-400 mb-2">
+                                {achievement.profiles.name} ({achievement.profiles.email})
+                                {achievement.profiles.cohorts && ` • ${achievement.profiles.cohorts.name}`}
+                              </p>
+                            )}
+                            {achievement.description && <p className="text-sm text-zinc-300">{achievement.description}</p>}
+                            <div className="text-xs text-zinc-400 mt-2">
+                              {achievement.earned_at && <span>Earned: {new Date(achievement.earned_at).toLocaleDateString()}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             </div>
@@ -4469,7 +5883,129 @@ export default function AdminDashboardPage() {
           onClose={() => setSelectedStudent(null)}
         />
       )}
+
+      {/* Blog Rewards Modal */}
+      {showBlogRewardsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-purple-500/30 bg-zinc-900 p-4 sm:p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg sm:text-xl font-semibold text-purple-200 mb-1 flex items-center gap-2">
+                  <span>💰</span>
+                  <span>All Blog Rewards</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-purple-300/80">
+                  Complete list of all sats rewards given for blog posts
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBlogRewardsModal(false)}
+                className="text-zinc-400 hover:text-zinc-300 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {loadingBlogRewardsList ? (
+              <div className="text-center py-12 text-zinc-400">
+                <div className="animate-spin text-4xl mb-4">⟳</div>
+                <p>Loading blog rewards...</p>
+              </div>
+            ) : blogRewardsList.length === 0 ? (
+              <div className="text-center py-12 text-zinc-400">
+                <p className="text-lg mb-2">No blog rewards found</p>
+                <p className="text-sm">No sats rewards have been given for blog posts yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <div>
+                    <div className="text-xs text-purple-300/80 mb-1">Total Rewards</div>
+                    <div className="text-lg font-bold text-purple-200">{blogRewardsList.length}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-purple-300/80 mb-1">Total Sats</div>
+                    <div className="text-lg font-bold text-purple-200">
+                      {blogRewardsList.reduce((sum: number, r: any) => sum + (r.amount_paid || 0) + (r.amount_pending || 0), 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-purple-300/80 mb-1">Paid</div>
+                    <div className="text-lg font-bold text-green-400">
+                      {blogRewardsList.reduce((sum: number, r: any) => sum + (r.amount_paid || 0), 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-purple-300/80 mb-1">Pending</div>
+                    <div className="text-lg font-bold text-yellow-400">
+                      {blogRewardsList.reduce((sum: number, r: any) => sum + (r.amount_pending || 0), 0).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rewards List */}
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                  {blogRewardsList.map((reward: any) => (
+                    <div
+                      key={reward.id}
+                      className="flex items-start justify-between p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:bg-zinc-800/70 transition"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="text-sm font-semibold text-zinc-200">
+                            {reward.student?.name || reward.student?.email || 'Unknown Student'}
+                          </div>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            reward.status === 'paid' ? 'bg-green-500/20 text-green-400' :
+                            reward.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                            reward.status === 'processing' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {reward.status || 'pending'}
+                          </span>
+                        </div>
+                        {reward.student?.email && (
+                          <div className="text-xs text-zinc-400 mb-2">{reward.student.email}</div>
+                        )}
+                        {reward.reason && (
+                          <div className="text-sm text-zinc-300 mb-1">
+                            <span className="text-zinc-500">Reason:</span> {reward.reason}
+                          </div>
+                        )}
+                        <div className="text-xs text-zinc-400">
+                          Created: {new Date(reward.created_at).toLocaleString()}
+                          {reward.payment_date && (
+                            <span className="ml-3">Paid: {new Date(reward.payment_date).toLocaleString()}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 ml-4">
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-purple-200">
+                            {((reward.amount_paid || 0) + (reward.amount_pending || 0)).toLocaleString()} sats
+                          </div>
+                          <div className="text-xs text-zinc-400">
+                            {reward.amount_paid > 0 && (
+                              <span className="text-green-400">{reward.amount_paid.toLocaleString()} paid</span>
+                            )}
+                            {reward.amount_paid > 0 && reward.amount_pending > 0 && <span> / </span>}
+                            {reward.amount_pending > 0 && (
+                              <span className="text-yellow-400">{reward.amount_pending.toLocaleString()} pending</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 

@@ -67,8 +67,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // If filtering by blog reward type, only include students who have actually written blogs
+    let filteredRewards = rewards || [];
+    if (rewardType === 'blog') {
+      // Get all unique student IDs from blog rewards
+      const blogRewardStudentIds = [...new Set((rewards || []).map((r: any) => r.student_id).filter(Boolean))];
+      
+      if (blogRewardStudentIds.length > 0) {
+        // Fetch students who have published blog posts
+        const { data: blogPosts, error: blogPostsError } = await supabaseAdmin
+          .from('blog_posts')
+          .select('author_id')
+          .eq('status', 'published')
+          .in('author_id', blogRewardStudentIds);
+        
+        if (blogPostsError) {
+          console.error('[Admin Sats API] Error fetching blog posts:', blogPostsError);
+        } else {
+          // Get unique author IDs who have published blogs
+          const authorsWithBlogs = new Set((blogPosts || []).map((p: any) => p.author_id).filter(Boolean));
+          
+          // Filter rewards to only include students who have published blogs
+          filteredRewards = (rewards || []).filter((r: any) => 
+            r.student_id && authorsWithBlogs.has(r.student_id)
+          );
+          
+          console.log(`[Admin Sats API] Filtered blog rewards: ${filteredRewards.length} rewards from ${authorsWithBlogs.size} students with published blogs (out of ${blogRewardStudentIds.length} total blog reward recipients)`);
+        }
+      }
+    }
+
     // Fetch related profile data separately
-    const studentIds = [...new Set((rewards || []).map((r: any) => r.student_id).filter(Boolean))];
+    const studentIds = [...new Set((filteredRewards || []).map((r: any) => r.student_id).filter(Boolean))];
     const awardedByIds = [...new Set((rewards || []).map((r: any) => r.awarded_by).filter(Boolean))];
     const allProfileIds = [...new Set([...studentIds, ...awardedByIds])];
 
@@ -112,7 +142,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Enrich rewards with profile data
-    const enrichedRewards = (rewards || []).map((reward: any) => ({
+    const enrichedRewards = (filteredRewards || []).map((reward: any) => ({
       ...reward,
       student: reward.student_id ? profilesMap[reward.student_id] || null : null,
       awarded_by_profile: reward.awarded_by ? profilesMap[reward.awarded_by] || null : null,

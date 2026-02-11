@@ -38,7 +38,19 @@ export async function POST(req: NextRequest) {
       return res;
     }
 
-    const { email, password } = await req.json();
+    // Parse request body with error handling
+    let body: { email?: string; password?: string };
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse login request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid request format. Please provide email and password.' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = body;
 
     // Validate email
     const emailValidation = validateAndNormalizeEmail(email);
