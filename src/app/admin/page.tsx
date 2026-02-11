@@ -2403,19 +2403,21 @@ export default function AdminDashboardPage() {
     
     const dataKey = subMenu ? `${section}-${subMenu}` : section;
     
-    // Skip if already loaded
-    if (dataLoadedRef.current.has(dataKey)) {
-      return;
-    }
-    
     try {
       switch (section) {
         case 'overview':
+          // Skip if already loaded
+          if (dataLoadedRef.current.has('overview')) {
+            return;
+          }
           await fetchOverview();
           dataLoadedRef.current.add('overview');
           break;
           
         case 'applications':
+          // Always fetch applications when applications section is active
+          // This ensures pending/rejected students have fresh data
+          // Don't skip - always refresh to get latest application statuses
           await fetchApplications();
           dataLoadedRef.current.add('applications');
           break;
@@ -4236,51 +4238,105 @@ export default function AdminDashboardPage() {
                   </>
                 )}
 
-            {/* Approved Students - Summary only, detailed list is in Student Database section */}
+            {/* Approved Students - List of approved and pending students */}
             {activeSubMenu === 'approved-students' && (
               <>
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-semibold text-zinc-50">✅ Approved Students</h3>
-                    <p className="text-sm text-zinc-400 mt-1">
-                      Students who have been approved and enrolled in the academy
-                    </p>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold text-zinc-50">✅ Approved & Pending Students</h3>
+                      <p className="text-sm text-zinc-400 mt-1">
+                        Students with approved or pending applications
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        approvedStudentsFetchedRef.current = false;
+                        approvedStudentsFetchingRef.current = false;
+                        fetchApprovedStudents();
+                      }}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700"
+                      disabled={loadingApprovedStudents}
+                    >
+                      {loadingApprovedStudents ? 'Refreshing...' : 'Refresh'}
+                    </button>
                   </div>
                   
                   {loadingApprovedStudents ? (
                     <div className="text-center py-12 text-zinc-400">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mb-2"></div>
-                      <p>Loading approved students...</p>
+                      <p>Loading students...</p>
                     </div>
                   ) : approvedStudents.length === 0 ? (
                     <div className="text-center py-12 text-zinc-400">
-                      <p className="text-lg mb-2">No approved students found</p>
-                      <p className="text-sm">Approved students will appear here once applications are approved.</p>
+                      <p className="text-lg mb-2">No students found</p>
+                      <p className="text-sm">Approved and pending students will appear here.</p>
                     </div>
                   ) : (
-                    <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                      <div className="text-center">
-                        <div className="text-4xl font-bold text-green-400 mb-2">
-                          {approvedStudents.length}
+                    <>
+                      {/* Summary Stats */}
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800">
+                          <div className="text-2xl font-bold text-green-400 mb-1">
+                            {approvedStudents.filter(s => s.applicationStatus === 'Approved').length}
+                          </div>
+                          <div className="text-sm text-zinc-400">Approved</div>
                         </div>
-                        <div className="text-lg text-zinc-300 mb-4">
-                          Approved Student{approvedStudents.length !== 1 ? 's' : ''}
+                        <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800">
+                          <div className="text-2xl font-bold text-yellow-400 mb-1">
+                            {approvedStudents.filter(s => s.applicationStatus === 'Pending').length}
+                          </div>
+                          <div className="text-sm text-zinc-400">Pending</div>
                         </div>
-                        <p className="text-sm text-zinc-400 mb-4">
-                          View the complete list of all students (including approved, pending, rejected, and not applied) in the <strong className="text-cyan-400">Student Database</strong> section.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveSubMenu('student-database');
-                            setActiveSection('students');
-                          }}
-                          className="rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30"
-                        >
-                          Go to Student Database →
-                        </button>
                       </div>
-                    </div>
+
+                      {/* Students List */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="border-b border-zinc-800">
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Name</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Email</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Phone</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Country</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Cohort</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Status</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Application Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {approvedStudents.map((student) => (
+                              <tr key={student.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/30">
+                                <td className="p-3 text-sm text-zinc-200">{student.name || 'N/A'}</td>
+                                <td className="p-3 text-sm text-zinc-300">{student.email || 'N/A'}</td>
+                                <td className="p-3 text-sm text-zinc-400">{student.phone || 'N/A'}</td>
+                                <td className="p-3 text-sm text-zinc-400">{student.country || 'N/A'}</td>
+                                <td className="p-3 text-sm text-zinc-400">{student.cohortName || 'N/A'}</td>
+                                <td className="p-3 text-sm">
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    student.status === 'Active' ? 'bg-green-500/20 text-green-400' :
+                                    student.status === 'Inactive' ? 'bg-red-500/20 text-red-400' :
+                                    'bg-zinc-500/20 text-zinc-400'
+                                  }`}>
+                                    {student.status || 'N/A'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-sm">
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    student.applicationStatus === 'Approved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                    student.applicationStatus === 'Pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                    'bg-zinc-500/20 text-zinc-400'
+                                  }`}>
+                                    {student.applicationStatus || 'Unknown'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   )}
                 </div>
               </>

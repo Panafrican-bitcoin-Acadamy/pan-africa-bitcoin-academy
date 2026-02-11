@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * GET /api/admin/students/approved
- * Get all approved students (from applications with status='Approved' and from students/profiles)
+ * Get all approved and pending students (from applications with status='Approved' or 'Pending')
  */
 export async function GET(request: NextRequest) {
   try {
@@ -13,39 +13,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get approved applications FIRST (this is the source of truth for approved status)
-    const { data: approvedApplications, error: appsError } = await supabaseAdmin
+    // Get approved AND pending students from applications
+    const BATCH_SIZE = 1000;
+    
+    // Get approved applications
+    const { data: approvedApplications, error: approvedAppsError } = await supabaseAdmin
       .from('applications')
       .select('*')
       .eq('status', 'Approved')
       .order('created_at', { ascending: false });
 
-    if (appsError) {
-      console.error('[Approved Students API] Error fetching approved applications:', appsError);
-      return NextResponse.json(
-        {
-          error: 'Failed to fetch approved applications',
-          ...(process.env.NODE_ENV === 'development' ? { details: appsError.message } : {}),
-        },
-        { status: 500 }
-      );
+    if (approvedAppsError) {
+      console.error('[Approved Students API] Error fetching approved applications:', approvedAppsError);
     }
 
-    // Create a set of approved email addresses (source of truth)
-    const approvedEmails = new Set<string>();
-    if (approvedApplications) {
-      approvedApplications.forEach((app) => {
-        if (app.email) {
-          approvedEmails.add(app.email.toLowerCase());
-        }
-      });
+    // Get pending applications
+    const { data: pendingApplications, error: pendingAppsError } = await supabaseAdmin
+      .from('applications')
+      .select('*')
+      .eq('status', 'Pending')
+      .order('created_at', { ascending: false });
+
+    if (pendingAppsError) {
+      console.error('[Approved Students API] Error fetching pending applications:', pendingAppsError);
     }
 
-    // Only get students whose emails match approved applications
-    // This ensures we only show students who are actually approved
-    const approvedEmailArray = Array.from(approvedEmails);
-    
-    if (approvedEmailArray.length === 0) {
+    // Combine all applications (approved + pending)
+    const allApplications = [
+      ...(approvedApplications || []),
+      ...(pendingApplications || [])
+    ];
+
+    if (allApplications.length === 0) {
       return NextResponse.json(
         {
           students: [],
@@ -55,43 +54,70 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get profiles for approved emails
-    const BATCH_SIZE = 1000;
-    let allProfiles: any[] = [];
+    // Create sets of email addresses with their application status
+    const approvedEmails = new Set<string>();
+    const pendingEmails = new Set<string>();
+    const allEmails = new Set<string>();
     
-    for (let i = 0; i < approvedEmailArray.length; i += BATCH_SIZE) {
-      const batch = approvedEmailArray.slice(i, i + BATCH_SIZE);
-      const { data: profilesBatch, error: profilesError } = await supabaseAdmin
-        .from('profiles')
-        .select(`
-          id,
-          name,
-          email,
-          phone,
-          country,
-          city,
-          status,
-          cohort_id,
-          student_id,
-          created_at,
-          cohorts (
-            id,
-            name,
-            start_date,
-            end_date,
-            status
-          )
-        `)
-        .in('email', batch);
-
-      if (profilesError) {
-        console.error('[Approved Students API] Error fetching profiles batch:', profilesError);
-      } else if (profilesBatch) {
-        allProfiles.push(...profilesBatch);
-      }
+    if (approvedApplications) {
+      approvedApplications.forEach((app) => {
+        if (app.email) {
+          const emailLower = app.email.toLowerCase();
+          approvedEmails.add(emailLower);
+          allEmails.add(emailLower);
+        }
+      });
+    }
+    
+    if (pendingApplications) {
+      pendingApplications.forEach((app) => {
+        if (app.email) {
+          const emailLower = app.email.toLowerCase();
+          pendingEmails.add(emailLower);
+          allEmails.add(emailLower);
+        }
+      });
     }
 
-    // Get student records for these profiles
+    // Get profiles for all emails (approved + pending)
+    const allEmailArray = Array.from(allEmails);
+    
+    let allProfiles: any[] = [];
+    
+    // Fetch by emails (from approved and pending applications)
+    for (let i = 0; i < allEmailArray.length; i += BATCH_SIZE) {
+      const batch = allEmailArray.slice(i, i + BATCH_SIZE);
+        const { data: profilesBatch, error: profilesError } = await supabaseAdmin
+          .from('profiles')
+          .select(`
+            id,
+            name,
+            email,
+            phone,
+            country,
+            city,
+            status,
+            cohort_id,
+            student_id,
+            created_at,
+            cohorts (
+              id,
+              name,
+              start_date,
+              end_date,
+              status
+            )
+          `)
+          .in('email', batch);
+
+        if (profilesError) {
+          console.error('[Approved Students API] Error fetching profiles by email:', profilesError);
+        } else if (profilesBatch) {
+          allProfiles.push(...profilesBatch);
+        }
+      }
+
+    // Get student records for all profiles
     const profileIds = allProfiles.map((p) => p.id).filter(Boolean);
     let studentsMap = new Map<string, any>();
     
@@ -113,29 +139,47 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Create applications map for quick lookup
+    // Create applications map for quick lookup (prioritize approved over pending)
     const applicationsMap = new Map<string, any>();
-    if (approvedApplications) {
-      approvedApplications.forEach((app) => {
-        const emailLower = app.email?.toLowerCase();
-        if (emailLower) {
-          // If multiple applications, keep the most recent one
-          const existing = applicationsMap.get(emailLower);
-          if (!existing || new Date(app.created_at) > new Date(existing.created_at)) {
+    allApplications.forEach((app) => {
+      const emailLower = app.email?.toLowerCase();
+      if (emailLower) {
+        const existing = applicationsMap.get(emailLower);
+        if (!existing) {
+          applicationsMap.set(emailLower, app);
+        } else {
+          // If multiple applications, prioritize approved over pending, then most recent
+          const existingIsApproved = existing.status === 'Approved';
+          const currentIsApproved = app.status === 'Approved';
+          
+          if (currentIsApproved && !existingIsApproved) {
+            // Current is approved, existing is not - use current
             applicationsMap.set(emailLower, app);
+          } else if (currentIsApproved === existingIsApproved) {
+            // Both same status - use most recent
+            if (new Date(app.created_at) > new Date(existing.created_at)) {
+              applicationsMap.set(emailLower, app);
+            }
           }
+          // Otherwise keep existing (approved > pending, or existing is more recent)
         }
-      });
-    }
+      }
+    });
 
-    // Combine and format the data - ONLY include students with approved applications
+    // Combine and format the data - include students with approved OR pending applications
     const approvedStudents: any[] = [];
 
     for (const profile of allProfiles) {
       const emailLower = profile.email?.toLowerCase();
-      if (!emailLower || !approvedEmails.has(emailLower)) {
-        continue; // Skip if not in approved emails list
+      
+      // Include if they have an approved OR pending application
+      if (!emailLower || !allEmails.has(emailLower)) {
+        continue; // Skip if not in approved/pending emails list
       }
+      
+      // Determine application status
+      const isApproved = approvedEmails.has(emailLower);
+      const isPending = pendingEmails.has(emailLower);
 
       const student = studentsMap.get(profile.id);
       const application = applicationsMap.get(emailLower);
@@ -165,6 +209,7 @@ export async function GET(request: NextRequest) {
         createdAt: application?.created_at || profile.created_at,
         source: student ? 'students_table' : 'application',
         applicationId: application?.id || null,
+        applicationStatus: isApproved ? 'Approved' : (isPending ? 'Pending' : 'Unknown'),
       });
     }
 
