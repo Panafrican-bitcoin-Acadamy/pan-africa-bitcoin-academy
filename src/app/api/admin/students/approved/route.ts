@@ -100,16 +100,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Add approved applications that might not have student records yet
-    if (approvedApplications) {
-      for (const app of approvedApplications) {
-        // Check if this application already has a student record
-        const hasStudentRecord = approvedStudents.some(
-          (s) => s.email?.toLowerCase() === app.email?.toLowerCase()
+    // FIX: Batch fetch profiles instead of N+1 queries
+    if (approvedApplications && approvedApplications.length > 0) {
+      // Create a Set of emails that already have student records
+      const existingEmails = new Set(
+        approvedStudents.map((s) => s.email?.toLowerCase()).filter(Boolean)
+      );
+
+      // Collect emails from approved applications that don't have student records
+      const emailsToFetch = approvedApplications
+        .map((app) => app.email?.toLowerCase())
+        .filter((email): email is string => 
+          Boolean(email) && !existingEmails.has(email)
         );
 
-        if (!hasStudentRecord) {
-          // Try to find profile by email
-          const { data: profile } = await supabaseAdmin
+      // Batch fetch all profiles in one query (fixes N+1 problem)
+      let profilesMap = new Map<string, any>();
+      if (emailsToFetch.length > 0) {
+        // Supabase .in() has a limit, so batch if needed
+        const BATCH_SIZE = 1000;
+        for (let i = 0; i < emailsToFetch.length; i += BATCH_SIZE) {
+          const batch = emailsToFetch.slice(i, i + BATCH_SIZE);
+          const { data: profilesBatch, error: profilesError } = await supabaseAdmin
             .from('profiles')
             .select(`
               id,
@@ -130,36 +142,56 @@ export async function GET(request: NextRequest) {
                 status
               )
             `)
-            .eq('email', app.email)
-            .maybeSingle();
+            .in('email', batch);
 
-          // Handle cohorts - it might be an array or a single object
-          const cohortData = profile?.cohorts;
-          const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
-          
-          approvedStudents.push({
-            id: profile?.id || app.id,
-            studentId: profile?.student_id || null,
-            name: `${app.first_name} ${app.last_name}`,
-            email: app.email,
-            phone: app.phone || profile?.phone,
-            country: app.country || profile?.country,
-            city: app.city || profile?.city,
-            status: profile?.status || 'Approved',
-            cohortId: app.preferred_cohort_id || profile?.cohort_id,
-            cohortName: cohort?.name || null,
-            cohort: cohort,
-            progressPercent: 0,
-            assignmentsCompleted: 0,
-            projectsCompleted: 0,
-            liveSessionsAttended: 0,
-            examScore: null,
-            examCompletedAt: null,
-            createdAt: app.created_at,
-            source: 'application',
-            applicationId: app.id,
-          });
+          if (profilesError) {
+            console.error('[Approved Students API] Error fetching profiles batch:', profilesError);
+          } else if (profilesBatch) {
+            // Add to map for quick lookup
+            profilesBatch.forEach((profile: any) => {
+              if (profile.email) {
+                profilesMap.set(profile.email.toLowerCase(), profile);
+              }
+            });
+          }
         }
+      }
+
+      // Now process approved applications and add those without student records
+      for (const app of approvedApplications) {
+        const emailLower = app.email?.toLowerCase();
+        if (!emailLower || existingEmails.has(emailLower)) {
+          continue; // Skip if already has student record
+        }
+
+        const profile = profilesMap.get(emailLower);
+
+        // Handle cohorts - it might be an array or a single object
+        const cohortData = profile?.cohorts;
+        const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
+        
+        approvedStudents.push({
+          id: profile?.id || app.id,
+          studentId: profile?.student_id || null,
+          name: profile?.name || `${app.first_name} ${app.last_name}`,
+          email: app.email,
+          phone: app.phone || profile?.phone,
+          country: app.country || profile?.country,
+          city: app.city || profile?.city,
+          status: profile?.status || 'Approved',
+          cohortId: app.preferred_cohort_id || profile?.cohort_id,
+          cohortName: cohort?.name || null,
+          cohort: cohort,
+          progressPercent: 0,
+          assignmentsCompleted: 0,
+          projectsCompleted: 0,
+          liveSessionsAttended: 0,
+          examScore: null,
+          examCompletedAt: null,
+          createdAt: app.created_at,
+          source: 'application',
+          applicationId: app.id,
+        });
       }
     }
 

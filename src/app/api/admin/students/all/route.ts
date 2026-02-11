@@ -72,12 +72,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Map email to applications - handle multiple applications per email
+    // Priority: Approved > Pending > Rejected, then most recent
     const applicationsMap = new Map<string, any>();
     if (allApplications) {
       for (const app of allApplications) {
         const emailLower = app.email?.toLowerCase();
-        if (emailLower) {
+        if (!emailLower) continue;
+        
+        const existing = applicationsMap.get(emailLower);
+        if (!existing) {
+          // First application for this email
           applicationsMap.set(emailLower, app);
+        } else {
+          // Multiple applications - use priority logic
+          const statusPriority = { 'Approved': 3, 'Pending': 2, 'Rejected': 1 };
+          const existingPriority = statusPriority[existing.status as keyof typeof statusPriority] || 0;
+          const newPriority = statusPriority[app.status as keyof typeof statusPriority] || 0;
+          
+          if (newPriority > existingPriority) {
+            // New application has higher priority status
+            applicationsMap.set(emailLower, app);
+          } else if (newPriority === existingPriority && new Date(app.created_at) > new Date(existing.created_at)) {
+            // Same priority, but new application is more recent
+            applicationsMap.set(emailLower, app);
+          }
+          // Otherwise keep existing application
         }
       }
     }
@@ -140,9 +160,10 @@ export async function GET(request: NextRequest) {
     });
 
     // Count by status
+    // Note: Students with source='students_table' already have applicationStatus='Approved' (line 104)
     const statusCounts = {
       total: allStudents.length,
-      approved: allStudents.filter((s) => s.applicationStatus === 'Approved' || s.source === 'students_table').length,
+      approved: allStudents.filter((s) => s.applicationStatus === 'Approved').length,
       pending: allStudents.filter((s) => s.applicationStatus === 'Pending').length,
       rejected: allStudents.filter((s) => s.applicationStatus === 'Rejected').length,
       active: allStudents.filter((s) => s.status === 'Active').length,
