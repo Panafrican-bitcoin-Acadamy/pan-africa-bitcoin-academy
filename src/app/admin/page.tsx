@@ -156,6 +156,12 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // State for approved students and all students
+  const [approvedStudents, setApprovedStudents] = useState<any[]>([]);
+  const [loadingApprovedStudents, setLoadingApprovedStudents] = useState(false);
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [loadingAllStudents, setLoadingAllStudents] = useState(false);
+  
   // New state for additional database tables
   const [achievements, setAchievements] = useState<any[]>([]);
   const [loadingAchievements, setLoadingAchievements] = useState(false);
@@ -836,6 +842,10 @@ export default function AdminDashboardPage() {
     } else if (activeSubMenu === 'assignments' && !assignmentsFetchedRef.current && fetchAssignmentsRef.current) {
       assignmentsFetchedRef.current = true;
       fetchAssignmentsRef.current();
+    } else if (activeSubMenu === 'approved-students') {
+      fetchApprovedStudents();
+    } else if (activeSubMenu === 'student-database') {
+      fetchAllStudents();
     }
     
     // Reset fetch flags when switching away from a submenu
@@ -1744,8 +1754,8 @@ export default function AdminDashboardPage() {
     } finally {
       // Only update loading state if this request wasn't aborted
       if (!abortController.signal.aborted) {
-        setLoadingBlogSubmissions(false);
-      }
+      setLoadingBlogSubmissions(false);
+    }
       // Clear the abort controller if it's the current one
       if (blogSubmissionsAbortControllerRef.current === abortController) {
         blogSubmissionsAbortControllerRef.current = null;
@@ -1945,6 +1955,40 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Fetch approved students
+  const fetchApprovedStudents = useCallback(async () => {
+    if (!admin) return;
+    setLoadingApprovedStudents(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/students/approved');
+      if (!res.ok) throw new Error('Failed to fetch approved students');
+      const data = await res.json();
+      setApprovedStudents(data.students || []);
+    } catch (err: any) {
+      console.error('[Approved Students] Error:', err);
+      setApprovedStudents([]);
+    } finally {
+      setLoadingApprovedStudents(false);
+    }
+  }, [admin, fetchWithAuth]);
+
+  // Fetch all students (applications + students table)
+  const fetchAllStudents = useCallback(async () => {
+    if (!admin) return;
+    setLoadingAllStudents(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/students/all');
+      if (!res.ok) throw new Error('Failed to fetch all students');
+      const data = await res.json();
+      setAllStudents(data.students || []);
+    } catch (err: any) {
+      console.error('[All Students] Error:', err);
+      setAllStudents([]);
+    } finally {
+      setLoadingAllStudents(false);
+    }
+  }, [admin, fetchWithAuth]);
+
   const handleAwardSatsRetroactively = async () => {
     if (!admin) return;
     
@@ -2143,7 +2187,7 @@ export default function AdminDashboardPage() {
         
         // Only log if there's actual error data
         if (Object.keys(data).length > 0) {
-          console.error('Admin login error:', data);
+        console.error('Admin login error:', data);
         } else {
           console.error('Admin login error: Empty response', { status: res.status, statusText: res.statusText });
         }
@@ -2152,12 +2196,12 @@ export default function AdminDashboardPage() {
       
       // Check if login was successful
       if (data.success) {
-        setLoginForm({ email: '', password: '' }); // Clear form
-        // Session is managed by useSession hook - check session to mark activity
-        // Wait a bit for cookie to be set, then check session
-        setTimeout(() => {
-          checkSession();
-        }, 100);
+      setLoginForm({ email: '', password: '' }); // Clear form
+      // Session is managed by useSession hook - check session to mark activity
+      // Wait a bit for cookie to be set, then check session
+      setTimeout(() => {
+        checkSession();
+      }, 100);
       } else {
         setAuthError(data.error || 'Login failed');
       }
@@ -3805,63 +3849,98 @@ export default function AdminDashboardPage() {
                   </>
                 )}
 
-            {/* Approved Students - Show filtered student database */}
+            {/* Approved Students - Show list of approved students */}
             {activeSubMenu === 'approved-students' && (
               <>
-                {/* Student Database - Filtered to approved students */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-zinc-50">Approved Students</h3>
-                    <p className="text-xs text-zinc-400 mt-1">Students who have been approved and enrolled</p>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold text-zinc-50">✅ Approved Students</h3>
+                      <p className="text-sm text-zinc-400 mt-1">
+                        Students who have been approved and enrolled in the academy
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={fetchApprovedStudents}
+                      disabled={loadingApprovedStudents}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loadingApprovedStudents ? 'Refreshing...' : '⟳ Refresh'}
+                    </button>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-zinc-900 text-left text-zinc-300">
-                        <tr>
-                          <th className="px-3 py-2">#</th>
-                          <th className="px-3 py-2">Name</th>
-                          <th className="px-3 py-2">Email</th>
-                          <th className="px-3 py-2">Phone</th>
-                          <th className="px-3 py-2">Cohort</th>
-                          <th className="px-3 py-2">Progress</th>
-                          <th className="px-3 py-2">Attendance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {progress.filter(p => p.status === 'Active').map((p, idx) => (
-                          <tr key={p.id} className="border-b border-zinc-800 hover:bg-zinc-800/30">
-                            <td className="px-3 py-2 text-zinc-400">{idx + 1}</td>
-                            <td className="px-3 py-2">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedStudent({ id: p.id, email: p.email, name: p.name })}
-                                className="text-cyan-400 hover:text-cyan-300 transition cursor-pointer"
-                              >
-                                {p.name}
-                              </button>
-                            </td>
-                            <td className="px-3 py-2 text-zinc-300">{p.email}</td>
-                            <td className="px-3 py-2 text-zinc-400">{p.phone || '—'}</td>
-                            <td className="px-3 py-2 text-zinc-300">{p.cohortName || '—'}</td>
-                            <td className="px-3 py-2">
-                              <span className="text-green-300">{p.completedChapters}</span>
-                              <span className="text-zinc-500">/{p.totalChapters || 20}</span>
-                            </td>
-                            <td className="px-3 py-2">
-                              {p.attendancePercent !== undefined ? (
-                                <span className="text-blue-300">{p.attendancePercent}%</span>
-                              ) : (
-                                <span className="text-zinc-500">—</span>
-                              )}
-                            </td>
+                  
+                  {loadingApprovedStudents ? (
+                    <div className="text-center py-12 text-zinc-400">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mb-2"></div>
+                      <p>Loading approved students...</p>
+                    </div>
+                  ) : approvedStudents.length === 0 ? (
+                    <div className="text-center py-12 text-zinc-400">
+                      <p className="text-lg mb-2">No approved students found</p>
+                      <p className="text-sm">Approved students will appear here once applications are approved.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <div className="mb-3 text-xs text-zinc-400">
+                        Showing {approvedStudents.length} approved student{approvedStudents.length !== 1 ? 's' : ''}
+                      </div>
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-zinc-900 text-left text-zinc-300">
+                          <tr>
+                            <th className="px-3 py-2">#</th>
+                            <th className="px-3 py-2">Name</th>
+                            <th className="px-3 py-2">Email</th>
+                            <th className="px-3 py-2">Phone</th>
+                            <th className="px-3 py-2">Country</th>
+                            <th className="px-3 py-2">Cohort</th>
+                            <th className="px-3 py-2">Status</th>
+                            <th className="px-3 py-2">Progress</th>
+                            <th className="px-3 py-2">Source</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {progress.filter(p => p.status === 'Active').length === 0 && (
-                      <p className="p-3 text-sm text-zinc-400 text-center">No approved students found.</p>
-                    )}
-                  </div>
+                        </thead>
+                        <tbody>
+                          {approvedStudents.map((student, idx) => (
+                            <tr key={student.id} className="border-b border-zinc-800 hover:bg-zinc-800/30">
+                              <td className="px-3 py-2 text-zinc-400">{idx + 1}</td>
+                              <td className="px-3 py-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedStudent({ id: student.id, email: student.email, name: student.name })}
+                                  className="text-cyan-400 hover:text-cyan-300 transition cursor-pointer"
+                                >
+                                  {student.name}
+                                </button>
+                              </td>
+                              <td className="px-3 py-2 text-zinc-300">{student.email}</td>
+                              <td className="px-3 py-2 text-zinc-400">{student.phone || '—'}</td>
+                              <td className="px-3 py-2 text-zinc-400">{student.country || '—'}</td>
+                              <td className="px-3 py-2 text-zinc-300">{student.cohortName || '—'}</td>
+                              <td className="px-3 py-2">
+                                <span className={`px-2 py-0.5 rounded text-xs ${
+                                  student.status === 'Active' 
+                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                }`}>
+                                  {student.status || 'Approved'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2">
+                                {student.progressPercent !== undefined ? (
+                                  <span className="text-green-300">{student.progressPercent}%</span>
+                                ) : (
+                                  <span className="text-zinc-500">—</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-zinc-500 text-xs">
+                                {student.source === 'students_table' ? 'Enrolled' : 'Application'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -3871,10 +3950,13 @@ export default function AdminDashboardPage() {
               <>
         {/* Student Database */}
                 {(activeSubMenu === 'student-database' || activeTab === 'students') && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <div className="mb-3 flex items-center justify-between">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-zinc-50">Student Database</h3>
+              <h3 className="text-xl font-semibold text-zinc-50">📚 Student Database</h3>
+              <p className="text-sm text-zinc-400 mt-1">
+                All students (both applied and approved) from applications and enrolled students
+              </p>
               {(cohortFilter || attendanceSort) && (
                 <div className="mt-1 flex items-center gap-2 text-xs text-zinc-400">
                   {cohortFilter && (
@@ -4231,8 +4313,8 @@ export default function AdminDashboardPage() {
           </div>
           <div className="mb-6 space-y-4">
             <p className="text-sm text-zinc-400">
-              Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
-            </p>
+            Review and approve student blog submissions. Approved posts will be published and authors will receive sats rewards.
+          </p>
             
             {/* Workflow Explanation */}
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
@@ -4291,8 +4373,8 @@ export default function AdminDashboardPage() {
             });
             return filteredSubmissions.length === 0 ? (
               <div className="text-center py-8 text-zinc-400">No {blogFilter} blog submissions found.</div>
-            ) : (
-              <div className="space-y-4">
+          ) : (
+            <div className="space-y-4">
                 {filteredSubmissions.map((submission) => (
                   <div
                     key={submission.id}
@@ -4385,7 +4467,7 @@ export default function AdminDashboardPage() {
                               <li>• No blog post was created</li>
                               <li>• No sats were awarded</li>
                               <li>• Submission marked as rejected</li>
-                              {submission.rejection_reason && (
+                    {submission.rejection_reason && (
                                 <li className="mt-2 pt-2 border-t border-red-500/20">
                                   <span className="font-medium">Rejection Reason:</span> {submission.rejection_reason}
                                 </li>
@@ -4448,8 +4530,8 @@ export default function AdminDashboardPage() {
               </div>
             );
           })()}
-        </div>
-                )}
+            </div>
+          )}
 
         {/* Blog Posts Section */}
                 {activeSubMenu === 'blog-posts' && (
@@ -4470,7 +4552,7 @@ export default function AdminDashboardPage() {
             >
               {loadingBlogPosts ? 'Refreshing...' : '⟳ Refresh'}
             </button>
-          </div>
+        </div>
 
           {/* Search and Filters */}
           {Array.isArray(blogPosts) && blogPosts.length > 0 && (
@@ -4911,7 +4993,7 @@ export default function AdminDashboardPage() {
                         <span>💰</span>
                         <span>View All Blog Rewards</span>
                       </button>
-                    </div>
+      </div>
 
                     {/* Summary Statistics */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">

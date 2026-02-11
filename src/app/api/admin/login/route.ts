@@ -70,6 +70,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    
+    // At this point, password is validated and guaranteed to be a string
+    const validatedPassword: string = password!;
 
     const { data: admin, error } = await supabaseAdmin
       .from('admins')
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Admin account not properly configured' }, { status: 500 });
     }
 
-    const ok = await bcrypt.compare(password, admin.password_hash);
+    const ok = await bcrypt.compare(validatedPassword, admin.password_hash);
     if (!ok) {
       console.error('Password mismatch for admin:', admin.id);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

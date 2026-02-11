@@ -1,0 +1,188 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin } from '@/lib/adminSession';
+
+/**
+ * GET /api/admin/students/all
+ * Get all students (from applications table AND students table)
+ * This shows both applied and approved students
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const session = requireAdmin(request);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get all applications (all statuses)
+    const { data: allApplications, error: appsError } = await supabaseAdmin
+      .from('applications')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (appsError) {
+      console.error('[All Students API] Error fetching applications:', appsError);
+    }
+
+    // Get all students (from students table)
+    const { data: students, error: studentsError } = await supabaseAdmin
+      .from('students')
+      .select(`
+        *,
+        profiles (
+          id,
+          name,
+          email,
+          phone,
+          country,
+          city,
+          status,
+          cohort_id,
+          student_id,
+          created_at,
+          cohorts (
+            id,
+            name,
+            start_date,
+            end_date,
+            status
+          )
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (studentsError) {
+      console.error('[All Students API] Error fetching students:', studentsError);
+    }
+
+    // Combine and format the data
+    const allStudents: any[] = [];
+    const processedEmails = new Set<string>();
+
+    // First, add all students from students table (these are enrolled)
+    if (students) {
+      for (const student of students) {
+        const profile = student.profiles;
+        if (profile && profile.email) {
+          processedEmails.add(profile.email.toLowerCase());
+          allStudents.push({
+            id: profile.id,
+            studentId: profile.student_id,
+            name: profile.name,
+            email: profile.email,
+            phone: profile.phone,
+            country: profile.country,
+            city: profile.city,
+            status: profile.status || 'Active',
+            cohortId: profile.cohort_id,
+            cohortName: profile.cohorts?.name || null,
+            cohort: profile.cohorts,
+            progressPercent: student.progress_percent || 0,
+            assignmentsCompleted: student.assignments_completed || 0,
+            projectsCompleted: student.projects_completed || 0,
+            liveSessionsAttended: student.live_sessions_attended || 0,
+            examScore: student.exam_score || null,
+            examCompletedAt: student.exam_completed_at || null,
+            createdAt: profile.created_at,
+            source: 'students_table',
+            applicationStatus: 'Approved', // Students in students table are approved
+          });
+        }
+      }
+    }
+
+    // Then, add all applications (including pending/rejected) that don't have student records
+    if (allApplications) {
+      for (const app of allApplications) {
+        const emailLower = app.email?.toLowerCase();
+        if (emailLower && !processedEmails.has(emailLower)) {
+          // Try to find profile by email
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select(`
+              id,
+              name,
+              email,
+              phone,
+              country,
+              city,
+              status,
+              cohort_id,
+              student_id,
+              created_at,
+              cohorts (
+                id,
+                name,
+                start_date,
+                end_date,
+                status
+              )
+            `)
+            .eq('email', app.email)
+            .maybeSingle();
+
+          allStudents.push({
+            id: profile?.id || app.id,
+            studentId: profile?.student_id || null,
+            name: `${app.first_name} ${app.last_name}`,
+            email: app.email,
+            phone: app.phone || profile?.phone,
+            country: app.country || profile?.country,
+            city: app.city || profile?.city,
+            status: profile?.status || app.status,
+            cohortId: app.preferred_cohort_id || profile?.cohort_id,
+            cohortName: profile?.cohorts?.name || null,
+            cohort: profile?.cohorts,
+            progressPercent: 0,
+            assignmentsCompleted: 0,
+            projectsCompleted: 0,
+            liveSessionsAttended: 0,
+            examScore: null,
+            examCompletedAt: null,
+            createdAt: app.created_at,
+            source: 'application',
+            applicationId: app.id,
+            applicationStatus: app.status, // Pending, Approved, or Rejected
+          });
+
+          processedEmails.add(emailLower);
+        }
+      }
+    }
+
+    // Sort by creation date (most recent first)
+    allStudents.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
+
+    // Count by status
+    const statusCounts = {
+      total: allStudents.length,
+      approved: allStudents.filter((s) => s.applicationStatus === 'Approved' || s.source === 'students_table').length,
+      pending: allStudents.filter((s) => s.applicationStatus === 'Pending').length,
+      rejected: allStudents.filter((s) => s.applicationStatus === 'Rejected').length,
+      active: allStudents.filter((s) => s.status === 'Active').length,
+    };
+
+    return NextResponse.json(
+      {
+        students: allStudents,
+        total: allStudents.length,
+        counts: statusCounts,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('[All Students API] Error:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {}),
+      },
+      { status: 500 }
+    );
+  }
+}
+
