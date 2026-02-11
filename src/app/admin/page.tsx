@@ -406,6 +406,14 @@ export default function AdminDashboardPage() {
   const fetchTestimonialsRef = useRef<(() => Promise<void>) | null>(null);
   const fetchMentorsRef = useRef<(() => Promise<void>) | null>(null);
   const fetchAssignmentsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchApprovedStudentsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchAllStudentsRef = useRef<(() => Promise<void>) | null>(null);
+  
+  // Flags to prevent duplicate fetches for approved students and all students
+  const approvedStudentsFetchedRef = useRef(false);
+  const approvedStudentsFetchingRef = useRef(false);
+  const allStudentsFetchedRef = useRef(false);
+  const allStudentsFetchingRef = useRef(false);
   
   // Refs to track if data has been fetched for each submenu (prevent duplicate fetches)
   const achievementsFetchedRef = useRef(false);
@@ -842,10 +850,12 @@ export default function AdminDashboardPage() {
     } else if (activeSubMenu === 'assignments' && !assignmentsFetchedRef.current && fetchAssignmentsRef.current) {
       assignmentsFetchedRef.current = true;
       fetchAssignmentsRef.current();
-    } else if (activeSubMenu === 'approved-students') {
-      fetchApprovedStudents();
-    } else if (activeSubMenu === 'student-database') {
-      fetchAllStudents();
+    } else if (activeSubMenu === 'approved-students' && !approvedStudentsFetchedRef.current && fetchApprovedStudentsRef.current) {
+      approvedStudentsFetchedRef.current = true;
+      fetchApprovedStudentsRef.current();
+    } else if (activeSubMenu === 'student-database' && !allStudentsFetchedRef.current && fetchAllStudentsRef.current) {
+      allStudentsFetchedRef.current = true;
+      fetchAllStudentsRef.current();
     }
     
     // Reset fetch flags when switching away from a submenu
@@ -856,6 +866,14 @@ export default function AdminDashboardPage() {
     if (activeSubMenu !== 'testimonials') testimonialsFetchedRef.current = false;
     if (activeSubMenu !== 'mentors') mentorsFetchedRef.current = false;
     if (activeSubMenu !== 'assignments') assignmentsFetchedRef.current = false;
+    if (activeSubMenu !== 'approved-students') {
+      approvedStudentsFetchedRef.current = false;
+      approvedStudentsFetchingRef.current = false;
+    }
+    if (activeSubMenu !== 'student-database') {
+      allStudentsFetchedRef.current = false;
+      allStudentsFetchingRef.current = false;
+    }
   }, [admin, activeSubMenu]);
 
   // Fetch students list and blog summary when submenu becomes active (only once)
@@ -1662,7 +1680,9 @@ export default function AdminDashboardPage() {
     fetchTestimonialsRef.current = fetchTestimonials;
     fetchMentorsRef.current = fetchMentors;
     fetchAssignmentsRef.current = fetchAssignments;
-  }, [fetchAchievements, fetchDeveloperResources, fetchDeveloperEvents, fetchSponsorships, fetchTestimonials, fetchMentors, fetchAssignments]);
+    fetchApprovedStudentsRef.current = fetchApprovedStudents;
+    fetchAllStudentsRef.current = fetchAllStudents;
+  }, [fetchAchievements, fetchDeveloperResources, fetchDeveloperEvents, fetchSponsorships, fetchTestimonials, fetchMentors, fetchAssignments, fetchApprovedStudents, fetchAllStudents]);
 
   const fetchBlogSubmissions = useCallback(async () => {
     if (!admin) return;
@@ -1988,34 +2008,64 @@ export default function AdminDashboardPage() {
   // Fetch approved students
   const fetchApprovedStudents = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate fetches
+    if (approvedStudentsFetchedRef.current || approvedStudentsFetchingRef.current) {
+      console.log('[Approved Students] Skipping fetch - already fetched or fetching');
+      return;
+    }
+    
+    console.log('[Approved Students] Starting fetch');
+    approvedStudentsFetchedRef.current = true;
+    approvedStudentsFetchingRef.current = true;
     setLoadingApprovedStudents(true);
+    
     try {
       const res = await fetchWithAuth('/api/admin/students/approved');
       if (!res.ok) throw new Error('Failed to fetch approved students');
       const data = await res.json();
       setApprovedStudents(data.students || []);
+      console.log('[Approved Students] Fetch completed successfully');
     } catch (err: any) {
       console.error('[Approved Students] Error:', err);
       setApprovedStudents([]);
+      // Reset fetched flag on error so it can retry
+      approvedStudentsFetchedRef.current = false;
     } finally {
       setLoadingApprovedStudents(false);
+      approvedStudentsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
   // Fetch all students (applications + students table)
   const fetchAllStudents = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate fetches
+    if (allStudentsFetchedRef.current || allStudentsFetchingRef.current) {
+      console.log('[All Students] Skipping fetch - already fetched or fetching');
+      return;
+    }
+    
+    console.log('[All Students] Starting fetch');
+    allStudentsFetchedRef.current = true;
+    allStudentsFetchingRef.current = true;
     setLoadingAllStudents(true);
+    
     try {
       const res = await fetchWithAuth('/api/admin/students/all');
       if (!res.ok) throw new Error('Failed to fetch all students');
       const data = await res.json();
       setAllStudents(data.students || []);
+      console.log('[All Students] Fetch completed successfully');
     } catch (err: any) {
       console.error('[All Students] Error:', err);
       setAllStudents([]);
+      // Reset fetched flag on error so it can retry
+      allStudentsFetchedRef.current = false;
     } finally {
       setLoadingAllStudents(false);
+      allStudentsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
@@ -2887,25 +2937,41 @@ export default function AdminDashboardPage() {
         <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => setFilter(f)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                      filter === f
-                        ? 'bg-cyan-400 text-black'
-                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                    }`}
-                  >
-                    {f.charAt(0).toUpperCase() + f.slice(1)} (
-                    {applications.filter((a) => {
-                      const statusMatch = f === 'all' || a.status.toLowerCase() === f;
-                      const cohortMatch = !cohortFilter || a.preferred_cohort_id === cohortFilter;
-                      return statusMatch && cohortMatch;
-                    }).length})
-                  </button>
-                ))}
+                {(() => {
+                  // Show only relevant buttons based on active submenu
+                  let buttonsToShow: ('all' | 'pending' | 'approved' | 'rejected')[] = [];
+                  
+                  if (activeSubMenu === 'rejected-students') {
+                    // Only show "rejected" button for rejected students section
+                    buttonsToShow = ['rejected'];
+                  } else if (activeSubMenu === 'pending-students') {
+                    // Only show "pending" button for pending students section
+                    buttonsToShow = ['pending'];
+                  } else {
+                    // Show all buttons for applications tab
+                    buttonsToShow = ['all', 'pending', 'approved', 'rejected'];
+                  }
+                  
+                  return buttonsToShow.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setFilter(f)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                        filter === f
+                          ? 'bg-cyan-400 text-black'
+                          : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                      }`}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)} (
+                      {applications.filter((a) => {
+                        const statusMatch = f === 'all' || a.status.toLowerCase() === f;
+                        const cohortMatch = !cohortFilter || a.preferred_cohort_id === cohortFilter;
+                        return statusMatch && cohortMatch;
+                      }).length})
+                    </button>
+                  ));
+                })()}
               </div>
               <select
                 value={cohortFilter || ''}
@@ -3892,7 +3958,12 @@ export default function AdminDashboardPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={fetchApprovedStudents}
+                      onClick={() => {
+                        // Reset flags to force refresh
+                        approvedStudentsFetchedRef.current = false;
+                        approvedStudentsFetchingRef.current = false;
+                        fetchApprovedStudents();
+                      }}
                       disabled={loadingApprovedStudents}
                       className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
