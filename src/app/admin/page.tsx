@@ -3985,8 +3985,17 @@ export default function AdminDashboardPage() {
             <div>
               <h3 className="text-xl font-semibold text-zinc-50">📚 Student Database</h3>
               <p className="text-sm text-zinc-400 mt-1">
-                All students (both applied and approved) from applications and enrolled students
+                All registered students - shows everyone who has created an account (approved, pending, rejected, and not applied)
               </p>
+              {allStudents.length > 0 && (
+                <div className="mt-2 flex items-center gap-4 text-xs text-zinc-400">
+                  <span>Total: <span className="text-cyan-400 font-medium">{allStudents.length}</span></span>
+                  <span>Approved: <span className="text-green-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Approved').length}</span></span>
+                  <span>Pending: <span className="text-yellow-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Pending').length}</span></span>
+                  <span>Rejected: <span className="text-red-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Rejected').length}</span></span>
+                  <span>Not Applied: <span className="text-zinc-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Not Applied').length}</span></span>
+                </div>
+              )}
               {(cohortFilter || attendanceSort) && (
                 <div className="mt-1 flex items-center gap-2 text-xs text-zinc-400">
                   {cohortFilter && (
@@ -4029,130 +4038,85 @@ export default function AdminDashboardPage() {
               </div>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-zinc-900 text-left text-zinc-300">
-                <tr>
-                  <th className="px-3 py-2">#</th>
-                  <th className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      Name
-                      <span className="text-xs text-zinc-500">(Click to view details)</span>
-                    </div>
-                  </th>
-                  <th className="px-3 py-2">Email</th>
-                  <th className="px-3 py-2">Phone</th>
-                  <th 
-                    className="px-3 py-2 cursor-pointer hover:bg-zinc-800 transition select-none"
-                    title="Click to filter by cohort"
-                    onClick={() => {
-                      // Get unique cohorts from progress (by ID)
-                      if (!progress || progress.length === 0) return;
-                      const uniqueCohorts = Array.from(new Set(progress.map(p => p.cohortId).filter(Boolean))) as string[];
-                      if (uniqueCohorts.length === 0) return;
-                      
-                      // Cycle through: null -> first cohort -> second cohort -> ... -> null
-                      if (!cohortFilter) {
-                        setCohortFilter(uniqueCohorts[0]);
-                      } else {
-                        const currentIndex = uniqueCohorts.indexOf(cohortFilter);
-                        if (currentIndex < uniqueCohorts.length - 1) {
-                          setCohortFilter(uniqueCohorts[currentIndex + 1]);
-                        } else {
-                          setCohortFilter(null);
-                        }
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-1">
-                      Cohort
-                      {cohortFilter && (
-                        <span 
-                          className="text-cyan-400 text-xs" 
-                          title={`Filtered: ${progress?.find(p => p.cohortId === cohortFilter)?.cohortName || cohorts?.find(c => c.id === cohortFilter)?.name || cohortFilter}`}
-                        >
-                          ●
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-3 py-2">Chapters</th>
-                  <th 
-                    className="px-3 py-2 cursor-pointer hover:bg-zinc-800 transition select-none"
-                    title="Click to sort by attendance"
-                    onClick={() => {
-                      // Cycle through: null -> desc (high to low) -> asc (low to high) -> null
-                      if (!attendanceSort) {
-                        setAttendanceSort('desc'); // High to low
-                      } else if (attendanceSort === 'desc') {
-                        setAttendanceSort('asc'); // Low to high
-                      } else {
-                        setAttendanceSort(null); // No sort
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-1">
-                      Attendance
-                      {attendanceSort && (
-                        <span className="text-cyan-400 text-xs" title={attendanceSort === 'desc' ? 'High to Low' : 'Low to High'}>
-                          {attendanceSort === 'desc' ? '↓' : '↑'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-3 py-2">Overall</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAndSortedProgress.map((p, index) => (
-                  <tr 
-                    key={p.id} 
-                    className={`border-b border-zinc-800 cursor-pointer transition hover:bg-zinc-800/50 ${cohortFilter && p.cohortId === cohortFilter ? 'bg-zinc-800/30' : ''}`}
-                    onClick={() => setSelectedStudent({ id: p.id, email: p.email, name: p.name })}
-                  >
-                    <td className="px-3 py-2 text-zinc-400">{index + 1}</td>
-                    <td className="px-3 py-2 text-zinc-50">{p.name}</td>
-                    <td className="px-3 py-2 text-zinc-400">{p.email}</td>
-                    <td className="px-3 py-2 text-zinc-400">{p.phone || '—'}</td>
-                    <td className="px-3 py-2 text-zinc-400">
-                      {p.cohortName || p.cohortId || '—'}
-                      {cohortFilter && p.cohortId === cohortFilter && (
-                        <span className="ml-2 text-cyan-400 text-xs">●</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="text-green-300">{p.completedChapters}</span>
-                      <span className="text-zinc-500">/{p.totalChapters || 20}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      {p.lecturesAttended !== undefined && p.totalLiveLectures !== undefined ? (
-                        <span>
-                          <span className="text-blue-300">{p.lecturesAttended}</span>
-                          <span className="text-zinc-500">/{p.totalLiveLectures}</span>
-                          <span className="ml-2 text-xs text-zinc-400">({p.attendancePercent}%)</span>
-                        </span>
-                      ) : (
-                        <span className="text-zinc-500">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      {p.overallProgress !== undefined ? (
-                        <span className="font-medium text-yellow-300">{p.overallProgress}%</span>
-                      ) : (
-                        <span className="text-zinc-500">—</span>
-                      )}
-                    </td>
+          {loadingAllStudents ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-zinc-400">Loading all students...</div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-900 text-left text-zinc-300">
+                  <tr>
+                    <th className="px-3 py-2">#</th>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Email</th>
+                    <th className="px-3 py-2">Phone</th>
+                    <th className="px-3 py-2">Country</th>
+                    <th className="px-3 py-2">Cohort</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Application Status</th>
+                    <th className="px-3 py-2">Progress</th>
+                    <th className="px-3 py-2">Source</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {progress.length === 0 && (
-              <p className="p-3 text-sm text-zinc-400">No progress data yet.</p>
-            )}
-            {progress.length > 0 && filteredAndSortedProgress.length === 0 && (
-              <p className="p-3 text-sm text-zinc-400">No students found for the selected cohort filter.</p>
-            )}
-          </div>
+                </thead>
+                <tbody>
+                  {allStudents.map((student, index) => (
+                    <tr 
+                      key={student.id} 
+                      className="border-b border-zinc-800 cursor-pointer transition hover:bg-zinc-800/50"
+                      onClick={() => setSelectedStudent({ id: student.id, email: student.email, name: student.name })}
+                    >
+                      <td className="px-3 py-2 text-zinc-400">{index + 1}</td>
+                      <td className="px-3 py-2 text-zinc-50">{student.name}</td>
+                      <td className="px-3 py-2 text-zinc-400">{student.email}</td>
+                      <td className="px-3 py-2 text-zinc-400">{student.phone || '—'}</td>
+                      <td className="px-3 py-2 text-zinc-400">{student.country || '—'}</td>
+                      <td className="px-3 py-2 text-zinc-400">{student.cohortName || '—'}</td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          student.status === 'Active' ? 'bg-green-500/20 text-green-400' :
+                          student.status === 'New' ? 'bg-blue-500/20 text-blue-400' :
+                          student.status === 'Graduated' ? 'bg-purple-500/20 text-purple-400' :
+                          'bg-zinc-500/20 text-zinc-400'
+                        }`}>
+                          {student.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          student.applicationStatus === 'Approved' ? 'bg-green-500/20 text-green-400' :
+                          student.applicationStatus === 'Pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                          student.applicationStatus === 'Rejected' ? 'bg-red-500/20 text-red-400' :
+                          'bg-zinc-500/20 text-zinc-400'
+                        }`}>
+                          {student.applicationStatus}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        {student.progressPercent > 0 ? (
+                          <span className="text-yellow-300 font-medium">{student.progressPercent}%</span>
+                        ) : (
+                          <span className="text-zinc-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="text-xs text-zinc-500">
+                          {student.source === 'students_table' ? 'Enrolled' :
+                           student.source === 'application' ? 'Application' :
+                           'Profile Only'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {allStudents.length === 0 && !loadingAllStudents && (
+                <div className="p-6 text-center text-zinc-400">
+                  <p>No students found.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
                 )}
 

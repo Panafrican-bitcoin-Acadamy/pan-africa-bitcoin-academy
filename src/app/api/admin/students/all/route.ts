@@ -4,8 +4,8 @@ import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * GET /api/admin/students/all
- * Get all students (from applications table AND students table)
- * This shows both applied and approved students
+ * Get ALL registered students from profiles table
+ * This includes everyone who has registered, regardless of application or student status
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +14,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all applications (all statuses)
+    // Get ALL profiles (everyone who has registered)
+    const { data: allProfiles, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select(`
+        *,
+        cohorts (
+          id,
+          name,
+          start_date,
+          end_date,
+          status
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (profilesError) {
+      console.error('[All Students API] Error fetching profiles:', profilesError);
+      return NextResponse.json(
+        { error: 'Failed to fetch profiles', details: profilesError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get all applications to match with profiles
     const { data: allApplications, error: appsError } = await supabaseAdmin
       .from('applications')
       .select('*')
@@ -24,29 +47,13 @@ export async function GET(request: NextRequest) {
       console.error('[All Students API] Error fetching applications:', appsError);
     }
 
-    // Get all students (from students table)
+    // Get all students (from students table) to get progress data
     const { data: students, error: studentsError } = await supabaseAdmin
       .from('students')
       .select(`
         *,
         profiles (
-          id,
-          name,
-          email,
-          phone,
-          country,
-          city,
-          status,
-          cohort_id,
-          student_id,
-          created_at,
-          cohorts (
-            id,
-            name,
-            start_date,
-            end_date,
-            status
-          )
+          id
         )
       `)
       .order('created_at', { ascending: false });
@@ -55,107 +62,73 @@ export async function GET(request: NextRequest) {
       console.error('[All Students API] Error fetching students:', studentsError);
     }
 
-    // Combine and format the data
-    const allStudents: any[] = [];
-    const processedEmails = new Set<string>();
-
-    // First, add all students from students table (these are enrolled)
+    // Create maps for quick lookup
+    const studentsMap = new Map<string, any>();
     if (students) {
       for (const student of students) {
-        const profile = student.profiles;
-        if (profile && profile.email) {
-          processedEmails.add(profile.email.toLowerCase());
-          
-          // Handle cohorts - it might be an array or a single object
-          const cohortData = profile.cohorts;
-          const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
-          
-          allStudents.push({
-            id: profile.id,
-            studentId: profile.student_id,
-            name: profile.name,
-            email: profile.email,
-            phone: profile.phone,
-            country: profile.country,
-            city: profile.city,
-            status: profile.status || 'Active',
-            cohortId: profile.cohort_id,
-            cohortName: cohort?.name || null,
-            cohort: cohort,
-            progressPercent: student.progress_percent || 0,
-            assignmentsCompleted: student.assignments_completed || 0,
-            projectsCompleted: student.projects_completed || 0,
-            liveSessionsAttended: student.live_sessions_attended || 0,
-            examScore: student.exam_score || null,
-            examCompletedAt: student.exam_completed_at || null,
-            createdAt: profile.created_at,
-            source: 'students_table',
-            applicationStatus: 'Approved', // Students in students table are approved
-          });
+        if (student.profiles?.id) {
+          studentsMap.set(student.profiles.id, student);
         }
       }
     }
 
-    // Then, add all applications (including pending/rejected) that don't have student records
+    const applicationsMap = new Map<string, any>();
     if (allApplications) {
       for (const app of allApplications) {
         const emailLower = app.email?.toLowerCase();
-        if (emailLower && !processedEmails.has(emailLower)) {
-          // Try to find profile by email
-          const { data: profile } = await supabaseAdmin
-            .from('profiles')
-            .select(`
-              id,
-              name,
-              email,
-              phone,
-              country,
-              city,
-              status,
-              cohort_id,
-              student_id,
-              created_at,
-              cohorts (
-                id,
-                name,
-                start_date,
-                end_date,
-                status
-              )
-            `)
-            .eq('email', app.email)
-            .maybeSingle();
-
-          // Handle cohorts - it might be an array or a single object
-          const cohortData = profile?.cohorts;
-          const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
-          
-          allStudents.push({
-            id: profile?.id || app.id,
-            studentId: profile?.student_id || null,
-            name: `${app.first_name} ${app.last_name}`,
-            email: app.email,
-            phone: app.phone || profile?.phone,
-            country: app.country || profile?.country,
-            city: app.city || profile?.city,
-            status: profile?.status || app.status,
-            cohortId: app.preferred_cohort_id || profile?.cohort_id,
-            cohortName: cohort?.name || null,
-            cohort: cohort,
-            progressPercent: 0,
-            assignmentsCompleted: 0,
-            projectsCompleted: 0,
-            liveSessionsAttended: 0,
-            examScore: null,
-            examCompletedAt: null,
-            createdAt: app.created_at,
-            source: 'application',
-            applicationId: app.id,
-            applicationStatus: app.status, // Pending, Approved, or Rejected
-          });
-
-          processedEmails.add(emailLower);
+        if (emailLower) {
+          applicationsMap.set(emailLower, app);
         }
+      }
+    }
+
+    // Process ALL profiles (everyone who has registered)
+    const allStudents: any[] = [];
+    
+    if (allProfiles) {
+      for (const profile of allProfiles) {
+        // Handle cohorts - it might be an array or a single object
+        const cohortData = profile.cohorts;
+        const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
+        
+        // Get student record if exists
+        const studentRecord = studentsMap.get(profile.id);
+        
+        // Get application record if exists
+        const emailLower = profile.email?.toLowerCase();
+        const application = emailLower ? applicationsMap.get(emailLower) : null;
+        
+        // Determine application status
+        let applicationStatus = 'Not Applied';
+        if (studentRecord) {
+          applicationStatus = 'Approved'; // Has student record = approved
+        } else if (application) {
+          applicationStatus = application.status; // Pending, Approved, or Rejected
+        }
+        
+        allStudents.push({
+          id: profile.id,
+          studentId: profile.student_id,
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          country: profile.country,
+          city: profile.city,
+          status: profile.status || 'New',
+          cohortId: profile.cohort_id,
+          cohortName: cohort?.name || null,
+          cohort: cohort,
+          progressPercent: studentRecord?.progress_percent || 0,
+          assignmentsCompleted: studentRecord?.assignments_completed || 0,
+          projectsCompleted: studentRecord?.projects_completed || 0,
+          liveSessionsAttended: studentRecord?.live_sessions_attended || 0,
+          examScore: studentRecord?.exam_score || null,
+          examCompletedAt: studentRecord?.exam_completed_at || null,
+          createdAt: profile.created_at,
+          source: studentRecord ? 'students_table' : (application ? 'application' : 'profile_only'),
+          applicationId: application?.id || null,
+          applicationStatus: applicationStatus,
+        });
       }
     }
 
