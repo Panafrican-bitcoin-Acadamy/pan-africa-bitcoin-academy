@@ -417,12 +417,19 @@ export default function AdminDashboardPage() {
   
   // Refs to track if data has been fetched for each submenu (prevent duplicate fetches)
   const achievementsFetchedRef = useRef(false);
+  const achievementsFetchingRef = useRef(false);
   const developerResourcesFetchedRef = useRef(false);
+  const developerResourcesFetchingRef = useRef(false);
   const developerEventsFetchedRef = useRef(false);
+  const developerEventsFetchingRef = useRef(false);
   const sponsorshipsFetchedRef = useRef(false);
+  const sponsorshipsFetchingRef = useRef(false);
   const testimonialsFetchedRef = useRef(false);
+  const testimonialsFetchingRef = useRef(false);
   const mentorsFetchedRef = useRef(false);
+  const mentorsFetchingRef = useRef(false);
   const assignmentsFetchedRef = useRef(false);
+  const assignmentsFetchingRef = useRef(false);
   
   // Refs to store current filter values (to avoid including them in callback dependencies)
   const satsStatusFilterRef = useRef<string>(satsStatusFilter);
@@ -814,6 +821,9 @@ export default function AdminDashboardPage() {
     };
   }, [admin, activeSubMenu]);
 
+  // Track previous submenu to only reset flags when actually changing
+  const prevActiveSubMenuRef = useRef<string | null>(null);
+  
   // Fetch new data when submenus become active (using refs to prevent loops)
   useEffect(() => {
     if (!admin) {
@@ -825,54 +835,90 @@ export default function AdminDashboardPage() {
       testimonialsFetchedRef.current = false;
       mentorsFetchedRef.current = false;
       assignmentsFetchedRef.current = false;
+      approvedStudentsFetchedRef.current = false;
+      approvedStudentsFetchingRef.current = false;
+      allStudentsFetchedRef.current = false;
+      allStudentsFetchingRef.current = false;
+      prevActiveSubMenuRef.current = null;
       return;
     }
     
-    // Only fetch if submenu changed and data hasn't been fetched yet
-    if (activeSubMenu === 'achievements' && !achievementsFetchedRef.current && fetchAchievementsRef.current) {
-      achievementsFetchedRef.current = true;
-      fetchAchievementsRef.current();
-    } else if (activeSubMenu === 'developer-resources' && !developerResourcesFetchedRef.current && fetchDeveloperResourcesRef.current) {
-      developerResourcesFetchedRef.current = true;
-      fetchDeveloperResourcesRef.current();
-    } else if (activeSubMenu === 'developer-events' && !developerEventsFetchedRef.current && fetchDeveloperEventsRef.current) {
-      developerEventsFetchedRef.current = true;
-      fetchDeveloperEventsRef.current();
-    } else if (activeSubMenu === 'sponsorships' && !sponsorshipsFetchedRef.current && fetchSponsorshipsRef.current) {
-      sponsorshipsFetchedRef.current = true;
-      fetchSponsorshipsRef.current();
-    } else if (activeSubMenu === 'testimonials' && !testimonialsFetchedRef.current && fetchTestimonialsRef.current) {
-      testimonialsFetchedRef.current = true;
-      fetchTestimonialsRef.current();
-    } else if (activeSubMenu === 'mentors' && !mentorsFetchedRef.current && fetchMentorsRef.current) {
-      mentorsFetchedRef.current = true;
-      fetchMentorsRef.current();
-    } else if (activeSubMenu === 'assignments' && !assignmentsFetchedRef.current && fetchAssignmentsRef.current) {
-      assignmentsFetchedRef.current = true;
-      fetchAssignmentsRef.current();
-    } else if (activeSubMenu === 'approved-students' && !approvedStudentsFetchedRef.current && fetchApprovedStudentsRef.current) {
-      approvedStudentsFetchedRef.current = true;
-      fetchApprovedStudentsRef.current();
-    } else if (activeSubMenu === 'student-database' && !allStudentsFetchedRef.current && fetchAllStudentsRef.current) {
-      allStudentsFetchedRef.current = true;
-      fetchAllStudentsRef.current();
+    const currentSubMenu = activeSubMenu;
+    const prevSubMenu = prevActiveSubMenuRef.current;
+    
+    // Only reset flags when submenu actually changes (not on every render)
+    if (prevSubMenu !== currentSubMenu) {
+      // Reset flags for the previous submenu only
+      if (prevSubMenu === 'achievements') {
+        achievementsFetchedRef.current = false;
+        achievementsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'developer-resources') {
+        developerResourcesFetchedRef.current = false;
+        developerResourcesFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'developer-events') {
+        developerEventsFetchedRef.current = false;
+        developerEventsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'sponsorships') {
+        sponsorshipsFetchedRef.current = false;
+        sponsorshipsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'testimonials') {
+        testimonialsFetchedRef.current = false;
+        testimonialsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'mentors') {
+        mentorsFetchedRef.current = false;
+        mentorsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'assignments') {
+        assignmentsFetchedRef.current = false;
+        assignmentsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'approved-students') {
+        approvedStudentsFetchedRef.current = false;
+        approvedStudentsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'student-database') {
+        allStudentsFetchedRef.current = false;
+        allStudentsFetchingRef.current = false;
+      }
+      
+      prevActiveSubMenuRef.current = currentSubMenu;
     }
     
-    // Reset fetch flags when switching away from a submenu
-    if (activeSubMenu !== 'achievements') achievementsFetchedRef.current = false;
-    if (activeSubMenu !== 'developer-resources') developerResourcesFetchedRef.current = false;
-    if (activeSubMenu !== 'developer-events') developerEventsFetchedRef.current = false;
-    if (activeSubMenu !== 'sponsorships') sponsorshipsFetchedRef.current = false;
-    if (activeSubMenu !== 'testimonials') testimonialsFetchedRef.current = false;
-    if (activeSubMenu !== 'mentors') mentorsFetchedRef.current = false;
-    if (activeSubMenu !== 'assignments') assignmentsFetchedRef.current = false;
-    if (activeSubMenu !== 'approved-students') {
-      approvedStudentsFetchedRef.current = false;
-      approvedStudentsFetchingRef.current = false;
-    }
-    if (activeSubMenu !== 'student-database') {
-      allStudentsFetchedRef.current = false;
-      allStudentsFetchingRef.current = false;
+    // Only fetch if submenu changed and data hasn't been fetched yet
+    if (currentSubMenu === 'achievements' && !achievementsFetchedRef.current && fetchAchievementsRef.current) {
+      achievementsFetchedRef.current = true;
+      fetchAchievementsRef.current();
+    } else if (currentSubMenu === 'developer-resources' && !developerResourcesFetchedRef.current && fetchDeveloperResourcesRef.current) {
+      developerResourcesFetchedRef.current = true;
+      fetchDeveloperResourcesRef.current();
+    } else if (currentSubMenu === 'developer-events' && !developerEventsFetchedRef.current && fetchDeveloperEventsRef.current) {
+      developerEventsFetchedRef.current = true;
+      fetchDeveloperEventsRef.current();
+    } else if (currentSubMenu === 'sponsorships' && !sponsorshipsFetchedRef.current && fetchSponsorshipsRef.current) {
+      sponsorshipsFetchedRef.current = true;
+      fetchSponsorshipsRef.current();
+    } else if (currentSubMenu === 'testimonials' && !testimonialsFetchedRef.current && fetchTestimonialsRef.current) {
+      testimonialsFetchedRef.current = true;
+      fetchTestimonialsRef.current();
+    } else if (currentSubMenu === 'mentors' && !mentorsFetchedRef.current && fetchMentorsRef.current) {
+      mentorsFetchedRef.current = true;
+      fetchMentorsRef.current();
+    } else if (currentSubMenu === 'assignments' && !assignmentsFetchedRef.current && fetchAssignmentsRef.current) {
+      assignmentsFetchedRef.current = true;
+      fetchAssignmentsRef.current();
+    } else if (currentSubMenu === 'approved-students' && !approvedStudentsFetchedRef.current && !approvedStudentsFetchingRef.current && fetchApprovedStudentsRef.current) {
+      approvedStudentsFetchedRef.current = true;
+      approvedStudentsFetchingRef.current = true;
+      fetchApprovedStudentsRef.current();
+    } else if (currentSubMenu === 'student-database' && !allStudentsFetchedRef.current && !allStudentsFetchingRef.current && fetchAllStudentsRef.current) {
+      allStudentsFetchedRef.current = true;
+      allStudentsFetchingRef.current = true;
+      fetchAllStudentsRef.current();
     }
   }, [admin, activeSubMenu]);
 
@@ -1115,33 +1161,9 @@ export default function AdminDashboardPage() {
   }, [fetchStudentSatsRewards]);
 
 
-  // Fetch data when submenu becomes active (only once)
-  useEffect(() => {
-    if (!admin || activeSubMenu !== 'student-sats-rewards') {
-      // Reset when submenu is not active
-      if (lastActiveSubMenuRef.current === 'student-sats-rewards') {
-        satsLastFetchKeyRef.current = '';
-      }
-      return;
-    }
-    
-    // Only fetch when submenu first becomes active
-    if (lastActiveSubMenuRef.current !== 'student-sats-rewards') {
-      lastActiveSubMenuRef.current = 'student-sats-rewards';
-      // Reset fetch flags
-      satsLastFetchKeyRef.current = '';
-      satsFetchingRef.current = false;
-      
-      // Fetch data after a short delay
-      const timeoutId = setTimeout(() => {
-        if (fetchStudentSatsRewardsRef.current) {
-          fetchStudentSatsRewardsRef.current();
-        }
-      }, 200);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [admin, activeSubMenu]);
+  // Fetch sats rewards data when submenu becomes active (only once)
+  // NOTE: This is consolidated with the main useEffect above to prevent duplicate fetches
+  // The fetchStudentSatsRewards is called from the student-sats-rewards useEffect (line 880)
 
   // Handle opening edit modal
   const handleEditReward = useCallback((reward: any) => {
@@ -1548,113 +1570,183 @@ export default function AdminDashboardPage() {
   // Fetch functions for new database tables
   const fetchAchievements = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (achievementsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      achievementsFetchingRef.current = true;
       setLoadingAchievements(true);
       const res = await fetchWithAuth('/api/admin/achievements');
       if (!res.ok) throw new Error('Failed to fetch achievements');
       const data = await res.json();
       setAchievements(data.achievements || []);
+      achievementsFetchedRef.current = true;
     } catch (err: any) {
       console.error('[Achievements] Error:', err.message || err);
       setAchievements([]);
+      achievementsFetchedRef.current = false; // Allow retry on error
     } finally {
       setLoadingAchievements(false);
+      achievementsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
   const fetchDeveloperResources = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (developerResourcesFetchingRef.current) {
+      return;
+    }
+    
     try {
+      developerResourcesFetchingRef.current = true;
       setLoadingDeveloperResources(true);
       const res = await fetchWithAuth('/api/admin/developer-resources');
       if (!res.ok) throw new Error('Failed to fetch developer resources');
       const data = await res.json();
       setDeveloperResources(data.resources || []);
+      developerResourcesFetchedRef.current = true;
     } catch (err: any) {
       console.error('[Developer Resources] Error:', err.message || err);
       setDeveloperResources([]);
+      developerResourcesFetchedRef.current = false; // Allow retry on error
     } finally {
       setLoadingDeveloperResources(false);
+      developerResourcesFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
   const fetchDeveloperEvents = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (developerEventsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      developerEventsFetchingRef.current = true;
       setLoadingDeveloperEvents(true);
       const res = await fetchWithAuth('/api/admin/developer-events');
       if (!res.ok) throw new Error('Failed to fetch developer events');
       const data = await res.json();
       setDeveloperEvents(data.events || []);
+      developerEventsFetchedRef.current = true;
     } catch (err: any) {
       console.error('[Developer Events] Error:', err.message || err);
       setDeveloperEvents([]);
+      developerEventsFetchedRef.current = false; // Allow retry on error
     } finally {
       setLoadingDeveloperEvents(false);
+      developerEventsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
   const fetchSponsorships = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (sponsorshipsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      sponsorshipsFetchingRef.current = true;
       setLoadingSponsorships(true);
       const res = await fetchWithAuth('/api/admin/sponsorships');
       if (!res.ok) throw new Error('Failed to fetch sponsorships');
       const data = await res.json();
       setSponsorships(data.sponsorships || []);
+      sponsorshipsFetchedRef.current = true;
     } catch (err: any) {
       console.error('[Sponsorships] Error:', err.message || err);
       setSponsorships([]);
+      sponsorshipsFetchedRef.current = false; // Allow retry on error
     } finally {
       setLoadingSponsorships(false);
+      sponsorshipsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
   const fetchTestimonials = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (testimonialsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      testimonialsFetchingRef.current = true;
       setLoadingTestimonials(true);
       const res = await fetchWithAuth('/api/admin/testimonials');
       if (!res.ok) throw new Error('Failed to fetch testimonials');
       const data = await res.json();
       setTestimonials(data.testimonials || []);
+      testimonialsFetchedRef.current = true;
     } catch (err: any) {
       console.error('[Testimonials] Error:', err.message || err);
       setTestimonials([]);
+      testimonialsFetchedRef.current = false; // Allow retry on error
     } finally {
       setLoadingTestimonials(false);
+      testimonialsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
   const fetchMentors = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (mentorsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      mentorsFetchingRef.current = true;
       setLoadingMentors(true);
       const res = await fetchWithAuth('/api/admin/mentors');
       if (!res.ok) throw new Error('Failed to fetch mentors');
       const data = await res.json();
       setMentors(data.mentors || []);
+      mentorsFetchedRef.current = true;
     } catch (err: any) {
       console.error('[Mentors] Error:', err.message || err);
       setMentors([]);
+      mentorsFetchedRef.current = false; // Allow retry on error
     } finally {
       setLoadingMentors(false);
+      mentorsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
   const fetchAssignments = useCallback(async () => {
     if (!admin) return;
+    
+    // Prevent duplicate simultaneous fetches
+    if (assignmentsFetchingRef.current) {
+      return;
+    }
+    
     try {
+      assignmentsFetchingRef.current = true;
       setLoadingAssignments(true);
       const res = await fetchWithAuth('/api/admin/assignments');
       if (!res.ok) throw new Error('Failed to fetch assignments');
       const data = await res.json();
       setAssignments(data.assignments || []);
+      assignmentsFetchedRef.current = true;
     } catch (err: any) {
       console.error('[Assignments] Error:', err.message || err);
       setAssignments([]);
+      assignmentsFetchedRef.current = false; // Allow retry on error
     } finally {
       setLoadingAssignments(false);
+      assignmentsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
 
