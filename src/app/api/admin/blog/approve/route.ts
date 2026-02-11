@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
         status: 'approved',
         reviewed_at: new Date().toISOString(),
         reviewed_by: session.adminId,
+        updated_at: new Date().toISOString(), // Explicitly update updated_at
       })
       .eq('id', submissionId);
 
@@ -244,19 +245,36 @@ export async function POST(request: NextRequest) {
             console.error('Invalid reward data - invalid amount:', rewardData);
             satsError = 'Invalid reward data: invalid amount_pending value';
           } else {
-            console.log('Creating sats reward with data:', {
+            // Prepare insert data with all required fields explicitly set
+            const insertData = {
               student_id: rewardData.student_id,
+              amount_paid: rewardData.amount_paid,
               amount_pending: rewardData.amount_pending,
               reward_type: rewardData.reward_type,
               related_entity_type: rewardData.related_entity_type,
               related_entity_id: rewardData.related_entity_id,
+              reason: rewardData.reason,
               status: rewardData.status,
-              reason: rewardData.reason.substring(0, 50) + '...',
+              awarded_by: rewardData.awarded_by,
+              // Explicitly set timestamps to ensure they're set
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+
+            console.log('Creating sats reward with validated data:', {
+              student_id: insertData.student_id,
+              amount_pending: insertData.amount_pending,
+              reward_type: insertData.reward_type,
+              related_entity_type: insertData.related_entity_type,
+              related_entity_id: insertData.related_entity_id,
+              status: insertData.status,
+              reason: insertData.reason.substring(0, 50) + '...',
+              awarded_by: insertData.awarded_by,
             });
 
             const { data: insertedReward, error: insertRewardError } = await supabaseAdmin
               .from('sats_rewards')
-              .insert(rewardData)
+              .insert(insertData)
               .select('id')
               .single();
 
@@ -267,12 +285,13 @@ export async function POST(request: NextRequest) {
                 code: insertRewardError.code,
                 details: insertRewardError.details,
                 hint: insertRewardError.hint,
-                rewardData: {
-                  student_id: rewardData.student_id,
-                  amount_pending: rewardData.amount_pending,
-                  reward_type: rewardData.reward_type,
-                  related_entity_type: rewardData.related_entity_type,
-                  related_entity_id: rewardData.related_entity_id,
+                insertData: {
+                  student_id: insertData.student_id,
+                  amount_pending: insertData.amount_pending,
+                  reward_type: insertData.reward_type,
+                  related_entity_type: insertData.related_entity_type,
+                  related_entity_id: insertData.related_entity_id,
+                  status: insertData.status,
                 },
               });
               
