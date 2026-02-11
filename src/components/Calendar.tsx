@@ -113,9 +113,26 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
         
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`Failed to fetch events: ${response.status}`);
+          // Try to get error details from response
+          let errorMessage = `Failed to fetch events: ${response.status}`;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+            if (errorData.details && process.env.NODE_ENV === 'development') {
+              console.error('📅 Calendar: Error details:', errorData.details);
+            }
+          } catch {
+            // If response is not JSON, use status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
         const data = await response.json();
+        
+        // Check if response contains an error
+        if (data.error) {
+          throw new Error(data.error);
+        }
         
         console.log('📅 Calendar: Received events data:', {
           eventsCount: data.events?.length || 0,

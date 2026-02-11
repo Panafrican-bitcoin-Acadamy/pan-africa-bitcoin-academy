@@ -817,14 +817,34 @@ export default function AdminDashboardPage() {
         blogSubmissionsAbortControllerRef.current.abort();
         blogSubmissionsAbortControllerRef.current = null;
       }
-      // Reset fetching flag
+      // Reset fetching flag and loading state
       blogSubmissionsFetchingRef.current = false;
+      setLoadingBlogSubmissions(false);
       return;
     }
     
     // Only fetch if not already fetching
-    if (!blogSubmissionsFetchingRef.current && fetchBlogSubmissionsRef.current) {
-      fetchBlogSubmissionsRef.current();
+    if (!blogSubmissionsFetchingRef.current) {
+      // Try to fetch immediately if ref is available
+      if (fetchBlogSubmissionsRef.current) {
+        console.log('[Blog Submissions] useEffect: Calling fetchBlogSubmissions');
+        fetchBlogSubmissionsRef.current();
+      } else {
+        // If ref not available yet, wait a bit and try again
+        console.log('[Blog Submissions] useEffect: Ref not available, waiting...');
+        const timeout = setTimeout(() => {
+          if (fetchBlogSubmissionsRef.current && !blogSubmissionsFetchingRef.current) {
+            console.log('[Blog Submissions] useEffect: Calling fetchBlogSubmissions after timeout');
+            fetchBlogSubmissionsRef.current();
+          } else {
+            console.warn('[Blog Submissions] useEffect: Still no ref or already fetching after timeout');
+          }
+        }, 100);
+        
+        return () => clearTimeout(timeout);
+      }
+    } else {
+      console.log('[Blog Submissions] useEffect: Already fetching, skipping');
     }
     
     // Cleanup: cancel request if component unmounts or submenu changes
@@ -845,24 +865,34 @@ export default function AdminDashboardPage() {
         blogPostsAbortControllerRef.current.abort();
         blogPostsAbortControllerRef.current = null;
       }
-      // Reset fetching flag
+      // Reset fetching flag and loading state
       blogPostsFetchingRef.current = false;
+      setLoadingBlogPosts(false);
       return;
     }
     
     // Only fetch if not already fetching
     if (!blogPostsFetchingRef.current) {
-      // Use a small delay to ensure the ref is set (in case useEffect ordering is an issue)
-      const timeoutId = setTimeout(() => {
-        if (fetchBlogPostsRef.current && !blogPostsFetchingRef.current) {
-          console.log('[Blog Posts] Triggering fetch via ref');
-          fetchBlogPostsRef.current();
-        } else if (!fetchBlogPostsRef.current) {
-          console.warn('[Blog Posts] fetchBlogPostsRef.current is null, fetch may not work');
-        }
-      }, 50);
-      
-      return () => clearTimeout(timeoutId);
+      // Try to fetch immediately if ref is available
+      if (fetchBlogPostsRef.current) {
+        console.log('[Blog Posts] useEffect: Calling fetchBlogPosts');
+        fetchBlogPostsRef.current();
+      } else {
+        // If ref not available yet, wait a bit and try again
+        console.log('[Blog Posts] useEffect: Ref not available, waiting...');
+        const timeoutId = setTimeout(() => {
+          if (fetchBlogPostsRef.current && !blogPostsFetchingRef.current) {
+            console.log('[Blog Posts] useEffect: Calling fetchBlogPosts after timeout');
+            fetchBlogPostsRef.current();
+          } else {
+            console.warn('[Blog Posts] useEffect: Still no ref or already fetching after timeout');
+          }
+        }, 100);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    } else {
+      console.log('[Blog Posts] useEffect: Already fetching, skipping');
     }
     
     // Cleanup: cancel request if component unmounts or submenu changes
@@ -1976,6 +2006,7 @@ export default function AdminDashboardPage() {
           details: errorDetails,
         });
         setBlogSubmissions([]);
+        setLoadingBlogSubmissions(false);
         blogSubmissionsFetchingRef.current = false;
         return;
       }
@@ -1985,6 +2016,7 @@ export default function AdminDashboardPage() {
       // Check again if request was aborted after async operations
       if (abortController.signal.aborted) {
         blogSubmissionsFetchingRef.current = false;
+        setLoadingBlogSubmissions(false);
         return;
       }
       
@@ -1998,15 +2030,17 @@ export default function AdminDashboardPage() {
       // Ignore abort errors
       if (err.name === 'AbortError' || abortController.signal.aborted) {
         blogSubmissionsFetchingRef.current = false;
+        setLoadingBlogSubmissions(false);
         return;
       }
       console.error('[Blog Submissions] Error:', err);
       setBlogSubmissions([]);
+      setLoadingBlogSubmissions(false);
     } finally {
       // Only update loading state if this request wasn't aborted
       if (!abortController.signal.aborted) {
-      setLoadingBlogSubmissions(false);
-    }
+        setLoadingBlogSubmissions(false);
+      }
       // Clear the abort controller if it's the current one
       if (blogSubmissionsAbortControllerRef.current === abortController) {
         blogSubmissionsAbortControllerRef.current = null;
@@ -2015,6 +2049,9 @@ export default function AdminDashboardPage() {
       blogSubmissionsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
+  
+  // Update ref immediately after function definition
+  fetchBlogSubmissionsRef.current = fetchBlogSubmissions;
 
   const fetchBlogPosts = useCallback(async () => {
     if (!admin) return;
@@ -2075,6 +2112,7 @@ export default function AdminDashboardPage() {
           error: errorMessage,
         });
         setBlogPosts([]);
+        setLoadingBlogPosts(false);
         blogPostsFetchingRef.current = false;
         return;
       }
@@ -2086,6 +2124,7 @@ export default function AdminDashboardPage() {
       if (abortController.signal.aborted) {
         console.log('[Blog Posts] Request was aborted after JSON parse');
         blogPostsFetchingRef.current = false;
+        setLoadingBlogPosts(false);
         return;
       }
       
@@ -2104,10 +2143,12 @@ export default function AdminDashboardPage() {
       // Ignore abort errors
       if (err.name === 'AbortError' || abortController.signal.aborted) {
         blogPostsFetchingRef.current = false;
+        setLoadingBlogPosts(false);
         return;
       }
       console.error('[Blog Posts] Error:', err);
       setBlogPosts([]);
+      setLoadingBlogPosts(false);
     } finally {
       // Only update loading state if this request wasn't aborted
       if (!abortController.signal.aborted) {
@@ -2121,6 +2162,9 @@ export default function AdminDashboardPage() {
       blogPostsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
+  
+  // Update ref immediately after function definition
+  fetchBlogPostsRef.current = fetchBlogPosts;
 
   // Store fetch functions in refs to prevent useEffect dependency issues
   useEffect(() => {
@@ -3909,14 +3953,6 @@ export default function AdminDashboardPage() {
                 View and manage all cohort sessions in a structured format
               </p>
             </div>
-            <button
-              type="button"
-              onClick={fetchSessions}
-              disabled={loadingSessions}
-              className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {loadingSessions ? 'Refreshing...' : 'Refresh'}
-            </button>
           </div>
 
           {/* Filters */}
@@ -4299,18 +4335,6 @@ export default function AdminDashboardPage() {
                         Students who have been approved and enrolled in the academy
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        approvedStudentsFetchedRef.current = false;
-                        approvedStudentsFetchingRef.current = false;
-                        fetchApprovedStudents();
-                      }}
-                      className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700"
-                      disabled={loadingApprovedStudents}
-                    >
-                      {loadingApprovedStudents ? 'Refreshing...' : 'Refresh'}
-                    </button>
                   </div>
                   
                   {loadingApprovedStudents ? (
@@ -4417,18 +4441,6 @@ export default function AdminDashboardPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  allStudentsFetchedRef.current = false;
-                  allStudentsFetchingRef.current = false;
-                  fetchAllStudents();
-                }}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700"
-                disabled={loadingAllStudents}
-              >
-                {loadingAllStudents ? 'Refreshing...' : 'Refresh'}
-              </button>
               {(cohortFilter || attendanceSort) && (
                 <>
                   {cohortFilter && (
@@ -4963,14 +4975,6 @@ export default function AdminDashboardPage() {
                 <span className="text-zinc-500"> Note: This is different from "Blog Submissions" which shows pending/awaiting review posts.</span>
               </p>
             </div>
-            <button
-              type="button"
-              onClick={fetchBlogPosts}
-              disabled={loadingBlogPosts}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loadingBlogPosts ? 'Refreshing...' : '⟳ Refresh'}
-            </button>
         </div>
 
           {/* Search and Filters */}
@@ -5267,96 +5271,6 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* Assessments Section - Final Exam Only */}
-            {(activeSubMenu === 'final-exam-submissions' || activeTab === 'exam') && (
-              <>
-        {/* Exam Management Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <h2 className="text-xl font-semibold text-zinc-50 mb-4">Final Exam Management</h2>
-          <p className="text-sm text-zinc-400 mb-6">
-            Grant or revoke exam access for students who have completed Chapter 21.
-          </p>
-
-          {loadingExamAccess ? (
-            <div className="text-center py-8 text-zinc-400">Loading exam access list...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-zinc-900 text-left text-zinc-300">
-                  <tr>
-                    <th className="px-3 py-2">Name</th>
-                    <th className="px-3 py-2">Email</th>
-                    <th className="px-3 py-2">Cohort</th>
-                    <th className="px-3 py-2">Chapter 21</th>
-                    <th className="px-3 py-2">Access</th>
-                    <th className="px-3 py-2">Exam Score</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {examAccessList
-                    .filter((student) => student.chapter21Completed)
-                    .map((student) => (
-                      <tr key={student.id} className="border-b border-zinc-800">
-                        <td className="px-3 py-2 text-zinc-50">{student.name || '—'}</td>
-                        <td className="px-3 py-2 text-zinc-400">{student.email}</td>
-                        <td className="px-3 py-2 text-zinc-400">
-                          {student.cohortName || '—'}
-                        </td>
-                        <td className="px-3 py-2">
-                          <span className="text-green-500">✓ Completed</span>
-                        </td>
-                        <td className="px-3 py-2">
-                          {student.hasExamAccess ? (
-                            <span className="text-green-500">✓ Granted</span>
-                          ) : (
-                            <span className="text-zinc-500">Not granted</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2">
-                          {student.examCompleted ? (
-                            <span className="font-semibold text-orange-500">
-                              {student.examScore}/50
-                            </span>
-                          ) : (
-                            <span className="text-zinc-500">Not taken</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2">
-                          {student.examCompleted ? (
-                            <span className="text-zinc-500 text-xs">Completed</span>
-                          ) : student.hasExamAccess ? (
-                            <button
-                              type="button"
-                              onClick={() => revokeExamAccess(student.id)}
-                              className="text-red-400 hover:text-red-300 text-xs transition cursor-pointer"
-                            >
-                              Revoke
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => grantExamAccess(student.id)}
-                              className="text-green-400 hover:text-green-300 text-xs transition cursor-pointer"
-                            >
-                              Grant Access
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-              {examAccessList.filter((s) => s.chapter21Completed).length === 0 && (
-                <p className="p-3 text-sm text-zinc-400 text-center">
-                  No students have completed Chapter 21 yet.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-              </>
-            )}
 
             {/* Assessments Section - Student Sats Rewards */}
             {activeSubMenu === 'student-sats-rewards' && (
@@ -5898,157 +5812,261 @@ export default function AdminDashboardPage() {
 
                   {/* Edit/Create Reward Modal */}
                   {showRewardModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-zinc-50">
-                            {editingReward ? 'Edit Reward' : 'Create New Reward'}
-                          </h3>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                      <div className="rounded-2xl border border-zinc-700/50 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 p-6 sm:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/50">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center">
+                              <span className="text-xl">🎁</span>
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-zinc-50">
+                                {editingReward ? 'Edit Reward' : 'Create New Reward'}
+                              </h3>
+                              <p className="text-xs text-zinc-400 mt-0.5">
+                                {editingReward ? 'Update reward details' : 'Award sats to a student'}
+                              </p>
+                            </div>
+                          </div>
                           <button
                             onClick={() => setShowRewardModal(false)}
-                            className="text-zinc-400 hover:text-zinc-300"
+                            className="w-8 h-8 rounded-lg border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 transition-all flex items-center justify-center"
                           >
                             ✕
                           </button>
                         </div>
 
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">Cohort</label>
-                            <select
-                              value={rewardForm.cohort_id}
-                              onChange={(e) => handleCohortChange(e.target.value)}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                            >
-                              <option value="">All Cohorts</option>
-                              {cohorts.map((cohort: any) => (
-                                <option key={cohort.id} value={cohort.id}>
-                                  {cohort.name}
-                                </option>
-                              ))}
-                            </select>
+                        <div className="space-y-5">
+                          {/* Cohort Selection */}
+                          <div className="group">
+                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                              <span className="text-cyan-400">📚</span>
+                              <span>Cohort</span>
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={rewardForm.cohort_id}
+                                onChange={(e) => handleCohortChange(e.target.value)}
+                                className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 focus:outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 transition-all appearance-none cursor-pointer hover:border-zinc-600 hover:bg-zinc-900"
+                                style={{
+                                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'right 1rem center',
+                                  paddingRight: '2.5rem'
+                                }}
+                              >
+                                <option value="" className="bg-zinc-900 text-zinc-200">All Cohorts</option>
+                                {cohorts.map((cohort: any) => (
+                                  <option key={cohort.id} value={cohort.id} className="bg-zinc-900 text-zinc-200">
+                                    {cohort.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-cyan-500/20 transition-all"></div>
+                            </div>
                           </div>
 
-                          <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">
-                              Student
+                          {/* Student Selection */}
+                          <div className="group">
+                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                              <span className="text-purple-400">👤</span>
+                              <span>Student</span>
                               {loadingStudentsList && (
-                                <span className="ml-2 text-xs text-zinc-500">(Loading...)</span>
+                                <span className="ml-auto flex items-center gap-1.5 text-xs text-cyan-400">
+                                  <span className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin"></span>
+                                  Loading...
+                                </span>
                               )}
                               {!loadingStudentsList && rewardForm.cohort_id && filteredStudentsByCohort.length > 0 && (
-                                <span className="ml-2 text-xs text-zinc-500">({filteredStudentsByCohort.length} students)</span>
+                                <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                  {filteredStudentsByCohort.length} available
+                                </span>
                               )}
                               {!loadingStudentsList && !rewardForm.cohort_id && studentsList.length > 0 && (
-                                <span className="ml-2 text-xs text-zinc-500">({studentsList.length} students)</span>
+                                <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                  {studentsList.length} available
+                                </span>
                               )}
                             </label>
-                            <select
-                              value={rewardForm.student_id}
-                              onChange={(e) => setRewardForm({ ...rewardForm, student_id: e.target.value })}
-                              disabled={loadingStudentsList}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <option value="">
-                                {loadingStudentsList 
-                                  ? 'Loading students...' 
-                                  : 'Select a student'
-                                }
-                              </option>
-                              {(rewardForm.cohort_id && filteredStudentsByCohort.length > 0
-                                ? filteredStudentsByCohort 
-                                : !rewardForm.cohort_id 
-                                  ? studentsList 
-                                  : []
-                              ).map((student: any) => (
-                                <option key={student.id} value={student.id}>
-                                  {student.name || student.email} {student.email ? `(${student.email})` : ''}
-                                  {student.cohortName ? ` - ${student.cohortName}` : ''}
+                            <div className="relative">
+                              <select
+                                value={rewardForm.student_id}
+                                onChange={(e) => setRewardForm({ ...rewardForm, student_id: e.target.value })}
+                                disabled={loadingStudentsList}
+                                className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 focus:outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all appearance-none cursor-pointer hover:border-zinc-600 hover:bg-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-zinc-700/50"
+                                style={{
+                                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'right 1rem center',
+                                  paddingRight: '2.5rem'
+                                }}
+                              >
+                                <option value="" className="bg-zinc-900 text-zinc-200">
+                                  {loadingStudentsList 
+                                    ? 'Loading students...' 
+                                    : 'Select a student'
+                                  }
                                 </option>
-                              ))}
-                              {!loadingStudentsList && rewardForm.cohort_id && filteredStudentsByCohort.length === 0 && studentsList.length === 0 && (
-                                <option value="" disabled>No students found for this cohort</option>
-                              )}
-                              {!loadingStudentsList && !rewardForm.cohort_id && studentsList.length === 0 && (
-                                <option value="" disabled>No students found</option>
-                              )}
-                            </select>
+                                {(rewardForm.cohort_id && filteredStudentsByCohort.length > 0
+                                  ? filteredStudentsByCohort 
+                                  : !rewardForm.cohort_id 
+                                    ? studentsList 
+                                    : []
+                                ).map((student: any) => (
+                                  <option key={student.id} value={student.id} className="bg-zinc-900 text-zinc-200">
+                                    {student.name || student.email} {student.email ? `(${student.email})` : ''}
+                                    {student.cohortName ? ` - ${student.cohortName}` : ''}
+                                  </option>
+                                ))}
+                                {!loadingStudentsList && rewardForm.cohort_id && filteredStudentsByCohort.length === 0 && studentsList.length === 0 && (
+                                  <option value="" disabled className="bg-zinc-900 text-zinc-500">No students found for this cohort</option>
+                                )}
+                                {!loadingStudentsList && !rewardForm.cohort_id && studentsList.length === 0 && (
+                                  <option value="" disabled className="bg-zinc-900 text-zinc-500">No students found</option>
+                                )}
+                              </select>
+                              <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-purple-500/20 transition-all"></div>
+                            </div>
                           </div>
 
-                          <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">Amount (sats)</label>
-                            <input
-                              type="number"
-                              value={rewardForm.amount}
-                              onChange={(e) => setRewardForm({ ...rewardForm, amount: e.target.value })}
-                              placeholder="0"
-                              min="0"
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                            />
+                          {/* Amount Input */}
+                          <div className="group">
+                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                              <span className="text-yellow-400">💰</span>
+                              <span>Amount (sats)</span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                value={rewardForm.amount}
+                                onChange={(e) => setRewardForm({ ...rewardForm, amount: e.target.value })}
+                                placeholder="0"
+                                min="0"
+                                className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/10 transition-all hover:border-zinc-600 hover:bg-zinc-900"
+                              />
+                              <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-yellow-500/20 transition-all"></div>
+                            </div>
                           </div>
 
-                          <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">Status</label>
-                            <select
-                              value={rewardForm.status}
-                              onChange={(e) => setRewardForm({ ...rewardForm, status: e.target.value })}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                            >
-                              <option value="pending">Pending (Not sent yet)</option>
-                              <option value="paid">Paid (Sent)</option>
-                              <option value="processing">Processing</option>
-                              <option value="failed">Failed</option>
-                            </select>
+                          {/* Status Selection */}
+                          <div className="group">
+                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                              <span className="text-green-400">✓</span>
+                              <span>Status</span>
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={rewardForm.status}
+                                onChange={(e) => setRewardForm({ ...rewardForm, status: e.target.value })}
+                                className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 focus:outline-none focus:border-green-500/50 focus:ring-4 focus:ring-green-500/10 transition-all appearance-none cursor-pointer hover:border-zinc-600 hover:bg-zinc-900"
+                                style={{
+                                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'right 1rem center',
+                                  paddingRight: '2.5rem'
+                                }}
+                              >
+                                <option value="pending" className="bg-zinc-900 text-zinc-200">⏳ Pending (Not sent yet)</option>
+                                <option value="paid" className="bg-zinc-900 text-zinc-200">✅ Paid (Sent)</option>
+                                <option value="processing" className="bg-zinc-900 text-zinc-200">⚙️ Processing</option>
+                                <option value="failed" className="bg-zinc-900 text-zinc-200">❌ Failed</option>
+                              </select>
+                              <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-green-500/20 transition-all"></div>
+                            </div>
                           </div>
 
-                          <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">Reward Type</label>
-                            <select
-                              value={rewardForm.reward_type}
-                              onChange={(e) => setRewardForm({ ...rewardForm, reward_type: e.target.value })}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                            >
-                              <option value="assignment">Assignment</option>
-                              <option value="chapter">Chapter</option>
-                              <option value="discussion">Discussion</option>
-                              <option value="peer_help">Peer Help</option>
-                              <option value="project">Project</option>
-                              <option value="attendance">Attendance</option>
-                              <option value="blog">Blog</option>
-                              <option value="other">Other</option>
-                            </select>
+                          {/* Reward Type Selection */}
+                          <div className="group">
+                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                              <span className="text-blue-400">🏆</span>
+                              <span>Reward Type</span>
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={rewardForm.reward_type}
+                                onChange={(e) => setRewardForm({ ...rewardForm, reward_type: e.target.value })}
+                                className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer hover:border-zinc-600 hover:bg-zinc-900"
+                                style={{
+                                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'right 1rem center',
+                                  paddingRight: '2.5rem'
+                                }}
+                              >
+                                <option value="assignment" className="bg-zinc-900 text-zinc-200">📝 Assignment</option>
+                                <option value="chapter" className="bg-zinc-900 text-zinc-200">📖 Chapter</option>
+                                <option value="discussion" className="bg-zinc-900 text-zinc-200">💬 Discussion</option>
+                                <option value="peer_help" className="bg-zinc-900 text-zinc-200">🤝 Peer Help</option>
+                                <option value="project" className="bg-zinc-900 text-zinc-200">🚀 Project</option>
+                                <option value="attendance" className="bg-zinc-900 text-zinc-200">📅 Attendance</option>
+                                <option value="blog" className="bg-zinc-900 text-zinc-200">✍️ Blog</option>
+                                <option value="other" className="bg-zinc-900 text-zinc-200">🔖 Other</option>
+                              </select>
+                              <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-blue-500/20 transition-all"></div>
+                            </div>
                           </div>
 
-                          <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">Reason</label>
-                            <select
-                              value={rewardForm.reason}
-                              onChange={(e) => setRewardForm({ ...rewardForm, reason: e.target.value })}
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                            >
-                              <option value="">Select a reason</option>
-                              <option value="Assignment completion">Assignment completion</option>
-                              <option value="Chapter completion">Chapter completion</option>
-                              <option value="Blog post approval">Blog post approval</option>
-                              <option value="Attendance bonus">Attendance bonus</option>
-                              <option value="Peer help contribution">Peer help contribution</option>
-                              <option value="Project submission">Project submission</option>
-                              <option value="Discussion participation">Discussion participation</option>
-                              <option value="Special achievement">Special achievement</option>
-                              <option value="Other">Other</option>
-                            </select>
+                          {/* Reason Selection */}
+                          <div className="group">
+                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
+                              <span className="text-orange-400">📋</span>
+                              <span>Reason</span>
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={rewardForm.reason}
+                                onChange={(e) => setRewardForm({ ...rewardForm, reason: e.target.value })}
+                                className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 focus:outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all appearance-none cursor-pointer hover:border-zinc-600 hover:bg-zinc-900"
+                                style={{
+                                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'right 1rem center',
+                                  paddingRight: '2.5rem'
+                                }}
+                              >
+                                <option value="" className="bg-zinc-900 text-zinc-200">Select a reason</option>
+                                <option value="Assignment completion" className="bg-zinc-900 text-zinc-200">📝 Assignment completion</option>
+                                <option value="Chapter completion" className="bg-zinc-900 text-zinc-200">📖 Chapter completion</option>
+                                <option value="Blog post approval" className="bg-zinc-900 text-zinc-200">✍️ Blog post approval</option>
+                                <option value="Attendance bonus" className="bg-zinc-900 text-zinc-200">📅 Attendance bonus</option>
+                                <option value="Peer help contribution" className="bg-zinc-900 text-zinc-200">🤝 Peer help contribution</option>
+                                <option value="Project submission" className="bg-zinc-900 text-zinc-200">🚀 Project submission</option>
+                                <option value="Discussion participation" className="bg-zinc-900 text-zinc-200">💬 Discussion participation</option>
+                                <option value="Special achievement" className="bg-zinc-900 text-zinc-200">⭐ Special achievement</option>
+                                <option value="Other" className="bg-zinc-900 text-zinc-200">🔖 Other</option>
+                              </select>
+                              <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-orange-500/20 transition-all"></div>
+                            </div>
                           </div>
 
-                          <div className="flex gap-3 pt-2">
+                          {/* Action Buttons */}
+                          <div className="flex gap-3 pt-4 border-t border-zinc-800/50">
                             <button
                               onClick={handleSaveReward}
                               disabled={savingReward}
-                              className="flex-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex-1 rounded-xl border-2 border-cyan-500/50 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-6 py-3 text-sm font-semibold text-cyan-300 transition-all hover:from-cyan-500/30 hover:to-blue-500/30 hover:border-cyan-500/70 hover:shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none flex items-center justify-center gap-2"
                             >
-                              {savingReward ? 'Saving...' : editingReward ? 'Update' : 'Create'}
+                              {savingReward ? (
+                                <>
+                                  <span className="w-4 h-4 border-2 border-cyan-300/30 border-t-cyan-300 rounded-full animate-spin"></span>
+                                  <span>Saving...</span>
+                                </>
+                              ) : editingReward ? (
+                                <>
+                                  <span>💾</span>
+                                  <span>Update Reward</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>✨</span>
+                                  <span>Create Reward</span>
+                                </>
+                              )}
                             </button>
                             <button
                               onClick={() => setShowRewardModal(false)}
-                              className="rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800"
+                              className="rounded-xl border-2 border-zinc-700/50 bg-zinc-800/50 px-6 py-3 text-sm font-semibold text-zinc-300 transition-all hover:bg-zinc-800 hover:border-zinc-600 hover:shadow-lg hover:shadow-zinc-900/50"
                             >
                               Cancel
                             </button>
@@ -6064,15 +6082,8 @@ export default function AdminDashboardPage() {
             {/* Content & Resources Section */}
             {activeSubMenu === 'assignments' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-zinc-50">📝 Assignments</h3>
-                  <button
-                    onClick={fetchAssignments}
-                    disabled={loadingAssignments}
-                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    {loadingAssignments ? 'Loading...' : 'Refresh'}
-                  </button>
                 </div>
                 {loadingAssignments ? (
                   <div className="text-center py-8 text-zinc-400">Loading assignments...</div>
@@ -6103,15 +6114,8 @@ export default function AdminDashboardPage() {
 
             {activeSubMenu === 'developer-resources' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-zinc-50">📚 Developer Resources</h3>
-                  <button
-                    onClick={fetchDeveloperResources}
-                    disabled={loadingDeveloperResources}
-                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    {loadingDeveloperResources ? 'Loading...' : 'Refresh'}
-                  </button>
                 </div>
                 {loadingDeveloperResources ? (
                   <div className="text-center py-8 text-zinc-400">Loading resources...</div>
@@ -6145,15 +6149,8 @@ export default function AdminDashboardPage() {
 
             {activeSubMenu === 'developer-events' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-zinc-50">📅 Developer Events</h3>
-                  <button
-                    onClick={fetchDeveloperEvents}
-                    disabled={loadingDeveloperEvents}
-                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    {loadingDeveloperEvents ? 'Loading...' : 'Refresh'}
-                  </button>
                 </div>
                 {loadingDeveloperEvents ? (
                   <div className="text-center py-8 text-zinc-400">Loading events...</div>
@@ -6188,15 +6185,8 @@ export default function AdminDashboardPage() {
 
             {activeSubMenu === 'testimonials' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-zinc-50">💬 Testimonials</h3>
-                  <button
-                    onClick={fetchTestimonials}
-                    disabled={loadingTestimonials}
-                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    {loadingTestimonials ? 'Loading...' : 'Refresh'}
-                  </button>
                 </div>
                 {loadingTestimonials ? (
                   <div className="text-center py-8 text-zinc-400">Loading testimonials...</div>
@@ -6232,15 +6222,8 @@ export default function AdminDashboardPage() {
             {/* Community Section */}
             {activeSubMenu === 'mentors' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-zinc-50">🤝 Mentors</h3>
-                  <button
-                    onClick={fetchMentors}
-                    disabled={loadingMentors}
-                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    {loadingMentors ? 'Loading...' : 'Refresh'}
-                  </button>
                 </div>
                 {loadingMentors ? (
                   <div className="text-center py-8 text-zinc-400">Loading mentors...</div>
@@ -6276,15 +6259,8 @@ export default function AdminDashboardPage() {
 
             {activeSubMenu === 'sponsorships' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-zinc-50">💰 Sponsorships</h3>
-                  <button
-                    onClick={fetchSponsorships}
-                    disabled={loadingSponsorships}
-                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    {loadingSponsorships ? 'Loading...' : 'Refresh'}
-                  </button>
                 </div>
                 {loadingSponsorships ? (
                   <div className="text-center py-8 text-zinc-400">Loading sponsorships...</div>
@@ -6325,15 +6301,8 @@ export default function AdminDashboardPage() {
 
             {activeSubMenu === 'achievements' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-zinc-50">🏆 Achievements</h3>
-                  <button
-                    onClick={fetchAchievements}
-                    disabled={loadingAchievements}
-                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    {loadingAchievements ? 'Loading...' : 'Refresh'}
-                  </button>
                 </div>
                 {loadingAchievements ? (
                   <div className="text-center py-8 text-zinc-400">Loading achievements...</div>
