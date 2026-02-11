@@ -6,6 +6,13 @@ import { requireAdmin } from '@/lib/adminSession';
  * GET /api/admin/students/all
  * Get ALL registered students from profiles table
  * This includes everyone who has registered, regardless of application or student status
+ * 
+ * Query parameters:
+ * - limit: Number of records to return (default: 1000, max: 5000)
+ * - offset: Number of records to skip (default: 0)
+ * - search: Search by name or email
+ * - status: Filter by application status (Approved, Pending, Rejected, Not Applied)
+ * - cohort_id: Filter by cohort ID
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,8 +21,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get ALL profiles (everyone who has registered)
-    const { data: allProfiles, error: profilesError } = await supabaseAdmin
+    const searchParams = request.nextUrl.searchParams;
+    const limit = Math.min(parseInt(searchParams.get('limit') || '1000', 10), 5000);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const search = searchParams.get('search')?.trim();
+    const statusFilter = searchParams.get('status');
+    const cohortId = searchParams.get('cohort_id');
+
+    // Build profiles query with filters
+    let profilesQuery = supabaseAdmin
       .from('profiles')
       .select(`
         *,
@@ -26,8 +40,42 @@ export async function GET(request: NextRequest) {
           end_date,
           status
         )
-      `)
-      .order('created_at', { ascending: false });
+      `, { count: 'exact' });
+
+    // Apply filters
+    if (cohortId) {
+      profilesQuery = profilesQuery.eq('cohort_id', cohortId);
+    }
+    if (search) {
+      profilesQuery = profilesQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    // Apply pagination
+    profilesQuery = profilesQuery
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    // Fetch all data in parallel for better performance
+    const [profilesResult, applicationsResult, studentsResult] = await Promise.all([
+      profilesQuery,
+      supabaseAdmin
+        .from('applications')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      supabaseAdmin
+        .from('students')
+        .select(`
+          *,
+          profiles (
+            id
+          )
+        `)
+        .order('created_at', { ascending: false })
+    ]);
+
+    const { data: allProfiles, error: profilesError, count: totalCount } = profilesResult;
+    const { data: allApplications, error: appsError } = applicationsResult;
+    const { data: students, error: studentsError } = studentsResult;
 
     if (profilesError) {
       console.error('[All Students API] Error fetching profiles:', profilesError);
@@ -37,26 +85,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all applications to match with profiles
-    const { data: allApplications, error: appsError } = await supabaseAdmin
-      .from('applications')
-      .select('*')
-      .order('created_at', { ascending: false });
-
     if (appsError) {
       console.error('[All Students API] Error fetching applications:', appsError);
     }
-
-    // Get all students (from students table) to get progress data
-    const { data: students, error: studentsError } = await supabaseAdmin
-      .from('students')
-      .select(`
-        *,
-        profiles (
-          id
-        )
-      `)
-      .order('created_at', { ascending: false });
 
     if (studentsError) {
       console.error('[All Students API] Error fetching students:', studentsError);
@@ -159,10 +190,16 @@ export async function GET(request: NextRequest) {
       return dateB - dateA;
     });
 
-    // Count by status
+    // Apply status filter if provided
+    let filteredStudents = allStudents;
+    if (statusFilter) {
+      filteredStudents = allStudents.filter((s) => s.applicationStatus === statusFilter);
+    }
+
+    // Count by status (for current page only)
     // Note: Students with source='students_table' already have applicationStatus='Approved' (line 104)
     const statusCounts = {
-      total: allStudents.length,
+      total: totalCount || allStudents.length,
       approved: allStudents.filter((s) => s.applicationStatus === 'Approved').length,
       pending: allStudents.filter((s) => s.applicationStatus === 'Pending').length,
       rejected: allStudents.filter((s) => s.applicationStatus === 'Rejected').length,
@@ -171,8 +208,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        students: allStudents,
-        total: allStudents.length,
+        students: filteredStudents,
+        total: totalCount || allStudents.length,
+        limit,
+        offset,
+        hasMore: totalCount ? offset + filteredStudents.length < totalCount : false,
         counts: statusCounts,
       },
       { status: 200 }

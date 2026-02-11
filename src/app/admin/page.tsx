@@ -1671,19 +1671,6 @@ export default function AdminDashboardPage() {
     }
   }, [admin, fetchWithAuth]);
 
-  // Store fetch functions in refs to prevent useEffect loops (must be after function definitions)
-  useEffect(() => {
-    fetchAchievementsRef.current = fetchAchievements;
-    fetchDeveloperResourcesRef.current = fetchDeveloperResources;
-    fetchDeveloperEventsRef.current = fetchDeveloperEvents;
-    fetchSponsorshipsRef.current = fetchSponsorships;
-    fetchTestimonialsRef.current = fetchTestimonials;
-    fetchMentorsRef.current = fetchMentors;
-    fetchAssignmentsRef.current = fetchAssignments;
-    fetchApprovedStudentsRef.current = fetchApprovedStudents;
-    fetchAllStudentsRef.current = fetchAllStudents;
-  }, [fetchAchievements, fetchDeveloperResources, fetchDeveloperEvents, fetchSponsorships, fetchTestimonials, fetchMentors, fetchAssignments, fetchApprovedStudents, fetchAllStudents]);
-
   const fetchBlogSubmissions = useCallback(async () => {
     if (!admin) return;
     
@@ -2036,6 +2023,9 @@ export default function AdminDashboardPage() {
       approvedStudentsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
+  
+  // Update ref whenever function changes
+  fetchApprovedStudentsRef.current = fetchApprovedStudents;
 
   // Fetch all students (applications + students table)
   const fetchAllStudents = useCallback(async () => {
@@ -2068,6 +2058,22 @@ export default function AdminDashboardPage() {
       allStudentsFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
+  
+  // Update ref whenever function changes
+  fetchAllStudentsRef.current = fetchAllStudents;
+
+  // Store fetch functions in refs to prevent useEffect loops (must be after ALL function definitions)
+  // Note: fetchApprovedStudents and fetchAllStudents refs are updated directly after their definitions above
+  useEffect(() => {
+    fetchAchievementsRef.current = fetchAchievements;
+    fetchDeveloperResourcesRef.current = fetchDeveloperResources;
+    fetchDeveloperEventsRef.current = fetchDeveloperEvents;
+    fetchSponsorshipsRef.current = fetchSponsorships;
+    fetchTestimonialsRef.current = fetchTestimonials;
+    fetchMentorsRef.current = fetchMentors;
+    fetchAssignmentsRef.current = fetchAssignments;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAwardSatsRetroactively = async () => {
     if (!admin) return;
