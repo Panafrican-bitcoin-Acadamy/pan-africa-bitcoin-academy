@@ -599,15 +599,15 @@ export default function AdminDashboardPage() {
     }
   }, [checkSession]);
 
-  // Fetch students list for dropdown - now uses blog authors API instead of students API
-  const fetchStudentsList = useCallback(async () => {
-    if (!admin || activeSubMenu !== 'student-sats-rewards') {
+  // Fetch students list for dropdown - fetches ALL students (not just blog authors)
+  const fetchStudentsList = useCallback(async (cohortId?: string, updateFiltered?: boolean) => {
+    if (!admin) {
       return;
     }
     
-    // Prevent duplicate fetches - check if already fetched or currently fetching
-    if (studentsListFetchedRef.current || studentsListFetchingRef.current) {
-      console.log('[Sats Rewards] Skipping fetchStudentsList - already fetched or fetching');
+    // Prevent duplicate simultaneous fetches
+    if (studentsListFetchingRef.current) {
+      console.log('[Sats Rewards] Skipping fetchStudentsList - already fetching');
       return;
     }
     
@@ -618,17 +618,20 @@ export default function AdminDashboardPage() {
       return;
     }
     
-    console.log('[Sats Rewards] Starting fetchStudentsList - using blog authors API');
-    studentsListFetchedRef.current = true;
+    console.log('[Sats Rewards] Starting fetchStudentsList', cohortId ? `for cohort ${cohortId}` : 'for all students');
     studentsListFetchingRef.current = true;
     lastStudentsListFetchTimeRef.current = now;
     
     try {
       setLoadingStudentsList(true);
       
-      // Use the new blog authors API instead of students API
-      // This fetches only students who have written published blog posts
-      const res = await fetchWithAuth('/api/admin/blog/authors');
+      // Use the students/all API which supports cohort filtering
+      let url = '/api/admin/students/all?limit=5000';
+      if (cohortId && cohortId !== 'all' && cohortId !== '') {
+        url += `&cohort_id=${cohortId}`;
+      }
+      
+      const res = await fetchWithAuth(url);
       
       // Handle unauthorized access
       if (res.status === 401) {
@@ -638,14 +641,14 @@ export default function AdminDashboardPage() {
       }
       
       if (!res.ok) {
-        let errorMessage = 'Failed to fetch blog authors';
+        let errorMessage = 'Failed to fetch students';
         try {
           const errorData = await res.json();
           errorMessage = errorData.error || errorMessage;
         } catch {
           // Use default error message
         }
-        console.error('[Sats Rewards] Failed to fetch blog authors:', {
+        console.error('[Sats Rewards] Failed to fetch students:', {
           status: res.status,
           statusText: res.statusText,
           error: errorMessage,
@@ -655,15 +658,26 @@ export default function AdminDashboardPage() {
       }
       
       const data = await res.json();
-      if (data && Array.isArray(data.authors)) {
-        console.log(`[Sats Rewards] Successfully fetched ${data.authors.length} blog authors`);
-        // Transform authors to match students format for compatibility
-        setStudentsList(data.authors.map((author: any) => ({
-          id: author.id,
-          name: author.name,
-          email: author.email,
-          status: author.status,
-        })));
+      if (data && Array.isArray(data.students)) {
+        console.log(`[Sats Rewards] Successfully fetched ${data.students.length} students`);
+        // Transform to match expected format
+        const transformedStudents = data.students.map((student: any) => ({
+          id: student.id,
+          name: student.name || '',
+          email: student.email || '',
+          status: student.status || 'Active',
+          cohortId: student.cohortId || null,
+          cohortName: student.cohortName || null,
+        }));
+        setStudentsList(transformedStudents);
+        // Mark as fetched only when fetching all students (not cohort-specific)
+        if (!cohortId || cohortId === 'all' || cohortId === '') {
+          studentsListFetchedRef.current = true;
+          // Also update filteredStudentsByCohort if requested (e.g., when modal opens)
+          if (updateFiltered) {
+            setFilteredStudentsByCohort(transformedStudents);
+          }
+        }
       } else {
         console.warn('[Sats Rewards] Unexpected data format:', data);
         setStudentsList([]);
@@ -673,16 +687,14 @@ export default function AdminDashboardPage() {
       if (err.message === 'Unauthorized') {
         console.error('[Sats Rewards] Unauthorized - session may have expired');
       } else {
-        console.error('[Sats Rewards] Error fetching blog authors:', err);
+        console.error('[Sats Rewards] Error fetching students:', err);
       }
       setStudentsList([]);
-      // Reset fetched flag on error so it can retry
-      studentsListFetchedRef.current = false;
     } finally {
       setLoadingStudentsList(false);
       studentsListFetchingRef.current = false;
     }
-  }, [admin, activeSubMenu, fetchWithAuth]);
+  }, [admin, fetchWithAuth]);
 
   // Fetch blog summary (blog posts with authors and sats) - separated from UI to prevent flickering
   const fetchBlogSummary = useCallback(async (forceRefresh: boolean = false) => {
@@ -958,8 +970,6 @@ export default function AdminDashboardPage() {
       approvedStudentsFetchingRef.current = true;
       fetchApprovedStudentsRef.current();
     } else if (currentSubMenu === 'student-database' && !allStudentsFetchedRef.current && !allStudentsFetchingRef.current && fetchAllStudentsRef.current) {
-      allStudentsFetchedRef.current = true;
-      allStudentsFetchingRef.current = true;
       fetchAllStudentsRef.current();
     }
   }, [admin, activeSubMenu]);
@@ -995,14 +1005,35 @@ export default function AdminDashboardPage() {
           }
         }, 500);
         
-        // Note: fetchStudentSatsRewards will be triggered by the separate useEffect below
+        // Fetch sats rewards when submenu becomes active
+        // Try to fetch immediately if ref is available, otherwise use timeout
+        let satsRewardsTimeout: NodeJS.Timeout | null = null;
+        if (fetchStudentSatsRewardsRef.current) {
+          fetchStudentSatsRewardsRef.current();
+        } else {
+          satsRewardsTimeout = setTimeout(() => {
+            if (fetchStudentSatsRewardsRef.current) {
+              fetchStudentSatsRewardsRef.current();
+            }
+          }, 300);
+        }
         
         // Cleanup timeout if component unmounts or submenu changes
         return () => {
           clearTimeout(blogSummaryTimeout);
+          if (satsRewardsTimeout) {
+            clearTimeout(satsRewardsTimeout);
+          }
         };
       } else {
-        console.log('[Sats Rewards] Submenu already active, skipping fetch');
+        console.log('[Sats Rewards] Submenu already active');
+        // Still fetch if data hasn't been loaded yet
+        if (satsLastFetchKeyRef.current !== 'fetched' && !satsFetchingRef.current) {
+          console.log('[Sats Rewards] Data not loaded yet, fetching now');
+          if (fetchStudentSatsRewardsRef.current) {
+            fetchStudentSatsRewardsRef.current();
+          }
+        }
       }
     } else {
       // Reset flags when submenu is not active
@@ -1238,53 +1269,64 @@ export default function AdminDashboardPage() {
       reason: '',
       status: 'pending',
     });
+    // Fetch all students when modal opens
     setFilteredStudentsByCohort([]);
+    fetchStudentsList(undefined, true); // Fetch all students initially and update filtered list
     setShowRewardModal(true);
-  }, [satsStudentFilter]);
+  }, [satsStudentFilter, fetchStudentsList]);
 
-  // Filter students by cohort
-  const filterStudentsByCohort = useCallback((cohortId: string) => {
-    if (!cohortId || cohortId === 'all') {
-      setFilteredStudentsByCohort(studentsList);
+  // Filter students by cohort - optimized to fetch directly from API
+  const filterStudentsByCohort = useCallback(async (cohortId: string) => {
+    if (!cohortId || cohortId === 'all' || cohortId === '') {
+      // Show all students when "All Cohorts" is selected
+      if (studentsListFetchedRef.current && studentsList.length > 0) {
+        // Use already fetched list if available
+        setFilteredStudentsByCohort(studentsList);
+      } else {
+        // Fetch all students and update filtered list when done
+        await fetchStudentsList(undefined, true); // Pass true to update filteredStudentsByCohort
+      }
       return;
     }
 
-    // Fetch students for this cohort
-    const fetchCohortStudents = async () => {
-      try {
-        setLoadingStudentsList(true);
-        // Get cohort enrollment for this cohort
-        const res = await fetchWithAuth(`/api/admin/students/progress`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            // Filter students by cohort_id
-            const cohortStudents = data.filter((student: any) => {
-              // Check if student is enrolled in this cohort
-              const enrollments = student.cohort_enrollment || [];
-              return enrollments.some((e: any) => e.cohort_id === cohortId);
-            });
-            setFilteredStudentsByCohort(cohortStudents.map((s: any) => ({
-              id: s.id,
-              name: s.name || '',
-              email: s.email || '',
-            })));
-          }
+    // Fetch students for this specific cohort directly from API
+    try {
+      setLoadingStudentsList(true);
+      const url = `/api/admin/students/all?limit=5000&cohort_id=${cohortId}`;
+      const res = await fetchWithAuth(url);
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.students)) {
+          const cohortStudents = data.students.map((student: any) => ({
+            id: student.id,
+            name: student.name || '',
+            email: student.email || '',
+            status: student.status || 'Active',
+            cohortId: student.cohortId || null,
+            cohortName: student.cohortName || null,
+          }));
+          setFilteredStudentsByCohort(cohortStudents);
+          console.log(`[Reward Modal] Fetched ${cohortStudents.length} students for cohort ${cohortId}`);
+        } else {
+          setFilteredStudentsByCohort([]);
         }
-      } catch (err) {
-        console.error('Error fetching cohort students:', err);
+      } else {
+        console.error('[Reward Modal] Failed to fetch cohort students');
         setFilteredStudentsByCohort([]);
-      } finally {
-        setLoadingStudentsList(false);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching cohort students:', err);
+      setFilteredStudentsByCohort([]);
+    } finally {
+      setLoadingStudentsList(false);
+    }
+  }, [studentsList, fetchStudentsList, fetchWithAuth]);
 
-    fetchCohortStudents();
-  }, [studentsList, fetchWithAuth]);
-
-  // Handle cohort selection change
+  // Handle cohort selection change - optimized to fetch students by cohort
   const handleCohortChange = useCallback((cohortId: string) => {
     setRewardForm({ ...rewardForm, cohort_id: cohortId, student_id: '' });
+    // Fetch students for the selected cohort
     filterStudentsByCohort(cohortId);
   }, [rewardForm, filterStudentsByCohort]);
 
@@ -2233,9 +2275,9 @@ export default function AdminDashboardPage() {
   const fetchAllStudents = useCallback(async () => {
     if (!admin) return;
     
-    // Prevent duplicate fetches
-    if (allStudentsFetchedRef.current || allStudentsFetchingRef.current) {
-      console.log('[All Students] Skipping fetch - already fetched or fetching');
+    // Prevent duplicate simultaneous fetches
+    if (allStudentsFetchingRef.current) {
+      console.log('[All Students] Skipping fetch - already fetching');
       return;
     }
     
@@ -2246,10 +2288,18 @@ export default function AdminDashboardPage() {
     
     try {
       const res = await fetchWithAuth('/api/admin/students/all');
-      if (!res.ok) throw new Error('Failed to fetch all students');
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to fetch all students: ${res.status} ${errorText}`);
+      }
       const data = await res.json();
+      console.log('[All Students] API response:', { 
+        studentsCount: data.students?.length || 0, 
+        total: data.total,
+        hasMore: data.hasMore 
+      });
       setAllStudents(data.students || []);
-      console.log('[All Students] Fetch completed successfully');
+      console.log('[All Students] Fetch completed successfully, count:', data.students?.length || 0);
     } catch (err: any) {
       console.error('[All Students] Error:', err);
       setAllStudents([]);
@@ -4238,15 +4288,15 @@ export default function AdminDashboardPage() {
                   </>
                 )}
 
-            {/* Approved Students - List of approved and pending students */}
+            {/* Approved Students - List of approved students only */}
             {activeSubMenu === 'approved-students' && (
               <>
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-semibold text-zinc-50">✅ Approved & Pending Students</h3>
+                      <h3 className="text-xl font-semibold text-zinc-50">✅ Approved Students</h3>
                       <p className="text-sm text-zinc-400 mt-1">
-                        Students with approved or pending applications
+                        Students who have been approved and enrolled in the academy
                       </p>
                     </div>
                     <button
@@ -4270,24 +4320,18 @@ export default function AdminDashboardPage() {
                     </div>
                   ) : approvedStudents.length === 0 ? (
                     <div className="text-center py-12 text-zinc-400">
-                      <p className="text-lg mb-2">No students found</p>
-                      <p className="text-sm">Approved and pending students will appear here.</p>
+                      <p className="text-lg mb-2">No approved students found</p>
+                      <p className="text-sm">Approved students will appear here once applications are approved.</p>
                     </div>
                   ) : (
                     <>
                       {/* Summary Stats */}
-                      <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800">
+                      <div className="mb-6">
+                        <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800 inline-block">
                           <div className="text-2xl font-bold text-green-400 mb-1">
-                            {approvedStudents.filter(s => s.applicationStatus === 'Approved').length}
+                            {approvedStudents.length}
                           </div>
-                          <div className="text-sm text-zinc-400">Approved</div>
-                        </div>
-                        <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800">
-                          <div className="text-2xl font-bold text-yellow-400 mb-1">
-                            {approvedStudents.filter(s => s.applicationStatus === 'Pending').length}
-                          </div>
-                          <div className="text-sm text-zinc-400">Pending</div>
+                          <div className="text-sm text-zinc-400">Approved Students</div>
                         </div>
                       </div>
 
@@ -4302,7 +4346,6 @@ export default function AdminDashboardPage() {
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Country</th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Cohort</th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Status</th>
-                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Application Status</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -4322,15 +4365,6 @@ export default function AdminDashboardPage() {
                                     {student.status || 'N/A'}
                                   </span>
                                 </td>
-                                <td className="p-3 text-sm">
-                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                    student.applicationStatus === 'Approved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                    student.applicationStatus === 'Pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                                    'bg-zinc-500/20 text-zinc-400'
-                                  }`}>
-                                    {student.applicationStatus || 'Unknown'}
-                                  </span>
-                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -4343,10 +4377,10 @@ export default function AdminDashboardPage() {
             )}
 
             {/* Student Database Section */}
-            {(activeSubMenu === 'student-database' || activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || activeTab === 'students') && (
+            {(activeSubMenu === 'student-database' || activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || (activeTab === 'students' && activeSubMenu !== 'approved-students')) && (
               <>
         {/* Student Database */}
-                {(activeSubMenu === 'student-database' || activeTab === 'students') && (
+                {(activeSubMenu === 'student-database' || (activeTab === 'students' && activeSubMenu !== 'approved-students')) && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -4382,28 +4416,42 @@ export default function AdminDashboardPage() {
                 </div>
               )}
             </div>
-            {(cohortFilter || attendanceSort) && (
-              <div className="flex items-center gap-2">
-                {cohortFilter && (
-                  <button
-                    type="button"
-                    onClick={() => setCohortFilter(null)}
-                    className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
-                  >
-                    Clear Filter
-                  </button>
-                )}
-                {attendanceSort && (
-                  <button
-                    type="button"
-                    onClick={() => setAttendanceSort(null)}
-                    className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
-                  >
-                    Clear Sort
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  allStudentsFetchedRef.current = false;
+                  allStudentsFetchingRef.current = false;
+                  fetchAllStudents();
+                }}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700"
+                disabled={loadingAllStudents}
+              >
+                {loadingAllStudents ? 'Refreshing...' : 'Refresh'}
+              </button>
+              {(cohortFilter || attendanceSort) && (
+                <>
+                  {cohortFilter && (
+                    <button
+                      type="button"
+                      onClick={() => setCohortFilter(null)}
+                      className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
+                    >
+                      Clear Filter
+                    </button>
+                  )}
+                  {attendanceSort && (
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceSort(null)}
+                      className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
+                    >
+                      Clear Sort
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           {loadingAllStudents ? (
             <div className="flex items-center justify-center py-12">
@@ -5882,19 +5930,47 @@ export default function AdminDashboardPage() {
                           </div>
 
                           <div>
-                            <label className="block text-sm text-zinc-300 mb-1.5">Student</label>
+                            <label className="block text-sm text-zinc-300 mb-1.5">
+                              Student
+                              {loadingStudentsList && (
+                                <span className="ml-2 text-xs text-zinc-500">(Loading...)</span>
+                              )}
+                              {!loadingStudentsList && rewardForm.cohort_id && filteredStudentsByCohort.length > 0 && (
+                                <span className="ml-2 text-xs text-zinc-500">({filteredStudentsByCohort.length} students)</span>
+                              )}
+                              {!loadingStudentsList && !rewardForm.cohort_id && studentsList.length > 0 && (
+                                <span className="ml-2 text-xs text-zinc-500">({studentsList.length} students)</span>
+                              )}
+                            </label>
                             <select
                               value={rewardForm.student_id}
                               onChange={(e) => setRewardForm({ ...rewardForm, student_id: e.target.value })}
                               disabled={loadingStudentsList}
                               className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <option value="">{loadingStudentsList ? 'Loading students...' : 'Select a student'}</option>
-                              {(rewardForm.cohort_id ? filteredStudentsByCohort : studentsList).map((student: any) => (
+                              <option value="">
+                                {loadingStudentsList 
+                                  ? 'Loading students...' 
+                                  : 'Select a student'
+                                }
+                              </option>
+                              {(rewardForm.cohort_id && filteredStudentsByCohort.length > 0
+                                ? filteredStudentsByCohort 
+                                : !rewardForm.cohort_id 
+                                  ? studentsList 
+                                  : []
+                              ).map((student: any) => (
                                 <option key={student.id} value={student.id}>
                                   {student.name || student.email} {student.email ? `(${student.email})` : ''}
+                                  {student.cohortName ? ` - ${student.cohortName}` : ''}
                                 </option>
                               ))}
+                              {!loadingStudentsList && rewardForm.cohort_id && filteredStudentsByCohort.length === 0 && studentsList.length === 0 && (
+                                <option value="" disabled>No students found for this cohort</option>
+                              )}
+                              {!loadingStudentsList && !rewardForm.cohort_id && studentsList.length === 0 && (
+                                <option value="" disabled>No students found</option>
+                              )}
                             </select>
                           </div>
 
