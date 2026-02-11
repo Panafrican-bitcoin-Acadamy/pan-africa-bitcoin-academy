@@ -3938,30 +3938,15 @@ export default function AdminDashboardPage() {
                   </>
                 )}
 
-            {/* Approved Students - Show list of approved students */}
+            {/* Approved Students - Summary only, detailed list is in Student Database section */}
             {activeSubMenu === 'approved-students' && (
               <>
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xl font-semibold text-zinc-50">✅ Approved Students</h3>
-                      <p className="text-sm text-zinc-400 mt-1">
-                        Students who have been approved and enrolled in the academy
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Reset flags to force refresh
-                        approvedStudentsFetchedRef.current = false;
-                        approvedStudentsFetchingRef.current = false;
-                        fetchApprovedStudents();
-                      }}
-                      disabled={loadingApprovedStudents}
-                      className="rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loadingApprovedStudents ? 'Refreshing...' : '⟳ Refresh'}
-                    </button>
+                  <div className="mb-4">
+                    <h3 className="text-xl font-semibold text-zinc-50">✅ Approved Students</h3>
+                    <p className="text-sm text-zinc-400 mt-1">
+                      Students who have been approved and enrolled in the academy
+                    </p>
                   </div>
                   
                   {loadingApprovedStudents ? (
@@ -3975,64 +3960,28 @@ export default function AdminDashboardPage() {
                       <p className="text-sm">Approved students will appear here once applications are approved.</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <div className="mb-3 text-xs text-zinc-400">
-                        Showing {approvedStudents.length} approved student{approvedStudents.length !== 1 ? 's' : ''}
+                    <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-green-400 mb-2">
+                          {approvedStudents.length}
+                        </div>
+                        <div className="text-lg text-zinc-300 mb-4">
+                          Approved Student{approvedStudents.length !== 1 ? 's' : ''}
+                        </div>
+                        <p className="text-sm text-zinc-400 mb-4">
+                          View the complete list of all students (including approved, pending, rejected, and not applied) in the <strong className="text-cyan-400">Student Database</strong> section.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSubMenu('student-database');
+                            setActiveSection('students');
+                          }}
+                          className="rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30"
+                        >
+                          Go to Student Database →
+                        </button>
                       </div>
-                      <table className="min-w-full text-sm">
-                        <thead className="bg-zinc-900 text-left text-zinc-300">
-                          <tr>
-                            <th className="px-3 py-2">#</th>
-                            <th className="px-3 py-2">Name</th>
-                            <th className="px-3 py-2">Email</th>
-                            <th className="px-3 py-2">Phone</th>
-                            <th className="px-3 py-2">Country</th>
-                            <th className="px-3 py-2">Cohort</th>
-                            <th className="px-3 py-2">Status</th>
-                            <th className="px-3 py-2">Progress</th>
-                            <th className="px-3 py-2">Source</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {approvedStudents.map((student, idx) => (
-                            <tr key={student.id} className="border-b border-zinc-800 hover:bg-zinc-800/30">
-                              <td className="px-3 py-2 text-zinc-400">{idx + 1}</td>
-                              <td className="px-3 py-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedStudent({ id: student.id, email: student.email, name: student.name })}
-                                  className="text-cyan-400 hover:text-cyan-300 transition cursor-pointer"
-                                >
-                                  {student.name}
-                                </button>
-                              </td>
-                              <td className="px-3 py-2 text-zinc-300">{student.email}</td>
-                              <td className="px-3 py-2 text-zinc-400">{student.phone || '—'}</td>
-                              <td className="px-3 py-2 text-zinc-400">{student.country || '—'}</td>
-                              <td className="px-3 py-2 text-zinc-300">{student.cohortName || '—'}</td>
-                              <td className="px-3 py-2">
-                                <span className={`px-2 py-0.5 rounded text-xs ${
-                                  student.status === 'Active' 
-                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                    : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                }`}>
-                                  {student.status || 'Approved'}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2">
-                                {student.progressPercent !== undefined ? (
-                                  <span className="text-green-300">{student.progressPercent}%</span>
-                                ) : (
-                                  <span className="text-zinc-500">—</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-zinc-500 text-xs">
-                                {student.source === 'students_table' ? 'Enrolled' : 'Application'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
                     </div>
                   )}
                 </div>
