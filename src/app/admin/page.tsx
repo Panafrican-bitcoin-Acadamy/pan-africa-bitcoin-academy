@@ -1881,9 +1881,17 @@ export default function AdminDashboardPage() {
   }, [fetchBlogPosts]);
 
   const handleApproveBlog = async (submissionId: string) => {
-    if (!admin) return;
+    if (!admin) {
+      console.error('[Approve Blog] No admin session');
+      alert('You must be logged in as admin to approve blogs');
+      return;
+    }
+    
+    console.log('[Approve Blog] Starting approval for submission:', submissionId);
     setProcessingBlog(submissionId);
+    
     try {
+      console.log('[Approve Blog] Calling API...');
       const res = await fetchWithAuth('/api/admin/blog/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1893,8 +1901,24 @@ export default function AdminDashboardPage() {
           isBlogOfMonth: false,
         }),
       });
+      
+      console.log('[Approve Blog] API response status:', res.status);
+      
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('[Approve Blog] Non-JSON response:', text);
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}`);
+      }
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to approve blog');
+      console.log('[Approve Blog] API response data:', data);
+      
+      if (!res.ok) {
+        console.error('[Approve Blog] API error:', data);
+        throw new Error(data.error || `Failed to approve blog (${res.status})`);
+      }
       
       // Show success message with sats reward info
       let message = data.message || 'Blog approved and published!';
@@ -1904,6 +1928,8 @@ export default function AdminDashboardPage() {
         message += `\n\n⚠ Warning: ${data.satsError}`;
       }
       alert(message);
+      
+      console.log('[Approve Blog] Success! Refreshing data...');
       
       // Refresh blog submissions list (force refresh to bypass guards)
       blogSubmissionsFetchingRef.current = false;
@@ -1925,8 +1951,12 @@ export default function AdminDashboardPage() {
           fetchBlogSummary(true); // true = force refresh
         }, 500);
       }
+      
+      console.log('[Approve Blog] Done!');
     } catch (err: any) {
-      alert(err.message || 'Failed to approve blog');
+      console.error('[Approve Blog] Error:', err);
+      const errorMessage = err.message || 'Failed to approve blog';
+      alert(`Error: ${errorMessage}\n\nPlease check the browser console for more details.`);
     } finally {
       setProcessingBlog(null);
     }
@@ -4503,9 +4533,19 @@ export default function AdminDashboardPage() {
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => handleApproveBlog(submission.id)}
-                            disabled={processingBlog === submission.id}
-                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('[Approve Button] Clicked for submission:', submission.id);
+                              if (processingBlog === submission.id) {
+                                console.log('[Approve Button] Already processing, ignoring click');
+                                return;
+                              }
+                              handleApproveBlog(submission.id);
+                            }}
+                            disabled={processingBlog === submission.id || submission.status !== 'pending'}
+                            className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            title={submission.status !== 'pending' ? 'This submission has already been reviewed' : 'Approve and publish this blog post'}
                           >
                             {processingBlog === submission.id ? 'Processing...' : '✓ Approve & Publish'}
                           </button>
