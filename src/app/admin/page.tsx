@@ -1114,19 +1114,6 @@ export default function AdminDashboardPage() {
     fetchStudentSatsRewardsRef.current = fetchStudentSatsRewards;
   }, [fetchStudentSatsRewards]);
 
-  // Manual refresh function
-  const handleRefreshSatsRewards = useCallback(() => {
-    // Reset fetch flags to force fresh fetch
-    satsLastFetchKeyRef.current = '';
-    satsFetchingRef.current = false;
-    // Clear existing data to show loading state
-    setAllSatsRewards([]);
-    setStudentSatsRewards([]);
-    // Fetch fresh data
-    if (fetchStudentSatsRewardsRef.current) {
-      fetchStudentSatsRewardsRef.current();
-    }
-  }, []);
 
   // Fetch data when submenu becomes active (only once)
   useEffect(() => {
@@ -5279,24 +5266,6 @@ export default function AdminDashboardPage() {
                         </div>
                       )}
                       <div className="flex gap-2">
-                        <button
-                          onClick={handleRefreshSatsRewards}
-                          disabled={loadingSatsRewards}
-                          className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 sm:px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          title="Refresh sats rewards data from database"
-                        >
-                          {loadingSatsRewards ? (
-                            <>
-                              <span className="animate-spin">⟳</span>
-                              <span className="hidden sm:inline">Refreshing...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>⟳</span>
-                              <span className="hidden sm:inline">Refresh</span>
-                            </>
-                          )}
-                        </button>
                         <button
                           onClick={handleCreateReward}
                           className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-300 transition hover:bg-green-500/20 flex items-center justify-center gap-2"
