@@ -70,6 +70,10 @@ export async function GET(request: NextRequest) {
       for (const student of students) {
         const profile = student.profiles;
         if (profile) {
+          // Handle cohorts - it might be an array or a single object
+          const cohortData = profile.cohorts;
+          const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
+          
           approvedStudents.push({
             id: profile.id,
             studentId: profile.student_id,
@@ -80,8 +84,8 @@ export async function GET(request: NextRequest) {
             city: profile.city,
             status: profile.status || 'Active',
             cohortId: profile.cohort_id,
-            cohortName: profile.cohorts?.name || null,
-            cohort: profile.cohorts,
+            cohortName: cohort?.name || null,
+            cohort: cohort,
             progressPercent: student.progress_percent || 0,
             assignmentsCompleted: student.assignments_completed || 0,
             projectsCompleted: student.projects_completed || 0,
@@ -129,6 +133,10 @@ export async function GET(request: NextRequest) {
             .eq('email', app.email)
             .maybeSingle();
 
+          // Handle cohorts - it might be an array or a single object
+          const cohortData = profile?.cohorts;
+          const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
+          
           approvedStudents.push({
             id: profile?.id || app.id,
             studentId: profile?.student_id || null,
@@ -139,8 +147,8 @@ export async function GET(request: NextRequest) {
             city: app.city || profile?.city,
             status: profile?.status || 'Approved',
             cohortId: app.preferred_cohort_id || profile?.cohort_id,
-            cohortName: profile?.cohorts?.name || null,
-            cohort: profile?.cohorts,
+            cohortName: cohort?.name || null,
+            cohort: cohort,
             progressPercent: 0,
             assignmentsCompleted: 0,
             projectsCompleted: 0,
