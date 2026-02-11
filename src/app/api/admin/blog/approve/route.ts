@@ -196,31 +196,53 @@ export async function POST(request: NextRequest) {
         } else {
           // Create a new sats_rewards record for this blog post approval
           // This allows tracking each blog post separately while still summing totals
-          // Prepare reward data with explicit types
-          const rewardData: {
-            student_id: string;
-            amount_paid: number;
-            amount_pending: number;
-            reward_type: string;
-            related_entity_type: string;
-            related_entity_id: string;
-            reason: string;
-            status: string;
-          } = {
+          // Prepare reward data with explicit types and validation
+          // Ensure all values match the CHECK constraints exactly (case-sensitive!)
+          const rewardData = {
             student_id: profileId,
             amount_paid: 0,
             amount_pending: BLOG_POST_REWARD_SATS,
-            reward_type: BLOG_REWARD_TYPE,
-            related_entity_type: 'blog',
+            reward_type: 'blog' as const, // Must be lowercase 'blog' to match CHECK constraint
+            related_entity_type: 'blog' as const, // Must be lowercase 'blog' to match CHECK constraint
             related_entity_id: blogPost.id,
             reason: `Blog post approved: "${submission.title}"`,
-            status: 'pending',
+            status: 'pending' as const, // Must be lowercase 'pending' to match CHECK constraint
+            awarded_by: session.adminId || null, // Optional: admin who awarded the reward
           };
 
-          // Validate all required fields
+          // Validate all required fields and CHECK constraint values
+          const validRewardTypes = ['assignment', 'chapter', 'discussion', 'peer_help', 'project', 'attendance', 'blog', 'other'];
+          const validRelatedEntityTypes = ['assignment', 'chapter', 'event', 'discussion', 'project', 'blog', 'other'];
+          const validStatuses = ['pending', 'processing', 'paid', 'failed'];
+          
           if (!rewardData.student_id || !rewardData.related_entity_id) {
-            console.error('Invalid reward data:', rewardData);
-            satsError = 'Invalid reward data: missing required fields';
+            console.error('Invalid reward data - missing required fields:', {
+              hasStudentId: !!rewardData.student_id,
+              hasRelatedEntityId: !!rewardData.related_entity_id,
+              rewardData,
+            });
+            satsError = 'Invalid reward data: missing required fields (student_id or related_entity_id)';
+          } else if (!validRewardTypes.includes(rewardData.reward_type)) {
+            console.error('Invalid reward data - invalid reward_type:', {
+              reward_type: rewardData.reward_type,
+              validTypes: validRewardTypes,
+            });
+            satsError = `Invalid reward_type: "${rewardData.reward_type}". Must be one of: ${validRewardTypes.join(', ')}`;
+          } else if (!validRelatedEntityTypes.includes(rewardData.related_entity_type)) {
+            console.error('Invalid reward data - invalid related_entity_type:', {
+              related_entity_type: rewardData.related_entity_type,
+              validTypes: validRelatedEntityTypes,
+            });
+            satsError = `Invalid related_entity_type: "${rewardData.related_entity_type}". Must be one of: ${validRelatedEntityTypes.join(', ')}`;
+          } else if (!validStatuses.includes(rewardData.status)) {
+            console.error('Invalid reward data - invalid status:', {
+              status: rewardData.status,
+              validStatuses: validStatuses,
+            });
+            satsError = `Invalid status: "${rewardData.status}". Must be one of: ${validStatuses.join(', ')}`;
+          } else if (typeof rewardData.amount_pending !== 'number' || rewardData.amount_pending < 0) {
+            console.error('Invalid reward data - invalid amount:', rewardData);
+            satsError = 'Invalid reward data: invalid amount_pending value';
           } else {
             console.log('Creating sats reward with data:', {
               student_id: rewardData.student_id,
