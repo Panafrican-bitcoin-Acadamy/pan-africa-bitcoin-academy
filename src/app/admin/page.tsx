@@ -426,6 +426,7 @@ export default function AdminDashboardPage() {
   // Flags to prevent duplicate fetches for approved students and all students
   const approvedStudentsFetchedRef = useRef(false);
   const approvedStudentsFetchingRef = useRef(false);
+  const lastApprovedStudentsFetchRef = useRef(0);
   const allStudentsFetchedRef = useRef(false);
   const allStudentsFetchingRef = useRef(false);
   
@@ -1021,10 +1022,18 @@ export default function AdminDashboardPage() {
     } else if (currentSubMenu === 'assignments' && !assignmentsFetchedRef.current && fetchAssignmentsRef.current) {
       assignmentsFetchedRef.current = true;
       fetchAssignmentsRef.current();
-    } else if (currentSubMenu === 'approved-students' && !approvedStudentsFetchedRef.current && !approvedStudentsFetchingRef.current && fetchApprovedStudentsRef.current) {
-      approvedStudentsFetchedRef.current = true;
-      approvedStudentsFetchingRef.current = true;
-      fetchApprovedStudentsRef.current();
+    } else if (currentSubMenu === 'approved-students' && fetchApprovedStudentsRef.current) {
+      // Fetch approved students when submenu is active
+      // The fetchApprovedStudents function handles rate limiting internally
+      if (!approvedStudentsFetchingRef.current) {
+        fetchApprovedStudentsRef.current();
+      }
+    } else if ((currentSubMenu === 'pending-students' || currentSubMenu === 'rejected-students')) {
+      // Fetch applications when pending or rejected students submenu is active
+      // The fetchApplications function handles rate limiting internally
+      if (!applicationsFetchingRef.current) {
+        fetchApplications();
+      }
     } else if (currentSubMenu === 'student-database' && !allStudentsFetchedRef.current && !allStudentsFetchingRef.current && fetchAllStudentsRef.current) {
       fetchAllStudentsRef.current();
     } else if (currentSubMenu === 'sessions' && fetchSessionsRef.current) {
@@ -1621,6 +1630,15 @@ export default function AdminDashboardPage() {
       }
       
       console.log('[Applications] Successfully fetched', data.applications?.length || 0, 'applications');
+      // Log status breakdown for debugging
+      if (data.applications && data.applications.length > 0) {
+        const statusCounts = data.applications.reduce((acc: any, app: any) => {
+          const status = app.status || 'Unknown';
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('[Applications] Status breakdown:', statusCounts);
+      }
       setApplications(data.applications || []);
     } catch (err: any) {
       console.error('[Applications] Error:', err);
@@ -2402,25 +2420,44 @@ export default function AdminDashboardPage() {
   const fetchApprovedStudents = useCallback(async () => {
     if (!admin) return;
     
-    // Prevent duplicate fetches
-    if (approvedStudentsFetchedRef.current || approvedStudentsFetchingRef.current) {
-      console.log('[Approved Students] Skipping fetch - already fetched or fetching');
+    // Prevent duplicate fetches - check both flags
+    if (approvedStudentsFetchingRef.current) {
+      console.log('[Approved Students] Already fetching, skipping duplicate call');
+      return;
+    }
+    
+    // Rate limiting - don't fetch if we just fetched recently (within 5 seconds)
+    const now = Date.now();
+    if (lastApprovedStudentsFetchRef.current > 0 && (now - lastApprovedStudentsFetchRef.current) < 5000) {
+      console.log('[Approved Students] Rate limited, skipping (last fetch was', now - lastApprovedStudentsFetchRef.current, 'ms ago)');
+      return;
+    }
+    
+    // If already fetched and within rate limit window, skip
+    if (approvedStudentsFetchedRef.current && (now - lastApprovedStudentsFetchRef.current) < 5000) {
+      console.log('[Approved Students] Already fetched recently, skipping');
       return;
     }
     
     console.log('[Approved Students] Starting fetch');
-    approvedStudentsFetchedRef.current = true;
     approvedStudentsFetchingRef.current = true;
+    lastApprovedStudentsFetchRef.current = now;
     setLoadingApprovedStudents(true);
     
     try {
       const res = await fetchWithAuth('/api/admin/students/approved');
-      if (!res.ok) throw new Error('Failed to fetch approved students');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch approved students: ${res.status}`);
+      }
       const data = await res.json();
+      console.log(`[Approved Students] Received ${data.students?.length || 0} students from API`);
       setApprovedStudents(data.students || []);
+      approvedStudentsFetchedRef.current = true;
       console.log('[Approved Students] Fetch completed successfully');
     } catch (err: any) {
       console.error('[Approved Students] Error:', err);
+      console.error('[Approved Students] Error details:', err.message);
       setApprovedStudents([]);
       // Reset fetched flag on error so it can retry
       approvedStudentsFetchedRef.current = false;
@@ -2670,6 +2707,15 @@ export default function AdminDashboardPage() {
         case 'students':
           // Student data is loaded by specific submenu hooks (approved-students, student-database, etc.)
           // These are handled by the useEffect hooks that watch activeSubMenu
+          if (subMenu === 'approved-students') {
+            if (!approvedStudentsFetchedRef.current && !approvedStudentsFetchingRef.current && fetchApprovedStudentsRef.current) {
+              // Reset flags to allow fresh fetch
+              approvedStudentsFetchedRef.current = false;
+              approvedStudentsFetchingRef.current = false;
+              await fetchApprovedStudentsRef.current();
+              dataLoadedRef.current.add('approved-students');
+            }
+          }
           break;
           
         case 'events':
@@ -2991,13 +3037,21 @@ export default function AdminDashboardPage() {
 
   const filteredApplications = useMemo(
     () => {
+      console.log('[Filtered Applications] Filter:', filter, 'Total applications:', applications.length);
       const filtered = applications.filter((app) => {
-        // Filter by status
-        const statusMatch = filter === 'all' || app.status?.toLowerCase() === filter;
+        // Filter by status (case-insensitive comparison)
+        const appStatus = app.status?.toLowerCase() || '';
+        const filterStatus = filter?.toLowerCase() || '';
+        const statusMatch = filter === 'all' || appStatus === filterStatus;
         // Filter by cohort
         const cohortMatch = !cohortFilter || app.preferred_cohort_id === cohortFilter;
-        return statusMatch && cohortMatch;
+        const matches = statusMatch && cohortMatch;
+        if (filter === 'pending' && matches) {
+          console.log('[Filtered Applications] Found pending application:', app.email, 'Status:', app.status);
+        }
+        return matches;
       });
+      console.log('[Filtered Applications] Filtered count:', filtered.length, 'for filter:', filter);
       
       // Sort pending applications by created_at (oldest first - first registered to last)
       if (filter === 'pending' || filter === 'all') {
@@ -3542,7 +3596,22 @@ export default function AdminDashboardPage() {
 
             {filteredApplications.length === 0 && (
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center text-zinc-400">
-                No {filter !== 'all' ? filter : ''} applications found{cohortFilter ? ` for selected cohort` : ''}.
+                {applications.length === 0 ? (
+                  <>
+                    <p className="text-lg mb-2">No applications found</p>
+                    <p className="text-sm">Applications will appear here once students submit their applications.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg mb-2">No {filter !== 'all' ? filter : ''} applications found{cohortFilter ? ` for selected cohort` : ''}.</p>
+                    <p className="text-sm mt-2">Total applications: {applications.length}</p>
+                    <p className="text-xs mt-2 text-zinc-500">
+                      Pending: {applications.filter(a => (a.status?.toLowerCase() || '') === 'pending').length} | 
+                      Approved: {applications.filter(a => (a.status?.toLowerCase() || '') === 'approved').length} | 
+                      Rejected: {applications.filter(a => (a.status?.toLowerCase() || '') === 'rejected').length}
+                    </p>
+                  </>
+                )}
               </div>
             )}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

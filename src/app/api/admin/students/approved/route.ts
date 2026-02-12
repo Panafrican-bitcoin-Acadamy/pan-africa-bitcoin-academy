@@ -13,10 +13,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // First, let's check if there are any students in the table
+    const { count: studentsCount } = await supabaseAdmin
+      .from('students')
+      .select('*', { count: 'exact', head: true });
+    
+    console.log(`[Approved Students API] Total students in database: ${studentsCount || 0}`);
+
     // Fetch all enrolled students with their profiles using a join query
     const { data: studentsData, error: studentsError } = await supabaseAdmin
       .from('students')
       .select(`
+        id,
         profile_id,
         progress_percent,
         assignments_completed,
@@ -50,16 +58,20 @@ export async function GET(request: NextRequest) {
 
     if (studentsError) {
       console.error('[Approved Students API] Error fetching students:', studentsError);
+      console.error('[Approved Students API] Error details:', JSON.stringify(studentsError, null, 2));
       return NextResponse.json(
         {
           error: 'Failed to fetch students',
-          ...(process.env.NODE_ENV === 'development' ? { details: studentsError.message } : {}),
+          ...(process.env.NODE_ENV === 'development' ? { details: studentsError.message, code: studentsError.code } : {}),
         },
         { status: 500 }
       );
     }
 
+    console.log(`[Approved Students API] Fetched ${studentsData?.length || 0} students from database`);
+
     if (!studentsData || studentsData.length === 0) {
+      console.log('[Approved Students API] No students found in students table');
       return NextResponse.json(
         {
           students: [],
@@ -104,6 +116,7 @@ export async function GET(request: NextRequest) {
 
     // Format the data
     const enrolledStudents: any[] = [];
+    let skippedCount = 0;
 
     for (const student of studentsData) {
       // Handle profiles - it might be an array or a single object
@@ -111,6 +124,8 @@ export async function GET(request: NextRequest) {
       const profile = Array.isArray(profileData) ? profileData[0] : profileData;
       
       if (!profile) {
+        console.warn(`[Approved Students API] Student ${student.id || student.profile_id} has no profile`);
+        skippedCount++;
         continue; // Skip if no profile found
       }
 
@@ -122,7 +137,7 @@ export async function GET(request: NextRequest) {
       
       enrolledStudents.push({
         id: profile.id,
-        studentId: profile.student_id || student.profile_id,
+        studentId: profile.student_id || student.profile_id || student.id,
         name: profile.name || '',
         email: profile.email || '',
         phone: profile.phone || '',
@@ -144,6 +159,8 @@ export async function GET(request: NextRequest) {
         applicationStatus: application?.status || 'Approved',
       });
     }
+
+    console.log(`[Approved Students API] Processed ${enrolledStudents.length} students, skipped ${skippedCount} without profiles`);
 
 
     // Sort by creation date (most recent first)
