@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/adminSession';
 
 /**
  * GET /api/admin/students/approved
- * Get all approved students ONLY (from applications with status='Approved')
+ * Get all enrolled students from the students table
  */
 export async function GET(request: NextRequest) {
   try {
@@ -13,28 +13,53 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get approved students ONLY from approved applications
-    const BATCH_SIZE = 1000;
-    
-    // Get approved applications (this is the source of truth for approved status)
-    const { data: approvedApplications, error: approvedAppsError } = await supabaseAdmin
-      .from('applications')
-      .select('*')
-      .eq('status', 'Approved')
+    // Fetch all enrolled students with their profiles using a join query
+    const { data: studentsData, error: studentsError } = await supabaseAdmin
+      .from('students')
+      .select(`
+        profile_id,
+        progress_percent,
+        assignments_completed,
+        projects_completed,
+        live_sessions_attended,
+        exam_score,
+        exam_completed_at,
+        created_at,
+        updated_at,
+        profiles (
+          id,
+          name,
+          email,
+          phone,
+          country,
+          city,
+          status,
+          cohort_id,
+          student_id,
+          created_at,
+          cohorts (
+            id,
+            name,
+            start_date,
+            end_date,
+            status
+          )
+        )
+      `)
       .order('created_at', { ascending: false });
 
-    if (approvedAppsError) {
-      console.error('[Approved Students API] Error fetching approved applications:', approvedAppsError);
+    if (studentsError) {
+      console.error('[Approved Students API] Error fetching students:', studentsError);
       return NextResponse.json(
         {
-          error: 'Failed to fetch approved applications',
-          ...(process.env.NODE_ENV === 'development' ? { details: approvedAppsError.message } : {}),
+          error: 'Failed to fetch students',
+          ...(process.env.NODE_ENV === 'development' ? { details: studentsError.message } : {}),
         },
         { status: 500 }
       );
     }
 
-    if (!approvedApplications || approvedApplications.length === 0) {
+    if (!studentsData || studentsData.length === 0) {
       return NextResponse.json(
         {
           students: [],
@@ -44,138 +69,85 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Create set of approved email addresses (source of truth)
-    const approvedEmails = new Set<string>();
+    // Get emails for applications lookup
+    const emails = studentsData
+      .map((s: any) => {
+        const profile = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
+        return profile?.email?.toLowerCase();
+      })
+      .filter(Boolean);
     
-    if (approvedApplications) {
-      approvedApplications.forEach((app) => {
-        if (app.email) {
-          approvedEmails.add(app.email.toLowerCase());
-        }
-      });
-    }
-
-    // Get profiles for approved emails only
-    const approvedEmailArray = Array.from(approvedEmails);
+    let applicationsMap = new Map<string, any>();
     
-    let allProfiles: any[] = [];
-    
-    // Fetch by emails (from approved applications only)
-    for (let i = 0; i < approvedEmailArray.length; i += BATCH_SIZE) {
-      const batch = approvedEmailArray.slice(i, i + BATCH_SIZE);
-        const { data: profilesBatch, error: profilesError } = await supabaseAdmin
-          .from('profiles')
-          .select(`
-            id,
-            name,
-            email,
-            phone,
-            country,
-            city,
-            status,
-            cohort_id,
-            student_id,
-            created_at,
-            cohorts (
-              id,
-              name,
-              start_date,
-              end_date,
-              status
-            )
-          `)
+    if (emails.length > 0) {
+      const BATCH_SIZE = 1000;
+      for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+        const batch = emails.slice(i, i + BATCH_SIZE);
+        const { data: appsBatch } = await supabaseAdmin
+          .from('applications')
+          .select('*')
           .in('email', batch);
 
-        if (profilesError) {
-          console.error('[Approved Students API] Error fetching profiles by email:', profilesError);
-        } else if (profilesBatch) {
-          allProfiles.push(...profilesBatch);
-        }
-      }
-
-    // Get student records for all profiles
-    const profileIds = allProfiles.map((p) => p.id).filter(Boolean);
-    let studentsMap = new Map<string, any>();
-    
-    if (profileIds.length > 0) {
-      for (let i = 0; i < profileIds.length; i += BATCH_SIZE) {
-        const batch = profileIds.slice(i, i + BATCH_SIZE);
-        const { data: studentsBatch, error: studentsError } = await supabaseAdmin
-          .from('students')
-          .select('*')
-          .in('profile_id', batch);
-
-        if (studentsError) {
-          console.error('[Approved Students API] Error fetching students batch:', studentsError);
-        } else if (studentsBatch) {
-          studentsBatch.forEach((student: any) => {
-            studentsMap.set(student.profile_id, student);
+        if (appsBatch) {
+          appsBatch.forEach((app: any) => {
+            const emailLower = app.email?.toLowerCase();
+            if (emailLower) {
+              const existing = applicationsMap.get(emailLower);
+              if (!existing || new Date(app.created_at) > new Date(existing.created_at)) {
+                applicationsMap.set(emailLower, app);
+              }
+            }
           });
         }
       }
     }
 
-    // Create applications map for quick lookup
-    const applicationsMap = new Map<string, any>();
-    if (approvedApplications) {
-      approvedApplications.forEach((app) => {
-        const emailLower = app.email?.toLowerCase();
-        if (emailLower) {
-          // If multiple applications, keep the most recent one
-          const existing = applicationsMap.get(emailLower);
-          if (!existing || new Date(app.created_at) > new Date(existing.created_at)) {
-            applicationsMap.set(emailLower, app);
-          }
-        }
-      });
-    }
+    // Format the data
+    const enrolledStudents: any[] = [];
 
-    // Combine and format the data - ONLY include students with approved applications
-    const approvedStudents: any[] = [];
-
-    for (const profile of allProfiles) {
-      const emailLower = profile.email?.toLowerCase();
+    for (const student of studentsData) {
+      // Handle profiles - it might be an array or a single object
+      const profileData = student.profiles;
+      const profile = Array.isArray(profileData) ? profileData[0] : profileData;
       
-      // Only include if they have an approved application
-      if (!emailLower || !approvedEmails.has(emailLower)) {
-        continue; // Skip if not in approved emails list
+      if (!profile) {
+        continue; // Skip if no profile found
       }
 
-      const student = studentsMap.get(profile.id);
-      const application = applicationsMap.get(emailLower);
+      const application = applicationsMap.get(profile.email?.toLowerCase());
 
       // Handle cohorts - it might be an array or a single object
       const cohortData = profile.cohorts;
       const cohort = Array.isArray(cohortData) ? cohortData[0] : cohortData;
       
-      approvedStudents.push({
+      enrolledStudents.push({
         id: profile.id,
-        studentId: profile.student_id,
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone,
-        country: profile.country,
-        city: profile.city,
-        status: profile.status || 'Active',
-        cohortId: profile.cohort_id,
+        studentId: profile.student_id || student.profile_id,
+        name: profile.name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        country: profile.country || '',
+        city: profile.city || '',
+        status: profile.status || 'Enrolled',
+        cohortId: profile.cohort_id || null,
         cohortName: cohort?.name || null,
         cohort: cohort,
-        progressPercent: student?.progress_percent || 0,
-        assignmentsCompleted: student?.assignments_completed || 0,
-        projectsCompleted: student?.projects_completed || 0,
-        liveSessionsAttended: student?.live_sessions_attended || 0,
-        examScore: student?.exam_score || null,
-        examCompletedAt: student?.exam_completed_at || null,
-        createdAt: application?.created_at || profile.created_at,
-        source: student ? 'students_table' : 'application',
+        progressPercent: student.progress_percent || 0,
+        assignmentsCompleted: student.assignments_completed || 0,
+        projectsCompleted: student.projects_completed || 0,
+        liveSessionsAttended: student.live_sessions_attended || 0,
+        examScore: student.exam_score || null,
+        examCompletedAt: student.exam_completed_at || null,
+        createdAt: student.created_at || profile.created_at || application?.created_at,
+        source: 'students_table',
         applicationId: application?.id || null,
-        applicationStatus: 'Approved', // All students in this list are approved
+        applicationStatus: application?.status || 'Approved',
       });
     }
 
 
     // Sort by creation date (most recent first)
-    approvedStudents.sort((a, b) => {
+    enrolledStudents.sort((a, b) => {
       const dateA = new Date(a.createdAt || 0).getTime();
       const dateB = new Date(b.createdAt || 0).getTime();
       return dateB - dateA;
@@ -183,8 +155,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        students: approvedStudents,
-        total: approvedStudents.length,
+        students: enrolledStudents,
+        total: enrolledStudents.length,
       },
       { status: 200 }
     );

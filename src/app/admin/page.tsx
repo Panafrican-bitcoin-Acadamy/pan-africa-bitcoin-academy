@@ -198,6 +198,9 @@ export default function AdminDashboardPage() {
   const [sessionStatusFilter, setSessionStatusFilter] = useState<string>('all');
   const [sessionDateFilter, setSessionDateFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
+  const [loadingAttendanceRecords, setLoadingAttendanceRecords] = useState(false);
+  const [attendanceEventFilter, setAttendanceEventFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam' | 'assignments'>('overview');
   
   // Sidebar state
@@ -271,6 +274,15 @@ export default function AdminDashboardPage() {
         { id: 'student-sats-rewards', label: 'Student Sats Rewards' },
       ],
     },
+    {
+      id: 'attendance',
+      label: 'Attendance',
+      icon: '📊',
+      subMenus: [
+        { id: 'upload-attendance', label: 'Upload Attendance' },
+        { id: 'attendance-records', label: 'Attendance Records' },
+      ],
+    },
   ];
   
   // Get breadcrumbs based on current navigation
@@ -313,6 +325,8 @@ export default function AdminDashboardPage() {
       'email-composition': 'overview',
       'calendar': 'overview',
       'final-exam-submissions': 'exam',
+      'upload-attendance': 'attendance',
+      'attendance-records': 'attendance',
     };
     
     const mappedTab = navigationMap[subMenuId];
@@ -418,13 +432,19 @@ export default function AdminDashboardPage() {
   // Flags to prevent duplicate simultaneous fetches for main sections
   const overviewFetchingRef = useRef(false);
   const applicationsFetchingRef = useRef(false);
+  const lastApplicationsFetchRef = useRef<number>(0);
   const cohortsFetchingRef = useRef(false);
   const sessionsFetchingRef = useRef(false);
+  const sessionsFetchedRef = useRef(false);
+  const fetchSessionsRef = useRef<(() => Promise<void>) | null>(null);
   const eventsFetchingRef = useRef(false);
   const progressFetchingRef = useRef(false);
   const mentorshipsFetchingRef = useRef(false);
   const examAccessFetchingRef = useRef(false);
   const submissionsFetchingRef = useRef(false);
+  const attendanceFetchingRef = useRef(false);
+  const attendanceFetchedRef = useRef(false);
+  const fetchAttendanceRecordsRef = useRef<(() => Promise<void>) | null>(null);
   
   // Refs to track if data has been fetched for each submenu (prevent duplicate fetches)
   const achievementsFetchedRef = useRef(false);
@@ -540,6 +560,7 @@ export default function AdminDashboardPage() {
       return () => clearTimeout(timeoutId);
     }
   }, [admin, activeTab, activeSubMenu]);
+
 
 
   // Auto-hide notification after 5 seconds
@@ -969,6 +990,11 @@ export default function AdminDashboardPage() {
         allStudentsFetchedRef.current = false;
         allStudentsFetchingRef.current = false;
       }
+      // Reset sessions fetch flags when leaving sessions submenu to allow fresh fetch on return
+      if (prevSubMenu === 'sessions' && currentSubMenu !== 'sessions') {
+        sessionsFetchedRef.current = false;
+        sessionsFetchingRef.current = false;
+      }
       
       prevActiveSubMenuRef.current = currentSubMenu;
     }
@@ -1001,6 +1027,13 @@ export default function AdminDashboardPage() {
       fetchApprovedStudentsRef.current();
     } else if (currentSubMenu === 'student-database' && !allStudentsFetchedRef.current && !allStudentsFetchingRef.current && fetchAllStudentsRef.current) {
       fetchAllStudentsRef.current();
+    } else if (currentSubMenu === 'sessions' && fetchSessionsRef.current) {
+      // Always fetch sessions when sessions submenu is active (allow refresh)
+      if (!sessionsFetchingRef.current) {
+        // Reset fetched flag to allow fresh fetch
+        sessionsFetchedRef.current = false;
+        fetchSessionsRef.current();
+      }
     }
   }, [admin, activeSubMenu]);
 
@@ -1554,15 +1587,48 @@ export default function AdminDashboardPage() {
   const fetchApplications = async () => {
     // Prevent duplicate simultaneous fetches
     if (applicationsFetchingRef.current) {
+      console.log('[Applications] Already fetching, skipping duplicate call');
+      return;
+    }
+    
+    // Rate limiting - don't fetch if we just fetched recently (within 2 seconds)
+    const now = Date.now();
+    if (lastApplicationsFetchRef.current > 0 && (now - lastApplicationsFetchRef.current) < 2000) {
+      console.log('[Applications] Rate limited, skipping (last fetch was', now - lastApplicationsFetchRef.current, 'ms ago)');
       return;
     }
     
     try {
       applicationsFetchingRef.current = true;
+      lastApplicationsFetchRef.current = now;
+      
+      console.log('[Applications] Starting fetch');
       const res = await fetchWithAuth('/api/admin/applications');
+      
+      // Handle rate limiting from API
+      if (res.status === 429) {
+        const errorData = await res.json().catch(() => ({}));
+        console.warn('[Applications] Rate limited by API:', errorData.error || 'Too many requests');
+        // Wait a bit longer before allowing next fetch
+        lastApplicationsFetchRef.current = Date.now() + 5000; // Add 5 seconds penalty
+        applicationsFetchingRef.current = false;
+        return;
+      }
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch applications');
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to fetch applications');
+      }
+      
+      console.log('[Applications] Successfully fetched', data.applications?.length || 0, 'applications');
       setApplications(data.applications || []);
+    } catch (err: any) {
+      console.error('[Applications] Error:', err);
+      // If it's a rate limit error, add penalty to last fetch time
+      if (err.message?.includes('Too many requests') || err.message?.includes('rate limit')) {
+        lastApplicationsFetchRef.current = Date.now() + 5000; // Add 5 seconds penalty
+      }
+      setApplications([]);
     } finally {
       applicationsFetchingRef.current = false;
     }
@@ -1588,28 +1654,80 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchSessions = async () => {
+  const fetchAttendanceRecords = useCallback(async () => {
+    if (!admin) return;
+    
     // Prevent duplicate simultaneous fetches
-    if (sessionsFetchingRef.current) {
+    if (attendanceFetchingRef.current) {
+      console.log('[Attendance Records] Already fetching, skipping duplicate call');
       return;
     }
     
     try {
-      sessionsFetchingRef.current = true;
-      setLoadingSessions(true);
+      attendanceFetchingRef.current = true;
+      setLoadingAttendanceRecords(true);
+      
+      console.log('[Attendance Records] Starting fetch');
+      const res = await fetchWithAuth('/api/admin/attendance');
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch attendance records');
+      }
+      
+      const data = await res.json();
+      console.log('[Attendance Records] Successfully fetched', data.records?.length || 0, 'records');
+      setAttendanceRecords(data.records || []);
+      attendanceFetchedRef.current = true;
+    } catch (err: any) {
+      console.error('[Attendance Records] Error:', err);
+      setAttendanceRecords([]);
+    } finally {
+      setLoadingAttendanceRecords(false);
+      attendanceFetchingRef.current = false;
+    }
+  }, [admin, fetchWithAuth]);
+
+  // Set ref after function is defined
+  fetchAttendanceRecordsRef.current = fetchAttendanceRecords;
+
+  const fetchSessions = useCallback(async () => {
+    if (!admin) return;
+    
+    // Prevent duplicate fetches
+    if (sessionsFetchedRef.current || sessionsFetchingRef.current) {
+      console.log('[Sessions] Skipping fetch - already fetched or fetching');
+      return;
+    }
+    
+    console.log('[Sessions] Starting fetch');
+    sessionsFetchedRef.current = true;
+    sessionsFetchingRef.current = true;
+    setLoadingSessions(true);
+    
+    try {
       const res = await fetchWithAuth('/api/sessions?admin=true');
+      if (!res.ok) throw new Error('Failed to fetch sessions');
       const data = await res.json();
       if (data.sessions) {
         setAllSessions(data.sessions || []);
+        console.log(`[Sessions] Fetched ${data.sessions.length} sessions`);
+      } else {
+        setAllSessions([]);
       }
     } catch (err: any) {
-      console.error('Error fetching sessions:', err);
+      console.error('[Sessions] Error:', err);
       setAllSessions([]);
+      // Reset fetched flag on error so it can retry
+      sessionsFetchedRef.current = false;
     } finally {
       setLoadingSessions(false);
       sessionsFetchingRef.current = false;
     }
-  };
+  }, [admin, fetchWithAuth]);
+  
+  // Update ref whenever function changes
+  fetchSessionsRef.current = fetchSessions;
 
   const fetchEvents = async () => {
     // Prevent duplicate simultaneous fetches
@@ -2486,10 +2604,43 @@ export default function AdminDashboardPage() {
   };
 
   const fetchLiveClassEvents = async () => {
-    const res = await fetchWithAuth('/api/admin/events/live-classes');
-    const data = await res.json();
-    if (data.events) setLiveClassEvents(data.events);
+    // Fetch all events (not just live-class) for attendance upload
+    try {
+      const res = await fetchWithAuth('/api/admin/events/all');
+      const data = await res.json();
+      if (data.events) {
+        // Transform to match the expected format
+        const transformedEvents = data.events.map((event: any) => ({
+          id: event.id,
+          name: event.title || event.name || 'Untitled Event',
+          start_time: event.date || event.start_time || null,
+          type: event.type || 'community',
+          cohort_id: event.cohortId || null,
+        }));
+        setLiveClassEvents(transformedEvents);
+      }
+    } catch (err) {
+      console.error('Error fetching events for attendance:', err);
+      setLiveClassEvents([]);
+    }
   };
+
+  // Fetch attendance data when attendance section is accessed
+  // This useEffect is placed here after fetchAttendanceRecords and fetchLiveClassEvents are defined
+  useEffect(() => {
+    if (admin && activeSection === 'attendance' && (activeSubMenu === 'upload-attendance' || activeSubMenu === 'attendance-records')) {
+      // Reset fetch flag to allow fresh data
+      if (!attendanceFetchedRef.current || !dataLoadedRef.current.has('attendance-records')) {
+        attendanceFetchedRef.current = false;
+        if (fetchAttendanceRecordsRef.current) {
+          fetchAttendanceRecordsRef.current();
+        }
+        fetchLiveClassEvents(); // Needed for event dropdown
+        fetchSessions(); // Fetch sessions for dropdown
+        dataLoadedRef.current.add('attendance-records');
+      }
+    }
+  }, [admin, activeSection, activeSubMenu]);
   
   // Define loadSectionData after all fetch functions are available
   const loadSectionData = async (section: string, subMenu?: string) => {
@@ -2532,8 +2683,15 @@ export default function AdminDashboardPage() {
           break;
           
         case 'attendance':
-          await fetchProgress();
-          dataLoadedRef.current.add('progress');
+          // Load attendance data based on submenu
+          if (subMenu === 'upload-attendance' || subMenu === 'attendance-records') {
+            // Always fetch fresh data for attendance records
+            if (!dataLoadedRef.current.has('attendance-records')) {
+              await fetchAttendanceRecords();
+              await fetchLiveClassEvents(); // Needed for event dropdown
+              dataLoadedRef.current.add('attendance-records');
+            }
+          }
           break;
           
         case 'exam':
@@ -2555,8 +2713,12 @@ export default function AdminDashboardPage() {
             dataLoadedRef.current.add('cohorts');
           }
           if (subMenu === 'sessions') {
-            await fetchSessions();
-            dataLoadedRef.current.add('sessions');
+            if (!sessionsFetchedRef.current && !sessionsFetchingRef.current && fetchSessionsRef.current) {
+              sessionsFetchedRef.current = false; // Reset to allow fresh fetch
+              sessionsFetchingRef.current = false;
+              await fetchSessionsRef.current();
+              dataLoadedRef.current.add('sessions');
+            }
           }
           // cohort-analytics needs both cohorts and progress data
           if (subMenu === 'cohort-analytics') {
@@ -2610,6 +2772,9 @@ export default function AdminDashboardPage() {
       form.reset();
       setSelectedEventForUpload('');
       fetchProgress(); // Refresh progress data
+      // Refresh attendance records to show newly uploaded data
+      attendanceFetchedRef.current = false;
+      fetchAttendanceRecords();
     } catch (err: any) {
       setError(err.message || 'Failed to upload attendance');
     } finally {
@@ -4218,111 +4383,6 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-                {/* Mentorship applications - Show in overview or cohorts section */}
-                {(!activeSubMenu || activeSubMenu === 'cohort-list' || activeSubMenu === 'cohort-analytics') && (
-                  <>
-        {/* Mentorship applications */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Mentorship Applications</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-zinc-900 text-left text-zinc-300">
-                <tr>
-                  <th className="px-3 py-2">Name</th>
-                  <th className="px-3 py-2">Email</th>
-                  <th className="px-3 py-2">Role</th>
-                  <th className="px-3 py-2">Country</th>
-                  <th className="px-3 py-2">Applied</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {mentorships.map((m) => (
-                  <tr key={m.id} className="border-b border-zinc-800">
-                    <td className="px-3 py-2 text-zinc-50">{m.name}</td>
-                    <td className="px-3 py-2 text-zinc-400">{m.email}</td>
-                    <td className="px-3 py-2 text-zinc-400">{m.role || '—'}</td>
-                    <td className="px-3 py-2 text-zinc-400">{m.country || '—'}</td>
-                    <td className="px-3 py-2 text-zinc-400">
-                      {new Date(m.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-full border px-2 py-1 text-xs ${getStatusClass(m.status)}`}>
-                        {m.status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => updateMentorshipStatus(m.id, 'Approved')}
-                        className="rounded border border-green-500/40 px-2 py-1 text-xs text-green-300 hover:bg-green-500/10 transition cursor-pointer"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateMentorshipStatus(m.id, 'Rejected')}
-                        className="rounded border border-red-500/40 px-2 py-1 text-xs text-red-300 hover:bg-red-500/10 transition cursor-pointer"
-                      >
-                        Reject
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {mentorships.length === 0 && (
-              <p className="p-3 text-sm text-zinc-400">No mentorship applications yet.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Attendance Upload */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <h3 className="mb-3 text-lg font-semibold text-zinc-50">Upload Attendance (Google Meet CSV)</h3>
-          <form onSubmit={handleAttendanceUpload} className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm text-zinc-300">Select Event</label>
-                <select
-                  value={selectedEventForUpload}
-                  onChange={(e) => setSelectedEventForUpload(e.target.value)}
-                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-50"
-                  required
-                >
-                  <option value="">Choose event...</option>
-                  {liveClassEvents.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name} {e.start_time ? `(${new Date(e.start_time).toLocaleDateString()})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-zinc-300">CSV File</label>
-                <input
-                  type="file"
-                  accept=".csv"
-                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-50 file:mr-4 file:rounded file:border-0 file:bg-zinc-800 file:px-4 file:py-2 file:text-sm file:text-zinc-50"
-                  required
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={uploadingAttendance}
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {uploadingAttendance ? 'Uploading...' : 'Upload Attendance'}
-            </button>
-            <p className="text-xs text-zinc-400">
-              CSV should include: Email, Name, Join Time, Leave Time, Duration (minutes)
-            </p>
-          </form>
-        </div>
-                  </>
-                )}
 
             {/* Approved Students - List of approved students only */}
             {activeSubMenu === 'approved-students' && (
@@ -6482,6 +6542,555 @@ export default function AdminDashboardPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Attendance Section */}
+      {activeSection === 'attendance' && (
+        <div className="space-y-6">
+          {/* Upload Attendance */}
+          {activeSubMenu === 'upload-attendance' && (
+            <>
+              <div className="w-full">
+                {/* Combined Header and Form Section */}
+                <div className="rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl">
+                  {/* Header Section */}
+                  <div className="px-8 pt-8 pb-6 border-b-2 border-zinc-800">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-2 border-blue-500/30 flex items-center justify-center">
+                      <span className="text-3xl">📤</span>
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-3xl font-bold text-zinc-50 mb-3">Upload Attendance</h2>
+                      <p className="text-base text-zinc-400 leading-relaxed">
+                        Upload Google Meet CSV files to record student attendance for class sessions and events. 
+                        Select the event or session, then upload your CSV file with attendance data.
+                      </p>
+                    </div>
+                  </div>
+                  </div>
+
+                  {/* Upload Form */}
+                  <div className="p-8">
+                  <form onSubmit={handleAttendanceUpload} className="space-y-6">
+                  {/* Event Selection */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-semibold text-zinc-200">
+                      <span className="text-xl">📅</span>
+                      <span>Select Event or Session</span>
+                      <span className="text-red-400 text-sm">*</span>
+                    </label>
+                    <select
+                      value={selectedEventForUpload}
+                      onChange={(e) => setSelectedEventForUpload(e.target.value)}
+                      className="w-full rounded-lg border-2 border-zinc-700/50 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-50 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all hover:border-zinc-600"
+                      required
+                    >
+                      <option value="">Choose event or session...</option>
+                      
+                      {/* All Sessions Grouped by Cohort */}
+                      {(() => {
+                        // Filter out cancelled sessions, but include all others (past and upcoming)
+                        const activeSessions = allSessions.filter((session: any) => {
+                          return session.status !== 'cancelled';
+                        });
+
+                        // Group sessions by cohort
+                        const sessionsByCohort: Record<string, typeof allSessions> = {};
+                        activeSessions.forEach((session: any) => {
+                          const cohortId = session.cohort_id;
+                          const cohortName = session.cohorts?.name || `Cohort ${cohortId?.substring(0, 8)}` || 'Unknown Cohort';
+                          const key = `${cohortId || 'no-cohort'}|${cohortName}`;
+                          
+                          if (!sessionsByCohort[key]) {
+                            sessionsByCohort[key] = [];
+                          }
+                          sessionsByCohort[key].push(session);
+                        });
+
+                        // Sort sessions within each cohort by session number
+                        Object.keys(sessionsByCohort).forEach((key) => {
+                          sessionsByCohort[key].sort((a: any, b: any) => {
+                            const numA = a.session_number || 0;
+                            const numB = b.session_number || 0;
+                            return numA - numB; // Session 1, 2, 3...
+                          });
+                        });
+
+                        // Sort cohorts alphabetically
+                        const sortedCohortKeys = Object.keys(sessionsByCohort).sort((a, b) => {
+                          const nameA = a.split('|')[1];
+                          const nameB = b.split('|')[1];
+                          return nameA.localeCompare(nameB);
+                        });
+
+                        if (sortedCohortKeys.length > 0) {
+                          return sortedCohortKeys.map((key) => {
+                            const [cohortId, cohortName] = key.split('|');
+                            const sessions = sessionsByCohort[key];
+                            
+                            return (
+                              <optgroup key={key} label={`📚 ${cohortName} - Sessions`}>
+                                {sessions.map((session: any) => {
+                                  const sessionDate = session.session_date 
+                                    ? new Date(session.session_date).toLocaleDateString('en-US', { 
+                                        month: 'short', 
+                                        day: 'numeric', 
+                                        year: 'numeric' 
+                                      })
+                                    : '';
+                                  const sessionLabel = `Session ${session.session_number || ''}${session.topic ? `: ${session.topic}` : ''} ${sessionDate ? `(${sessionDate})` : ''}`;
+                                  
+                                  // Use session ID with a prefix to identify it as a session
+                                  return (
+                                    <option key={`session-${session.id}`} value={`session-${session.id}`}>
+                                      {sessionLabel}
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                            );
+                          });
+                        }
+                        return null;
+                      })()}
+
+                      {/* Other Events Grouped by Type */}
+                      {(() => {
+                        // Group events by type
+                        const groupedEvents: Record<string, typeof liveClassEvents> = {};
+                        liveClassEvents.forEach((e) => {
+                          const eventType = e.type || 'other';
+                          if (!groupedEvents[eventType]) {
+                            groupedEvents[eventType] = [];
+                          }
+                          groupedEvents[eventType].push(e);
+                        });
+
+                        // Sort events within each group by start time (newest first)
+                        Object.keys(groupedEvents).forEach((type) => {
+                          groupedEvents[type].sort((a, b) => {
+                            const timeA = a.start_time ? new Date(a.start_time).getTime() : 0;
+                            const timeB = b.start_time ? new Date(b.start_time).getTime() : 0;
+                            return timeB - timeA; // Newest first
+                          });
+                        });
+
+                        // Render grouped events
+                        const typeLabels: Record<string, string> = {
+                          'live-class': '📅 Live Class Events',
+                          'workshop': '🔧 Workshops',
+                          'assignment': '📝 Assignments',
+                          'quiz': '📋 Quizzes',
+                          'community': '🤝 Community Events',
+                          'deadline': '⏰ Deadlines',
+                          'cohort': '👥 Cohort Events',
+                          'other': '📅 Other Events',
+                        };
+
+                        return Object.keys(groupedEvents)
+                          .sort()
+                          .map((type) => {
+                            const events = groupedEvents[type];
+                            if (events.length === 0) return null;
+                            
+                            return (
+                              <optgroup key={type} label={typeLabels[type] || `📅 ${type}`}>
+                                {events.map((e) => (
+                                  <option key={e.id} value={e.id}>
+                                    {e.name} {e.start_time ? `(${new Date(e.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})` : ''}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            );
+                          });
+                      })()}
+                    </select>
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-zinc-300">
+                      <span className="text-purple-400">📄</span>
+                      <span>CSV File</span>
+                      <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".csv"
+                        className="w-full rounded-lg border-2 border-zinc-700/50 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-50 file:mr-4 file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white file:cursor-pointer hover:file:from-blue-700 hover:file:to-purple-700 transition-all focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10"
+                        required
+                      />
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Select a CSV file exported from Google Meet
+                    </p>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-4 border-t border-zinc-800">
+                    <button
+                      type="submit"
+                      disabled={uploadingAttendance}
+                      className="w-full md:w-auto rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-3.5 text-sm font-semibold text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 flex items-center justify-center gap-2"
+                    >
+                      {uploadingAttendance ? (
+                        <>
+                          <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          <span>Uploading Attendance...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>📤</span>
+                          <span>Upload Attendance</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+                  </div>
+                </div>
+              </div>
+
+              {/* CSV Format Guide */}
+              <div className="mt-6 rounded-2xl border-2 border-zinc-800/50 bg-gradient-to-br from-zinc-900/50 to-zinc-900/30 p-8 shadow-lg">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-500/20 border-2 border-blue-500/30 flex items-center justify-center">
+                    <span className="text-2xl">ℹ️</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-zinc-200 mb-2">CSV Format Requirements</h3>
+                    <p className="text-sm text-zinc-400">
+                      Your CSV file should include the following columns (column names are case-insensitive):
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-green-500/20 hover:border-green-500/40 transition">
+                    <span className="text-2xl">✓</span>
+                    <div>
+                      <span className="text-sm font-bold text-zinc-200">Email</span>
+                      <span className="text-xs text-red-400 ml-2 font-medium">(required)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-zinc-800/50 hover:border-zinc-700/50 transition">
+                    <span className="text-2xl">👤</span>
+                    <div>
+                      <span className="text-sm font-bold text-zinc-200">Name</span>
+                      <span className="text-xs text-zinc-500 ml-2">(optional)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-zinc-800/50 hover:border-zinc-700/50 transition">
+                    <span className="text-2xl">⏰</span>
+                    <div>
+                      <span className="text-sm font-bold text-zinc-200">Join Time</span>
+                      <span className="text-xs text-zinc-500 ml-2">(optional)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-zinc-800/50 hover:border-zinc-700/50 transition">
+                    <span className="text-2xl">⏱️</span>
+                    <div>
+                      <span className="text-sm font-bold text-zinc-200">Leave Time</span>
+                      <span className="text-xs text-zinc-500 ml-2">(optional)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-zinc-800/50 hover:border-zinc-700/50 transition md:col-span-2">
+                    <span className="text-2xl">⏳</span>
+                    <div>
+                      <span className="text-sm font-bold text-zinc-200">Duration (minutes)</span>
+                      <span className="text-xs text-zinc-500 ml-2">(optional)</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-2 border-blue-500/20">
+                  <p className="text-sm text-blue-200 leading-relaxed">
+                    <span className="font-bold text-blue-300">💡 Tip:</span> The system will automatically match students by email address. 
+                    Make sure the email addresses in your CSV match the student emails in the database.
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Attendance Records */}
+          {activeSubMenu === 'attendance-records' && (
+            <div className="w-full">
+              {/* Main Container */}
+              <div className="space-y-6">
+                {/* Filter Section */}
+                <div className="w-full rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl p-6">
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-zinc-300">
+                      <span className="text-lg">🔍</span>
+                      <span>Filter by Event:</span>
+                    </div>
+                    <select
+                      value={attendanceEventFilter}
+                      onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                      className="flex-1 w-full lg:w-auto rounded-lg border-2 border-zinc-700/50 bg-zinc-900/80 px-4 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all hover:border-zinc-600"
+                    >
+                      <option value="all">All Events & Sessions</option>
+                      {(() => {
+                        const activeSessions = allSessions.filter((session: any) => {
+                          return session.status !== 'cancelled';
+                        });
+
+                        const sessionsByCohort: Record<string, typeof allSessions> = {};
+                        activeSessions.forEach((session: any) => {
+                          const cohortId = session.cohort_id;
+                          const cohortName = session.cohorts?.name || `Cohort ${cohortId?.substring(0, 8)}` || 'Unknown Cohort';
+                          const key = `${cohortId || 'no-cohort'}|${cohortName}`;
+                          
+                          if (!sessionsByCohort[key]) {
+                            sessionsByCohort[key] = [];
+                          }
+                          sessionsByCohort[key].push(session);
+                        });
+
+                        Object.keys(sessionsByCohort).forEach((key) => {
+                          sessionsByCohort[key].sort((a: any, b: any) => {
+                            const numA = a.session_number || 0;
+                            const numB = b.session_number || 0;
+                            return numA - numB;
+                          });
+                        });
+
+                        const sortedCohortKeys = Object.keys(sessionsByCohort).sort((a, b) => {
+                          const nameA = a.split('|')[1];
+                          const nameB = b.split('|')[1];
+                          return nameA.localeCompare(nameB);
+                        });
+
+                        return sortedCohortKeys.map((key) => {
+                          const [cohortId, cohortName] = key.split('|');
+                          const sessions = sessionsByCohort[key];
+                          
+                          return (
+                            <optgroup key={key} label={`📚 ${cohortName} - Sessions`}>
+                              {sessions.map((session: any) => {
+                                const sessionDate = session.session_date 
+                                  ? new Date(session.session_date).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric', 
+                                      year: 'numeric' 
+                                    })
+                                  : '';
+                                const sessionLabel = `Session ${session.session_number || ''}${session.topic ? `: ${session.topic}` : ''} ${sessionDate ? `(${sessionDate})` : ''}`;
+                                
+                                return (
+                                  <option key={`session-${session.id}`} value={`session-${session.id}`}>
+                                    {sessionLabel}
+                                  </option>
+                                );
+                              })}
+                            </optgroup>
+                          );
+                        });
+                      })()}
+                      {(() => {
+                        const groupedEvents: Record<string, typeof liveClassEvents> = {};
+                        liveClassEvents.forEach((e) => {
+                          const eventType = e.type || 'other';
+                          if (!groupedEvents[eventType]) {
+                            groupedEvents[eventType] = [];
+                          }
+                          groupedEvents[eventType].push(e);
+                        });
+
+                        Object.keys(groupedEvents).forEach((type) => {
+                          groupedEvents[type].sort((a, b) => {
+                            const timeA = a.start_time ? new Date(a.start_time).getTime() : 0;
+                            const timeB = b.start_time ? new Date(b.start_time).getTime() : 0;
+                            return timeB - timeA;
+                          });
+                        });
+
+                        const typeLabels: Record<string, string> = {
+                          'live-class': '📅 Live Class Events',
+                          'workshop': '🔧 Workshops',
+                          'assignment': '📝 Assignments',
+                          'quiz': '📋 Quizzes',
+                          'community': '🤝 Community Events',
+                          'deadline': '⏰ Deadlines',
+                          'cohort': '👥 Cohort Events',
+                          'other': '📅 Other Events',
+                        };
+
+                        return Object.keys(groupedEvents)
+                          .sort()
+                          .map((type) => {
+                            const events = groupedEvents[type];
+                            if (events.length === 0) return null;
+                            
+                            return (
+                              <optgroup key={type} label={typeLabels[type] || `📅 ${type}`}>
+                                {events.map((e) => (
+                                  <option key={e.id} value={e.id}>
+                                    {e.name} {e.start_time ? `(${new Date(e.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})` : ''}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            );
+                          });
+                      })()}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Records Content */}
+                <div className="w-full rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl overflow-hidden">
+                  {loadingAttendanceRecords ? (
+                    <div className="w-full text-center py-20 text-zinc-400">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400 mb-4"></div>
+                      <p className="text-lg font-medium">Loading attendance records...</p>
+                      <p className="text-sm mt-2 text-zinc-500">Please wait while we fetch the data</p>
+                    </div>
+                  ) : attendanceRecords.length === 0 ? (
+                    <div className="w-full text-center py-20 text-zinc-400">
+                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-zinc-800/50 border-2 border-zinc-700/50 mb-6">
+                        <span className="text-5xl">📋</span>
+                      </div>
+                      <p className="text-xl font-bold text-zinc-300 mb-2">No attendance records found</p>
+                      <p className="text-sm text-zinc-500 mb-4">Upload a CSV file to add attendance records.</p>
+                      <button
+                        onClick={() => {
+                          setActiveSubMenu('upload-attendance');
+                        }}
+                        className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-blue-700 hover:to-purple-700 transition-all"
+                      >
+                        Go to Upload Attendance
+                      </button>
+                    </div>
+                  ) : (
+                  <div className="p-6">
+                    {attendanceRecords.filter((record) => 
+                      attendanceEventFilter === 'all' || record.eventId === attendanceEventFilter
+                    ).length === 0 ? (
+                      <div className="text-center py-12 text-zinc-400">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-zinc-800/50 border-2 border-zinc-700/50 mb-4">
+                          <span className="text-4xl">🔍</span>
+                        </div>
+                        <p className="text-lg font-medium text-zinc-300 mb-2">No records found for selected event</p>
+                        <p className="text-sm text-zinc-500">Try selecting a different event or upload attendance data.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {attendanceRecords
+                          .filter((record) => 
+                            attendanceEventFilter === 'all' || record.eventId === attendanceEventFilter
+                          )
+                          .map((record) => (
+                            <div 
+                              key={record.id} 
+                              className="rounded-xl border-2 border-zinc-800/50 bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 p-5 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all"
+                            >
+                              {/* Student Info Header */}
+                              <div className="flex items-start justify-between mb-4 pb-4 border-b-2 border-zinc-800/50">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-2 border-blue-500/30 flex items-center justify-center">
+                                      <span className="text-lg">👤</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="text-base font-bold text-zinc-200 truncate">{record.studentName}</h3>
+                                      <p className="text-xs text-zinc-400 truncate">{record.studentEmail}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Event Info */}
+                              <div className="mb-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-sm">📅</span>
+                                  <span className="text-xs font-semibold text-zinc-400 uppercase">Event</span>
+                                </div>
+                                <div className="pl-6">
+                                  <p className="text-sm font-semibold text-zinc-200 mb-1">{record.eventName}</p>
+                                  {record.eventType && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 capitalize">
+                                      {record.eventType}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Time Information */}
+                              <div className="space-y-3 mb-4">
+                                {record.joinTime && (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+                                      <span className="text-xs">⏰</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs text-zinc-400 mb-0.5">Join Time</p>
+                                      <p className="text-sm font-medium text-zinc-200">
+                                        {new Date(record.joinTime).toLocaleString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {record.leaveTime && (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                                      <span className="text-xs">🚪</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs text-zinc-400 mb-0.5">Leave Time</p>
+                                      <p className="text-sm font-medium text-zinc-200">
+                                        {new Date(record.leaveTime).toLocaleString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Duration and Upload Date */}
+                              <div className="flex items-center justify-between pt-4 border-t-2 border-zinc-800/50">
+                                {record.durationMinutes && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs">⏱️</span>
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                      <span className="text-sm font-bold text-blue-300">{record.durationMinutes}</span>
+                                      <span className="text-xs text-zinc-500">min</span>
+                                    </span>
+                                  </div>
+                                )}
+                                {record.createdAt && (
+                                  <div className="text-right">
+                                    <p className="text-xs text-zinc-500 mb-0.5">Uploaded</p>
+                                    <p className="text-xs font-medium text-zinc-400">
+                                      {new Date(record.createdAt).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                      })}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
