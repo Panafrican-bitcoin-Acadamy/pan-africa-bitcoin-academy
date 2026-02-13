@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 import { sendApprovalEmail } from '@/lib/email';
+import { validateUUID, secureTextInput } from '@/lib/security-utils';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/audit-log';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,11 +14,21 @@ export async function POST(req: NextRequest) {
 
     const { applicationId, approvedBy } = await req.json();
 
-    if (!applicationId) {
+    // Security: Validate applicationId format (UUID)
+    if (!applicationId || !validateUUID(applicationId)) {
       return NextResponse.json(
-        { error: 'Application ID is required' },
+        { error: 'Invalid application ID format' },
         { status: 400 }
       );
+    }
+
+    // Security: Sanitize approvedBy field if provided
+    let sanitizedApprovedBy = session.email; // Default to session email
+    if (approvedBy) {
+      const approvedByValidation = secureTextInput(approvedBy, { maxLength: 200 });
+      if (approvedByValidation.valid && approvedByValidation.sanitized) {
+        sanitizedApprovedBy = approvedByValidation.sanitized;
+      }
     }
 
     // Get the application
@@ -401,13 +413,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Security: Log approval action for audit
+    logAdminAction(
+      AUDIT_ACTIONS.APPLICATION_APPROVED,
+      session.adminId,
+      session.email,
+      'application',
+      {
+        resourceId: applicationId,
+        details: {
+          applicantEmail: emailLower,
+          applicantName: fullName,
+          cohortId: application.preferred_cohort_id,
+          approvedBy: sanitizedApprovedBy,
+        },
+      }
+    );
+
     // Update application status to Approved
     // Only set profile_id if profile exists
     const { error: updateError } = await supabaseAdmin
       .from('applications')
       .update({
         status: 'Approved',
-        approved_by: approvedBy || null,
+        approved_by: sanitizedApprovedBy,
         approved_at: new Date().toISOString(),
         profile_id: profileId, // Use verified profileId
       })

@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
+import { validateUUID, secureEmailInput, secureTextInput } from '@/lib/security-utils';
+import { containsSQLInjection, containsXSS } from '@/lib/input-security';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/audit-log';
 
 // CSV Upload endpoint for Google Meet attendance
 // Expected CSV format: Email, Name, Join Time, Leave Time, Duration (minutes)
+
+// Security constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max file size
+const MAX_ROWS = 10000; // Maximum number of rows to process
+const ALLOWED_FILE_TYPES = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+const ALLOWED_EXTENSIONS = ['.csv', '.txt'];
+
 export async function POST(req: NextRequest) {
   try {
     const session = requireAdmin(req);
@@ -22,6 +32,42 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Security: Validate eventId format (UUID)
+    if (!validateUUID(eventId)) {
+      return NextResponse.json(
+        { error: 'Invalid event ID format' },
+        { status: 400 }
+      );
+    }
+
+    // Security: Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `File size exceeds maximum allowed size of ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { status: 400 }
+      );
+    }
+
+    // Security: Validate file type
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext));
+    const hasValidMimeType = file.type && ALLOWED_FILE_TYPES.includes(file.type);
+    
+    if (!hasValidExtension && !hasValidMimeType) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Only CSV files are allowed.' },
+        { status: 400 }
+      );
+    }
+
+    // Security: Validate file name (prevent path traversal)
+    if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+      return NextResponse.json(
+        { error: 'Invalid file name' },
+        { status: 400 }
+      );
+    }
+
     // Verify event exists
     const { data: event, error: eventError } = await supabaseAdmin
       .from('events')
@@ -36,10 +82,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Parse CSV
+    // Parse CSV with security checks
     const text = await file.text();
+    
+    // Security: Check for malicious content in file
+    if (containsSQLInjection(text) || containsXSS(text)) {
+      return NextResponse.json(
+        { error: 'File contains potentially dangerous content' },
+        { status: 400 }
+      );
+    }
+
+    // Security: Limit file content size
+    if (text.length > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'File content exceeds maximum size' },
+        { status: 400 }
+      );
+    }
+
     const lines = text.split('\n').filter(line => line.trim());
+    
+    // Security: Limit number of rows
+    if (lines.length > MAX_ROWS) {
+      return NextResponse.json(
+        { error: `File contains too many rows. Maximum allowed: ${MAX_ROWS}` },
+        { status: 400 }
+      );
+    }
+
+    if (lines.length < 2) {
+      return NextResponse.json(
+        { error: 'CSV file must contain at least a header row and one data row' },
+        { status: 400 }
+      );
+    }
+
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    // Security: Validate header row
+    if (headers.length > 50) {
+      return NextResponse.json(
+        { error: 'CSV file contains too many columns' },
+        { status: 400 }
+      );
+    }
 
     // Find column indices
     const emailIdx = headers.findIndex(h => h.includes('email'));
@@ -71,21 +158,57 @@ export async function POST(req: NextRequest) {
     let matched = 0;
 
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      const email = values[emailIdx]?.toLowerCase();
-      
-      if (!email) continue;
+      // Security: Limit processing to prevent DoS
+      if (i > MAX_ROWS) {
+        errors.push(`Processing stopped at row ${i}. Maximum ${MAX_ROWS} rows allowed.`);
+        break;
+      }
 
-      const studentId = emailToProfileId.get(email);
-      if (!studentId) {
-        errors.push(`No student found for email: ${email}`);
+      const values = lines[i].split(',').map(v => v.trim());
+      
+      // Security: Validate row length
+      if (values.length > 50) {
+        errors.push(`Row ${i + 1} contains too many columns. Skipping.`);
         continue;
       }
 
-      const name = nameIdx >= 0 ? values[nameIdx] : null;
+      const emailRaw = values[emailIdx];
+      if (!emailRaw) continue;
+
+      // Security: Validate and sanitize email
+      const emailValidation = secureEmailInput(emailRaw);
+      if (!emailValidation.valid || !emailValidation.normalized) {
+        errors.push(`Row ${i + 1}: Invalid email format: ${emailRaw.substring(0, 50)}`);
+        continue;
+      }
+      const email = emailValidation.normalized.toLowerCase();
+
+      const studentId = emailToProfileId.get(email);
+      if (!studentId) {
+        errors.push(`Row ${i + 1}: No student found for email: ${email}`);
+        continue;
+      }
+
+      // Security: Sanitize name if present
+      let name = null;
+      if (nameIdx >= 0 && values[nameIdx]) {
+        const nameValidation = secureTextInput(values[nameIdx], { maxLength: 200 });
+        if (nameValidation.valid && nameValidation.sanitized) {
+          name = nameValidation.sanitized;
+        }
+      }
+
       const joinTime = joinTimeIdx >= 0 ? parseDateTime(values[joinTimeIdx]) : null;
       const leaveTime = leaveTimeIdx >= 0 ? parseDateTime(values[leaveTimeIdx]) : null;
-      const duration = durationIdx >= 0 ? parseInt(values[durationIdx]) || null : null;
+      
+      // Security: Validate duration (must be positive integer)
+      let duration = null;
+      if (durationIdx >= 0 && values[durationIdx]) {
+        const durationValue = parseInt(values[durationIdx]);
+        if (!isNaN(durationValue) && durationValue >= 0 && durationValue <= 1440) { // Max 24 hours
+          duration = durationValue;
+        }
+      }
 
       records.push({
         student_id: studentId,
@@ -117,6 +240,26 @@ export async function POST(req: NextRequest) {
         );
       }
     }
+
+    // Security: Log the upload action for audit purposes
+    logAdminAction(
+      AUDIT_ACTIONS.ATTENDANCE_UPLOADED,
+      session.adminId,
+      session.email,
+      'attendance',
+      {
+        resourceId: eventId,
+        details: {
+          eventName: event.name,
+          eventType: event.type,
+          rowsProcessed: processed,
+          rowsMatched: matched,
+          errorCount: errors.length,
+          fileName: file.name,
+          fileSize: file.size,
+        },
+      }
+    );
 
     const res = NextResponse.json({
       success: true,
