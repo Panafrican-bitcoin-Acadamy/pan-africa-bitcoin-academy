@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  validateRequestSize, 
+  checkConcurrentConnections,
+  releaseConnection 
+} from '@/lib/rate-limit';
 import { ENDPOINT_RATE_LIMITS, getRateLimitForPath } from '@/lib/api-rate-limit';
 
 export function middleware(request: NextRequest) {
@@ -16,12 +22,42 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Get client IP
+  const clientIP = getClientIP(request);
+
+  // Security: Check request size
+  const contentLength = request.headers.get('content-length');
+  if (contentLength) {
+    const sizeCheck = validateRequestSize(parseInt(contentLength, 10));
+    if (!sizeCheck.valid) {
+      return NextResponse.json(
+        { error: sizeCheck.error || 'Request too large' },
+        { status: 413 } // Payload Too Large
+      );
+    }
+  }
+
+  // Security: Check concurrent connections per IP
+  const connectionCheck = checkConcurrentConnections(clientIP);
+  if (!connectionCheck.allowed) {
+    console.warn(`[SECURITY] IP ${clientIP} exceeded concurrent connection limit`);
+    return NextResponse.json(
+      {
+        error: 'Too many concurrent connections. Please try again later.',
+        retryAfter: 60,
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': '60',
+        },
+      }
+    );
+  }
+
   // Get rate limit config based on endpoint path and method
   const method = request.method;
   const config = getRateLimitForPath(pathname, method);
-  
-  // Get client IP
-  const clientIP = getClientIP(request);
   
   // Create unique identifier for this endpoint + IP
   const identifier = `${pathname}:${clientIP}`;
@@ -29,8 +65,27 @@ export function middleware(request: NextRequest) {
   // Check rate limit
   const rateLimit = checkRateLimit(identifier, config);
 
+  // If IP is blocked, return 403 Forbidden
+  if (rateLimit.blocked) {
+    releaseConnection(clientIP); // Release connection
+    return NextResponse.json(
+      {
+        error: 'Access denied. Your IP has been temporarily blocked due to repeated violations.',
+        blockReason: rateLimit.blockReason,
+        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+      },
+      {
+        status: 403, // Forbidden
+        headers: {
+          'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
+
   // If rate limit exceeded, return 429 response
   if (!rateLimit.allowed) {
+    releaseConnection(clientIP); // Release connection
     return NextResponse.json(
       {
         error: 'Too many requests. Please try again later.',
@@ -55,6 +110,12 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-RateLimit-Limit', config.maxRequests.toString());
   response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
   response.headers.set('X-RateLimit-Reset', new Date(rateLimit.resetTime).toISOString());
+  response.headers.set('X-Concurrent-Connections', connectionCheck.active.toString());
+  response.headers.set('X-Max-Concurrent-Connections', connectionCheck.max.toString());
+
+  // Release connection when response is sent (using AbortController)
+  // Note: In Next.js middleware, we can't easily track response completion
+  // This is a limitation - connections will auto-release after timeout
 
   return response;
 }
