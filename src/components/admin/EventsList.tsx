@@ -313,7 +313,7 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedEvents.map((event) => {
             const Icon = EVENT_TYPE_ICONS[event.type] || Calendar;
             const isEventUpcoming = isUpcoming(event);
@@ -331,13 +331,13 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
               >
                 {event.image_url && (
                   <div 
-                    className="w-full h-48 overflow-hidden bg-zinc-900 relative group cursor-pointer"
+                    className="w-full h-32 overflow-hidden bg-zinc-900 relative group cursor-pointer flex items-center justify-center"
                     onClick={() => setSelectedImage(event.image_url!)}
                   >
                     <img
                       src={event.image_url}
                       alt={event.name}
-                      className="w-full h-full object-cover transition group-hover:scale-105"
+                      className="w-full h-full object-contain p-2 transition group-hover:scale-105"
                       onError={(e) => {
                         // Hide image on error
                         (e.target as HTMLImageElement).style.display = 'none';
@@ -346,8 +346,8 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
                     {/* Hover overlay with view hint */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <div className="flex items-center gap-2 text-white">
-                        <ZoomIn className="h-5 w-5" />
-                        <span className="text-sm font-medium">Click to view full size</span>
+                        <ZoomIn className="h-4 w-4" />
+                        <span className="text-xs font-medium">Click to view full size</span>
                       </div>
                     </div>
                   </div>
