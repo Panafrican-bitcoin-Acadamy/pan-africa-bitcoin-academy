@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, AlertCircle, CheckCircle2, Image as ImageIcon, X } from 'lucide-react';
 
 interface Cohort {
   id: string;
@@ -18,6 +18,7 @@ interface EventFormData {
   description: string;
   link: string;
   recording_url: string;
+  image_url: string;
   cohort_id: string | null;
   for_all: boolean;
   chapter_number: string;
@@ -42,6 +43,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
     description: '',
     link: '',
     recording_url: '',
+    image_url: '',
     cohort_id: null,
     for_all: true,
     chapter_number: '',
@@ -53,6 +55,10 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch cohorts on mount
   useEffect(() => {
@@ -84,6 +90,80 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
       return true;
     } catch {
       return false;
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      setError('Invalid image type. Please upload JPEG, PNG, WebP, or GIF.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size exceeds 5MB limit. Please upload a smaller image.');
+      return;
+    }
+
+    setImageFile(file);
+    setError(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageRemove = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, image_url: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return null;
+
+    setUploadingImage(true);
+    try {
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+      });
+
+      // Upload to server
+      const response = await fetch('/api/events/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ imageData: base64 }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+
+      return data.imageUrl;
+    } catch (err: any) {
+      console.error('Error uploading image:', err);
+      setError(err.message || 'Failed to upload image');
+      return null;
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -165,6 +245,18 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
     setSubmitting(true);
 
     try {
+      // Upload image if selected
+      let imageUrl = formData.image_url;
+      if (imageFile && !imageUrl) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        } else {
+          setSubmitting(false);
+          return; // Error already set in uploadImage
+        }
+      }
+
       // Prepare payload
       const payload: any = {
         name: formData.name.trim(),
@@ -174,6 +266,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
         description: formData.description.trim() || null,
         link: formData.link.trim() || null,
         recording_url: formData.recording_url.trim() || null,
+        image_url: imageUrl || null,
         for_all: formData.for_all,
         cohort_id: formData.for_all ? null : formData.cohort_id,
       };
@@ -207,11 +300,17 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
         description: '',
         link: '',
         recording_url: '',
+        image_url: '',
         cohort_id: null,
         for_all: true,
         chapter_number: '',
       });
       setFieldErrors({});
+      setImageFile(null);
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
 
       // Dispatch refresh event for EventsList
       if (typeof window !== 'undefined') {
@@ -510,6 +609,58 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
           </div>
           {fieldErrors.recording_url && (
             <p className="mt-1 text-xs text-red-400">{fieldErrors.recording_url}</p>
+          )}
+        </div>
+
+        {/* Event Image */}
+        <div>
+          <label htmlFor="event-image" className="block text-sm font-medium text-zinc-300 mb-2">
+            Event Image <span className="text-zinc-500 text-xs">(Optional)</span>
+          </label>
+          {imagePreview ? (
+            <div className="relative">
+              <div className="relative rounded-lg border border-zinc-700 bg-zinc-950 overflow-hidden">
+                <img
+                  src={imagePreview}
+                  alt="Event preview"
+                  className="w-full h-48 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={handleImageRemove}
+                  className="absolute top-2 right-2 rounded-full bg-red-500/90 hover:bg-red-500 p-1.5 text-white transition"
+                  title="Remove image"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              {uploadingImage && (
+                <p className="mt-2 text-xs text-zinc-400">Uploading image...</p>
+              )}
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="event-image"
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-lg bg-zinc-950 cursor-pointer hover:border-cyan-400/50 transition"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <ImageIcon className="h-8 w-8 text-zinc-500 mb-2" />
+                  <p className="text-sm text-zinc-400 mb-1">
+                    <span className="font-medium text-cyan-400">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-zinc-500">PNG, JPG, WebP or GIF (MAX. 5MB)</p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  id="event-image"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </label>
+            </div>
           )}
         </div>
 

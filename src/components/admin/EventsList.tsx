@@ -12,6 +12,7 @@ interface Event {
   description: string | null;
   link: string | null;
   recording_url: string | null;
+  image_url: string | null;
   cohort_id: string | null;
   cohort_name?: string | null;
   created_at: string;
@@ -70,6 +71,7 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
         description: event.description || null,
         link: event.link && event.link !== '#' ? event.link : null,
         recording_url: event.recordingUrl || null,
+        image_url: event.imageUrl || null,
         cohort_id: event.cohortId || null,
         cohort_name: null, // We'll fetch this separately if needed
         created_at: '',
@@ -301,15 +303,29 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
             return (
               <div
                 key={event.id}
-                className={`rounded-lg border p-4 transition ${
+                className={`rounded-lg border overflow-hidden transition ${
                   isEventUpcoming
                     ? 'border-cyan-500/30 bg-cyan-500/5'
                     : 'border-zinc-700/50 bg-zinc-950/50'
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
+                {event.image_url && (
+                  <div className="w-full h-48 overflow-hidden bg-zinc-900">
+                    <img
+                      src={event.image_url}
+                      alt={event.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Hide image on error
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
                       <div className={`rounded-lg p-2 ${
                         isEventUpcoming ? 'bg-cyan-500/20' : 'bg-zinc-800'
                       }`}>
@@ -380,18 +396,19 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
                           </a>
                         )}
                       </div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => handleDelete(event.id, event.name)}
-                      disabled={deletingId === event.id}
-                      className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Delete event"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleDelete(event.id, event.name)}
+                        disabled={deletingId === event.id}
+                        className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Delete event"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
