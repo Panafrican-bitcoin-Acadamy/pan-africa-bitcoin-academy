@@ -68,6 +68,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Extract email and name for logging and email sending
+    const emailLower = application.email?.toLowerCase().trim();
+    const fullName = `${application.first_name || ''} ${application.last_name || ''}`.trim();
+
     // Security: Log rejection action for audit
     logAdminAction(
       AUDIT_ACTIONS.APPLICATION_REJECTED,
@@ -106,9 +110,6 @@ export async function POST(req: NextRequest) {
     // Send rejection email to student
     let emailSent = false;
     let emailError = null;
-    
-    const emailLower = application.email?.toLowerCase().trim();
-    const fullName = `${application.first_name || ''} ${application.last_name || ''}`.trim();
     
     // Validate email before sending
     if (!emailLower || !emailLower.includes('@')) {
