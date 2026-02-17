@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, AlertCircle, CheckCircle2, Image as ImageIcon, X } from 'lucide-react';
+import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, AlertCircle, CheckCircle2, Image as ImageIcon, X, ZoomIn, Download, RotateCw, Camera, RefreshCw, Crop, Maximize2 } from 'lucide-react';
+import { 
+  getImageDimensions, 
+  validateImageDimensions, 
+  compressImage, 
+  fileToBase64,
+  generateUniqueFileName,
+  type ImageDimensions,
+  type ImageValidationResult 
+} from '@/lib/image-utils';
 
 interface Cohort {
   id: string;
@@ -19,6 +28,7 @@ interface EventFormData {
   link: string;
   recording_url: string;
   image_url: string;
+  image_alt_text: string; // Alt text for accessibility
   cohort_id: string | null;
   for_all: boolean;
   chapter_number: string;
@@ -44,6 +54,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
     link: '',
     recording_url: '',
     image_url: '',
+    image_alt_text: '',
     cohort_id: null,
     for_all: true,
     chapter_number: '',
@@ -58,12 +69,47 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageUploaded, setImageUploaded] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageRotation, setImageRotation] = useState(0);
+  const [imageZoom, setImageZoom] = useState(100);
+  const [imageDimensions, setImageDimensions] = useState<ImageDimensions | null>(null);
+  const [imageValidation, setImageValidation] = useState<ImageValidationResult | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [enableCompression, setEnableCompression] = useState(true);
+  const [compressionQuality, setCompressionQuality] = useState(85);
+  const [maxImageWidth, setMaxImageWidth] = useState(1920);
+  const [showCropTool, setShowCropTool] = useState(false);
+  const [cropArea, setCropArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch cohorts on mount
   useEffect(() => {
     fetchCohorts();
   }, []);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showImageModal) {
+        setShowImageModal(false);
+      }
+    };
+
+    if (showImageModal) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showImageModal]);
 
   const fetchCohorts = async () => {
     setLoadingCohorts(true);
@@ -93,77 +139,289 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      setError('Invalid image type. Please upload JPEG, PNG, WebP, or GIF.');
-      return;
+    await processImageFile(file);
+  };
+
+  const processImageFile = async (file: File) => {
+    try {
+      setError(null);
+      setUploadError(null);
+      setImageUploaded(false);
+      setUploadProgress(0);
+      setRetryCount(0);
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setError('Invalid image type. Please upload JPEG, PNG, WebP, or GIF.');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size exceeds 5MB limit. Please upload a smaller image.');
+        return;
+      }
+
+      // Get and validate image dimensions
+      const dimensions = await getImageDimensions(file);
+      setImageDimensions(dimensions);
+
+      // Validate dimensions (optional - can be configured)
+      const validation = await validateImageDimensions(file, {
+        minWidth: 100,
+        minHeight: 100,
+        maxWidth: 10000,
+        maxHeight: 10000,
+      });
+
+      setImageValidation(validation);
+
+      if (!validation.valid) {
+        setError(validation.error || 'Image validation failed');
+        return;
+      }
+
+      // Set file and create preview
+      setImageFile(file);
+      
+      // Create preview immediately
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Auto-upload the image immediately after selection
+      const uploadedUrl = await uploadImage();
+      if (uploadedUrl) {
+        setFormData(prev => ({ ...prev, image_url: uploadedUrl }));
+        setImageUploaded(true);
+      }
+    } catch (err: any) {
+      console.error('Error processing image:', err);
+      setError(err.message || 'Failed to process image');
     }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image size exceeds 5MB limit. Please upload a smaller image.');
-      return;
-    }
-
-    setImageFile(file);
-    setError(null);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleImageRemove = () => {
     setImageFile(null);
     setImagePreview(null);
-    setFormData(prev => ({ ...prev, image_url: '' }));
+    setFormData(prev => ({ ...prev, image_url: '', image_alt_text: '' }));
+    setImageUploaded(false);
+    setUploadProgress(0);
+    setImageRotation(0);
+    setImageZoom(100);
+    setImageDimensions(null);
+    setImageValidation(null);
+    setUploadError(null);
+    setRetryCount(0);
+    setCropArea(null);
+    setShowCropTool(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
   };
 
-  const uploadImage = async (): Promise<string | null> => {
+  const handleCameraCapture = () => {
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
+  };
+
+  const handleCameraSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await processImageFile(file);
+    }
+  };
+
+  const handleImageRotate = () => {
+    setImageRotation((prev) => (prev + 90) % 360);
+  };
+
+  const handleZoomIn = () => {
+    setImageZoom((prev) => Math.min(prev + 25, 200));
+  };
+
+  const handleZoomOut = () => {
+    setImageZoom((prev) => Math.max(prev - 25, 50));
+  };
+
+  const handleZoomReset = () => {
+    setImageZoom(100);
+    setImageRotation(0);
+  };
+
+  const handleDownloadImage = () => {
+    if (imagePreview && imageFile) {
+      const link = document.createElement('a');
+      link.href = imagePreview;
+      link.download = imageFile.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (uploadingImage) return; // Don't allow drop while uploading
+    
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    await processImageFile(file);
+  };
+
+  const uploadImage = async (retry = false): Promise<string | null> => {
     if (!imageFile) return null;
 
+    if (retry) {
+      setRetryCount(prev => prev + 1);
+    }
+
     setUploadingImage(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
     try {
-      // Convert file to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(imageFile);
-      });
+      // Step 1: Process image (compression/resizing) - 10%
+      setUploadProgress(10);
+      
+      let processedFile: File | Blob = imageFile;
+      let base64: string;
 
-      // Upload to server
-      const response = await fetch('/api/events/upload-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ imageData: base64 }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload image');
+      if (enableCompression && imageFile.size > 500 * 1024) { // Compress if > 500KB
+        setUploadProgress(15);
+        const compressedBlob = await compressImage(imageFile, {
+          maxWidth: maxImageWidth,
+          maxHeight: maxImageWidth,
+          quality: compressionQuality / 100,
+          format: 'jpeg',
+          stripExif: true, // Remove EXIF data
+        });
+        
+        // Convert blob to file-like object for upload
+        processedFile = compressedBlob;
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(compressedBlob);
+        });
+      } else {
+        // Convert file to base64 with EXIF stripping
+        setUploadProgress(20);
+        base64 = await fileToBase64(imageFile, {
+          stripExif: true,
+          quality: 0.9,
+        });
       }
 
+      setUploadProgress(30);
+
+      // Step 2: Upload to server - 30% to 90%
+      const xhr = new XMLHttpRequest();
+      
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          // Map from 30% to 90% (upload progress)
+          const progress = 30 + (e.loaded / e.total) * 60;
+          setUploadProgress(Math.min(progress, 90));
+        }
+      });
+
+      const uploadPromise = new Promise<{ imageUrl: string }>((resolve, reject) => {
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              // Log successful upload
+              console.log('[Image Upload] Success:', {
+                fileName: imageFile.name,
+                originalSize: imageFile.size,
+                processedSize: processedFile instanceof Blob ? processedFile.size : imageFile.size,
+                dimensions: imageDimensions,
+                retryCount,
+              });
+              resolve(data);
+            } catch (e) {
+              reject(new Error('Invalid response from server'));
+            }
+          } else {
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              reject(new Error(errorData.error || 'Failed to upload image'));
+            } catch {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload cancelled'));
+        });
+
+        xhr.open('POST', '/api/events/upload-image');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.withCredentials = true;
+        xhr.send(JSON.stringify({ 
+          imageData: base64,
+          fileName: imageFile.name,
+          altText: formData.image_alt_text || undefined,
+        }));
+      });
+
+      const data = await uploadPromise;
+      setUploadProgress(100);
+      
       return data.imageUrl;
     } catch (err: any) {
-      console.error('Error uploading image:', err);
-      setError(err.message || 'Failed to upload image');
+      console.error('[Image Upload] Error:', {
+        error: err.message,
+        fileName: imageFile.name,
+        retryCount,
+      });
+      setUploadError(err.message || 'Failed to upload image');
+      setUploadProgress(0);
       return null;
     } finally {
       setUploadingImage(false);
+      // Keep progress at 100 if successful, reset if error
+      if (uploadProgress < 100 && uploadError) {
+        setTimeout(() => setUploadProgress(0), 1000);
+      }
+    }
+  };
+
+  const handleRetryUpload = async () => {
+    if (imageFile && retryCount < 3) {
+      const uploadedUrl = await uploadImage(true);
+      if (uploadedUrl) {
+        setFormData(prev => ({ ...prev, image_url: uploadedUrl }));
+        setImageUploaded(true);
+        setUploadError(null);
+      }
     }
   };
 
@@ -245,9 +503,10 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
     setSubmitting(true);
 
     try {
-      // Upload image if selected
+      // Use already uploaded image URL if available, otherwise upload now
       let imageUrl = formData.image_url;
-      if (imageFile && !imageUrl) {
+      if (imageFile && !imageUrl && !imageUploaded) {
+        // Only upload if not already uploaded
         const uploadedUrl = await uploadImage();
         if (uploadedUrl) {
           imageUrl = uploadedUrl;
@@ -301,6 +560,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
         link: '',
         recording_url: '',
         image_url: '',
+        image_alt_text: '',
         cohort_id: null,
         for_all: true,
         chapter_number: '',
@@ -308,8 +568,19 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
       setFieldErrors({});
       setImageFile(null);
       setImagePreview(null);
+      setImageUploaded(false);
+      setUploadProgress(0);
+      setImageDimensions(null);
+      setImageValidation(null);
+      setUploadError(null);
+      setRetryCount(0);
+      setImageRotation(0);
+      setImageZoom(100);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
       }
 
       // Dispatch refresh event for EventsList
@@ -618,48 +889,275 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
             Event Image <span className="text-zinc-500 text-xs">(Optional)</span>
           </label>
           {imagePreview ? (
-            <div className="relative">
-              <div className="relative rounded-lg border border-zinc-700 bg-zinc-950 overflow-hidden">
-                <img
-                  src={imagePreview}
-                  alt="Event preview"
-                  className="w-full h-48 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={handleImageRemove}
-                  className="absolute top-2 right-2 rounded-full bg-red-500/90 hover:bg-red-500 p-1.5 text-white transition"
-                  title="Remove image"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+            <div className="space-y-3">
+              <div className="relative rounded-lg border border-zinc-700 bg-zinc-950 overflow-hidden group">
+                <div className="relative">
+                  <div 
+                    className="relative w-full h-48 overflow-hidden cursor-pointer"
+                    onClick={() => !uploadingImage && setShowImageModal(true)}
+                  >
+                    <img
+                      src={imagePreview}
+                      alt="Event preview"
+                      className={`w-full h-full object-cover transition-all ${
+                        uploadingImage ? 'opacity-50' : imageUploaded ? 'opacity-100 group-hover:opacity-90' : 'opacity-75'
+                      }`}
+                      style={{
+                        transform: `rotate(${imageRotation}deg) scale(${imageZoom / 100})`,
+                        transition: 'transform 0.3s ease',
+                      }}
+                    />
+                    {/* Click to view full size hint */}
+                    {!uploadingImage && (
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="flex items-center gap-2 text-white">
+                          <ZoomIn className="h-5 w-5" />
+                          <span className="text-sm font-medium">Click to view full size</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Overlay when uploading */}
+                  {uploadingImage && (
+                    <div className="absolute inset-0 bg-zinc-900/70 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mb-2"></div>
+                        <p className="text-sm text-cyan-300 font-medium">Uploading...</p>
+                      </div>
+                    </div>
+                  )}
+                  {/* Success indicator */}
+                  {imageUploaded && !uploadingImage && (
+                    <div className="absolute top-2 left-2 rounded-full bg-green-500/90 px-2 py-1 flex items-center gap-1.5 z-10">
+                      <CheckCircle2 className="h-4 w-4 text-white" />
+                      <span className="text-xs text-white font-medium">Uploaded</span>
+                    </div>
+                  )}
+                  {/* Action buttons */}
+                  {!uploadingImage && (
+                    <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
+                      {/* View full size button */}
+                      <button
+                        type="button"
+                        onClick={() => setShowImageModal(true)}
+                        className="rounded-full bg-blue-500/90 hover:bg-blue-500 p-2 text-white transition shadow-lg"
+                        title="View full size"
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                      </button>
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={handleImageRemove}
+                        className="rounded-full bg-red-500/90 hover:bg-red-500 p-2 text-white transition shadow-lg"
+                        title="Remove image"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
+              
+              {/* Image controls */}
+              {imageUploaded && !uploadingImage && (
+                <div className="flex items-center justify-between gap-2 p-2 bg-zinc-900/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleImageRotate}
+                      className="rounded px-2 py-1 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition flex items-center gap-1"
+                      title="Rotate image"
+                    >
+                      <RotateCw className="h-3.5 w-3.5" />
+                      Rotate
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleZoomIn}
+                      className="rounded px-2 py-1 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition flex items-center gap-1"
+                      title="Zoom in"
+                    >
+                      <ZoomIn className="h-3.5 w-3.5" />
+                      Zoom In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleZoomOut}
+                      className="rounded px-2 py-1 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition flex items-center gap-1"
+                      title="Zoom out"
+                    >
+                      <ZoomIn className="h-3.5 w-3.5 rotate-180" />
+                      Zoom Out
+                    </button>
+                    {(imageZoom !== 100 || imageRotation !== 0) && (
+                      <button
+                        type="button"
+                        onClick={handleZoomReset}
+                        className="rounded px-2 py-1 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-zinc-800 transition"
+                        title="Reset zoom and rotation"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadImage}
+                    className="rounded px-2 py-1 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition flex items-center gap-1"
+                    title="Download image"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </button>
+                </div>
+              )}
+              
+              {/* Upload Progress Bar */}
               {uploadingImage && (
-                <p className="mt-2 text-xs text-zinc-400">Uploading image...</p>
+                <div className="space-y-2 rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
+                      <span className="text-sm font-medium text-cyan-300">Uploading image...</span>
+                    </div>
+                    <span className="text-sm font-semibold text-cyan-400">{Math.round(uploadProgress)}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden shadow-inner">
+                    <div
+                      className="h-full bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 transition-all duration-300 ease-out shadow-lg"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Please wait while your image is being uploaded to the server...
+                  </p>
+                </div>
+              )}
+              
+              {/* File info when uploaded */}
+              {imageUploaded && !uploadingImage && imageFile && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-zinc-400 bg-zinc-900/50 rounded-lg px-3 py-2">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+                      <span className="truncate max-w-[200px]" title={imageFile.name}>
+                        {imageFile.name}
+                      </span>
+                      <span className="text-zinc-500">
+                        ({(imageFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </span>
+                  </div>
+                  
+                  {/* Image dimensions info */}
+                  {imageDimensions && (
+                    <div className="text-xs text-zinc-500 bg-zinc-900/30 rounded-lg px-3 py-1.5">
+                      Dimensions: {imageDimensions.width} × {imageDimensions.height}px
+                      {imageValidation?.aspectRatio && (
+                        <span className="ml-2">
+                          • Aspect Ratio: {imageValidation.aspectRatio.toFixed(2)}:1
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Alt text input for accessibility */}
+                  <div>
+                    <label htmlFor="image-alt-text" className="block text-xs font-medium text-zinc-400 mb-1">
+                      Alt Text (for accessibility)
+                    </label>
+                    <input
+                      id="image-alt-text"
+                      type="text"
+                      value={formData.image_alt_text}
+                      onChange={(e) => handleChange('image_alt_text', e.target.value)}
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      placeholder="Describe the image for screen readers..."
+                      maxLength={200}
+                    />
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      {formData.image_alt_text.length}/200 characters
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload error with retry */}
+              {uploadError && !uploadingImage && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-red-300 mb-1">Upload Failed</p>
+                      <p className="text-xs text-red-400/80">{uploadError}</p>
+                    </div>
+                    {retryCount < 3 && (
+                      <button
+                        type="button"
+                        onClick={handleRetryUpload}
+                        className="flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium text-red-300 hover:text-red-200 hover:bg-red-500/20 transition"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Retry
+                      </button>
+                    )}
+                  </div>
+                  {retryCount >= 3 && (
+                    <p className="mt-2 text-xs text-red-400/60">
+                      Maximum retry attempts reached. Please try uploading again.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           ) : (
-            <div>
-              <label
-                htmlFor="event-image"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-lg bg-zinc-950 cursor-pointer hover:border-cyan-400/50 transition"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <ImageIcon className="h-8 w-8 text-zinc-500 mb-2" />
-                  <p className="text-sm text-zinc-400 mb-1">
-                    <span className="font-medium text-cyan-400">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-zinc-500">PNG, JPG, WebP or GIF (MAX. 5MB)</p>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  id="event-image"
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-              </label>
+            <div className="space-y-3">
+              <div>
+                <label
+                  htmlFor="event-image"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg bg-zinc-950 cursor-pointer transition ${
+                    uploadingImage
+                      ? 'border-cyan-400 bg-cyan-500/10'
+                      : 'border-zinc-700 hover:border-cyan-400/50'
+                  }`}
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    {uploadingImage ? (
+                      <>
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mb-2"></div>
+                        <p className="text-sm text-cyan-300 font-medium mb-1">Uploading image...</p>
+                        <div className="w-48 bg-zinc-800 rounded-full h-2 overflow-hidden mt-2">
+                          <div
+                            className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-300 ease-out"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-cyan-400 mt-2 font-medium">{Math.round(uploadProgress)}%</p>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-8 w-8 text-zinc-500 mb-2" />
+                        <p className="text-sm text-zinc-400 mb-1">
+                          <span className="font-medium text-cyan-400">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-zinc-500">PNG, JPG, WebP or GIF (MAX. 5MB)</p>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    id="event-image"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    disabled={uploadingImage}
+                    aria-label="Upload event image"
+                  />
+                </label>
+              </div>
             </div>
           )}
         </div>
@@ -698,6 +1196,114 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
           </button>
         </div>
       </form>
+
+      {/* Full-Size Image Modal */}
+      {showImageModal && imagePreview && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div 
+            className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 z-10 rounded-full bg-red-500/90 hover:bg-red-500 p-3 text-white transition shadow-lg"
+              title="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Image with zoom and rotation */}
+            <div className="relative w-full h-full flex items-center justify-center overflow-auto">
+              <img
+                src={imagePreview}
+                alt="Event image full size"
+                className="max-w-full max-h-full object-contain"
+                style={{
+                  transform: `rotate(${imageRotation}deg) scale(${imageZoom / 100})`,
+                  transition: 'transform 0.3s ease',
+                }}
+              />
+            </div>
+
+            {/* Controls overlay */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-zinc-900/90 backdrop-blur-sm rounded-lg px-4 py-3 border border-zinc-700">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                disabled={imageZoom <= 50}
+                className="rounded px-3 py-2 text-sm text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                title="Zoom out"
+              >
+                <ZoomIn className="h-4 w-4 rotate-180" />
+                <span>Zoom Out</span>
+              </button>
+              
+              <span className="text-sm text-zinc-400 min-w-[60px] text-center">
+                {imageZoom}%
+              </span>
+              
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                disabled={imageZoom >= 200}
+                className="rounded px-3 py-2 text-sm text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                title="Zoom in"
+              >
+                <ZoomIn className="h-4 w-4" />
+                <span>Zoom In</span>
+              </button>
+
+              <div className="w-px h-6 bg-zinc-700" />
+
+              <button
+                type="button"
+                onClick={handleImageRotate}
+                className="rounded px-3 py-2 text-sm text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition flex items-center gap-2"
+                title="Rotate 90°"
+              >
+                <RotateCw className="h-4 w-4" />
+                <span>Rotate</span>
+              </button>
+
+              {(imageZoom !== 100 || imageRotation !== 0) && (
+                <>
+                  <div className="w-px h-6 bg-zinc-700" />
+                  <button
+                    type="button"
+                    onClick={handleZoomReset}
+                    className="rounded px-3 py-2 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-zinc-800 transition"
+                    title="Reset zoom and rotation"
+                  >
+                    Reset
+                  </button>
+                </>
+              )}
+
+              <div className="w-px h-6 bg-zinc-700" />
+
+              <button
+                type="button"
+                onClick={handleDownloadImage}
+                className="rounded px-3 py-2 text-sm text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition flex items-center gap-2"
+                title="Download image"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download</span>
+              </button>
+            </div>
+
+            {/* Keyboard shortcuts hint */}
+            <div className="absolute top-4 left-4 bg-zinc-900/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-zinc-400 border border-zinc-700">
+              <p>Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">ESC</kbd> to close</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, Trash2, Edit, ExternalLink, AlertCircle, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, Trash2, Edit, ExternalLink, AlertCircle, RefreshCw, ZoomIn, X } from 'lucide-react';
 
 interface Event {
   id: string;
@@ -46,6 +46,7 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past' | 'everyone' | 'cohort'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -101,6 +102,25 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
       window.removeEventListener('refreshEventsList', handleRefresh);
     };
   }, []);
+
+  // Handle ESC key to close image modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedImage) {
+        setSelectedImage(null);
+      }
+    };
+
+    if (selectedImage) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedImage]);
 
   const handleDelete = async (eventId: string, eventName: string) => {
     if (!confirm(`Are you sure you want to delete "${eventName}"? This action cannot be undone.`)) {
@@ -310,16 +330,26 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
                 }`}
               >
                 {event.image_url && (
-                  <div className="w-full h-48 overflow-hidden bg-zinc-900">
+                  <div 
+                    className="w-full h-48 overflow-hidden bg-zinc-900 relative group cursor-pointer"
+                    onClick={() => setSelectedImage(event.image_url!)}
+                  >
                     <img
                       src={event.image_url}
                       alt={event.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition group-hover:scale-105"
                       onError={(e) => {
                         // Hide image on error
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
+                    {/* Hover overlay with view hint */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="flex items-center gap-2 text-white">
+                        <ZoomIn className="h-5 w-5" />
+                        <span className="text-sm font-medium">Click to view full size</span>
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div className="p-4">
@@ -414,6 +444,43 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Full-Size Image Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div 
+            className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 rounded-full bg-red-500/90 hover:bg-red-500 p-3 text-white transition shadow-lg"
+              title="Close (ESC)"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Full-size image */}
+            <div className="relative w-full h-full flex items-center justify-center overflow-auto">
+              <img
+                src={selectedImage}
+                alt="Event image full size"
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+
+            {/* Image info */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-zinc-900/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-zinc-300 border border-zinc-700">
+              <p>Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">ESC</kbd> or click outside to close</p>
+            </div>
+          </div>
         </div>
       )}
     </div>

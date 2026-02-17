@@ -38,21 +38,27 @@ export function middleware(request: NextRequest) {
   }
 
   // Security: Check concurrent connections per IP
-  const connectionCheck = checkConcurrentConnections(clientIP);
-  if (!connectionCheck.allowed) {
-    console.warn(`[SECURITY] IP ${clientIP} exceeded concurrent connection limit`);
-    return NextResponse.json(
-      {
-        error: 'Too many concurrent connections. Please try again later.',
-        retryAfter: 60,
-      },
-      {
-        status: 429,
-        headers: {
-          'Retry-After': '60',
+  // Skip for admin routes (they may need more concurrent connections)
+  const isAdminRoute = pathname.startsWith('/api/admin/');
+  let connectionCheck = { allowed: true, active: 0, max: 20 };
+  
+  if (!isAdminRoute) {
+    connectionCheck = checkConcurrentConnections(clientIP);
+    if (!connectionCheck.allowed) {
+      console.warn(`[SECURITY] IP ${clientIP} exceeded concurrent connection limit`);
+      return NextResponse.json(
+        {
+          error: 'Too many concurrent connections. Please try again later.',
+          retryAfter: 60,
         },
-      }
-    );
+        {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+          },
+        }
+      );
+    }
   }
 
   // Get rate limit config based on endpoint path and method

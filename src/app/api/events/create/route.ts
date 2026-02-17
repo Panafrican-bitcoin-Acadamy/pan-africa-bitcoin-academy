@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       link, 
       recording_url,
       image_url, // optional: URL of the event image
+      image_alt_text, // optional: Alt text for accessibility
       cohort_id, // null or "for_all" for everyone, or UUID for specific cohort
       for_all, // boolean: true = for everyone, false = for specific cohort
       chapter_number // optional: chapter number for live-class events
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
         link: link || null,
         recording_url: recording_url || null,
         image_url: image_url || null, // Event image URL
+        image_alt_text: image_alt_text || null, // Alt text for accessibility
         cohort_id: finalCohortId, // null = for everyone, UUID = for specific cohort
         chapter_number: chapter_number && eventType === 'live-class' ? parseInt(chapter_number) : null,
       })

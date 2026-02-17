@@ -2853,45 +2853,61 @@ export default function AdminDashboardPage() {
       
       // Check if response has content before parsing JSON
       const contentType = res.headers.get('content-type');
-      let data: any = {};
+      let data: any = null;
       
       if (contentType && contentType.includes('application/json')) {
         try {
           const text = await res.text();
-          if (text) {
+          if (text && text.trim()) {
             data = JSON.parse(text);
           }
         } catch (parseError) {
           console.error('Failed to parse login response:', parseError);
           setAuthError('Invalid response from server. Please try again.');
+          setLoginLoading(false);
           return;
         }
       }
       
       if (!res.ok) {
-        const errorMsg = data.error || `Login failed (${res.status} ${res.statusText})`;
-        const errorDetails = data.details ? `: ${data.details}` : '';
+        // Handle error response
+        const errorMsg = data?.error || `Login failed (${res.status} ${res.statusText})`;
+        const errorDetails = data?.details ? `: ${data.details}` : '';
         setAuthError(`${errorMsg}${errorDetails}`);
         
-        // Only log if there's actual error data
-        if (Object.keys(data).length > 0) {
-        console.error('Admin login error:', data);
+        // Only log meaningful error data
+        if (data && typeof data === 'object' && data.error) {
+          console.error('Admin login error:', { 
+            error: data.error, 
+            details: data.details || null, 
+            status: res.status,
+            statusText: res.statusText
+          });
         } else {
-          console.error('Admin login error: Empty response', { status: res.status, statusText: res.statusText });
+          console.error('Admin login error: Non-JSON or empty response', { 
+            status: res.status, 
+            statusText: res.statusText, 
+            contentType: contentType || 'unknown',
+            hasData: !!data
+          });
         }
+        setLoginLoading(false);
         return;
       }
       
       // Check if login was successful
-      if (data.success) {
-      setLoginForm({ email: '', password: '' }); // Clear form
-      // Session is managed by useSession hook - check session to mark activity
-      // Wait a bit for cookie to be set, then check session
-      setTimeout(() => {
-        checkSession();
-      }, 100);
+      if (data && data.success) {
+        setLoginForm({ email: '', password: '' }); // Clear form
+        setAuthError(null); // Clear any previous errors
+        // Session is managed by useSession hook - check session to mark activity
+        // Wait a bit for cookie to be set, then check session
+        setTimeout(() => {
+          checkSession();
+        }, 100);
       } else {
-        setAuthError(data.error || 'Login failed');
+        const errorMsg = data?.error || 'Login failed';
+        setAuthError(errorMsg);
+        console.error('Admin login failed:', { success: data?.success, error: errorMsg });
       }
     } catch (err: any) {
       console.error('Login request error:', err);
