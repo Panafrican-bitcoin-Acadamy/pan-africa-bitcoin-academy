@@ -68,29 +68,61 @@ export async function POST(req: NextRequest) {
       finalCohortId = cohort_id; // Event is for specific cohort
     }
 
+    // Create event payload - only include fields that exist in database
+    const eventPayload: any = {
+      name: name.trim(),
+      type: eventType,
+      start_time: start_time,
+      end_time: end_time || null,
+      description: description || null,
+      link: link || null,
+      recording_url: recording_url || null,
+      cohort_id: finalCohortId, // null = for everyone, UUID = for specific cohort
+    };
+
+    // Only include image_url if provided (column may not exist if migration not run)
+    if (image_url) {
+      eventPayload.image_url = image_url;
+    }
+
+    // Only include image_alt_text if provided (column may not exist if migration not run)
+    if (image_alt_text && image_alt_text.trim()) {
+      eventPayload.image_alt_text = image_alt_text.trim();
+    }
+
+    // Note: chapter_number is NOT in events table - it's only in assignments table
+    // So we don't include it here
+
     // Create event
     const { data: newEvent, error: createError } = await supabaseAdmin
       .from('events')
-      .insert({
-        name: name.trim(),
-        type: eventType,
-        start_time: start_time,
-        end_time: end_time || null,
-        description: description || null,
-        link: link || null,
-        recording_url: recording_url || null,
-        image_url: image_url || null, // Event image URL
-        image_alt_text: image_alt_text || null, // Alt text for accessibility
-        cohort_id: finalCohortId, // null = for everyone, UUID = for specific cohort
-        chapter_number: chapter_number && eventType === 'live-class' ? parseInt(chapter_number) : null,
-      })
+      .insert(eventPayload)
       .select('*')
       .single();
 
     if (createError) {
-      console.error('Error creating event:', createError);
+      console.error('Error creating event:', {
+        error: createError,
+        message: createError.message,
+        code: createError.code,
+        details: createError.details,
+        hint: createError.hint,
+        data: {
+          name,
+          type: eventType,
+          start_time,
+          end_time,
+          hasImageUrl: !!image_url,
+          hasImageAltText: !!image_alt_text,
+          cohort_id: finalCohortId,
+        }
+      });
       return NextResponse.json(
-        { error: 'Failed to create event', details: createError.message },
+        { 
+          error: 'Failed to create event', 
+          details: createError.message,
+          hint: createError.hint || 'Check if all required database columns exist (image_url, image_alt_text)',
+        },
         { status: 500 }
       );
     }

@@ -161,11 +161,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
         return;
       }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image size exceeds 5MB limit. Please upload a smaller image.');
-        return;
-      }
+      // No file size limit - allow unlimited size
 
       // Get and validate image dimensions
       const dimensions = await getImageDimensions(file);
@@ -516,7 +512,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
         }
       }
 
-      // Prepare payload
+      // Prepare payload with all event data
       const payload: any = {
         name: formData.name.trim(),
         type: formData.type,
@@ -526,6 +522,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
         link: formData.link.trim() || null,
         recording_url: formData.recording_url.trim() || null,
         image_url: imageUrl || null,
+        image_alt_text: formData.image_alt_text.trim() || null,
         for_all: formData.for_all,
         cohort_id: formData.for_all ? null : formData.cohort_id,
       };
@@ -1142,7 +1139,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
                         <p className="text-sm text-zinc-400 mb-1">
                           <span className="font-medium text-cyan-400">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs text-zinc-500">PNG, JPG, WebP or GIF (MAX. 5MB)</p>
+                        <p className="text-xs text-zinc-500">PNG, JPG, WebP or GIF</p>
                       </>
                     )}
                   </div>
@@ -1190,7 +1187,7 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 rounded-lg bg-gradient-to-r from-cyan-400 to-purple-500 px-6 py-3 font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-lg bg-gradient-to-r from-cyan-400 to-purple-500 px-4 py-2 text-sm font-medium text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Creating Event...' : 'Create Event'}
           </button>

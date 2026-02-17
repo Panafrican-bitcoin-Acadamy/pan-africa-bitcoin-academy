@@ -7,10 +7,10 @@ VALUES (
   'events',
   'events',
   true, -- Public bucket so images can be accessed directly
-  5242880, -- 5MB file size limit
+  NULL, -- No file size limit (unlimited)
   ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET file_size_limit = NULL; -- Update existing bucket to remove size limit
 
 -- Set up storage policies for the events bucket
 -- Allow authenticated admins to upload

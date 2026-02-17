@@ -5,8 +5,7 @@ import { containsXSS } from '@/lib/input-security';
 import crypto from 'crypto';
 
 // Security constants
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MIN_IMAGE_SIZE = 100; // 100 bytes minimum
+const MIN_IMAGE_SIZE = 100; // 100 bytes minimum (for security - prevent empty/invalid images)
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_FILENAME_LENGTH = 255;
 const MAX_IMAGE_DIMENSIONS = { width: 10000, height: 10000 };
@@ -58,16 +57,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check image size (max 5MB)
+    // Convert base64 to buffer and check minimum size
     const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
     const imageSizeInBytes = (base64Data.length * 3) / 4;
-
-    if (imageSizeInBytes > MAX_IMAGE_SIZE) {
-      return NextResponse.json(
-        { error: `Image size exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit. Please upload a smaller image.` },
-        { status: 400 }
-      );
-    }
 
     // Security: Validate minimum image size (prevent empty/invalid images)
     if (imageSizeInBytes < 100) {
