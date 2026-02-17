@@ -268,12 +268,39 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                 console.log('📅 Calendar: No sessions array in response or empty array');
               }
             } else {
-              const errorText = await sessionsResponse.text().catch(() => 'Unable to read error');
+              // Try to get error details from response
+              let errorDetails: any = {};
+              try {
+                const errorData = await sessionsResponse.json();
+                errorDetails = {
+                  error: errorData.error || 'Unknown error',
+                  details: errorData.details || null,
+                };
+              } catch {
+                // If response is not JSON, try to read as text
+                try {
+                  const errorText = await sessionsResponse.text();
+                  errorDetails = {
+                    error: errorText || 'Unable to read error',
+                  };
+                } catch {
+                  errorDetails = {
+                    error: 'Unable to read error response',
+                  };
+                }
+              }
+              
               console.error('❌ Calendar: Failed to fetch sessions:', {
                 status: sessionsResponse.status,
                 statusText: sessionsResponse.statusText,
-                error: errorText
+                url: sessionsUrl,
+                ...errorDetails
               });
+              
+              // Only log as warning if it's a 401/403 (unauthorized) - this is expected for non-admin users
+              if (sessionsResponse.status === 401 || sessionsResponse.status === 403) {
+                console.warn('⚠️ Calendar: Unauthorized to fetch sessions (this is expected for non-admin users)');
+              }
             }
           } else {
             console.log('📅 Calendar: No sessions URL - email or admin mode required');

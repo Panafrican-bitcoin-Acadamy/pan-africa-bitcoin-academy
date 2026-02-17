@@ -5,6 +5,16 @@ import dynamic from 'next/dynamic';
 import { useSession } from '@/hooks/useSession';
 import EmailComposer from '@/components/EmailComposer';
 import { StudentProgressModal } from '@/components/StudentProgressModal';
+import EventForm from '@/components/admin/EventForm';
+import EventsList from '@/components/admin/EventsList';
+import MentorRegistrationForm from '@/components/admin/MentorRegistrationForm';
+import { 
+  Users, BookOpen, Book, Handshake, Mail, FileText, BarChart3, 
+  CheckCircle2, AlertCircle, Trophy, DollarSign, Calendar as CalendarIcon, 
+  Clock, User, Info, Trash2, Award, Target, Briefcase, Heart,
+  ClipboardList, Rocket, HelpCircle, Sparkles, Settings, 
+  PenTool, GraduationCap, XCircle, Loader2
+} from 'lucide-react';
 
 // Cohort color palette - same as Calendar component
 const cohortColors = [
@@ -175,6 +185,7 @@ export default function AdminDashboardPage() {
   const [loadingTestimonials, setLoadingTestimonials] = useState(false);
   const [mentors, setMentors] = useState<any[]>([]);
   const [loadingMentors, setLoadingMentors] = useState(false);
+  
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   
@@ -214,12 +225,11 @@ export default function AdminDashboardPage() {
     {
       id: 'students',
       label: 'Students',
-      icon: '👥',
+      icon: Users,
       subMenus: [
         { id: 'approved-students', label: 'Approved Students' },
         { id: 'pending-students', label: 'Pending Students' },
         { id: 'rejected-students', label: 'Rejected Students' },
-        { id: 'student-database', label: 'Student Database' },
         { id: 'assignments-submissions', label: 'Assignment Submissions' },
         { id: 'blog-submissions', label: 'Blog Submissions' },
         { id: 'blog-posts', label: 'Blog Posts' },
@@ -228,7 +238,7 @@ export default function AdminDashboardPage() {
     {
       id: 'cohorts',
       label: 'Cohorts',
-      icon: '📚',
+      icon: BookOpen,
       subMenus: [
         { id: 'cohort-list', label: 'Cohort List' },
         { id: 'sessions', label: 'Sessions' },
@@ -238,7 +248,7 @@ export default function AdminDashboardPage() {
     {
       id: 'content',
       label: 'Content & Resources',
-      icon: '📖',
+      icon: Book,
       subMenus: [
         { id: 'assignments', label: 'Assignments' },
         { id: 'developer-resources', label: 'Developer Resources' },
@@ -249,7 +259,7 @@ export default function AdminDashboardPage() {
     {
       id: 'community',
       label: 'Community',
-      icon: '🤝',
+      icon: Handshake,
       subMenus: [
         { id: 'mentors', label: 'Mentors' },
         { id: 'sponsorships', label: 'Sponsorships' },
@@ -259,16 +269,17 @@ export default function AdminDashboardPage() {
     {
       id: 'communications',
       label: 'Communications',
-      icon: '✉️',
+      icon: Mail,
       subMenus: [
         { id: 'email-composition', label: 'Email Composition' },
         { id: 'calendar', label: 'Calendar' },
+        { id: 'events', label: 'Events' },
       ],
     },
     {
       id: 'assessments',
       label: 'Assessments',
-      icon: '📝',
+      icon: FileText,
       subMenus: [
         { id: 'final-exam-submissions', label: 'Final Exam Submissions' },
         { id: 'student-sats-rewards', label: 'Student Sats Rewards' },
@@ -277,7 +288,7 @@ export default function AdminDashboardPage() {
     {
       id: 'attendance',
       label: 'Attendance',
-      icon: '📊',
+      icon: BarChart3,
       subMenus: [
         { id: 'upload-attendance', label: 'Upload Attendance' },
         { id: 'attendance-records', label: 'Attendance Records' },
@@ -315,7 +326,6 @@ export default function AdminDashboardPage() {
       'approved-students': 'students',
       'pending-students': 'applications',
       'rejected-students': 'applications',
-      'student-database': 'students',
       'assignments-submissions': 'assignments',
       'blog-submissions': 'overview',
       'blog-posts': 'overview',
@@ -324,6 +334,7 @@ export default function AdminDashboardPage() {
       'cohort-analytics': 'overview',
       'email-composition': 'overview',
       'calendar': 'overview',
+      'events': 'overview',
       'final-exam-submissions': 'exam',
       'upload-attendance': 'attendance',
       'attendance-records': 'attendance',
@@ -987,7 +998,7 @@ export default function AdminDashboardPage() {
         approvedStudentsFetchedRef.current = false;
         approvedStudentsFetchingRef.current = false;
       }
-      if (prevSubMenu === 'student-database') {
+      if (false) { // Removed student-database
         allStudentsFetchedRef.current = false;
         allStudentsFetchingRef.current = false;
       }
@@ -1034,7 +1045,7 @@ export default function AdminDashboardPage() {
       if (!applicationsFetchingRef.current) {
         fetchApplications();
       }
-    } else if (currentSubMenu === 'student-database' && !allStudentsFetchedRef.current && !allStudentsFetchingRef.current && fetchAllStudentsRef.current) {
+    } else if (false && !allStudentsFetchedRef.current && !allStudentsFetchingRef.current && fetchAllStudentsRef.current) { // Removed student-database
       fetchAllStudentsRef.current();
     } else if (currentSubMenu === 'sessions' && fetchSessionsRef.current) {
       // Always fetch sessions when sessions submenu is active (allow refresh)
@@ -2705,7 +2716,7 @@ export default function AdminDashboardPage() {
           break;
           
         case 'students':
-          // Student data is loaded by specific submenu hooks (approved-students, student-database, etc.)
+          // Student data is loaded by specific submenu hooks (approved-students, etc.)
           // These are handled by the useEffect hooks that watch activeSubMenu
           if (subMenu === 'approved-students') {
             if (!approvedStudentsFetchedRef.current && !approvedStudentsFetchingRef.current && fetchApprovedStudentsRef.current) {
@@ -2919,14 +2930,14 @@ export default function AdminDashboardPage() {
       if (res.ok && data.success) {
         let message = `Application for ${email} approved successfully!`;
         if (data.emailSent) {
-          message += `\n\n✅ Approval email sent to ${email}`;
+          message += `\n\nApproval email sent to ${email}`;
         } else {
           // Always show email status, even if not sent
           if (data.emailError) {
-            message += `\n\n⚠️ Email not sent: ${data.emailError}`;
+            message += `\n\nEmail not sent: ${data.emailError}`;
             message += `\n\nCheck server console for details.`;
           } else {
-            message += `\n\n⚠️ Email status unknown - check server console for details.`;
+            message += `\n\nEmail status unknown - check server console for details.`;
           }
         }
         
@@ -3017,9 +3028,9 @@ export default function AdminDashboardPage() {
       if (res.ok && data.success) {
         let message = `Application for ${email} rejected successfully!`;
         if (data.emailSent) {
-          message += `\n\n✅ Rejection email sent to ${email}`;
+          message += `\n\nRejection email sent to ${email}`;
         } else if (data.emailError) {
-          message += `\n\n⚠️ Email not sent: ${data.emailError}`;
+          message += `\n\nEmail not sent: ${data.emailError}`;
         }
         alert(message);
         await fetchApplications();
@@ -3391,7 +3402,9 @@ export default function AdminDashboardPage() {
                       : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-300'
                   }`}
                 >
-                  <span className="text-lg flex-shrink-0">{section.icon}</span>
+                  {section.icon && (
+                    <section.icon className="h-5 w-5 flex-shrink-0" />
+                  )}
                   {!sidebarCollapsed && <span className="flex-1 text-left">{section.label}</span>}
                   {!sidebarCollapsed && (
                     <span className={`transition-transform ${isSectionActive ? 'rotate-90' : ''}`}>
@@ -4407,7 +4420,7 @@ export default function AdminDashboardPage() {
             )}
 
             {/* Communications Section */}
-            {(activeSubMenu === 'email-composition' || activeSubMenu === 'calendar') && (
+            {(activeSubMenu === 'email-composition' || activeSubMenu === 'calendar' || activeSubMenu === 'events') && (
               <>
                 {/* Email Composition and Calendar */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -4449,6 +4462,25 @@ export default function AdminDashboardPage() {
           </div>
                   )}
         </div>
+
+                {/* Events Section - Create and List Together */}
+                {activeSubMenu === 'events' && (
+                  <div className="space-y-6">
+                    {/* Create Event Form */}
+                    <EventForm onSuccess={() => {
+                      // Refresh events list after successful creation
+                      if (window.dispatchEvent) {
+                        window.dispatchEvent(new CustomEvent('refreshEventsList'));
+                      }
+                    }} />
+                    
+                    {/* List Events */}
+                    <EventsList onRefresh={() => {
+                      // Optionally refresh other components
+                      console.log('Events list refreshed');
+                    }} />
+                  </div>
+                )}
               </>
             )}
 
@@ -4459,7 +4491,10 @@ export default function AdminDashboardPage() {
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-semibold text-zinc-50">✅ Approved Students</h3>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-400" />
+                        <h3 className="text-xl font-semibold text-zinc-50">Approved Students</h3>
+                      </div>
                       <p className="text-sm text-zinc-400 mt-1">
                         Students who have been approved and enrolled in the academy
                       </p>
@@ -4529,153 +4564,9 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* Student Database Section */}
-            {(activeSubMenu === 'student-database' || activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || (activeTab === 'students' && activeSubMenu !== 'approved-students')) && (
+            {/* Assignment Submissions Section */}
+            {(activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || activeTab === 'assignments') && (
               <>
-        {/* Student Database */}
-                {(activeSubMenu === 'student-database' || (activeTab === 'students' && activeSubMenu !== 'approved-students')) && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-zinc-50">📚 Student Database</h3>
-              <p className="text-sm text-zinc-400 mt-1">
-                All registered students - shows everyone who has created an account (approved, pending, rejected, and not applied)
-              </p>
-              {allStudents.length > 0 && (
-                <div className="mt-2 flex items-center gap-4 text-xs text-zinc-400">
-                  <span>Total: <span className="text-cyan-400 font-medium">{allStudents.length}</span></span>
-                  <span>Approved: <span className="text-green-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Approved').length}</span></span>
-                  <span>Pending: <span className="text-yellow-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Pending').length}</span></span>
-                  <span>Rejected: <span className="text-red-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Rejected').length}</span></span>
-                  <span>Not Applied: <span className="text-zinc-400 font-medium">{allStudents.filter(s => s.applicationStatus === 'Not Applied').length}</span></span>
-                </div>
-              )}
-              {(cohortFilter || attendanceSort) && (
-                <div className="mt-1 flex items-center gap-2 text-xs text-zinc-400">
-                  {cohortFilter && (
-                    <span>
-                      Filtered: <span className="text-cyan-400">
-                        {progress?.find(p => p.cohortId === cohortFilter)?.cohortName || 
-                         cohorts?.find(c => c.id === cohortFilter)?.name || 
-                         'Cohort'}
-                      </span>
-                    </span>
-                  )}
-                  {attendanceSort && (
-                    <span>
-                      Sorted by Attendance: <span className="text-cyan-400">{attendanceSort === 'desc' ? 'High to Low' : 'Low to High'}</span>
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {(cohortFilter || attendanceSort) && (
-                <>
-                  {cohortFilter && (
-                    <button
-                      type="button"
-                      onClick={() => setCohortFilter(null)}
-                      className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
-                    >
-                      Clear Filter
-                    </button>
-                  )}
-                  {attendanceSort && (
-                    <button
-                      type="button"
-                      onClick={() => setAttendanceSort(null)}
-                      className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
-                    >
-                      Clear Sort
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          {loadingAllStudents ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-zinc-400">Loading all students...</div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-zinc-900 text-left text-zinc-300">
-                  <tr>
-                    <th className="px-3 py-2">#</th>
-                    <th className="px-3 py-2">Name</th>
-                    <th className="px-3 py-2">Email</th>
-                    <th className="px-3 py-2">Phone</th>
-                    <th className="px-3 py-2">Country</th>
-                    <th className="px-3 py-2">Cohort</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Application Status</th>
-                    <th className="px-3 py-2">Progress</th>
-                    <th className="px-3 py-2">Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allStudents.map((student, index) => (
-                    <tr 
-                      key={student.id} 
-                      className="border-b border-zinc-800 cursor-pointer transition hover:bg-zinc-800/50"
-                      onClick={() => setSelectedStudent({ id: student.id, email: student.email, name: student.name })}
-                    >
-                      <td className="px-3 py-2 text-zinc-400">{index + 1}</td>
-                      <td className="px-3 py-2 text-zinc-50">{student.name}</td>
-                      <td className="px-3 py-2 text-zinc-400">{student.email}</td>
-                      <td className="px-3 py-2 text-zinc-400">{student.phone || '—'}</td>
-                      <td className="px-3 py-2 text-zinc-400">{student.country || '—'}</td>
-                      <td className="px-3 py-2 text-zinc-400">{student.cohortName || '—'}</td>
-                      <td className="px-3 py-2">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          student.status === 'Active' ? 'bg-green-500/20 text-green-400' :
-                          student.status === 'New' ? 'bg-blue-500/20 text-blue-400' :
-                          student.status === 'Graduated' ? 'bg-purple-500/20 text-purple-400' :
-                          'bg-zinc-500/20 text-zinc-400'
-                        }`}>
-                          {student.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          student.applicationStatus === 'Approved' ? 'bg-green-500/20 text-green-400' :
-                          student.applicationStatus === 'Pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                          student.applicationStatus === 'Rejected' ? 'bg-red-500/20 text-red-400' :
-                          'bg-zinc-500/20 text-zinc-400'
-                        }`}>
-                          {student.applicationStatus}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        {student.progressPercent > 0 ? (
-                          <span className="text-yellow-300 font-medium">{student.progressPercent}%</span>
-                        ) : (
-                          <span className="text-zinc-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="text-xs text-zinc-500">
-                          {student.source === 'students_table' ? 'Enrolled' :
-                           student.source === 'application' ? 'Application' :
-                           'Profile Only'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {allStudents.length === 0 && !loadingAllStudents && (
-                <div className="p-6 text-center text-zinc-400">
-                  <p>No students found.</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-                )}
-
         {/* Assignment Submissions Section */}
                 {(activeSubMenu === 'assignments-submissions' || activeTab === 'assignments') && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
@@ -4832,7 +4723,10 @@ export default function AdminDashboardPage() {
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-zinc-50">📝 Blog Submissions</h2>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-zinc-50" />
+                <h2 className="text-xl font-semibold text-zinc-50">Blog Submissions</h2>
+              </div>
               <p className="text-sm text-zinc-400 mt-1">
                 Review and approve blog submissions from students. 
                 <span className="text-zinc-500"> When approved, they automatically become "Blog Posts" (published on the website).</span>
@@ -4868,7 +4762,10 @@ export default function AdminDashboardPage() {
             
             {/* Workflow Explanation */}
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
-              <h3 className="text-sm font-semibold text-zinc-200 mb-3">📋 Blog Submission Workflow</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <ClipboardList className="h-4 w-4 text-zinc-200" />
+                <h3 className="text-sm font-semibold text-zinc-200">Blog Submission Workflow</h3>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Pending Status */}
                 <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
@@ -5098,7 +4995,10 @@ export default function AdminDashboardPage() {
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-zinc-50">📝 Blog Posts</h2>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-zinc-50" />
+                <h2 className="text-xl font-semibold text-zinc-50">Blog Posts</h2>
+              </div>
               <p className="text-sm text-zinc-400 mt-1">
                 Published blog posts (created when submissions are approved). 
                 <span className="text-zinc-500"> Note: This is different from "Blog Submissions" which shows pending/awaiting review posts.</span>
@@ -5162,7 +5062,10 @@ export default function AdminDashboardPage() {
                 <p className="text-lg mb-2 font-semibold text-zinc-300">No blog posts found</p>
                 <p className="text-sm mb-4">Blog posts are created automatically when you approve a submission in the "Blog Submissions" section.</p>
                 <div className="mt-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-left">
-                  <p className="text-xs font-semibold text-blue-300 mb-2">📋 Difference between Blog Submissions and Blog Posts:</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <ClipboardList className="h-4 w-4 text-blue-300" />
+                    <p className="text-xs font-semibold text-blue-300">Difference between Blog Submissions and Blog Posts:</p>
+                  </div>
                   <div className="text-xs text-blue-200/80 space-y-2">
                     <div>
                       <p className="font-medium text-blue-300">Blog Submissions:</p>
@@ -5234,17 +5137,17 @@ export default function AdminDashboardPage() {
                           </h3>
                           {post.is_featured && (
                             <span className="rounded-full border px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30 whitespace-nowrap">
-                              ⭐ Featured
+                              <Sparkles className="h-3 w-3 inline mr-1" /> Featured
                             </span>
                           )}
                           {post.is_blog_of_month && (
                             <span className="rounded-full border px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 border-purple-500/30 whitespace-nowrap">
-                              🏆 Blog of Month
+                              <Trophy className="h-3 w-3 inline mr-1" /> Blog of Month
                             </span>
                           )}
                           {post._isFromSubmission && (
                             <span className="rounded-full border px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30 whitespace-nowrap" title="This post came from an approved submission">
-                              📝 From Submission
+                              <FileText className="h-3 w-3 inline mr-1" /> From Submission
                             </span>
                           )}
                         </div>
@@ -5348,7 +5251,12 @@ export default function AdminDashboardPage() {
                             disabled={processingBlogPost === post.id}
                             className="rounded-lg bg-yellow-500/20 px-3 py-1.5 text-xs font-medium text-yellow-400 transition hover:bg-yellow-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                           >
-                            {processingBlogPost === post.id ? '...' : '📝 Draft'}
+                            {processingBlogPost === post.id ? '...' : (
+                              <>
+                                <FileText className="h-3 w-3 inline mr-1" />
+                                Draft
+                              </>
+                            )}
                           </button>
                         )}
                         {post.status !== 'archived' && (
@@ -5374,7 +5282,12 @@ export default function AdminDashboardPage() {
                               : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
                           }`}
                         >
-                          {processingBlogPost === post.id ? '...' : post.is_featured ? '⭐ Unfeature' : '⭐ Feature'}
+                          {processingBlogPost === post.id ? '...' : (
+                            <>
+                              <Sparkles className="h-3 w-3 inline mr-1" />
+                              {post.is_featured ? 'Unfeature' : 'Feature'}
+                            </>
+                          )}
                         </button>
                         <button
                           type="button"
@@ -5386,7 +5299,12 @@ export default function AdminDashboardPage() {
                               : 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
                           }`}
                         >
-                          {processingBlogPost === post.id ? '...' : post.is_blog_of_month ? '🏆 Remove BOM' : '🏆 Set BOM'}
+                          {processingBlogPost === post.id ? '...' : (
+                            <>
+                              <Trophy className="h-3 w-3 inline mr-1" />
+                              {post.is_blog_of_month ? 'Remove BOM' : 'Set BOM'}
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -5424,7 +5342,7 @@ export default function AdminDashboardPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <div>
                         <h3 className="text-base sm:text-lg font-semibold text-purple-200 mb-1 flex items-center gap-2">
-                          <span>📝</span>
+                          <FileText className="h-4 w-4" />
                           <span>Blog Summary</span>
                         </h3>
                         <p className="text-xs sm:text-sm text-purple-300/80">
@@ -5452,7 +5370,7 @@ export default function AdminDashboardPage() {
                         }}
                         className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-purple-300 transition hover:bg-purple-500/20 flex items-center gap-2"
                       >
-                        <span>💰</span>
+                        <DollarSign className="h-4 w-4" />
                         <span>View All Blog Rewards</span>
                       </button>
       </div>
@@ -5843,7 +5761,7 @@ export default function AdminDashboardPage() {
                             {/* Type Badge */}
                             <div className="mb-4">
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-300">
-                                <span>🎯</span>
+                                <Target className="h-3 w-3" />
                                 {formatRewardType(reward.reward_type || 'other')}
                               </span>
                             </div>
@@ -5930,7 +5848,7 @@ export default function AdminDashboardPage() {
                                 className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 sm:px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/20"
                                 title="Delete"
                               >
-                                🗑️
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           </div>
@@ -5970,7 +5888,7 @@ export default function AdminDashboardPage() {
                           {/* Cohort Selection */}
                           <div className="group">
                             <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                              <span className="text-cyan-400">📚</span>
+                              <BookOpen className="h-4 w-4 text-cyan-400" />
                               <span>Cohort</span>
                             </label>
                             <div className="relative">
@@ -5999,7 +5917,7 @@ export default function AdminDashboardPage() {
                           {/* Student Selection */}
                           <div className="group">
                             <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                              <span className="text-purple-400">👤</span>
+                              <User className="h-4 w-4 text-purple-400" />
                               <span>Student</span>
                               {loadingStudentsList && (
                                 <span className="ml-auto flex items-center gap-1.5 text-xs text-cyan-400">
@@ -6062,7 +5980,7 @@ export default function AdminDashboardPage() {
                           {/* Amount Input */}
                           <div className="group">
                             <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                              <span className="text-yellow-400">💰</span>
+                              <DollarSign className="h-4 w-4 text-yellow-400" />
                               <span>Amount (sats)</span>
                             </label>
                             <div className="relative">
@@ -6097,8 +6015,8 @@ export default function AdminDashboardPage() {
                                 }}
                               >
                                 <option value="pending" className="bg-zinc-900 text-zinc-200">⏳ Pending (Not sent yet)</option>
-                                <option value="paid" className="bg-zinc-900 text-zinc-200">✅ Paid (Sent)</option>
-                                <option value="processing" className="bg-zinc-900 text-zinc-200">⚙️ Processing</option>
+                                <option value="paid" className="bg-zinc-900 text-zinc-200">Paid (Sent)</option>
+                                <option value="processing" className="bg-zinc-900 text-zinc-200">Processing</option>
                                 <option value="failed" className="bg-zinc-900 text-zinc-200">❌ Failed</option>
                               </select>
                               <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-green-500/20 transition-all"></div>
@@ -6108,7 +6026,7 @@ export default function AdminDashboardPage() {
                           {/* Reward Type Selection */}
                           <div className="group">
                             <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                              <span className="text-blue-400">🏆</span>
+                              <Trophy className="h-4 w-4 text-blue-400" />
                               <span>Reward Type</span>
                             </label>
                             <div className="relative">
@@ -6123,14 +6041,14 @@ export default function AdminDashboardPage() {
                                   paddingRight: '2.5rem'
                                 }}
                               >
-                                <option value="assignment" className="bg-zinc-900 text-zinc-200">📝 Assignment</option>
-                                <option value="chapter" className="bg-zinc-900 text-zinc-200">📖 Chapter</option>
-                                <option value="discussion" className="bg-zinc-900 text-zinc-200">💬 Discussion</option>
-                                <option value="peer_help" className="bg-zinc-900 text-zinc-200">🤝 Peer Help</option>
-                                <option value="project" className="bg-zinc-900 text-zinc-200">🚀 Project</option>
-                                <option value="attendance" className="bg-zinc-900 text-zinc-200">📅 Attendance</option>
-                                <option value="blog" className="bg-zinc-900 text-zinc-200">✍️ Blog</option>
-                                <option value="other" className="bg-zinc-900 text-zinc-200">🔖 Other</option>
+                                <option value="assignment" className="bg-zinc-900 text-zinc-200">Assignment</option>
+                                <option value="chapter" className="bg-zinc-900 text-zinc-200">Chapter</option>
+                                <option value="discussion" className="bg-zinc-900 text-zinc-200">Discussion</option>
+                                <option value="peer_help" className="bg-zinc-900 text-zinc-200">Peer Help</option>
+                                <option value="project" className="bg-zinc-900 text-zinc-200">Project</option>
+                                <option value="attendance" className="bg-zinc-900 text-zinc-200">Attendance</option>
+                                <option value="blog" className="bg-zinc-900 text-zinc-200">Blog</option>
+                                <option value="other" className="bg-zinc-900 text-zinc-200">Other</option>
                               </select>
                               <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-blue-500/20 transition-all"></div>
                             </div>
@@ -6139,7 +6057,7 @@ export default function AdminDashboardPage() {
                           {/* Reason Selection */}
                           <div className="group">
                             <label className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-2">
-                              <span className="text-orange-400">📋</span>
+                              <ClipboardList className="h-4 w-4 text-orange-400" />
                               <span>Reason</span>
                             </label>
                             <div className="relative">
@@ -6155,15 +6073,15 @@ export default function AdminDashboardPage() {
                                 }}
                               >
                                 <option value="" className="bg-zinc-900 text-zinc-200">Select a reason</option>
-                                <option value="Assignment completion" className="bg-zinc-900 text-zinc-200">📝 Assignment completion</option>
+                                <option value="Assignment completion" className="bg-zinc-900 text-zinc-200">Assignment completion</option>
                                 <option value="Chapter completion" className="bg-zinc-900 text-zinc-200">📖 Chapter completion</option>
-                                <option value="Blog post approval" className="bg-zinc-900 text-zinc-200">✍️ Blog post approval</option>
-                                <option value="Attendance bonus" className="bg-zinc-900 text-zinc-200">📅 Attendance bonus</option>
-                                <option value="Peer help contribution" className="bg-zinc-900 text-zinc-200">🤝 Peer help contribution</option>
-                                <option value="Project submission" className="bg-zinc-900 text-zinc-200">🚀 Project submission</option>
-                                <option value="Discussion participation" className="bg-zinc-900 text-zinc-200">💬 Discussion participation</option>
-                                <option value="Special achievement" className="bg-zinc-900 text-zinc-200">⭐ Special achievement</option>
-                                <option value="Other" className="bg-zinc-900 text-zinc-200">🔖 Other</option>
+                                <option value="Blog post approval" className="bg-zinc-900 text-zinc-200">Blog post approval</option>
+                                <option value="Attendance bonus" className="bg-zinc-900 text-zinc-200">Attendance bonus</option>
+                                <option value="Peer help contribution" className="bg-zinc-900 text-zinc-200">Peer help contribution</option>
+                                <option value="Project submission" className="bg-zinc-900 text-zinc-200">Project submission</option>
+                                <option value="Discussion participation" className="bg-zinc-900 text-zinc-200">Discussion participation</option>
+                                <option value="Special achievement" className="bg-zinc-900 text-zinc-200">Special achievement</option>
+                                <option value="Other" className="bg-zinc-900 text-zinc-200">Other</option>
                               </select>
                               <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-orange-500/20 transition-all"></div>
                             </div>
@@ -6212,7 +6130,10 @@ export default function AdminDashboardPage() {
             {activeSubMenu === 'assignments' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">📝 Assignments</h3>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-zinc-50" />
+                    <h3 className="text-lg font-semibold text-zinc-50">Assignments</h3>
+                  </div>
                 </div>
                 {loadingAssignments ? (
                   <div className="text-center py-8 text-zinc-400">Loading assignments...</div>
@@ -6244,7 +6165,10 @@ export default function AdminDashboardPage() {
             {activeSubMenu === 'developer-resources' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">📚 Developer Resources</h3>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-zinc-50" />
+                    <h3 className="text-lg font-semibold text-zinc-50">Developer Resources</h3>
+                  </div>
                 </div>
                 {loadingDeveloperResources ? (
                   <div className="text-center py-8 text-zinc-400">Loading resources...</div>
@@ -6279,7 +6203,10 @@ export default function AdminDashboardPage() {
             {activeSubMenu === 'developer-events' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">📅 Developer Events</h3>
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5 text-zinc-50" />
+                    <h3 className="text-lg font-semibold text-zinc-50">Developer Events</h3>
+                  </div>
                 </div>
                 {loadingDeveloperEvents ? (
                   <div className="text-center py-8 text-zinc-400">Loading events...</div>
@@ -6315,7 +6242,10 @@ export default function AdminDashboardPage() {
             {activeSubMenu === 'testimonials' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">💬 Testimonials</h3>
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="h-5 w-5 text-zinc-50" />
+                    <h3 className="text-lg font-semibold text-zinc-50">Testimonials</h3>
+                  </div>
                 </div>
                 {loadingTestimonials ? (
                   <div className="text-center py-8 text-zinc-400">Loading testimonials...</div>
@@ -6350,46 +6280,71 @@ export default function AdminDashboardPage() {
 
             {/* Community Section */}
             {activeSubMenu === 'mentors' && (
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">🤝 Mentors</h3>
-                </div>
-                {loadingMentors ? (
-                  <div className="text-center py-8 text-zinc-400">Loading mentors...</div>
-                ) : mentors.length === 0 ? (
-                  <div className="text-center py-8 text-zinc-400">No mentors found.</div>
-                ) : (
-                  <div className="space-y-3">
-                    {mentors.map((mentor: any) => (
-                      <div key={mentor.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-sm font-semibold text-zinc-50">{mentor.name}</h4>
-                              <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{mentor.type}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded ${mentor.is_active ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
-                                {mentor.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                            {mentor.role && <p className="text-xs text-zinc-400 mb-2">{mentor.role}</p>}
-                            {mentor.description && <p className="text-sm text-zinc-300 mb-2">{mentor.description}</p>}
-                            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-                              {mentor.github && <a href={mentor.github} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300">GitHub</a>}
-                              {mentor.twitter && <a href={mentor.twitter} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300">Twitter</a>}
+              <div className="space-y-6">
+                {/* Register New Mentor Form */}
+                <MentorRegistrationForm 
+                  onSuccess={() => {
+                    // Refresh mentors list after successful registration
+                    mentorsFetchedRef.current = false;
+                    mentorsFetchingRef.current = false;
+                    fetchMentors();
+                  }}
+                />
+
+                {/* Mentors List */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Handshake className="h-5 w-5 text-zinc-50" />
+                      <h3 className="text-lg font-semibold text-zinc-50">All Mentors</h3>
+                    </div>
+                    <p className="text-xs text-zinc-400">
+                      Active mentors appear on the <a href="/mentorship" target="_blank" className="text-cyan-400 hover:text-cyan-300 underline">mentorship page</a>
+                    </p>
+                  </div>
+                  {loadingMentors ? (
+                    <div className="text-center py-8 text-zinc-400">Loading mentors...</div>
+                  ) : mentors.length === 0 ? (
+                    <div className="text-center py-8 text-zinc-400">
+                      <p>No mentors found.</p>
+                      <p className="text-xs text-zinc-500 mt-2">Register a new mentor using the form above.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {mentors.map((mentor: any) => (
+                        <div key={mentor.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="text-sm font-semibold text-zinc-50">{mentor.name}</h4>
+                                <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{mentor.type}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${mentor.is_active ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}`}>
+                                  {mentor.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+                              {mentor.role && <p className="text-xs text-zinc-400 mb-2">{mentor.role}</p>}
+                              {mentor.description && <p className="text-sm text-zinc-300 mb-2">"{mentor.description}"</p>}
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                                {mentor.github && <a href={mentor.github} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300">GitHub</a>}
+                                {mentor.twitter && <a href={mentor.twitter} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300">Twitter</a>}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {activeSubMenu === 'sponsorships' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">💰 Sponsorships</h3>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-zinc-50" />
+                    <h3 className="text-lg font-semibold text-zinc-50">Sponsorships</h3>
+                  </div>
                 </div>
                 {loadingSponsorships ? (
                   <div className="text-center py-8 text-zinc-400">Loading sponsorships...</div>
@@ -6431,7 +6386,10 @@ export default function AdminDashboardPage() {
             {activeSubMenu === 'achievements' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">🏆 Achievements</h3>
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-zinc-50" />
+                    <h3 className="text-lg font-semibold text-zinc-50">Achievements</h3>
+                  </div>
                 </div>
                 {loadingAchievements ? (
                   <div className="text-center py-8 text-zinc-400">Loading achievements...</div>
@@ -6500,7 +6458,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg sm:text-xl font-semibold text-purple-200 mb-1 flex items-center gap-2">
-                  <span>💰</span>
+                  <DollarSign className="h-5 w-5" />
                   <span>All Blog Rewards</span>
                 </h3>
                 <p className="text-xs sm:text-sm text-purple-300/80">
@@ -6645,7 +6603,7 @@ export default function AdminDashboardPage() {
                   {/* Event Selection */}
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 text-base font-semibold text-zinc-200">
-                      <span className="text-xl">📅</span>
+                      <CalendarIcon className="h-5 w-5" />
                       <span>Select Event or Session</span>
                       <span className="text-red-400 text-sm">*</span>
                     </label>
@@ -6699,7 +6657,7 @@ export default function AdminDashboardPage() {
                             const sessions = sessionsByCohort[key];
                             
                             return (
-                              <optgroup key={key} label={`📚 ${cohortName} - Sessions`}>
+                              <optgroup key={key} label={`${cohortName} - Sessions`}>
                                 {sessions.map((session: any) => {
                                   const sessionDate = session.session_date 
                                     ? new Date(session.session_date).toLocaleDateString('en-US', { 
@@ -6747,14 +6705,14 @@ export default function AdminDashboardPage() {
 
                         // Render grouped events
                         const typeLabels: Record<string, string> = {
-                          'live-class': '📅 Live Class Events',
-                          'workshop': '🔧 Workshops',
-                          'assignment': '📝 Assignments',
-                          'quiz': '📋 Quizzes',
-                          'community': '🤝 Community Events',
-                          'deadline': '⏰ Deadlines',
-                          'cohort': '👥 Cohort Events',
-                          'other': '📅 Other Events',
+                          'live-class': 'Live Class Events',
+                          'workshop': 'Workshops',
+                          'assignment': 'Assignments',
+                          'quiz': 'Quizzes',
+                          'community': 'Community Events',
+                          'deadline': 'Deadlines',
+                          'cohort': 'Cohort Events',
+                          'other': 'Other Events',
                         };
 
                         return Object.keys(groupedEvents)
@@ -6764,7 +6722,7 @@ export default function AdminDashboardPage() {
                             if (events.length === 0) return null;
                             
                             return (
-                              <optgroup key={type} label={typeLabels[type] || `📅 ${type}`}>
+                              <optgroup key={type} label={typeLabels[type] || type}>
                                 {events.map((e) => (
                                   <option key={e.id} value={e.id}>
                                     {e.name} {e.start_time ? `(${new Date(e.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})` : ''}
@@ -6826,7 +6784,7 @@ export default function AdminDashboardPage() {
               <div className="mt-6 rounded-2xl border-2 border-zinc-800/50 bg-gradient-to-br from-zinc-900/50 to-zinc-900/30 p-8 shadow-lg">
                 <div className="flex items-start gap-4 mb-6">
                   <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-500/20 border-2 border-blue-500/30 flex items-center justify-center">
-                    <span className="text-2xl">ℹ️</span>
+                    <Info className="h-6 w-6" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-zinc-200 mb-2">CSV Format Requirements</h3>
@@ -6844,21 +6802,21 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-zinc-800/50 hover:border-zinc-700/50 transition">
-                    <span className="text-2xl">👤</span>
+                    <User className="h-6 w-6" />
                     <div>
                       <span className="text-sm font-bold text-zinc-200">Name</span>
                       <span className="text-xs text-zinc-500 ml-2">(optional)</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-zinc-800/50 hover:border-zinc-700/50 transition">
-                    <span className="text-2xl">⏰</span>
+                    <Clock className="h-6 w-6" />
                     <div>
                       <span className="text-sm font-bold text-zinc-200">Join Time</span>
                       <span className="text-xs text-zinc-500 ml-2">(optional)</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/60 border-2 border-zinc-800/50 hover:border-zinc-700/50 transition">
-                    <span className="text-2xl">⏱️</span>
+                    <Clock className="h-6 w-6" />
                     <div>
                       <span className="text-sm font-bold text-zinc-200">Leave Time</span>
                       <span className="text-xs text-zinc-500 ml-2">(optional)</span>
@@ -6936,7 +6894,7 @@ export default function AdminDashboardPage() {
                           const sessions = sessionsByCohort[key];
                           
                           return (
-                            <optgroup key={key} label={`📚 ${cohortName} - Sessions`}>
+                            <optgroup key={key} label={`${cohortName} - Sessions`}>
                               {sessions.map((session: any) => {
                                 const sessionDate = session.session_date 
                                   ? new Date(session.session_date).toLocaleDateString('en-US', { 
@@ -6976,14 +6934,14 @@ export default function AdminDashboardPage() {
                         });
 
                         const typeLabels: Record<string, string> = {
-                          'live-class': '📅 Live Class Events',
-                          'workshop': '🔧 Workshops',
-                          'assignment': '📝 Assignments',
-                          'quiz': '📋 Quizzes',
-                          'community': '🤝 Community Events',
-                          'deadline': '⏰ Deadlines',
-                          'cohort': '👥 Cohort Events',
-                          'other': '📅 Other Events',
+                          'live-class': 'Live Class Events',
+                          'workshop': 'Workshops',
+                          'assignment': 'Assignments',
+                          'quiz': 'Quizzes',
+                          'community': 'Community Events',
+                          'deadline': 'Deadlines',
+                          'cohort': 'Cohort Events',
+                          'other': 'Other Events',
                         };
 
                         return Object.keys(groupedEvents)
@@ -6993,7 +6951,7 @@ export default function AdminDashboardPage() {
                             if (events.length === 0) return null;
                             
                             return (
-                              <optgroup key={type} label={typeLabels[type] || `📅 ${type}`}>
+                              <optgroup key={type} label={typeLabels[type] || type}>
                                 {events.map((e) => (
                                   <option key={e.id} value={e.id}>
                                     {e.name} {e.start_time ? `(${new Date(e.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})` : ''}
@@ -7018,7 +6976,7 @@ export default function AdminDashboardPage() {
                   ) : attendanceRecords.length === 0 ? (
                     <div className="w-full text-center py-20 text-zinc-400">
                       <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-zinc-800/50 border-2 border-zinc-700/50 mb-6">
-                        <span className="text-5xl">📋</span>
+                        <ClipboardList className="h-12 w-12" />
                       </div>
                       <p className="text-xl font-bold text-zinc-300 mb-2">No attendance records found</p>
                       <p className="text-sm text-zinc-500 mb-4">Upload a CSV file to add attendance records.</p>
@@ -7059,7 +7017,7 @@ export default function AdminDashboardPage() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
                                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-2 border-blue-500/30 flex items-center justify-center">
-                                      <span className="text-lg">👤</span>
+                                      <User className="h-5 w-5" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <h3 className="text-base font-bold text-zinc-200 truncate">{record.studentName}</h3>
@@ -7072,7 +7030,7 @@ export default function AdminDashboardPage() {
                               {/* Event Info */}
                               <div className="mb-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <span className="text-sm">📅</span>
+                                  <CalendarIcon className="h-4 w-4" />
                                   <span className="text-xs font-semibold text-zinc-400 uppercase">Event</span>
                                 </div>
                                 <div className="pl-6">
@@ -7090,7 +7048,7 @@ export default function AdminDashboardPage() {
                                 {record.joinTime && (
                                   <div className="flex items-center gap-2">
                                     <div className="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
-                                      <span className="text-xs">⏰</span>
+                                      <Clock className="h-3 w-3" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-xs text-zinc-400 mb-0.5">Join Time</p>
@@ -7130,7 +7088,7 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center justify-between pt-4 border-t-2 border-zinc-800/50">
                                 {record.durationMinutes && (
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs">⏱️</span>
+                                    <Clock className="h-3 w-3" />
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
                                       <span className="text-sm font-bold text-blue-300">{record.durationMinutes}</span>
                                       <span className="text-xs text-zinc-500">min</span>
