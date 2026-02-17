@@ -1046,10 +1046,8 @@ export default function AdminDashboardPage() {
         fetchApplications();
       }
     } else if (currentSubMenu === 'sessions' && fetchSessionsRef.current) {
-      // Always fetch sessions when sessions submenu is active (allow refresh)
-      if (!sessionsFetchingRef.current) {
-        // Reset fetched flag to allow fresh fetch
-        sessionsFetchedRef.current = false;
+      // Fetch sessions when sessions submenu is active (only if not already fetched or fetching)
+      if (!sessionsFetchedRef.current && !sessionsFetchingRef.current) {
         fetchSessionsRef.current();
       }
     }
@@ -1721,26 +1719,28 @@ export default function AdminDashboardPage() {
   const fetchSessions = useCallback(async () => {
     if (!admin) return;
     
-    // Prevent duplicate fetches
-    if (sessionsFetchedRef.current || sessionsFetchingRef.current) {
-      console.log('[Sessions] Skipping fetch - already fetched or fetching');
+    // Prevent duplicate concurrent fetches - check and set flag atomically
+    if (sessionsFetchingRef.current) {
+      console.log('[Sessions] Skipping fetch - already fetching');
       return;
     }
     
-    console.log('[Sessions] Starting fetch');
-    sessionsFetchedRef.current = true;
+    // Set fetching flag immediately to prevent concurrent calls
     sessionsFetchingRef.current = true;
     setLoadingSessions(true);
     
     try {
+      console.log('[Sessions] Starting fetch');
       const res = await fetchWithAuth('/api/sessions?admin=true');
       if (!res.ok) throw new Error('Failed to fetch sessions');
       const data = await res.json();
       if (data.sessions) {
         setAllSessions(data.sessions || []);
         console.log(`[Sessions] Fetched ${data.sessions.length} sessions`);
+        sessionsFetchedRef.current = true;
       } else {
         setAllSessions([]);
+        sessionsFetchedRef.current = true;
       }
     } catch (err: any) {
       console.error('[Sessions] Error:', err);
@@ -2682,7 +2682,10 @@ export default function AdminDashboardPage() {
           fetchAttendanceRecordsRef.current();
         }
         fetchLiveClassEvents(); // Needed for event dropdown
-        fetchSessions(); // Fetch sessions for dropdown
+        // Fetch sessions for dropdown (only if not already fetched or fetching)
+        if (!sessionsFetchedRef.current && !sessionsFetchingRef.current && fetchSessionsRef.current) {
+          fetchSessionsRef.current();
+        }
         dataLoadedRef.current.add('attendance-records');
       }
     }
@@ -2769,8 +2772,6 @@ export default function AdminDashboardPage() {
           }
           if (subMenu === 'sessions') {
             if (!sessionsFetchedRef.current && !sessionsFetchingRef.current && fetchSessionsRef.current) {
-              sessionsFetchedRef.current = false; // Reset to allow fresh fetch
-              sessionsFetchingRef.current = false;
               await fetchSessionsRef.current();
               dataLoadedRef.current.add('sessions');
             }
@@ -3194,7 +3195,11 @@ export default function AdminDashboardPage() {
       alert(`Sessions regenerated successfully! ${data.sessionsGenerated || 0} sessions created.`);
       await fetchCohorts();
       await fetchOverview();
-      await fetchSessions();
+      // Force refresh sessions by resetting the fetched flag
+      sessionsFetchedRef.current = false;
+      if (fetchSessionsRef.current) {
+        await fetchSessionsRef.current();
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to regenerate sessions');
     } finally {
@@ -3233,7 +3238,11 @@ export default function AdminDashboardPage() {
       alert(scheduleText);
       await fetchCohorts();
       await fetchOverview();
-      await fetchSessions();
+      // Force refresh sessions by resetting the fetched flag
+      sessionsFetchedRef.current = false;
+      if (fetchSessionsRef.current) {
+        await fetchSessionsRef.current();
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to rearrange sessions');
     } finally {
