@@ -1045,8 +1045,6 @@ export default function AdminDashboardPage() {
       if (!applicationsFetchingRef.current) {
         fetchApplications();
       }
-    } else if (false && !allStudentsFetchedRef.current && !allStudentsFetchingRef.current && fetchAllStudentsRef.current) { // Removed student-database
-      fetchAllStudentsRef.current();
     } else if (currentSubMenu === 'sessions' && fetchSessionsRef.current) {
       // Always fetch sessions when sessions submenu is active (allow refresh)
       if (!sessionsFetchingRef.current) {
