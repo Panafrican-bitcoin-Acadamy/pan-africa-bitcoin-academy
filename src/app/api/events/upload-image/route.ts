@@ -18,8 +18,9 @@ const MIN_IMAGE_DIMENSIONS = { width: 100, height: 100 };
  * Body: { imageData: string (base64) }
  */
 export async function POST(req: NextRequest) {
+  let session: { adminId: string; email: string } | null = null;
   try {
-    const session = requireAdmin(req);
+    session = requireAdmin(req);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
