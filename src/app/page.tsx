@@ -251,6 +251,8 @@ interface UpcomingEvent {
   time: string;
   description: string;
   link: string | null;
+  image_url: string | null;
+  image_alt_text: string | null;
 }
 
 async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
@@ -292,11 +294,13 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
           time: startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
           description: event.description || '',
           link: event.link || null,
+          image_url: event.image_url || null,
+          image_alt_text: event.image_alt_text || null,
         });
       });
     }
 
-    // Transform sessions
+    // Transform sessions (sessions don't have images)
     if (sessionsResult.data) {
       sessionsResult.data.forEach((session: any) => {
         const sessionDate = new Date(session.session_date);
@@ -310,6 +314,8 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
           time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
           description: session.topic || `Cohort session ${session.session_number}`,
           link: session.link || null,
+          image_url: null,
+          image_alt_text: null,
         });
       });
     }
@@ -959,41 +965,54 @@ export default async function Home() {
                     return (
                       <div
                         key={event.id}
-                        className={`rounded-xl border p-6 transition hover:brightness-110 ${
+                        className={`rounded-xl border overflow-hidden transition hover:brightness-110 ${
                           isClosestEvent
                             ? 'border-yellow-500/50 bg-gradient-to-br from-yellow-500/20 via-yellow-400/15 to-yellow-500/20 shadow-[0_0_40px_rgba(234,179,8,0.4)] ring-2 ring-yellow-500/30'
                             : `${style.border} ${style.bg} hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]`
                         }`}
                       >
-                        {isClosestEvent && (
-                          <div className="mb-2 flex items-center gap-2">
-                            <span className="rounded-full bg-yellow-500/30 px-2 py-0.5 text-xs font-semibold text-yellow-200">
-                              Next Up
-                            </span>
+                        {/* Event Image */}
+                        {event.image_url && (
+                          <div className="w-full h-40 bg-zinc-900 flex items-center justify-center overflow-hidden">
+                            <img
+                              src={event.image_url}
+                              alt={event.image_alt_text || event.title}
+                              className="w-full h-full object-contain"
+                              loading="lazy"
+                            />
                           </div>
                         )}
-                        <div className="mb-3 flex items-start gap-3">
-                          <IconComponent className={`h-6 w-6 ${isClosestEvent ? 'text-yellow-300' : style.text} flex-shrink-0 mt-0.5`} />
-                          <div className="flex-1 min-w-0">
-                            <div className="mb-2 flex items-center gap-2 flex-wrap">
-                              <span className={`text-xs font-medium ${isClosestEvent ? 'text-yellow-300' : style.text}`}>
-                                {event.dateString}
+                        <div className="p-6">
+                          {isClosestEvent && (
+                            <div className="mb-2 flex items-center gap-2">
+                              <span className="rounded-full bg-yellow-500/30 px-2 py-0.5 text-xs font-semibold text-yellow-200">
+                                Next Up
                               </span>
-                              {event.time && (
-                                <>
-                                  <span className="text-zinc-500">•</span>
-                                  <span className="text-xs text-zinc-400">{event.time}</span>
-                                </>
+                            </div>
+                          )}
+                          <div className="mb-3 flex items-start gap-3">
+                            <IconComponent className={`h-6 w-6 ${isClosestEvent ? 'text-yellow-300' : style.text} flex-shrink-0 mt-0.5`} />
+                            <div className="flex-1 min-w-0">
+                              <div className="mb-2 flex items-center gap-2 flex-wrap">
+                                <span className={`text-xs font-medium ${isClosestEvent ? 'text-yellow-300' : style.text}`}>
+                                  {event.dateString}
+                                </span>
+                                {event.time && (
+                                  <>
+                                    <span className="text-zinc-500">•</span>
+                                    <span className="text-xs text-zinc-400">{event.time}</span>
+                                  </>
+                                )}
+                              </div>
+                              <h3 className={`mb-2 text-lg font-semibold line-clamp-2 ${isClosestEvent ? 'text-yellow-200' : 'text-zinc-100'}`}>
+                                {event.title}
+                              </h3>
+                              {event.description && (
+                                <p className="mb-3 text-sm text-zinc-400 line-clamp-2">
+                                  {event.description}
+                                </p>
                               )}
                             </div>
-                            <h3 className={`mb-2 text-lg font-semibold line-clamp-2 ${isClosestEvent ? 'text-yellow-200' : 'text-zinc-100'}`}>
-                              {event.title}
-                            </h3>
-                            {event.description && (
-                              <p className="mb-3 text-sm text-zinc-400 line-clamp-2">
-                                {event.description}
-                              </p>
-                            )}
                           </div>
                         </div>
                       </div>
