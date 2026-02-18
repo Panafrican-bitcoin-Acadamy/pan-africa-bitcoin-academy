@@ -269,15 +269,17 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayISO = today.toISOString();
 
     // Fetch all events (for everyone - cohort_id is null) and upcoming cohort sessions
     const [eventsResult, sessionsResult] = await Promise.all([
       // Fetch events for everyone (cohort_id is null) that are upcoming
+      // Note: Events with cohort_id = null are visible to everyone on the homepage
       supabaseAdmin
         .from('events')
         .select('*')
         .is('cohort_id', null)
-        .gte('start_time', today.toISOString())
+        .gte('start_time', todayISO)
         .order('start_time', { ascending: true })
         .limit(20), // Increased limit to show more events
       // Fetch upcoming cohort sessions
@@ -331,9 +333,22 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
     }
 
     // Sort by date and return top 12 (to show more events from admin)
-    return upcomingEvents
+    const sortedEvents = upcomingEvents
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(0, 12);
+
+    // Log for debugging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Homepage] Upcoming Events:', {
+        totalFetched: upcomingEvents.length,
+        totalDisplayed: sortedEvents.length,
+        eventsFromDB: eventsResult.data?.length || 0,
+        sessionsFromDB: sessionsResult.data?.length || 0,
+        todayISO: today.toISOString(),
+      });
+    }
+
+    return sortedEvents;
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
     return [];

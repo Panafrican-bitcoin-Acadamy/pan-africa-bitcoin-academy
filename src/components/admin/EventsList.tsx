@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, Trash2, Edit, ExternalLink, AlertCircle, RefreshCw, ZoomIn, X } from 'lucide-react';
+import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, Trash2, Edit, ExternalLink, AlertCircle, RefreshCw, ZoomIn, X, Mail, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface Event {
   id: string;
@@ -54,6 +54,8 @@ export default function EventsList({
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [sendingInvitationsId, setSendingInvitationsId] = useState<string | null>(null);
+  const [invitationResult, setInvitationResult] = useState<{ eventId: string; success: boolean; message: string; details?: any } | null>(null);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -163,6 +165,54 @@ export default function EventsList({
     }
   };
 
+  const handleSendInvitations = async (eventId: string, eventName: string) => {
+    if (!confirm(`Send invitation emails to all students for "${eventName}"?`)) {
+      return;
+    }
+
+    setSendingInvitationsId(eventId);
+    setInvitationResult(null);
+    
+    try {
+      const response = await fetch(`/api/admin/events/${eventId}/send-invitations`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send invitations');
+      }
+
+      setInvitationResult({
+        eventId,
+        success: true,
+        message: data.message || 'Invitations sent successfully',
+        details: data,
+      });
+
+      // Clear result after 5 seconds
+      setTimeout(() => {
+        setInvitationResult(null);
+      }, 5000);
+    } catch (err: any) {
+      console.error('Error sending invitations:', err);
+      setInvitationResult({
+        eventId,
+        success: false,
+        message: err.message || 'Failed to send invitations',
+      });
+      
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setInvitationResult(null);
+      }, 5000);
+    } finally {
+      setSendingInvitationsId(null);
+    }
+  };
+
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
@@ -254,6 +304,47 @@ export default function EventsList({
             <p className="text-sm font-medium text-red-300">Error</p>
             <p className="text-sm text-red-400/80 mt-1">{error}</p>
           </div>
+        </div>
+      )}
+
+      {/* Invitation Result Message */}
+      {invitationResult && (
+        <div className={`mb-4 rounded-lg border p-4 flex items-start gap-3 ${
+          invitationResult.success
+            ? 'border-green-500/30 bg-green-500/10'
+            : 'border-red-500/30 bg-red-500/10'
+        }`}>
+          {invitationResult.success ? (
+            <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1">
+            <p className={`text-sm font-medium ${
+              invitationResult.success ? 'text-green-300' : 'text-red-300'
+            }`}>
+              {invitationResult.success ? 'Success' : 'Error'}
+            </p>
+            <p className={`text-sm mt-1 ${
+              invitationResult.success ? 'text-green-400/80' : 'text-red-400/80'
+            }`}>
+              {invitationResult.message}
+              {invitationResult.details && invitationResult.details.totalStudents && (
+                <span className="block mt-1 text-xs">
+                  Sent to {invitationResult.details.successCount} of {invitationResult.details.totalStudents} students
+                  {invitationResult.details.failureCount > 0 && (
+                    <span className="text-yellow-400"> ({invitationResult.details.failureCount} failed)</span>
+                  )}
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => setInvitationResult(null)}
+            className="text-zinc-400 hover:text-zinc-300 transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
