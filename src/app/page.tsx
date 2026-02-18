@@ -255,6 +255,16 @@ interface UpcomingEvent {
   image_alt_text: string | null;
 }
 
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  'live-class': 'Live Class',
+  'assignment': 'Assignment',
+  'community': 'Community',
+  'workshop': 'Workshop',
+  'deadline': 'Deadline',
+  'quiz': 'Quiz',
+  'cohort': 'Cohort',
+};
+
 async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
   try {
     const today = new Date();
@@ -262,14 +272,14 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
 
     // Fetch all events (for everyone - cohort_id is null) and upcoming cohort sessions
     const [eventsResult, sessionsResult] = await Promise.all([
-      // Fetch events for everyone
+      // Fetch events for everyone (cohort_id is null) that are upcoming
       supabaseAdmin
         .from('events')
         .select('*')
         .is('cohort_id', null)
         .gte('start_time', today.toISOString())
         .order('start_time', { ascending: true })
-        .limit(10),
+        .limit(20), // Increased limit to show more events
       // Fetch upcoming cohort sessions
       supabaseAdmin
         .from('cohort_sessions')
@@ -320,10 +330,10 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
       });
     }
 
-    // Sort by date and return top 6
+    // Sort by date and return top 12 (to show more events from admin)
     return upcomingEvents
       .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .slice(0, 6);
+      .slice(0, 12);
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
     return [];
@@ -965,54 +975,69 @@ export default async function Home() {
                     return (
                       <div
                         key={event.id}
-                        className={`rounded-xl border overflow-hidden transition hover:brightness-110 ${
+                        className={`rounded-xl border overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
                           isClosestEvent
                             ? 'border-yellow-500/50 bg-gradient-to-br from-yellow-500/20 via-yellow-400/15 to-yellow-500/20 shadow-[0_0_40px_rgba(234,179,8,0.4)] ring-2 ring-yellow-500/30'
                             : `${style.border} ${style.bg} hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]`
                         }`}
                       >
-                        {/* Event Image */}
+                        {/* Event Image - Improved presentation */}
                         {event.image_url && (
-                          <div className="w-full h-40 bg-zinc-900 flex items-center justify-center overflow-hidden">
+                          <div className="w-full h-48 bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center overflow-hidden relative">
                             <img
                               src={event.image_url}
                               alt={event.image_alt_text || event.title}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-contain p-3"
                               loading="lazy"
                             />
+                            {/* Subtle overlay gradient at bottom for text readability if needed */}
+                            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-zinc-950/50 to-transparent pointer-events-none" />
                           </div>
                         )}
-                        <div className="p-6">
-                          {isClosestEvent && (
-                            <div className="mb-2 flex items-center gap-2">
-                              <span className="rounded-full bg-yellow-500/30 px-2 py-0.5 text-xs font-semibold text-yellow-200">
-                                Next Up
-                              </span>
-                            </div>
-                          )}
-                          <div className="mb-3 flex items-start gap-3">
-                            <IconComponent className={`h-6 w-6 ${isClosestEvent ? 'text-yellow-300' : style.text} flex-shrink-0 mt-0.5`} />
+                        
+                        <div className="p-5">
+                          {/* Badge and Date/Time Section */}
+                          <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex-1 min-w-0">
-                              <div className="mb-2 flex items-center gap-2 flex-wrap">
-                                <span className={`text-xs font-medium ${isClosestEvent ? 'text-yellow-300' : style.text}`}>
+                              {isClosestEvent && (
+                                <div className="mb-2">
+                                  <span className="inline-flex items-center rounded-full bg-yellow-500/30 px-2.5 py-1 text-xs font-semibold text-yellow-200">
+                                    Next Up
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                <IconComponent className={`h-4 w-4 ${isClosestEvent ? 'text-yellow-300' : style.text} flex-shrink-0`} />
+                                <span className={`font-medium ${isClosestEvent ? 'text-yellow-300' : style.text}`}>
                                   {event.dateString}
                                 </span>
                                 {event.time && (
                                   <>
-                                    <span className="text-zinc-500">•</span>
-                                    <span className="text-xs text-zinc-400">{event.time}</span>
+                                    <span className="text-zinc-600">•</span>
+                                    <span className="text-zinc-400">{event.time}</span>
                                   </>
                                 )}
                               </div>
-                              <h3 className={`mb-2 text-lg font-semibold line-clamp-2 ${isClosestEvent ? 'text-yellow-200' : 'text-zinc-100'}`}>
-                                {event.title}
-                              </h3>
-                              {event.description && (
-                                <p className="mb-3 text-sm text-zinc-400 line-clamp-2">
-                                  {event.description}
-                                </p>
-                              )}
                             </div>
+                          </div>
+
+                          {/* Title - Better typography */}
+                          <h3 className={`mb-3 text-xl font-bold leading-tight ${isClosestEvent ? 'text-yellow-100' : 'text-zinc-50'} line-clamp-2`}>
+                            {event.title}
+                          </h3>
+
+                          {/* Description - Improved spacing and readability */}
+                          {event.description && (
+                            <p className={`text-sm leading-relaxed ${isClosestEvent ? 'text-yellow-200/80' : 'text-zinc-400'} line-clamp-3 mb-4`}>
+                              {event.description}
+                            </p>
+                          )}
+
+                          {/* Event Type Badge */}
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${style.bg} ${style.text} border ${style.border}`}>
+                              {EVENT_TYPE_LABELS[event.type] || event.type}
+                            </span>
                           </div>
                         </div>
                       </div>
