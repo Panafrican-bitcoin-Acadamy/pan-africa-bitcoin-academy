@@ -154,7 +154,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
                   {assignment.searchAddress}
                 </code>
                 <a
-                  href={`https://blockstream.info/address/${assignment.searchAddress}`}
+                  href={`https://www.blockchain.com/explorer/addresses/btc/${assignment.searchAddress}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-300 hover:bg-cyan-500/20 transition"
