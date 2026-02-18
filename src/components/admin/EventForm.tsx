@@ -34,6 +34,20 @@ interface EventFormData {
   chapter_number: string;
 }
 
+interface EventForEdit {
+  id: string;
+  name: string;
+  type: string;
+  start_time: string;
+  end_time: string | null;
+  description: string | null;
+  link: string | null;
+  recording_url: string | null;
+  image_url: string | null;
+  image_alt_text?: string | null;
+  cohort_id: string | null;
+}
+
 const EVENT_TYPES = [
   { value: 'community', label: 'Community', icon: Users },
   { value: 'live-class', label: 'Live Class', icon: Video },
@@ -44,7 +58,15 @@ const EVENT_TYPES = [
   { value: 'cohort', label: 'Cohort', icon: Rocket },
 ];
 
-export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function EventForm({ 
+  event, 
+  onSuccess,
+  onCancel 
+}: { 
+  event?: EventForEdit | null;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}) {
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
     type: 'community',
@@ -86,10 +108,71 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Format datetime-local value from ISO string
+  const formatDateTimeLocal = (isoString: string): string => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   // Fetch cohorts on mount
   useEffect(() => {
     fetchCohorts();
   }, []);
+
+  // Populate form when event prop changes (edit mode)
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        name: event.name || '',
+        type: event.type || 'community',
+        start_time: formatDateTimeLocal(event.start_time),
+        end_time: event.end_time ? formatDateTimeLocal(event.end_time) : '',
+        description: event.description || '',
+        link: event.link || '',
+        recording_url: event.recording_url || '',
+        image_url: event.image_url || '',
+        image_alt_text: event.image_alt_text || '',
+        cohort_id: event.cohort_id,
+        for_all: !event.cohort_id,
+        chapter_number: '',
+      });
+      
+      // Set image preview if image exists
+      if (event.image_url) {
+        setImagePreview(event.image_url);
+        setImageUploaded(true);
+      }
+    } else {
+      // Reset form when event is cleared (create mode)
+      setFormData({
+        name: '',
+        type: 'community',
+        start_time: '',
+        end_time: '',
+        description: '',
+        link: '',
+        recording_url: '',
+        image_url: '',
+        image_alt_text: '',
+        cohort_id: null,
+        for_all: true,
+        chapter_number: '',
+      });
+      setImagePreview(null);
+      setImageUploaded(false);
+      setImageFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [event]);
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -532,8 +615,12 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
         payload.chapter_number = parseInt(formData.chapter_number);
       }
 
-      const response = await fetch('/api/events/create', {
-        method: 'POST',
+      const isEditMode = !!event;
+      const url = isEditMode ? `/api/admin/events/${event.id}` : '/api/events/create';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(payload),
@@ -542,42 +629,44 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create event');
+        throw new Error(data.error || `Failed to ${isEditMode ? 'update' : 'create'} event`);
       }
 
-      setSuccess(data.message || 'Event created successfully!');
+      setSuccess(data.message || `Event ${isEditMode ? 'updated' : 'created'} successfully!`);
       
-      // Reset form
-      setFormData({
-        name: '',
-        type: 'community',
-        start_time: '',
-        end_time: '',
-        description: '',
-        link: '',
-        recording_url: '',
-        image_url: '',
-        image_alt_text: '',
-        cohort_id: null,
-        for_all: true,
-        chapter_number: '',
-      });
-      setFieldErrors({});
-      setImageFile(null);
-      setImagePreview(null);
-      setImageUploaded(false);
-      setUploadProgress(0);
-      setImageDimensions(null);
-      setImageValidation(null);
-      setUploadError(null);
-      setRetryCount(0);
-      setImageRotation(0);
-      setImageZoom(100);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      if (cameraInputRef.current) {
-        cameraInputRef.current.value = '';
+      // Only reset form if creating new event (not editing)
+      if (!isEditMode) {
+        setFormData({
+          name: '',
+          type: 'community',
+          start_time: '',
+          end_time: '',
+          description: '',
+          link: '',
+          recording_url: '',
+          image_url: '',
+          image_alt_text: '',
+          cohort_id: null,
+          for_all: true,
+          chapter_number: '',
+        });
+        setFieldErrors({});
+        setImageFile(null);
+        setImagePreview(null);
+        setImageUploaded(false);
+        setUploadProgress(0);
+        setImageDimensions(null);
+        setImageValidation(null);
+        setUploadError(null);
+        setRetryCount(0);
+        setImageRotation(0);
+        setImageZoom(100);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        if (cameraInputRef.current) {
+          cameraInputRef.current.value = '';
+        }
       }
 
       // Dispatch refresh event for EventsList
@@ -611,29 +700,31 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  // Format datetime-local value from ISO string
-  const formatDateTimeLocal = (isoString: string): string => {
-    if (!isoString) return '';
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return '';
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
   const selectedType = EVENT_TYPES.find(t => t.value === formData.type) || EVENT_TYPES[0];
   const TypeIcon = selectedType.icon;
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-zinc-50 mb-2">Create New Event</h2>
-        <p className="text-sm text-zinc-400">
-          Create events that will appear in the "Upcoming Events" section on the homepage. Events marked "For Everyone" will be visible to all users.
-        </p>
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6" data-event-form>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-zinc-50 mb-2">
+            {event ? 'Edit Event' : 'Create New Event'}
+          </h2>
+          <p className="text-sm text-zinc-400">
+            {event 
+              ? 'Update event details. Changes will be reflected immediately.'
+              : 'Create events that will appear in the "Upcoming Events" section on the homepage. Events marked "For Everyone" will be visible to all users.'}
+          </p>
+        </div>
+        {event && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-900 transition"
+          >
+            Cancel
+          </button>
+        )}
       </div>
 
       {error && (
@@ -1189,7 +1280,9 @@ export default function EventForm({ onSuccess }: { onSuccess?: () => void }) {
             disabled={submitting}
             className="rounded-lg bg-gradient-to-r from-cyan-400 to-purple-500 px-4 py-2 text-sm font-medium text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Creating Event...' : 'Create Event'}
+            {submitting 
+              ? (event ? 'Updating Event...' : 'Creating Event...') 
+              : (event ? 'Update Event' : 'Create Event')}
           </button>
         </div>
       </form>

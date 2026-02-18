@@ -76,6 +76,7 @@ export async function GET(_req: NextRequest) {
         link: event.link || '#',
         recordingUrl: event.recording_url || null,
         imageUrl: event.image_url || null,
+        imageAltText: event.image_alt_text || null,
         endTime: endTime ? endTime.toISOString() : null,
         cohortId: event.cohort_id || null,
         isForEveryone: !event.cohort_id,

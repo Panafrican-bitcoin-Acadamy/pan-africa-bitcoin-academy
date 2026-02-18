@@ -197,6 +197,9 @@ export default function AdminDashboardPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [processing, setProcessing] = useState<string | null>(null);
   const [cohortFilter, setCohortFilter] = useState<string | null>(null); // Filter by cohort
+  
+  // Event editing state
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [attendanceSort, setAttendanceSort] = useState<'asc' | 'desc' | null>(null); // Sort by attendance
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingCohort, setCreatingCohort] = useState(false);
@@ -4489,19 +4492,51 @@ export default function AdminDashboardPage() {
                 {/* Events Section - Create and List Together */}
                 {activeSubMenu === 'events' && (
                   <div className="space-y-6">
-                    {/* Create Event Form */}
-                    <EventForm onSuccess={() => {
-                      // Refresh events list after successful creation
-                      if (window.dispatchEvent) {
-                        window.dispatchEvent(new CustomEvent('refreshEventsList'));
-                      }
-                    }} />
+                    {/* Create/Edit Event Form */}
+                    <EventForm 
+                      event={editingEvent}
+                      onSuccess={() => {
+                        // Clear editing state and refresh events list after successful creation/update
+                        setEditingEvent(null);
+                        if (window.dispatchEvent) {
+                          window.dispatchEvent(new CustomEvent('refreshEventsList'));
+                        }
+                      }}
+                      onCancel={() => {
+                        setEditingEvent(null);
+                      }}
+                    />
                     
                     {/* List Events */}
-                    <EventsList onRefresh={() => {
-                      // Optionally refresh other components
-                      console.log('Events list refreshed');
-                    }} />
+                    <EventsList 
+                      onRefresh={() => {
+                        // Optionally refresh other components
+                        console.log('Events list refreshed');
+                      }}
+                      onEdit={(event) => {
+                        // Transform event to match EventForm's expected format
+                        setEditingEvent({
+                          id: event.id,
+                          name: event.name,
+                          type: event.type,
+                          start_time: event.start_time,
+                          end_time: event.end_time,
+                          description: event.description,
+                          link: event.link,
+                          recording_url: event.recording_url,
+                          image_url: event.image_url,
+                          image_alt_text: event.image_alt_text || null,
+                          cohort_id: event.cohort_id,
+                        });
+                        // Scroll to form
+                        setTimeout(() => {
+                          const formElement = document.querySelector('[data-event-form]');
+                          if (formElement) {
+                            formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }, 100);
+                      }}
+                    />
                   </div>
                 )}
               </>

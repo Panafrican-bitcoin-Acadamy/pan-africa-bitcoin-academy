@@ -29,6 +29,8 @@ export async function PUT(
       description, 
       link, 
       recording_url,
+      image_url,
+      image_alt_text,
       cohort_id,
       for_all,
       chapter_number
@@ -72,21 +74,36 @@ export async function PUT(
       finalCohortId = cohort_id; // Event is for specific cohort
     }
 
+    // Build update payload
+    const updatePayload: any = {
+      name: name.trim(),
+      type: eventType,
+      start_time: start_time,
+      end_time: end_time || null,
+      description: description?.trim() || null,
+      link: link?.trim() || null,
+      recording_url: recording_url?.trim() || null,
+      cohort_id: finalCohortId,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Only include image_url if provided
+    if (image_url !== undefined) {
+      updatePayload.image_url = image_url || null;
+    }
+
+    // Only include image_alt_text if provided
+    if (image_alt_text !== undefined) {
+      updatePayload.image_alt_text = image_alt_text?.trim() || null;
+    }
+
+    // Note: chapter_number is NOT in events table - it's only in assignments table
+    // So we don't include it here
+
     // Update event
     const { data: updatedEvent, error: updateError } = await supabaseAdmin
       .from('events')
-      .update({
-        name: name.trim(),
-        type: eventType,
-        start_time: start_time,
-        end_time: end_time || null,
-        description: description?.trim() || null,
-        link: link?.trim() || null,
-        recording_url: recording_url?.trim() || null,
-        cohort_id: finalCohortId,
-        chapter_number: chapter_number && eventType === 'live-class' && !isNaN(parseInt(chapter_number)) ? parseInt(chapter_number) : null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', eventId)
       .select('*')
       .single();
@@ -159,18 +176,99 @@ export async function DELETE(
 
     const { id: eventId } = await params;
 
+    // First, fetch the event to get the image URL before deleting
+    const { data: event, error: fetchError } = await supabaseAdmin
+      .from('events')
+      .select('id, name, image_url')
+      .eq('id', eventId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[Delete Event] Error fetching event:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to fetch event', details: fetchError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete associated image from storage if it exists
+    if (event.image_url) {
+      try {
+        // Extract file path from the URL
+        // URLs are typically: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
+        const urlParts = event.image_url.split('/storage/v1/object/public/');
+        if (urlParts.length === 2) {
+          const pathParts = urlParts[1].split('/');
+          const bucketName = pathParts[0];
+          const filePath = pathParts.slice(1).join('/');
+
+          // Try to delete from events bucket first
+          let deleteError = null;
+          ({ error: deleteError } = await supabaseAdmin.storage
+            .from(bucketName)
+            .remove([filePath]));
+
+          // If not found in events bucket, try profile_img/events/ path
+          if (deleteError && bucketName === 'profile_img') {
+            // Already tried profile_img, check if it's in events/ subfolder
+            const eventsPath = `events/${filePath.split('/').pop()}`;
+            ({ error: deleteError } = await supabaseAdmin.storage
+              .from('profile_img')
+              .remove([eventsPath]));
+          }
+
+          if (deleteError) {
+            // Log but don't fail the deletion - image might already be deleted or not exist
+            console.warn('[Delete Event] Warning: Could not delete image from storage:', {
+              eventId,
+              imageUrl: event.image_url,
+              error: deleteError.message,
+            });
+          } else {
+            console.log('[Delete Event] Successfully deleted image from storage:', {
+              eventId,
+              imageUrl: event.image_url,
+            });
+          }
+        }
+      } catch (imageError: any) {
+        // Log but don't fail the deletion - image deletion is optional
+        console.warn('[Delete Event] Warning: Error deleting image:', {
+          eventId,
+          imageUrl: event.image_url,
+          error: imageError.message,
+        });
+      }
+    }
+
+    // Delete the event from database
     const { error: deleteError } = await supabaseAdmin
       .from('events')
       .delete()
       .eq('id', eventId);
 
     if (deleteError) {
-      console.error('Error deleting event:', deleteError);
+      console.error('[Delete Event] Error deleting event from database:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete event', details: deleteError.message },
+        { error: 'Failed to delete event from database', details: deleteError.message },
         { status: 500 }
       );
     }
+
+    console.log('[Delete Event] Successfully deleted event:', {
+      eventId,
+      eventName: event.name,
+      adminId: session.adminId,
+      adminEmail: session.email,
+      timestamp: new Date().toISOString(),
+    });
 
     const res = NextResponse.json(
       {
@@ -182,7 +280,7 @@ export async function DELETE(
     attachRefresh(res, session);
     return res;
   } catch (error: any) {
-    console.error('Error in delete event API:', error);
+    console.error('[Delete Event] Error in delete event API:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

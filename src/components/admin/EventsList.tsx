@@ -13,6 +13,7 @@ interface Event {
   link: string | null;
   recording_url: string | null;
   image_url: string | null;
+  image_alt_text?: string | null;
   cohort_id: string | null;
   cohort_name?: string | null;
   created_at: string;
@@ -39,7 +40,13 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   'cohort': 'Cohort',
 };
 
-export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
+export default function EventsList({ 
+  onRefresh,
+  onEdit 
+}: { 
+  onRefresh?: () => void;
+  onEdit?: (event: Event) => void;
+}) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +80,7 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
         link: event.link && event.link !== '#' ? event.link : null,
         recording_url: event.recordingUrl || null,
         image_url: event.imageUrl || null,
+        image_alt_text: event.imageAltText || null,
         cohort_id: event.cohortId || null,
         cohort_name: null, // We'll fetch this separately if needed
         created_at: '',
@@ -430,6 +438,15 @@ export default function EventsList({ onRefresh }: { onRefresh?: () => void }) {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(event)}
+                          className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-2 text-cyan-400 hover:bg-cyan-500/20 transition"
+                          title="Edit event"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(event.id, event.name)}
                         disabled={deletingId === event.id}
