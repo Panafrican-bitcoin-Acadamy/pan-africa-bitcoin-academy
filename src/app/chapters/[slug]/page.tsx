@@ -13,6 +13,7 @@ import { Chapter8Assignment } from "@/components/Chapter8Assignment";
 import { Chapter18Assignment } from "@/components/Chapter18Assignment";
 import { ChapterUTXOAssignment } from "@/components/ChapterUTXOAssignment";
 import { Chapter14HalvingPuzzle } from "@/components/Chapter14HalvingPuzzle";
+import { ChapterExplorerAssignment } from "@/components/ChapterExplorerAssignment";
 import { SeedPhraseGrid } from "@/components/SeedPhraseGrid";
 import { BtcSatsConverter } from "@/components/BtcSatsConverter";
 import type { Metadata } from "next";
@@ -910,14 +911,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               rewardSats={100}
             />
           ) : chapter.slug === 'verify-for-yourself-block-explorers-nodes' ? (
-            <div className="mt-3">
-              <div className="inline-flex items-center gap-2 rounded-lg border border-purple-400/30 bg-purple-500/10 px-4 py-3 text-purple-200">
-                <span>📋 Explorer Scavenger Hunt Assignment</span>
-              </div>
-              <p className="mt-3 text-sm text-zinc-400">
-                Complete the assignment to practice using block explorers and verify transactions independently.
-              </p>
-            </div>
+            <ChapterExplorerAssignment chapterSlug={chapter.slug} />
           ) : chapter.slug === 'proof-of-work-and-block-rewards' ? (
             <Chapter14HalvingPuzzle
               assignmentId="dddddddd-dddd-4ddd-8ddd-dddddddddddd"
