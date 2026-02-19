@@ -27,6 +27,17 @@ interface Cohort {
 export default function ApplyPage() {
   const router = useRouter();
   const { isAuthenticated, profile, isRegistered, loading: authLoading } = useAuth();
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [cohortsLoading, setCohortsLoading] = useState(true);
+  const [cohortsError, setCohortsError] = useState<string | null>(null);
+  const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [itemsPerView, setItemsPerView] = useState(1);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   
   // Show loading spinner overlay when submitting
   useEffect(() => {
@@ -39,16 +50,6 @@ export default function ApplyPage() {
       document.body.style.overflow = '';
     };
   }, [submitting]);
-  const [cohorts, setCohorts] = useState<Cohort[]>([]);
-  const [cohortsLoading, setCohortsLoading] = useState(true);
-  const [cohortsError, setCohortsError] = useState<string | null>(null);
-  const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(1);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Calculate carousel transform value accounting for gaps
   // Container has padding (px-2 sm:px-4), so cards fit within padded area
@@ -177,7 +178,6 @@ export default function ApplyPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({

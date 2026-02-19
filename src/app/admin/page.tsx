@@ -145,6 +145,120 @@ interface MentorshipApp {
   created_at: string;
 }
 
+interface Achievement {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  points: number;
+  category: string | null;
+  created_at: string;
+}
+
+interface DeveloperResource {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  type: string | null;
+  category: string | null;
+  created_at: string;
+}
+
+interface DeveloperEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  date: string | null;
+  type: string | null;
+  created_at: string;
+}
+
+interface Sponsorship {
+  id: string;
+  sponsor_name: string;
+  student_id: string | null;
+  amount: number;
+  status: string;
+  created_at: string;
+}
+
+interface Testimonial {
+  id: string;
+  student_id: string | null;
+  content: string;
+  author_name: string | null;
+  author_role: string | null;
+  approved: boolean;
+  created_at: string;
+}
+
+interface Mentor {
+  id: string;
+  name: string;
+  role: string;
+  description: string | null;
+  image_url: string | null;
+  github: string | null;
+  twitter: string | null;
+  type: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface Assignment {
+  id: string;
+  chapter_slug: string;
+  question: string;
+  search_address: string | null;
+  correct_answer: string | null;
+  points: number;
+  created_at: string;
+}
+
+interface BlogReward {
+  id: string;
+  student_id: string;
+  blog_submission_id: string | null;
+  amount_paid: number;
+  amount_pending: number;
+  status: string;
+  created_at: string;
+}
+
+interface Student {
+  id: string;
+  profile_id: string;
+  cohort_id: string | null;
+  status: string;
+  enrollment_date: string | null;
+  exam_score: number | null;
+  exam_completed_at: string | null;
+  created_at: string;
+}
+
+interface Session {
+  id: string;
+  cohort_id: string;
+  session_number: number;
+  session_date: string;
+  topic: string | null;
+  link: string | null;
+  duration_minutes: number | null;
+  created_at: string;
+}
+
+interface AttendanceRecord {
+  id: string;
+  student_id: string;
+  event_id: string | null;
+  session_id: string | null;
+  attended: boolean;
+  attendance_date: string;
+  created_at: string;
+}
+
 const statusClasses: Record<string, string> = {
   approved: 'text-green-400 bg-green-500/10 border-green-500/30',
   rejected: 'text-red-400 bg-red-500/10 border-red-500/30',
@@ -170,31 +284,31 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   
   // State for approved students and all students
-  const [approvedStudents, setApprovedStudents] = useState<any[]>([]);
+  const [approvedStudents, setApprovedStudents] = useState<Student[]>([]);
   const [loadingApprovedStudents, setLoadingApprovedStudents] = useState(false);
-  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [loadingAllStudents, setLoadingAllStudents] = useState(false);
   
   // New state for additional database tables
-  const [achievements, setAchievements] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loadingAchievements, setLoadingAchievements] = useState(false);
-  const [developerResources, setDeveloperResources] = useState<any[]>([]);
+  const [developerResources, setDeveloperResources] = useState<DeveloperResource[]>([]);
   const [loadingDeveloperResources, setLoadingDeveloperResources] = useState(false);
-  const [developerEvents, setDeveloperEvents] = useState<any[]>([]);
+  const [developerEvents, setDeveloperEvents] = useState<DeveloperEvent[]>([]);
   const [loadingDeveloperEvents, setLoadingDeveloperEvents] = useState(false);
-  const [sponsorships, setSponsorships] = useState<any[]>([]);
+  const [sponsorships, setSponsorships] = useState<Sponsorship[]>([]);
   const [loadingSponsorships, setLoadingSponsorships] = useState(false);
-  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(false);
-  const [mentors, setMentors] = useState<any[]>([]);
+  const [mentors, setMentors] = useState<Mentor[]>([]);
   const [loadingMentors, setLoadingMentors] = useState(false);
   
-  const [assignments, setAssignments] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   
   // Blog rewards modal state
   const [showBlogRewardsModal, setShowBlogRewardsModal] = useState(false);
-  const [blogRewardsList, setBlogRewardsList] = useState<any[]>([]);
+  const [blogRewardsList, setBlogRewardsList] = useState<BlogReward[]>([]);
   const [loadingBlogRewardsList, setLoadingBlogRewardsList] = useState(false);
   
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
@@ -202,20 +316,20 @@ export default function AdminDashboardPage() {
   const [cohortFilter, setCohortFilter] = useState<string | null>(null); // Filter by cohort
   
   // Event editing state
-  const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [attendanceSort, setAttendanceSort] = useState<'asc' | 'desc' | null>(null); // Sort by attendance
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
   const [rearrangingSessions, setRearrangingSessions] = useState<string | null>(null);
-  const [allSessions, setAllSessions] = useState<any[]>([]);
+  const [allSessions, setAllSessions] = useState<Session[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessionCohortFilter, setSessionCohortFilter] = useState<string | null>(null);
   const [sessionStatusFilter, setSessionStatusFilter] = useState<string>('all');
   const [sessionDateFilter, setSessionDateFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
-  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loadingAttendanceRecords, setLoadingAttendanceRecords] = useState(false);
   const [attendanceEventFilter, setAttendanceEventFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'students' | 'events' | 'mentorships' | 'attendance' | 'exam' | 'assignments'>('overview');
