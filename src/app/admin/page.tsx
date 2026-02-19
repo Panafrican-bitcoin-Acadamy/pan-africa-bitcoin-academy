@@ -13,8 +13,10 @@ import {
   CheckCircle2, AlertCircle, Trophy, DollarSign, Calendar as CalendarIcon, 
   Clock, User, Info, Trash2, Award, Target, Briefcase, Heart,
   ClipboardList, Rocket, HelpCircle, Sparkles, Settings, 
-  PenTool, GraduationCap, XCircle, Loader2
+  PenTool, GraduationCap, XCircle, Loader2, Shield, Lock, History, LogOut,
+  Eye, EyeOff
 } from 'lucide-react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 // Cohort color palette - same as Calendar component
 const cohortColors = [
@@ -295,6 +297,16 @@ export default function AdminDashboardPage() {
       subMenus: [
         { id: 'upload-attendance', label: 'Upload Attendance' },
         { id: 'attendance-records', label: 'Attendance Records' },
+      ],
+    },
+    {
+      id: 'security',
+      label: 'Security',
+      icon: Shield,
+      subMenus: [
+        { id: 'login-history', label: 'Login History' },
+        { id: 'account-lockouts', label: 'Account Lockouts' },
+        { id: 'session-management', label: 'Session Management' },
       ],
     },
   ];
@@ -2842,6 +2854,7 @@ export default function AdminDashboardPage() {
   };
 
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2852,24 +2865,21 @@ export default function AdminDashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginForm),
+        credentials: 'include', // Ensure cookies are sent and received
       });
       
-      // Check if response has content before parsing JSON
-      const contentType = res.headers.get('content-type');
+      // Parse JSON response directly (don't use text() first)
       let data: any = null;
-      
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          const text = await res.text();
-          if (text && text.trim()) {
-            data = JSON.parse(text);
-          }
-        } catch (parseError) {
-          console.error('Failed to parse login response:', parseError);
-          setAuthError('Invalid response from server. Please try again.');
-          setLoginLoading(false);
-          return;
-        }
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        console.error('Failed to parse login response:', parseError);
+        // Try to get text for debugging
+        const text = await res.text().catch(() => '');
+        console.error('Response text:', text);
+        setAuthError('Invalid response from server. Please try again.');
+        setLoginLoading(false);
+        return;
       }
       
       if (!res.ok) {
@@ -2878,22 +2888,19 @@ export default function AdminDashboardPage() {
         const errorDetails = data?.details ? `: ${data.details}` : '';
         setAuthError(`${errorMsg}${errorDetails}`);
         
-        // Only log meaningful error data
-        if (data && typeof data === 'object' && data.error) {
-          console.error('Admin login error:', { 
-            error: data.error, 
-            details: data.details || null, 
+        // Only log meaningful error data - avoid logging empty objects
+        if (data && typeof data === 'object' && Object.keys(data).length > 0 && data.error) {
+          // Only log if we have an actual error message
+          const errorInfo: any = {
+            error: data.error,
             status: res.status,
             statusText: res.statusText
-          });
-        } else {
-          console.error('Admin login error: Non-JSON or empty response', { 
-            status: res.status, 
-            statusText: res.statusText, 
-            contentType: contentType || 'unknown',
-            hasData: !!data
-          });
+          };
+          if (data.details) errorInfo.details = data.details;
+          if (data.requestId) errorInfo.requestId = data.requestId;
+          console.error('Admin login error:', errorInfo);
         }
+        // Don't log if data is null, empty, or has no error field
         setLoginLoading(false);
         return;
       }
@@ -2902,15 +2909,31 @@ export default function AdminDashboardPage() {
       if (data && data.success) {
         setLoginForm({ email: '', password: '' }); // Clear form
         setAuthError(null); // Clear any previous errors
-        // Session is managed by useSession hook - check session to mark activity
-        // Wait a bit for cookie to be set, then check session
+        
+        // Check if password change is required
+        if (data.requiresPasswordChange) {
+          // Redirect to password change page
+          window.location.href = '/admin/change-password';
+          return;
+        }
+        
+        // Wait a bit longer for cookie to be set, then check session
+        // The cookie needs time to be set by the browser
         setTimeout(() => {
-          checkSession();
-        }, 100);
+          checkSession().then((success) => {
+            if (!success) {
+              console.warn('Session check failed after login, retrying...');
+              // Retry once more after another short delay
+              setTimeout(() => {
+                checkSession();
+              }, 200);
+            }
+          });
+        }, 200); // Increased from 100ms to 200ms
       } else {
         const errorMsg = data?.error || 'Login failed';
         setAuthError(errorMsg);
-        console.error('Admin login failed:', { success: data?.success, error: errorMsg });
+        console.error('Admin login failed:', { success: data?.success, error: errorMsg, data });
       }
     } catch (err: any) {
       console.error('Login request error:', err);
@@ -3300,6 +3323,7 @@ export default function AdminDashboardPage() {
   if (!admin) {
     return (
       <div className="min-h-screen bg-black p-6 sm:p-8">
+        {loginLoading && <LoadingSpinner overlay />}
         <div className="mx-auto max-w-md space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
           <div>
             <h1 className="text-2xl font-bold text-zinc-50">Admin Login</h1>
@@ -3325,13 +3349,37 @@ export default function AdminDashboardPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm text-zinc-300">Password</label>
-              <input
-                type="password" name="password" autoComplete="current-password"
-                required
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 pr-10 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="text-right">
+              <a
+                href="/admin/forgot-password"
+                className="text-xs text-cyan-400 hover:text-cyan-300 transition"
+              >
+                Forgot password?
+              </a>
             </div>
             <button
               type="submit"
@@ -7176,6 +7224,382 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {/* Security Section */}
+          {activeSection === 'security' && (
+            <div className="space-y-6">
+              {/* Login History */}
+              {activeSubMenu === 'login-history' && (
+                <SecurityLoginHistory />
+              )}
+
+              {/* Account Lockouts */}
+              {activeSubMenu === 'account-lockouts' && (
+                <SecurityAccountLockouts />
+              )}
+
+              {/* Session Management */}
+              {activeSubMenu === 'session-management' && (
+                <SecuritySessionManagement />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Security Section Components
+function SecurityLoginHistory() {
+  const [attempts, setAttempts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    email: '',
+    ip: '',
+    success: '',
+    startDate: '',
+    endDate: '',
+  });
+
+  const fetchLoginHistory = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.email) params.append('email', filters.email);
+      if (filters.ip) params.append('ip', filters.ip);
+      if (filters.success) params.append('success', filters.success);
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+
+      const res = await fetch(`/api/admin/login-history?${params.toString()}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAttempts(data.attempts || []);
+      }
+    } catch (error) {
+      console.error('Error fetching login history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLoginHistory();
+  }, []);
+
+  return (
+    <div className="w-full rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <History className="h-6 w-6 text-cyan-400" />
+        <h2 className="text-2xl font-bold text-zinc-50">Login History</h2>
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Filter by email"
+          value={filters.email}
+          onChange={(e) => setFilters({ ...filters, email: e.target.value })}
+          className="rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
+        />
+        <input
+          type="text"
+          placeholder="Filter by IP"
+          value={filters.ip}
+          onChange={(e) => setFilters({ ...filters, ip: e.target.value })}
+          className="rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
+        />
+        <select
+          value={filters.success}
+          onChange={(e) => setFilters({ ...filters, success: e.target.value })}
+          className="rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
+        >
+          <option value="">All attempts</option>
+          <option value="true">Successful</option>
+          <option value="false">Failed</option>
+        </select>
+        <input
+          type="date"
+          value={filters.startDate}
+          onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+          className="rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
+        />
+        <input
+          type="date"
+          value={filters.endDate}
+          onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+          className="rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
+        />
+        <button
+          onClick={fetchLoginHistory}
+          className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black hover:bg-cyan-600 transition"
+        >
+          Apply Filters
+        </button>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="text-center py-12 text-zinc-400">Loading...</div>
+      ) : attempts.length === 0 ? (
+        <div className="text-center py-12 text-zinc-400">No login attempts found</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-zinc-800">
+                <th className="text-left p-3 text-sm font-semibold text-zinc-300">Time</th>
+                <th className="text-left p-3 text-sm font-semibold text-zinc-300">Email</th>
+                <th className="text-left p-3 text-sm font-semibold text-zinc-300">IP Address</th>
+                <th className="text-left p-3 text-sm font-semibold text-zinc-300">Device</th>
+                <th className="text-left p-3 text-sm font-semibold text-zinc-300">Status</th>
+                <th className="text-left p-3 text-sm font-semibold text-zinc-300">Request ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attempts.map((attempt) => (
+                <tr key={attempt.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                  <td className="p-3 text-sm text-zinc-400">
+                    {new Date(attempt.createdAt).toLocaleString()}
+                  </td>
+                  <td className="p-3 text-sm text-zinc-300">{attempt.email}</td>
+                  <td className="p-3 text-sm text-zinc-400">{attempt.ipAddress}</td>
+                  <td className="p-3 text-sm text-zinc-400">{attempt.device}</td>
+                  <td className="p-3">
+                    {attempt.success ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 border border-green-500/20 text-xs text-green-300">
+                        Success
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+                        {attempt.failureReason || 'Failed'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3 text-xs text-zinc-500 font-mono">{attempt.requestId}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SecurityAccountLockouts() {
+  const [lockedAccounts, setLockedAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchLockedAccounts = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/account-management/locked-accounts');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLockedAccounts(data.accounts || []);
+      }
+    } catch (error) {
+      console.error('Error fetching locked accounts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const unlockAccount = async (adminId: string) => {
+    if (!confirm('Are you sure you want to unlock this account?')) return;
+    try {
+      const res = await fetch('/api/admin/account-management/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message);
+        fetchLockedAccounts();
+      } else {
+        alert(data.error || 'Failed to unlock account');
+      }
+    } catch (error) {
+      alert('Failed to unlock account');
+    }
+  };
+
+  useEffect(() => {
+    fetchLockedAccounts();
+  }, []);
+
+  return (
+    <div className="w-full rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Lock className="h-6 w-6 text-red-400" />
+        <h2 className="text-2xl font-bold text-zinc-50">Account Lockouts</h2>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-zinc-400">Loading...</div>
+      ) : lockedAccounts.length === 0 ? (
+        <div className="text-center py-12 text-zinc-400">No locked accounts</div>
+      ) : (
+        <div className="space-y-4">
+          {lockedAccounts.map((account) => (
+            <div
+              key={account.id}
+              className="rounded-lg border border-red-500/30 bg-red-500/10 p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-zinc-200">{account.email}</p>
+                  <p className="text-sm text-zinc-400">
+                    Failed attempts: {account.failedLoginAttempts} | 
+                    Locked for {account.minutesRemaining} more minutes
+                  </p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Locked until: {new Date(account.lockedUntil).toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => unlockAccount(account.id)}
+                  className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 transition"
+                >
+                  Unlock
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SecuritySessionManagement() {
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSessions = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/sessions');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSessions(data.sessions || []);
+      }
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const revokeSession = async (sessionId: string) => {
+    if (!confirm('Are you sure you want to revoke this session?')) return;
+    try {
+      const res = await fetch('/api/admin/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message);
+        fetchSessions();
+      } else {
+        alert(data.error || 'Failed to revoke session');
+      }
+    } catch (error) {
+      alert('Failed to revoke session');
+    }
+  };
+
+  const revokeAllSessions = async () => {
+    if (!confirm('Are you sure you want to revoke all other sessions? You will remain logged in.')) return;
+    try {
+      const res = await fetch('/api/admin/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ revokeAll: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message);
+        fetchSessions();
+      } else {
+        alert(data.error || 'Failed to revoke sessions');
+      }
+    } catch (error) {
+      alert('Failed to revoke sessions');
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  return (
+    <div className="w-full rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <LogOut className="h-6 w-6 text-cyan-400" />
+          <h2 className="text-2xl font-bold text-zinc-50">Session Management</h2>
+        </div>
+        {sessions.length > 1 && (
+          <button
+            onClick={revokeAllSessions}
+            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition"
+          >
+            Revoke All Other Sessions
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-zinc-400">Loading...</div>
+      ) : sessions.length === 0 ? (
+        <div className="text-center py-12 text-zinc-400">No active sessions</div>
+      ) : (
+        <div className="space-y-4">
+          {sessions.map((session) => (
+            <div
+              key={session.id}
+              className={`rounded-lg border p-4 ${
+                session.isCurrent
+                  ? 'border-cyan-500/50 bg-cyan-500/10'
+                  : 'border-zinc-800 bg-zinc-900/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="font-semibold text-zinc-200">{session.device}</p>
+                    {session.isCurrent && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300">
+                        Current Session
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-zinc-400">IP: {session.ipAddress}</p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Last active: {new Date(session.lastActive).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    Expires: {new Date(session.expiresAt).toLocaleString()}
+                  </p>
+                </div>
+                {!session.isCurrent && (
+                  <button
+                    onClick={() => revokeSession(session.id)}
+                    className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition ml-4"
+                  >
+                    Revoke
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

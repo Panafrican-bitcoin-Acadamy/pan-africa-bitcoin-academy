@@ -17,6 +17,7 @@ export function Footer() {
                   width={48}
                   height={48}
                   className="object-contain brightness-110 contrast-125 saturate-120"
+                  style={{ width: 'auto', height: 'auto' }}
                   quality={95}
                   sizes="48px"
                 />

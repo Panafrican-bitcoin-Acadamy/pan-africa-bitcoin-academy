@@ -74,16 +74,32 @@ export function middleware(request: NextRequest) {
   // If IP is blocked, return 403 Forbidden
   if (rateLimit.blocked) {
     releaseConnection(clientIP); // Release connection
+    const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+    const retryAfterMinutes = Math.ceil(retryAfterSeconds / 60);
+    const retryAfterHours = Math.floor(retryAfterMinutes / 60);
+    const remainingMinutes = retryAfterMinutes % 60;
+    
+    // Format wait time message
+    let waitTimeMessage = '';
+    if (retryAfterHours > 0) {
+      waitTimeMessage = remainingMinutes > 0 
+        ? `${retryAfterHours} hour${retryAfterHours > 1 ? 's' : ''} and ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`
+        : `${retryAfterHours} hour${retryAfterHours > 1 ? 's' : ''}`;
+    } else {
+      waitTimeMessage = `${retryAfterMinutes} minute${retryAfterMinutes > 1 ? 's' : ''}`;
+    }
+    
     return NextResponse.json(
       {
-        error: 'Access denied. Your IP has been temporarily blocked due to repeated violations.',
+        error: `Access denied. Your IP has been temporarily blocked due to repeated violations. Please try again in ${waitTimeMessage}.`,
         blockReason: rateLimit.blockReason,
-        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+        retryAfter: retryAfterSeconds,
+        retryAfterFormatted: waitTimeMessage,
       },
       {
         status: 403, // Forbidden
         headers: {
-          'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          'Retry-After': retryAfterSeconds.toString(),
         },
       }
     );

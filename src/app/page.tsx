@@ -521,6 +521,7 @@ export default async function Home() {
                       priority
                       loading="eager"
                       className="object-contain brightness-110 contrast-125 saturate-120"
+                      style={{ width: 'auto', height: 'auto' }}
                       quality={95}
                       sizes="(max-width: 768px) 192px, 256px"
                       fetchPriority="high"

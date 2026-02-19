@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { validatePassword, getPasswordRequirements } from '@/lib/passwordValidation';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -135,25 +136,28 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
             } catch {
               // ignore
             }
+            // Keep loading spinner visible during redirect
+            // Don't set loading to false yet - let it show during redirect
             onClose();
             // Redirect based on redirectAfterLogin prop
             if (redirectAfterLogin === null) {
               // Don't redirect - stay on current page
               // The auth state will update and the page will re-render
+              setLoading(false);
             } else if (redirectAfterLogin) {
-              // Redirect to specified URL
+              // Redirect to specified URL - spinner will disappear when page unloads
               window.location.href = redirectAfterLogin;
             } else {
-              // Default behavior: redirect to dashboard
+              // Default behavior: redirect to dashboard - spinner will disappear when page unloads
               window.location.href = '/dashboard';
             }
           } else {
             setServerError(data.error || 'Invalid credentials. Please try again.');
+            setLoading(false);
           }
         } catch (err: any) {
           console.error('Login error:', err);
           setServerError(err.message || 'Sign in failed. Please try again.');
-        } finally {
           setLoading(false);
         }
       }
@@ -203,10 +207,12 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
             } catch {
               // ignore
             }
+            // Keep loading spinner visible during redirect/reload
+            // Don't set loading to false - let it show during page reload
             onClose();
             // Show success message about email verification
             alert('Account created successfully! Please check your email to verify your address before logging in.');
-            // Reload page to update navbar with new auth state
+            // Reload page to update navbar with new auth state - spinner will disappear when page unloads
             window.location.reload();
           } else {
             throw new Error(data.error || 'Sign up failed');
@@ -214,7 +220,6 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
         } catch (err: any) {
           console.error('Registration error:', err);
           setServerError(err.message || 'Sign up failed. Please try again.');
-        } finally {
           setLoading(false);
         }
       }
@@ -255,7 +260,9 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
   };
 
   const modalContent = (
-    <div
+    <>
+      {loading && <LoadingSpinner overlay />}
+      <div
       className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-xl"
       style={{ 
         position: 'fixed', 
@@ -562,6 +569,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
         </div>
       </div>
     </div>
+    </>
   );
 
   return createPortal(modalContent, document.body);

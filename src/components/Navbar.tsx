@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useSession } from "@/hooks/useSession";
 import { SearchBar } from "./SearchBar";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 // Lazy load modals - only load when needed (using React.lazy for better code splitting)
 const AuthModal = lazy(() => import("./AuthModal").then(mod => ({ default: mod.AuthModal })));
@@ -35,16 +36,28 @@ export function Navbar() {
   const tabletDropdownRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, profile, isRegistered, loading, logout, showSessionExpired, setShowSessionExpired } = useAuth();
   const { isAuthenticated: isAdminAuth, email: adminEmail, logout: adminLogout, loading: adminLoading } = useSession('admin');
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  
   const handleLogout = async () => {
-    // Handle both student and admin logout
-    if (isAdminAuth) {
-      await adminLogout();
-    } else {
-      await logout();
+    setLogoutLoading(true);
+    try {
+      // Handle both student and admin logout
+      if (isAdminAuth) {
+        await adminLogout();
+      } else {
+        await logout();
+      }
+      setAccountDropdownOpen(false);
+      setMobileMenuOpen(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Keep spinner visible briefly to show feedback
+      setTimeout(() => {
+        setLogoutLoading(false);
+      }, 500);
     }
-    setAccountDropdownOpen(false);
-    setMobileMenuOpen(false);
-    router.push('/');
   };
 
   // Fetch profile data when modal opens
@@ -92,7 +105,9 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl w-full">
+    <>
+      {logoutLoading && <LoadingSpinner overlay />}
+      <header className="sticky top-0 z-50 border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl w-full">
       {/* Mobile-first: Full width on mobile, max-width only on larger screens */}
       <div className="w-full flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 sm:max-w-7xl sm:mx-auto lg:px-6">
         <Link 
@@ -112,6 +127,7 @@ export function Navbar() {
               priority
               loading="eager"
               className="object-contain brightness-110 contrast-125 saturate-120"
+              style={{ width: 'auto', height: 'auto' }}
               quality={95}
               sizes="(max-width: 640px) 48px, (max-width: 768px) 56px, 64px"
               fetchPriority="high"
@@ -382,13 +398,13 @@ export function Navbar() {
                         e.preventDefault();
                         e.stopPropagation();
                         setAccountDropdownOpen(false);
-                        // Call logout immediately - don't wait for state update
-                        logout();
+                        handleLogout();
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                      disabled={logoutLoading}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <LogOut className="h-4 w-4" />
-                      Logout
+                      {logoutLoading ? 'Logging out...' : 'Logout'}
                     </button>
                   </div>
                 </div>
@@ -514,10 +530,11 @@ export function Navbar() {
                     e.stopPropagation();
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target"
+                  disabled={logoutLoading}
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <LogOut className="h-5 w-5" />
-                  Logout
+                  {logoutLoading ? 'Logging out...' : 'Logout'}
                 </button>
               </div>
             ) : isAuthenticated && profile ? (
@@ -577,10 +594,11 @@ export function Navbar() {
                     e.stopPropagation();
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target"
+                  disabled={logoutLoading}
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <LogOut className="h-5 w-5" />
-                  Logout
+                  {logoutLoading ? 'Logging out...' : 'Logout'}
                 </button>
               </div>
             ) : isAdminAuth ? (
@@ -607,10 +625,11 @@ export function Navbar() {
                     e.stopPropagation();
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target"
+                  disabled={logoutLoading}
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 min-h-[48px] text-base text-red-400 active:bg-red-500/10 touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <LogOut className="h-5 w-5" />
-                  Logout
+                  {logoutLoading ? 'Logging out...' : 'Logout'}
                 </button>
               </div>
             ) : (
@@ -742,6 +761,7 @@ export function Navbar() {
         </Suspense>
       )}
     </header>
+    </>
   );
 }
 

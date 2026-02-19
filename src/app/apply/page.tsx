@@ -8,6 +8,7 @@ import { AnimatedSection } from '@/components/AnimatedSection';
 import { sortedCountries, getPhoneRule, type Country } from '@/lib/countries';
 import { inputStyles, labelStyles, formStyles, buttonStyles, cardStyles, alertStyles, cn } from '@/lib/styles';
 import { FormGrid } from '@/components/ui';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface Cohort {
   id: string;
@@ -26,6 +27,18 @@ interface Cohort {
 export default function ApplyPage() {
   const router = useRouter();
   const { isAuthenticated, profile, isRegistered, loading: authLoading } = useAuth();
+  
+  // Show loading spinner overlay when submitting
+  useEffect(() => {
+    if (submitting) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [submitting]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [cohortsLoading, setCohortsLoading] = useState(true);
   const [cohortsError, setCohortsError] = useState<string | null>(null);
@@ -494,6 +507,7 @@ export default function ApplyPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
+      {submitting && <LoadingSpinner overlay />}
       <div className="relative z-10 w-full bg-black/95">
         <div className="w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-7xl sm:mx-auto lg:px-8 lg:py-20">
           {/* Hero Section */}

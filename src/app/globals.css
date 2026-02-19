@@ -80,6 +80,44 @@ a {
   grid-template-columns: repeat(40, minmax(0, 1fr));
 }
 
+/* Ensure visible blinking caret for all input fields and textareas */
+/* The caret will automatically blink - we just need to make it visible */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"],
+textarea,
+input:not([type]) {
+  caret-color: #22d3ee; /* Bright cyan color for visibility - matches theme */
+}
+
+/* Ensure caret is visible when focused (browsers automatically make it blink) */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus,
+input[type="month"]:focus,
+input[type="week"]:focus,
+textarea:focus,
+input:not([type]):focus {
+  caret-color: #22d3ee !important; /* Bright cyan - ensures visibility on focus */
+  /* Browser will automatically handle blinking */
+}
+
 /* Override browser autofill styles */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
@@ -93,6 +131,7 @@ select:-webkit-autofill:active {
   -webkit-text-fill-color: rgb(250 250 249) !important;
   background-color: rgb(3 7 18) !important;
   color: rgb(250 250 249) !important;
+  caret-color: #22d3ee !important; /* Ensure caret is visible even with autofill */
 }
 
 input:-webkit-autofill::first-line,
