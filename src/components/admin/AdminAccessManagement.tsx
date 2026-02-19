@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, Trash2, Edit2, Mail, Phone, MapPin, Briefcase, Shield, CheckCircle2, XCircle, Lock, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Trash2, Edit2, Mail, Phone, MapPin, Briefcase, Shield, CheckCircle2, XCircle, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface Admin {
@@ -66,7 +66,6 @@ export function AdminAccessManagement() {
 
   // Fetch admins on mount
   useEffect(() => {
-    console.log('[AdminAccessManagement] Component mounted, fetching admins...');
     fetchAdmins();
   }, []);
 
@@ -194,21 +193,36 @@ export function AdminAccessManagement() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="admin-access-management">
+      {/* Debug: Always visible test */}
+      <div className="rounded-lg border-2 border-green-500 bg-green-500/10 p-4 mb-4">
+        <p className="text-green-300 font-semibold">✓ AdminAccessManagement Component is Rendering</p>
+        <p className="text-green-400/70 text-xs mt-1">Loading: {loading ? 'Yes' : 'No'} | Admins: {admins.length}</p>
+      </div>
 
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-50">Admin Access Management</h2>
-        <p className="mt-1 text-sm text-zinc-400">Register and manage admin accounts for the academy</p>
+      {/* Page Header */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+          <UserPlus className="h-5 w-5 text-cyan-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-zinc-50">Admin Access Management</h2>
+          <p className="text-xs text-zinc-400 mt-0.5">Register and manage admin accounts for the academy</p>
+        </div>
       </div>
 
       {submitting && <LoadingSpinner overlay />}
 
       {/* Create Admin Form - Always visible */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <UserPlus className="h-5 w-5 text-cyan-400" />
-          <h3 className="text-lg font-semibold text-zinc-50">Register New Admin</h3>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 shadow-lg">
+        <div className="mb-6 flex items-center gap-3 pb-4 border-b border-zinc-800/50">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+            <UserPlus className="h-5 w-5 text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-zinc-50">Register New Admin User</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">Fill in the details below to create a new admin account</p>
+          </div>
         </div>
 
         {error && (
@@ -241,196 +255,274 @@ export function AdminAccessManagement() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                First Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="John"
-              />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Personal Information Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-800/50">
+              <User className="h-4 w-4 text-zinc-400" />
+              <h4 className="text-sm font-semibold text-zinc-300">Personal Information</h4>
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Last Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Doe"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
-              Email <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              placeholder="admin@example.com"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Position in Academy
-              </label>
-              <input
-                type="text"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="e.g., Director, Instructor, Coordinator"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Level of Access <span className="text-red-400">*</span>
-              </label>
-              <select
-                required
-                value={formData.accessLevel}
-                onChange={(e) => setFormData({ ...formData, accessLevel: e.target.value })}
-                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              >
-                {ACCESS_LEVELS.map((level) => (
-                  <option key={level.value} value={level.value}>
-                    {level.label} - {level.description}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              placeholder="+1234567890"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Country
-              </label>
-              <input
-                type="text"
-                value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Country"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
-                City
-              </label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="City"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
-              Temporary Password
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  First Name <span className="text-red-400">*</span>
+                </label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  value={formData.temporaryPassword}
-                  onChange={(e) => setFormData({ ...formData, temporaryPassword: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 pr-10 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                  placeholder="Leave empty to auto-generate"
+                  type="text"
+                  required
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                  placeholder="Enter first name"
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Last Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                  placeholder="Enter last name"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-zinc-300">
+                Email Address <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 pl-10 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                  placeholder="admin@example.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Role & Access Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-800/50">
+              <Briefcase className="h-4 w-4 text-zinc-400" />
+              <h4 className="text-sm font-semibold text-zinc-300">Role & Access</h4>
+            </div>
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Position in Academy
+                </label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 pl-10 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                    placeholder="e.g., Director, Instructor, Coordinator"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Level of Access <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none z-10" />
+                  <select
+                    required
+                    value={formData.accessLevel}
+                    onChange={(e) => setFormData({ ...formData, accessLevel: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 pl-10 pr-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition appearance-none cursor-pointer"
+                  >
+                    {ACCESS_LEVELS.map((level) => (
+                      <option key={level.value} value={level.value}>
+                        {level.label} - {level.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Information Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-800/50">
+              <Phone className="h-4 w-4 text-zinc-400" />
+              <h4 className="text-sm font-semibold text-zinc-300">Contact Information</h4>
+            </div>
+            
+            <div>
+              <label className="mb-2 block text-sm font-medium text-zinc-300">
+                Phone Number
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 pl-10 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                  placeholder="+1234567890"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Country
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 pl-10 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                    placeholder="Enter country"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  City
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 pl-10 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                    placeholder="Enter city"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Security & Additional Info Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-800/50">
+              <Lock className="h-4 w-4 text-zinc-400" />
+              <h4 className="text-sm font-semibold text-zinc-300">Security & Additional Information</h4>
+            </div>
+            
+            <div>
+              <label className="mb-2 block text-sm font-medium text-zinc-300">
+                Temporary Password
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.temporaryPassword}
+                    onChange={(e) => setFormData({ ...formData, temporaryPassword: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 pl-10 pr-10 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                    placeholder="Leave empty to auto-generate"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition"
+                  onClick={generatePassword}
+                  className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 whitespace-nowrap"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  Generate
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={generatePassword}
-                className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20"
-              >
-                Generate
-              </button>
+              <p className="mt-1.5 text-xs text-zinc-500">Leave empty to auto-generate a secure 16-character password</p>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">Leave empty to auto-generate a secure password</p>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-zinc-300">
+                Notes (Optional)
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={3}
+                className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition resize-none"
+                placeholder="Additional notes about this admin (e.g., responsibilities, special permissions, etc.)"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
-              Notes (Optional)
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              className="w-full rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              placeholder="Additional notes about this admin..."
-            />
+          {/* Submit Button */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white transition hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
+            >
+              {submitting ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span>Creating Admin Account...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4" />
+                  <span>Create Admin Account</span>
+                </>
+              )}
+            </button>
+            <p className="mt-2 text-xs text-center text-zinc-500">
+              Required fields are marked with <span className="text-red-400">*</span>
+            </p>
           </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? 'Creating Admin...' : 'Create Admin Account'}
-          </button>
         </form>
       </div>
 
       {/* Admins List - Only show loading for the list, not the form */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-cyan-400" />
-            <h3 className="text-lg font-semibold text-zinc-50">Registered Admins ({admins.length})</h3>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+        <div className="mb-6 flex items-center justify-between pb-4 border-b border-zinc-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+              <Shield className="h-4 w-4 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-50">Registered Admins</h3>
+              <p className="text-xs text-zinc-400 mt-0.5">{admins.length} admin{admins.length !== 1 ? 's' : ''} registered</p>
+            </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-16">
             <LoadingSpinner size="md" />
             <div className="ml-4 text-sm text-zinc-400">Loading admins...</div>
           </div>
         ) : admins.length === 0 ? (
-          <div className="py-8 text-center text-zinc-400">No admins registered yet.</div>
+          <div className="py-16 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800/50 border-2 border-zinc-700/50 mb-4">
+              <Shield className="h-8 w-8 text-zinc-500" />
+            </div>
+            <p className="text-zinc-400 font-medium">No admins registered yet</p>
+            <p className="text-xs text-zinc-500 mt-1">Use the form above to register the first admin</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
