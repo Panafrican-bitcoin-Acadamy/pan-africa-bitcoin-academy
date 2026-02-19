@@ -194,12 +194,6 @@ export function AdminAccessManagement() {
 
   return (
     <div className="space-y-6" data-testid="admin-access-management">
-      {/* Debug: Always visible test */}
-      <div className="rounded-lg border-2 border-green-500 bg-green-500/10 p-4 mb-4">
-        <p className="text-green-300 font-semibold">✓ AdminAccessManagement Component is Rendering</p>
-        <p className="text-green-400/70 text-xs mt-1">Loading: {loading ? 'Yes' : 'No'} | Admins: {admins.length}</p>
-      </div>
-
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20">

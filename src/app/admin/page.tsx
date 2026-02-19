@@ -102,6 +102,11 @@ interface EventItem {
   start_time: string;
   end_time: string | null;
   cohort_id: string | null;
+  description: string | null;
+  link: string | null;
+  recording_url: string | null;
+  image_url: string | null;
+  image_alt_text?: string | null;
 }
 
 interface OverviewSummary {
@@ -239,6 +244,12 @@ interface Student {
   exam_score: number | null;
   exam_completed_at: string | null;
   created_at: string;
+  // Extended properties from API response
+  name: string;
+  email: string;
+  phone: string | null;
+  country: string | null;
+  cohortName: string | null;
 }
 
 interface Session {
@@ -249,6 +260,12 @@ interface Session {
   topic: string | null;
   link: string | null;
   duration_minutes: number | null;
+  status?: string | null;
+  instructor?: string | null;
+  cohorts?: {
+    id: string;
+    name: string;
+  } | null;
   created_at: string;
 }
 
@@ -260,6 +277,16 @@ interface AttendanceRecord {
   attended: boolean;
   attendance_date: string;
   created_at: string;
+  // Extended properties from API response
+  eventId?: string;
+  studentName?: string;
+  studentEmail?: string;
+  eventName?: string;
+  eventType?: string;
+  joinTime?: string;
+  leaveTime?: string;
+  durationMinutes?: number;
+  createdAt?: string;
 }
 
 const statusClasses: Record<string, string> = {
@@ -7217,7 +7244,7 @@ export default function AdminDashboardPage() {
                   ) : (
                   <div className="p-6">
                     {attendanceRecords.filter((record) => 
-                      attendanceEventFilter === 'all' || record.eventId === attendanceEventFilter
+                      attendanceEventFilter === 'all' || record.eventId === attendanceEventFilter || record.event_id === attendanceEventFilter
                     ).length === 0 ? (
                       <div className="text-center py-12 text-zinc-400">
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-zinc-800/50 border-2 border-zinc-700/50 mb-4">
@@ -7230,7 +7257,7 @@ export default function AdminDashboardPage() {
                       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                         {attendanceRecords
                           .filter((record) => 
-                            attendanceEventFilter === 'all' || record.eventId === attendanceEventFilter
+                            attendanceEventFilter === 'all' || record.eventId === attendanceEventFilter || record.event_id === attendanceEventFilter
                           )
                           .map((record) => (
                             <div 
@@ -7320,11 +7347,11 @@ export default function AdminDashboardPage() {
                                     </span>
                                   </div>
                                 )}
-                                {record.createdAt && (
+                                {(record.createdAt || record.created_at) && (
                                   <div className="text-right">
                                     <p className="text-xs text-zinc-500 mb-0.5">Uploaded</p>
                                     <p className="text-xs font-medium text-zinc-400">
-                                      {new Date(record.createdAt).toLocaleDateString('en-US', {
+                                      {new Date(record.createdAt || record.created_at).toLocaleDateString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
                                         year: 'numeric',
@@ -7345,7 +7372,7 @@ export default function AdminDashboardPage() {
           )}
 
           {/* Security Section */}
-          {activeSection === 'security' && (
+          {(activeSection as string) === 'security' && (
             <div className="space-y-8">
               {/* Security Section Header */}
               <div className="flex items-center gap-4 pb-4 border-b border-zinc-800/50">
