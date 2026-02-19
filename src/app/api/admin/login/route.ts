@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if account is locked (only if migration has been run)
-    let lockStatus = { locked: false };
+    let lockStatus: { locked: boolean; lockedUntil?: Date } = { locked: false };
     try {
       lockStatus = await isAccountLocked(admin.id);
     } catch (lockError) {
@@ -196,8 +196,8 @@ export async function POST(req: NextRequest) {
       console.warn(`[Login ${requestId}] Could not check account lock status (migration may not be run):`, lockError);
     }
 
-    if (lockStatus.locked) {
-      const lockedUntil = lockStatus.lockedUntil!;
+    if (lockStatus.locked && lockStatus.lockedUntil) {
+      const lockedUntil = lockStatus.lockedUntil;
       const minutesRemaining = Math.ceil((lockedUntil.getTime() - Date.now()) / (60 * 1000));
       
       logLoginAttempt({
