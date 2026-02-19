@@ -8,6 +8,7 @@ import { StudentProgressModal } from '@/components/StudentProgressModal';
 import EventForm from '@/components/admin/EventForm';
 import EventsList from '@/components/admin/EventsList';
 import MentorRegistrationForm from '@/components/admin/MentorRegistrationForm';
+import { AdminAccessManagement } from '@/components/admin/AdminAccessManagement';
 import { 
   Users, BookOpen, Book, Handshake, Mail, FileText, BarChart3, 
   CheckCircle2, AlertCircle, Trophy, DollarSign, Calendar as CalendarIcon, 
@@ -304,6 +305,7 @@ export default function AdminDashboardPage() {
       label: 'Security',
       icon: Shield,
       subMenus: [
+        { id: 'admin-access', label: 'Admin Access' },
         { id: 'login-history', label: 'Login History' },
         { id: 'account-lockouts', label: 'Account Lockouts' },
         { id: 'session-management', label: 'Session Management' },
@@ -7228,6 +7230,11 @@ export default function AdminDashboardPage() {
           {/* Security Section */}
           {activeSection === 'security' && (
             <div className="space-y-6">
+              {/* Admin Access - Show when selected or as default (first submenu) */}
+              {activeSubMenu !== 'login-history' && activeSubMenu !== 'account-lockouts' && activeSubMenu !== 'session-management' && (
+                <AdminAccessManagement />
+              )}
+
               {/* Login History */}
               {activeSubMenu === 'login-history' && (
                 <SecurityLoginHistory />
@@ -7286,7 +7293,8 @@ function SecurityLoginHistory() {
 
   useEffect(() => {
     fetchLoginHistory();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only fetch on mount, user clicks "Apply Filters" to refetch with filters
 
   return (
     <div className="w-full rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl p-6">
