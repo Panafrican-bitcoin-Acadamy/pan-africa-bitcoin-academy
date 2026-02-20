@@ -253,6 +253,8 @@ interface UpcomingEvent {
   link: string | null;
   image_url: string | null;
   image_alt_text: string | null;
+  is_registration_enabled?: boolean;
+  cohort_id?: string | null;
 }
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -308,6 +310,8 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
           link: event.link || null,
           image_url: event.image_url || null,
           image_alt_text: event.image_alt_text || null,
+          is_registration_enabled: event.is_registration_enabled || false,
+          cohort_id: event.cohort_id || null,
         });
       });
     }
@@ -1049,11 +1053,24 @@ export default async function Home() {
                             </p>
                           )}
 
-                          {/* Event Type Badge */}
-                          <div className="flex items-center gap-2">
+                          {/* Event Type Badge and Register Button */}
+                          <div className="flex items-center justify-between gap-2 mt-4">
                             <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${style.bg} ${style.text} border ${style.border}`}>
                               {EVENT_TYPE_LABELS[event.type] || event.type}
                             </span>
+                            {/* Register Button - Only show for non-cohort events with registration enabled */}
+                            {event.is_registration_enabled && !event.cohort_id && (
+                              <Link
+                                href={`/events/${event.id}/register`}
+                                className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                                  isClosestEvent
+                                    ? 'bg-yellow-500/20 text-yellow-200 border border-yellow-500/30 hover:bg-yellow-500/30'
+                                    : 'bg-orange-500/20 text-orange-200 border border-orange-500/30 hover:bg-orange-500/30'
+                                }`}
+                              >
+                                Register
+                              </Link>
+                            )}
                           </div>
                         </div>
                       </div>

@@ -482,7 +482,7 @@ export default function AdminDashboardPage() {
     setActiveSection(sectionId);
     setActiveSubMenu(subMenuId);
     
-    // Map sidebar selections to existing tab system
+    // Map sidebar selections to existing tab system (Security section doesn't need tab mapping)
     const navigationMap: Record<string, string> = {
       'approved-students': 'students',
       'pending-students': 'applications',
@@ -3542,8 +3542,8 @@ export default function AdminDashboardPage() {
 
   if (loading && !overview) {
     return (
-      <div className="min-h-screen bg-black p-8 text-center text-zinc-400">
-        Loading admin dashboard...
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -7372,7 +7372,7 @@ export default function AdminDashboardPage() {
           )}
 
           {/* Security Section */}
-          {(activeSection as string) === 'security' && (
+          {(activeSection as string | null) === 'security' && (
             <div className="space-y-8">
               {/* Security Section Header */}
               <div className="flex items-center gap-4 pb-4 border-b border-zinc-800/50">
@@ -7385,23 +7385,12 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Determine which submenu to show - default to admin-access if none selected */}
-              {(() => {
-                const currentSubMenu = activeSubMenu || 'admin-access';
-                
-                switch (currentSubMenu) {
-                  case 'admin-access':
-                    return <AdminAccessManagement />;
-                  case 'login-history':
-                    return <SecurityLoginHistory />;
-                  case 'account-lockouts':
-                    return <SecurityAccountLockouts />;
-                  case 'session-management':
-                    return <SecuritySessionManagement />;
-                  default:
-                    return <AdminAccessManagement />;
-                }
-              })()}
+              {/* Security Submenu Content */}
+              {activeSubMenu === 'admin-access' && <AdminAccessManagement />}
+              {activeSubMenu === 'login-history' && <SecurityLoginHistory />}
+              {activeSubMenu === 'account-lockouts' && <SecurityAccountLockouts />}
+              {activeSubMenu === 'session-management' && <SecuritySessionManagement />}
+              {!activeSubMenu && <AdminAccessManagement />}
             </div>
           )}
         </div>

@@ -32,6 +32,10 @@ interface EventFormData {
   cohort_id: string | null;
   for_all: boolean;
   chapter_number: string;
+  // Registration fields
+  is_registration_enabled: boolean;
+  max_registrations: string;
+  registration_deadline: string;
 }
 
 interface EventForEdit {
@@ -46,6 +50,13 @@ interface EventForEdit {
   image_url: string | null;
   image_alt_text?: string | null;
   cohort_id: string | null;
+  // Registration fields
+  is_registration_enabled?: boolean;
+  location?: string | null;
+  event_date?: string | null;
+  max_registrations?: number | null;
+  registration_deadline?: string | null;
+  form_config?: any;
 }
 
 const EVENT_TYPES = [
@@ -80,6 +91,10 @@ export default function EventForm({
     cohort_id: null,
     for_all: true,
     chapter_number: '',
+    // Registration fields
+    is_registration_enabled: false,
+    max_registrations: '',
+    registration_deadline: '',
   });
 
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -129,6 +144,7 @@ export default function EventForm({
   // Populate form when event prop changes (edit mode)
   useEffect(() => {
     if (event) {
+      const eventData = event as any; // Type assertion to access new fields
       setFormData({
         name: event.name || '',
         type: event.type || 'community',
@@ -142,6 +158,10 @@ export default function EventForm({
         cohort_id: event.cohort_id,
         for_all: !event.cohort_id,
         chapter_number: '',
+        // Registration fields
+        is_registration_enabled: eventData.is_registration_enabled || false,
+        max_registrations: eventData.max_registrations ? String(eventData.max_registrations) : '',
+        registration_deadline: eventData.registration_deadline ? formatDateTimeLocal(eventData.registration_deadline) : '',
       });
       
       // Set image preview if image exists
@@ -164,6 +184,10 @@ export default function EventForm({
         cohort_id: null,
         for_all: true,
         chapter_number: '',
+        // Registration fields
+        is_registration_enabled: false,
+        max_registrations: '',
+        registration_deadline: '',
       });
       setImagePreview(null);
       setImageUploaded(false);
@@ -565,6 +589,17 @@ export default function EventForm({
       errors.cohort_id = 'Please select a cohort or choose "For Everyone"';
     }
 
+    // Registration validation (only for non-cohort events)
+    if (formData.is_registration_enabled) {
+      if (formData.for_all === false) {
+        errors.is_registration_enabled = 'Registration can only be enabled for events "For Everyone" (non-cohort events)';
+      }
+      
+      if (formData.max_registrations && parseInt(formData.max_registrations) < 1) {
+        errors.max_registrations = 'Max registrations must be at least 1';
+      }
+    }
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -608,6 +643,14 @@ export default function EventForm({
         image_alt_text: formData.image_alt_text.trim() || null,
         for_all: formData.for_all,
         cohort_id: formData.for_all ? null : formData.cohort_id,
+        // Registration fields (only if registration is enabled and event is for everyone)
+        is_registration_enabled: formData.is_registration_enabled && formData.for_all,
+        max_registrations: formData.is_registration_enabled && formData.for_all && formData.max_registrations
+          ? parseInt(formData.max_registrations)
+          : null,
+        registration_deadline: formData.is_registration_enabled && formData.for_all && formData.registration_deadline
+          ? new Date(formData.registration_deadline).toISOString()
+          : null,
       };
 
       // Add chapter_number only for live-class events
@@ -649,6 +692,10 @@ export default function EventForm({
           cohort_id: null,
           for_all: true,
           chapter_number: '',
+          // Registration fields
+          is_registration_enabled: false,
+          max_registrations: '',
+          registration_deadline: '',
         });
         setFieldErrors({});
         setImageFile(null);
@@ -1269,6 +1316,75 @@ export default function EventForm({
             />
             {fieldErrors.chapter_number && (
               <p className="mt-1 text-xs text-red-400">{fieldErrors.chapter_number}</p>
+            )}
+          </div>
+        )}
+
+        {/* Registration Section - Only for "For Everyone" events */}
+        {formData.for_all && (
+          <div className="space-y-4 rounded-xl border border-zinc-700/50 bg-zinc-900/30 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-50">Event Registration</h3>
+                <p className="text-sm text-zinc-400 mt-1">
+                  Enable registration for this event. Only available for events "For Everyone".
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_registration_enabled}
+                  onChange={(e) => handleChange('is_registration_enabled', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+              </label>
+            </div>
+
+            {formData.is_registration_enabled && (
+              <div className="space-y-4 pt-4 border-t border-zinc-700/50">
+                {/* Max Registrations */}
+                <div>
+                  <label htmlFor="max-registrations" className="block text-sm font-medium text-zinc-300 mb-2">
+                    Max Registrations <span className="text-zinc-500 text-xs">(Optional)</span>
+                  </label>
+                  <input
+                    id="max-registrations"
+                    type="number"
+                    min="1"
+                    value={formData.max_registrations}
+                    onChange={(e) => handleChange('max_registrations', e.target.value)}
+                    className={`w-full rounded-lg border bg-zinc-950 px-4 py-2.5 text-zinc-100 placeholder-zinc-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 ${
+                      fieldErrors.max_registrations ? 'border-red-500/50' : 'border-zinc-700'
+                    }`}
+                    placeholder="e.g., 50 (leave empty for unlimited)"
+                  />
+                  {fieldErrors.max_registrations && (
+                    <p className="mt-1 text-xs text-red-400">{fieldErrors.max_registrations}</p>
+                  )}
+                </div>
+
+                {/* Registration Deadline */}
+                <div>
+                  <label htmlFor="registration-deadline" className="block text-sm font-medium text-zinc-300 mb-2">
+                    Registration Deadline <span className="text-zinc-500 text-xs">(Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      id="registration-deadline"
+                      type="datetime-local"
+                      value={formData.registration_deadline}
+                      onChange={(e) => handleChange('registration_deadline', e.target.value)}
+                      className="w-full rounded-lg border bg-zinc-950 pl-10 pr-4 py-2.5 text-zinc-100 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 border-zinc-700"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {fieldErrors.is_registration_enabled && (
+              <p className="mt-2 text-xs text-red-400">{fieldErrors.is_registration_enabled}</p>
             )}
           </div>
         )}

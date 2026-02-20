@@ -97,6 +97,11 @@ export const ENDPOINT_RATE_LIMITS = {
     maxRequests: 5,
     windowMs: 60 * 60 * 1000, // 1 hour
   },
+  // Event registration
+  EVENT_REGISTRATION: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
   // General API endpoints (GET requests, data fetching)
   API_READ: {
     maxRequests: 100,
@@ -146,6 +151,11 @@ export function getRateLimitForPath(path: string, method: string = 'GET'): RateL
   // Application routes
   if (path.includes('/application') || path.includes('/submit-application') || path.includes('/apply')) {
     return ENDPOINT_RATE_LIMITS.APPLICATION_SUBMIT;
+  }
+  
+  // Event registration routes
+  if (path.includes('/events/') && path.includes('/register')) {
+    return ENDPOINT_RATE_LIMITS.EVENT_REGISTRATION;
   }
   
   // Admin routes

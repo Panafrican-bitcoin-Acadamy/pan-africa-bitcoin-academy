@@ -33,7 +33,14 @@ export async function PUT(
       image_alt_text,
       cohort_id,
       for_all,
-      chapter_number
+      chapter_number,
+      // Registration fields
+      is_registration_enabled,
+      location,
+      event_date,
+      max_registrations,
+      registration_deadline,
+      form_config
     } = await req.json();
 
     // Validate required fields
@@ -95,6 +102,61 @@ export async function PUT(
     // Only include image_alt_text if provided
     if (image_alt_text !== undefined) {
       updatePayload.image_alt_text = image_alt_text?.trim() || null;
+    }
+
+    // Validate registration fields (only for non-cohort events)
+    if (is_registration_enabled !== undefined && is_registration_enabled && finalCohortId !== null) {
+      return NextResponse.json(
+        { error: 'Registration can only be enabled for events "For Everyone" (non-cohort events)' },
+        { status: 400 }
+      );
+    }
+
+    // Registration fields (only for non-cohort events)
+    if (finalCohortId === null) {
+      // Only update registration fields if explicitly provided
+      if (is_registration_enabled !== undefined) {
+        updatePayload.is_registration_enabled = is_registration_enabled;
+      }
+      if (location !== undefined) {
+        updatePayload.location = location?.trim() || null;
+      }
+      if (event_date !== undefined) {
+        updatePayload.event_date = event_date || null;
+      }
+      if (max_registrations !== undefined) {
+        updatePayload.max_registrations = max_registrations ? parseInt(max_registrations) : null;
+      }
+      if (registration_deadline !== undefined) {
+        updatePayload.registration_deadline = registration_deadline || null;
+      }
+      if (form_config !== undefined) {
+        if (form_config) {
+          // Validate form_config is valid JSON
+          try {
+            const parsed = typeof form_config === 'string' ? JSON.parse(form_config) : form_config;
+            updatePayload.form_config = parsed;
+          } catch (e) {
+            return NextResponse.json(
+              { error: 'Invalid form_config JSON format' },
+              { status: 400 }
+            );
+          }
+        } else {
+          updatePayload.form_config = null;
+        }
+      }
+    } else {
+      // If event is cohort-based, disable registration
+      if (is_registration_enabled !== undefined) {
+        updatePayload.is_registration_enabled = false;
+      }
+      // Clear registration fields for cohort events
+      updatePayload.location = null;
+      updatePayload.event_date = null;
+      updatePayload.max_registrations = null;
+      updatePayload.registration_deadline = null;
+      updatePayload.form_config = null;
     }
 
     // Note: chapter_number is NOT in events table - it's only in assignments table
