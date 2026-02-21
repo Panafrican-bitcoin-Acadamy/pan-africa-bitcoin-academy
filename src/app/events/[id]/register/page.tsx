@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/PageContainer';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { validateAndNormalizeEmail, sanitizeName, isValidPhone } from '@/lib/validation';
+import { sortedCountries, getPhoneRule, type Country } from '@/lib/countries';
 
 interface Event {
   id: string;
@@ -44,10 +45,13 @@ export default function EventRegisterPage() {
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
-    phone: '',
+    whatsapp: '',
     additional_data: {} as Record<string, any>,
   });
 
+  const [selectedCountryCode, setSelectedCountryCode] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [customFields, setCustomFields] = useState<FormField[]>([]);
 
@@ -128,6 +132,44 @@ export default function EventRegisterPage() {
     }
   };
 
+  const handleCountryCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    setSelectedCountryCode(code);
+    const country = sortedCountries.find(c => c.code === code);
+    setSelectedCountry(country || null);
+    setWhatsappError(null);
+  };
+
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow digits, spaces, hyphens, and parentheses
+    const cleanedValue = value.replace(/[^\d\s\-\(\)]/g, '');
+    
+    setFormData((prev) => ({
+      ...prev,
+      whatsapp: cleanedValue,
+    }));
+
+    // Clear errors
+    setWhatsappError(null);
+    if (formErrors.whatsapp) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.whatsapp;
+        return newErrors;
+      });
+    }
+
+    // Validate length if country is selected
+    if (selectedCountry && cleanedValue) {
+      const digitsOnly = cleanedValue.replace(/\D/g, '');
+      const { min, max } = getPhoneRule(selectedCountry.name);
+      if (digitsOnly.length < min || digitsOnly.length > max) {
+        setWhatsappError(`Needs ${min}${min !== max ? `-${max}` : ''} digits for ${selectedCountry.name} (excluding country code).`);
+      }
+    }
+  };
+
   const handleCustomFieldChange = (fieldName: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -165,9 +207,19 @@ export default function EventRegisterPage() {
       errors.email = emailValidation.error || 'Invalid email';
     }
 
-    // Validate phone (optional)
-    if (formData.phone && !isValidPhone(formData.phone)) {
-      errors.phone = 'Invalid phone number';
+    // Validate WhatsApp (optional)
+    if (formData.whatsapp) {
+      if (!selectedCountryCode) {
+        errors.whatsapp = 'Please select a country code';
+      } else if (selectedCountry) {
+        const digitsOnly = formData.whatsapp.replace(/\D/g, '');
+        const { min, max } = getPhoneRule(selectedCountry.name);
+        if (digitsOnly.length < min || digitsOnly.length > max) {
+          errors.whatsapp = `WhatsApp number should have ${min}${min !== max ? `-${max}` : ''} digits for ${selectedCountry.name}.`;
+        }
+      } else if (!isValidPhone(formData.whatsapp)) {
+        errors.whatsapp = 'Invalid WhatsApp number';
+      }
     }
 
     // Validate custom fields
@@ -203,7 +255,9 @@ export default function EventRegisterPage() {
         body: JSON.stringify({
           full_name: sanitizeName(formData.full_name, 100),
           email: validateAndNormalizeEmail(formData.email).normalized,
-          phone: formData.phone || null,
+          phone: formData.whatsapp && selectedCountryCode 
+            ? `${selectedCountryCode} ${formData.whatsapp}`.trim() 
+            : null,
           additional_data: Object.keys(formData.additional_data).length > 0 ? formData.additional_data : null,
         }),
       });
@@ -365,22 +419,63 @@ export default function EventRegisterPage() {
             )}
           </div>
 
-          {/* Phone */}
+          {/* WhatsApp Number */}
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-zinc-300 mb-2">
-              Phone Number <span className="text-zinc-500 text-xs">(Optional)</span>
+            <label htmlFor="whatsapp" className="block text-sm font-medium text-zinc-300 mb-2">
+              WhatsApp Number <span className="text-zinc-500 text-xs">(Optional)</span>
             </label>
-            <input
-              type="tel"
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-              placeholder="+1234567890"
-            />
-            {formErrors.phone && (
-              <p className="mt-1 text-sm text-red-400">{formErrors.phone}</p>
-            )}
+            <div className="flex gap-2">
+              {/* Country Code Selector */}
+              <label htmlFor="countryCode" className="sr-only">
+                Country Code
+              </label>
+              <select
+                id="countryCode"
+                name="countryCode"
+                autoComplete="tel-country-code"
+                value={selectedCountryCode}
+                onChange={handleCountryCodeChange}
+                aria-label="Country code"
+                className="flex-shrink-0 rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-3 text-sm text-zinc-50 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer"
+                style={{ minWidth: '100px', maxWidth: '120px' }}
+                title={selectedCountryCode ? sortedCountries.find(c => c.code === selectedCountryCode)?.name : "Select country code"}
+              >
+                <option value="" className="bg-zinc-950 text-zinc-400">Code</option>
+                {sortedCountries.map((country) => (
+                  <option key={country.code} value={country.code} className="bg-zinc-950 text-zinc-50">
+                    {country.flag} {country.code}
+                  </option>
+                ))}
+              </select>
+              
+              {/* WhatsApp Number Input */}
+              <div className="flex-1">
+                <input
+                  type="tel"
+                  id="whatsapp"
+                  name="whatsapp"
+                  autoComplete="tel-national"
+                  value={formData.whatsapp}
+                  onChange={handleWhatsappChange}
+                  className={`w-full rounded-lg border bg-zinc-900/50 px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 ${
+                    formErrors.whatsapp || whatsappError ? 'border-red-500/50' : 'border-zinc-700'
+                  }`}
+                  placeholder={selectedCountry 
+                    ? `Enter ${selectedCountry.name} number` 
+                    : "Select country code first"}
+                  maxLength={selectedCountry ? getPhoneRule(selectedCountry.name).max + 5 : 15}
+                  disabled={!selectedCountryCode}
+                />
+                {(formErrors.whatsapp || whatsappError) && (
+                  <p className="mt-1 text-sm text-red-400">{formErrors.whatsapp || whatsappError}</p>
+                )}
+                {selectedCountry && !whatsappError && !formErrors.whatsapp && (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {getPhoneRule(selectedCountry.name).min}{getPhoneRule(selectedCountry.name).min !== getPhoneRule(selectedCountry.name).max ? `-${getPhoneRule(selectedCountry.name).max}` : ''} digits (excluding country code)
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Custom Fields */}
