@@ -207,19 +207,19 @@ export default function EventRegisterPage() {
       errors.email = emailValidation.error || 'Invalid email';
     }
 
-    // Validate WhatsApp (optional)
-    if (formData.whatsapp) {
-      if (!selectedCountryCode) {
-        errors.whatsapp = 'Please select a country code';
-      } else if (selectedCountry) {
-        const digitsOnly = formData.whatsapp.replace(/\D/g, '');
-        const { min, max } = getPhoneRule(selectedCountry.name);
-        if (digitsOnly.length < min || digitsOnly.length > max) {
-          errors.whatsapp = `WhatsApp number should have ${min}${min !== max ? `-${max}` : ''} digits for ${selectedCountry.name}.`;
-        }
-      } else if (!isValidPhone(formData.whatsapp)) {
-        errors.whatsapp = 'Invalid WhatsApp number';
+    // Validate WhatsApp (required)
+    if (!selectedCountryCode) {
+      errors.whatsapp = 'Please select a country code';
+    } else if (!formData.whatsapp.trim()) {
+      errors.whatsapp = 'WhatsApp number is required';
+    } else if (selectedCountry) {
+      const digitsOnly = formData.whatsapp.replace(/\D/g, '');
+      const { min, max } = getPhoneRule(selectedCountry.name);
+      if (digitsOnly.length < min || digitsOnly.length > max) {
+        errors.whatsapp = `WhatsApp number should have ${min}${min !== max ? `-${max}` : ''} digits for ${selectedCountry.name}.`;
       }
+    } else if (!isValidPhone(formData.whatsapp)) {
+      errors.whatsapp = 'Invalid WhatsApp number';
     }
 
     // Validate custom fields
@@ -255,8 +255,8 @@ export default function EventRegisterPage() {
         body: JSON.stringify({
           full_name: sanitizeName(formData.full_name, 100),
           email: validateAndNormalizeEmail(formData.email).normalized,
-          phone: formData.whatsapp && selectedCountryCode 
-            ? `${selectedCountryCode} ${formData.whatsapp}`.trim() 
+          phone: selectedCountryCode && formData.whatsapp
+            ? `${selectedCountryCode} ${formData.whatsapp}`.trim()
             : null,
           additional_data: Object.keys(formData.additional_data).length > 0 ? formData.additional_data : null,
         }),
@@ -422,7 +422,7 @@ export default function EventRegisterPage() {
           {/* WhatsApp Number */}
           <div>
             <label htmlFor="whatsapp" className="block text-sm font-medium text-zinc-300 mb-2">
-              WhatsApp Number <span className="text-zinc-500 text-xs">(Optional)</span>
+              WhatsApp Number <span className="text-red-400">*</span>
             </label>
             <div className="flex gap-2">
               {/* Country Code Selector */}
@@ -465,6 +465,7 @@ export default function EventRegisterPage() {
                     : "Select country code first"}
                   maxLength={selectedCountry ? getPhoneRule(selectedCountry.name).max + 5 : 15}
                   disabled={!selectedCountryCode}
+                  required
                 />
                 {(formErrors.whatsapp || whatsappError) && (
                   <p className="mt-1 text-sm text-red-400">{formErrors.whatsapp || whatsappError}</p>
