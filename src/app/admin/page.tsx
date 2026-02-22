@@ -3748,6 +3748,26 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+            {/* Security Section - render early so form is visible when Admin Access is selected */}
+            {activeSection === 'security' && (
+              <div className="space-y-8">
+                <div className="flex items-center gap-4 pb-4 border-b border-zinc-800/50">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/30">
+                    <Shield className="h-6 w-6 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-zinc-50">Security Management</h1>
+                    <p className="text-sm text-zinc-400 mt-0.5">Monitor and manage admin access, sessions, and security events</p>
+                  </div>
+                </div>
+                {activeSubMenu === 'admin-access' && <AdminAccessManagement />}
+                {activeSubMenu === 'login-history' && <SecurityLoginHistory />}
+                {activeSubMenu === 'account-lockouts' && <SecurityAccountLockouts />}
+                {activeSubMenu === 'session-management' && <SecuritySessionManagement />}
+                {activeSection === 'security' && !activeSubMenu && <AdminAccessManagement />}
+              </div>
+            )}
+
             {/* Overview cards - show on dashboard or when no specific sub-menu is selected */}
             {(!activeSubMenu || (activeTab === 'overview' && !activeSubMenu)) && (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -7368,29 +7388,6 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Security Section */}
-          {(activeSection as string | null) === 'security' && (
-            <div className="space-y-8">
-              {/* Security Section Header */}
-              <div className="flex items-center gap-4 pb-4 border-b border-zinc-800/50">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/30">
-                  <Shield className="h-6 w-6 text-cyan-400" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-zinc-50">Security Management</h1>
-                  <p className="text-sm text-zinc-400 mt-0.5">Monitor and manage admin access, sessions, and security events</p>
-                </div>
-              </div>
-
-              {/* Security Submenu Content */}
-              {activeSubMenu === 'admin-access' && <AdminAccessManagement />}
-              {activeSubMenu === 'login-history' && <SecurityLoginHistory />}
-              {activeSubMenu === 'account-lockouts' && <SecurityAccountLockouts />}
-              {activeSubMenu === 'session-management' && <SecuritySessionManagement />}
-              {!activeSubMenu && <AdminAccessManagement />}
             </div>
           )}
         </div>

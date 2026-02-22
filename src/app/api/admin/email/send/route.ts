@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { from, to, cc, bcc, subject, body } = await req.json();
+    const { from, to, cc, bcc, subject, body, replyTo } = await req.json();
 
     // Validate required fields
     if (!to || !Array.isArray(to) || to.length === 0) {
@@ -114,22 +114,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prepare email data - use provided from email or fallback to default
-    let fromEmail = getFromEmail();
-    if (from && typeof from === 'string' && from.trim().length > 0) {
-      // Validate the provided from email
-      const fromValidation = validateAndNormalizeEmail(from.trim());
-      if (fromValidation.valid && fromValidation.normalized) {
-        // Format as "Name <email>" if it's just an email, otherwise use as-is
-        if (fromValidation.normalized.includes('<')) {
-          fromEmail = fromValidation.normalized;
-        } else {
-          fromEmail = `PanAfrican Bitcoin Academy <${fromValidation.normalized}>`;
+    // Parse "Name <email>" format for from field
+    const parseFromAddress = (fromStr: string): string | null => {
+      const trimmed = fromStr.trim();
+      if (!trimmed) return null;
+      const match = trimmed.match(/^(.+?)\s*<([^>]+)>$/);
+      if (match) {
+        const [, name, email] = match;
+        const emailValidation = validateAndNormalizeEmail(email.trim());
+        if (emailValidation.valid && emailValidation.normalized) {
+          return `${(name || '').trim()} <${emailValidation.normalized}>`;
+        }
+      } else {
+        const emailValidation = validateAndNormalizeEmail(trimmed);
+        if (emailValidation.valid && emailValidation.normalized) {
+          return `PanAfrican Bitcoin Academy <${emailValidation.normalized}>`;
         }
       }
+      return null;
+    };
+
+    let fromEmail = getFromEmail();
+    if (from && typeof from === 'string' && from.trim().length > 0) {
+      const parsed = parseFromAddress(from);
+      if (parsed) fromEmail = parsed;
     }
 
-    const emailData: any = {
+    const emailData: Record<string, unknown> = {
       from: fromEmail,
       to: toValidation.valid,
       subject: subject.trim(),
@@ -142,6 +153,13 @@ export async function POST(req: NextRequest) {
 
     if (bccValidation.valid.length > 0) {
       emailData.bcc = bccValidation.valid;
+    }
+
+    if (replyTo && typeof replyTo === 'string' && replyTo.trim().length > 0) {
+      const replyValidation = validateAndNormalizeEmail(replyTo.trim());
+      if (replyValidation.valid && replyValidation.normalized) {
+        emailData.replyTo = replyValidation.normalized;
+      }
     }
 
     // Send email

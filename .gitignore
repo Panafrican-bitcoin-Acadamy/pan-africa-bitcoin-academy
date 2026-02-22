@@ -30,6 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# WhatsApp page and Twilio integration (keep private)
+/src/app/whatsapp/
+/src/app/api/whatsapp/
+/src/components/whatsapp/
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.template

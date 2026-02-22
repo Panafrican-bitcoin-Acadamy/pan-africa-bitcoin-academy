@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { X, Paperclip, Send, Trash2, Maximize2, Minimize2, Clock, Save } from 'lucide-react';
+import { X, Paperclip, Send, Trash2, Maximize2, Minimize2, Clock, Save, ChevronDown, User, Plus } from 'lucide-react';
 
 interface EmailComposerProps {
   onClose?: () => void;
@@ -16,6 +16,28 @@ interface RecipientChip {
   label?: string;
 }
 
+interface SavedSender {
+  id: string;
+  name: string;
+  email: string;
+  replyTo?: string;
+}
+
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+}
+
+const EMAIL_TEMPLATES: EmailTemplate[] = [
+  { id: 'blank', name: 'Blank', subject: '', body: '' },
+  { id: 'welcome', name: 'Welcome', subject: 'Welcome to Pan African Bitcoin Academy', body: '<p>Hello,</p><p>Welcome to the Pan African Bitcoin Academy! We\'re excited to have you join our program.</p><p>Best regards,<br/>Pan African Bitcoin Academy Team</p>' },
+  { id: 'reminder', name: 'Session Reminder', subject: 'Reminder: Upcoming Session', body: '<p>Hello,</p><p>This is a friendly reminder about our upcoming session.</p><p>We look forward to seeing you!</p><p>Best regards,<br/>Pan African Bitcoin Academy</p>' },
+  { id: 'announcement', name: 'Announcement', subject: 'Important Announcement', body: '<p>Hello everyone,</p><p>We have an important announcement to share with you.</p><p>Please take a moment to read the details below.</p><p>Best regards,<br/>Pan African Bitcoin Academy</p>' },
+  { id: 'followup', name: 'Follow-up', subject: 'Following up', body: '<p>Hello,</p><p>I wanted to follow up on our previous conversation.</p><p>Please let me know if you have any questions.</p><p>Best regards</p>' },
+];
+
 export default function EmailComposer({ 
   onClose, 
   initialTo = '', 
@@ -24,6 +46,18 @@ export default function EmailComposer({
 }: EmailComposerProps) {
   const [fromName, setFromName] = useState('PanAfrican Bitcoin Academy');
   const [fromEmail, setFromEmail] = useState('noreply@panafricanbitcoin.com');
+  const [replyTo, setReplyTo] = useState('');
+  const [showReplyTo, setShowReplyTo] = useState(false);
+  const [savedSenders, setSavedSenders] = useState<SavedSender[]>(() => {
+    try {
+      const s = localStorage.getItem('email-saved-senders');
+      return s ? JSON.parse(s) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showSenderPresets, setShowSenderPresets] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [toRecipients, setToRecipients] = useState<RecipientChip[]>(() => {
     if (initialTo) {
       return initialTo.split(',').map((email, idx) => ({
@@ -80,6 +114,7 @@ export default function EmailComposer({
       const draft = {
         fromName,
         fromEmail,
+        replyTo,
         to: toRecipients.map(r => r.email).join(','),
         cc: ccRecipients.map(r => r.email).join(','),
         bcc: bccRecipients.map(r => r.email).join(','),
@@ -101,6 +136,10 @@ export default function EmailComposer({
         const draft = JSON.parse(draftStr);
         if (draft.fromName) setFromName(draft.fromName);
         if (draft.fromEmail) setFromEmail(draft.fromEmail);
+        if (draft.replyTo) {
+          setReplyTo(draft.replyTo);
+          setShowReplyTo(true);
+        }
         if (draft.to) {
           setToRecipients(draft.to.split(',').map((email: string, idx: number) => ({
             id: `to-${idx}`,
@@ -254,7 +293,7 @@ export default function EmailComposer({
       // Format from as "Name <email>"
       const fromFormatted = `${fromName.trim()} <${fromEmail.trim()}>`;
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         from: fromFormatted,
         to: toRecipients.map(r => r.email),
         cc: ccRecipients.map(r => r.email),
@@ -262,6 +301,9 @@ export default function EmailComposer({
         subject: subject.trim(),
         body: emailBody,
       };
+      if (replyTo.trim() && validateEmail(replyTo.trim())) {
+        payload.replyTo = replyTo.trim();
+      }
 
       console.log('Sending email:', { ...payload, body: emailBody.substring(0, 100) + '...' });
 
@@ -313,6 +355,8 @@ export default function EmailComposer({
       setBody('');
       setFromName('PanAfrican Bitcoin Academy');
       setFromEmail('noreply@panafricanbitcoin.com');
+      setReplyTo('');
+      setShowReplyTo(false);
       if (bodyRef.current) {
         bodyRef.current.innerHTML = '';
       }
@@ -414,29 +458,138 @@ export default function EmailComposer({
 
       {/* Email Form */}
       <div className="flex-1 overflow-y-auto">
-        {/* From Field */}
-        <div className="px-4 py-2 border-b border-zinc-700">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-zinc-400 w-12">From:</label>
-            <div className="flex-1 flex items-center gap-2">
+        {/* From Field - improved layout with name and email */}
+        <div className="px-4 py-3 border-b border-zinc-700 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5" />
+              From:
+            </label>
+            <div className="relative flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const name = fromName.trim();
+                  const email = fromEmail.trim();
+                  if (name && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    const newSender: SavedSender = {
+                      id: `sender-${Date.now()}`,
+                      name,
+                      email,
+                      replyTo: replyTo.trim() || undefined,
+                    };
+                    const updated = [...savedSenders, newSender];
+                    setSavedSenders(updated);
+                    localStorage.setItem('email-saved-senders', JSON.stringify(updated));
+                  }
+                }}
+                className="text-xs text-zinc-500 hover:text-cyan-400 flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-800"
+                title="Save current sender as preset"
+              >
+                <Save className="w-3 h-3" />
+                Save preset
+              </button>
+              {savedSenders.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowSenderPresets(!showSenderPresets)}
+                    className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-800"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSenderPresets ? 'rotate-180' : ''}`} />
+                    Saved senders
+                  </button>
+                  {showSenderPresets && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowSenderPresets(false)} aria-hidden="true" />
+                      <div className="absolute right-0 top-full mt-1 z-20 w-64 rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl py-1 max-h-48 overflow-y-auto">
+                        {savedSenders.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setFromName(s.name);
+                              setFromEmail(s.email);
+                              setReplyTo(s.replyTo || '');
+                              setShowSenderPresets(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700"
+                          >
+                            <div className="font-medium truncate">{s.name}</div>
+                            <div className="text-xs text-zinc-400 truncate">{s.email}</div>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const name = fromName.trim();
+                            const email = fromEmail.trim();
+                            if (name && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                              const newSender: SavedSender = {
+                                id: `sender-${Date.now()}`,
+                                name,
+                                email,
+                                replyTo: replyTo.trim() || undefined,
+                              };
+                              const updated = [...savedSenders, newSender];
+                              setSavedSenders(updated);
+                              localStorage.setItem('email-saved-senders', JSON.stringify(updated));
+                              setShowSenderPresets(false);
+                            }
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs text-cyan-400 hover:bg-zinc-700 flex items-center gap-2"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Save current as preset
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1">Display Name</label>
               <input
                 type="text"
                 value={fromName}
                 onChange={(e) => setFromName(e.target.value)}
-                placeholder="Sender Name"
-                className="flex-1 text-sm text-zinc-100 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="e.g. Pan African Bitcoin Academy"
+                className="w-full text-sm text-zinc-100 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-zinc-500"
               />
-              <span className="text-zinc-500 text-sm">&lt;</span>
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1">Email Address</label>
               <input
                 type="email"
                 value={fromEmail}
                 onChange={(e) => setFromEmail(e.target.value)}
-                placeholder="email@domain.com"
-                className="flex-1 text-sm text-zinc-100 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="e.g. noreply@panafricanbitcoin.com"
+                className="w-full text-sm text-zinc-100 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-zinc-500"
               />
-              <span className="text-zinc-500 text-sm">&gt;</span>
             </div>
           </div>
+          {showReplyTo && (
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1">Reply-To (optional)</label>
+              <input
+                type="email"
+                value={replyTo}
+                onChange={(e) => setReplyTo(e.target.value)}
+                placeholder="Replies will go to this address"
+                className="w-full text-sm text-zinc-100 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-zinc-500"
+              />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowReplyTo(!showReplyTo)}
+            className="text-xs text-cyan-500 hover:text-cyan-400"
+          >
+            {showReplyTo ? '− Hide Reply-To' : '+ Add Reply-To address'}
+          </button>
         </div>
 
         {/* To Field */}
@@ -567,8 +720,44 @@ export default function EmailComposer({
           </div>
         </div>
 
-        {/* Formatting Toolbar */}
-        <div className="px-4 py-2 border-b border-zinc-700 bg-zinc-800 flex items-center gap-2">
+        {/* Templates & Formatting Toolbar */}
+        <div className="px-4 py-2 border-b border-zinc-700 bg-zinc-800 flex flex-wrap items-center gap-2">
+          <div className="relative mr-2">
+            <button
+              type="button"
+              onClick={() => setShowTemplates(!showTemplates)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 rounded transition border border-zinc-600"
+            >
+              <span>Template</span>
+              <ChevronDown className={`w-3.5 h-3.5 ${showTemplates ? 'rotate-180' : ''}`} />
+            </button>
+            {showTemplates && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowTemplates(false)} aria-hidden="true" />
+                <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl py-1 max-h-64 overflow-y-auto">
+                  {EMAIL_TEMPLATES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        if (t.subject) setSubject(t.subject);
+                        if (t.body && bodyRef.current) {
+                          bodyRef.current.innerHTML = t.body;
+                          setBody(t.body);
+                        }
+                        setShowTemplates(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700"
+                    >
+                      <div className="font-medium">{t.name}</div>
+                      {t.subject && <div className="text-xs text-zinc-500 truncate">{t.subject}</div>}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="w-px h-4 bg-zinc-600" />
           <button
             onClick={() => applyFormatting('bold')}
             className="p-1.5 hover:bg-zinc-700 rounded transition"
@@ -589,6 +778,35 @@ export default function EmailComposer({
             title="Underline"
           >
             <span className="text-sm underline text-zinc-300">U</span>
+          </button>
+          <button
+            onClick={() => applyFormatting('strikeThrough')}
+            className="p-1.5 hover:bg-zinc-700 rounded transition"
+            title="Strikethrough"
+          >
+            <span className="text-sm line-through text-zinc-300">S</span>
+          </button>
+          <div className="w-px h-4 bg-zinc-600" />
+          <button
+            onClick={() => applyFormatting('formatBlock', 'h2')}
+            className="p-1.5 hover:bg-zinc-700 rounded transition text-xs font-semibold text-zinc-300"
+            title="Heading"
+          >
+            H2
+          </button>
+          <button
+            onClick={() => applyFormatting('formatBlock', 'h3')}
+            className="p-1.5 hover:bg-zinc-700 rounded transition text-xs font-semibold text-zinc-300"
+            title="Subheading"
+          >
+            H3
+          </button>
+          <button
+            onClick={() => applyFormatting('formatBlock', 'p')}
+            className="p-1.5 hover:bg-zinc-700 rounded transition text-xs text-zinc-300"
+            title="Paragraph"
+          >
+            P
           </button>
           <div className="w-px h-4 bg-zinc-600" />
           <button
