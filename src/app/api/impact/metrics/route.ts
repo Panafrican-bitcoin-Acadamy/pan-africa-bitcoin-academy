@@ -13,14 +13,30 @@ export async function GET(_req: NextRequest) {
       console.error('Error fetching approved applications:', applicationsError);
     }
 
-    // 2. Cohorts Completed (status = 'Completed')
-    const { count: cohortsCompleted, error: cohortsError } = await supabaseAdmin
-      .from('cohorts')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'Completed');
+    // 2. Cohorts Completed: cohorts where ALL sessions are completed
+    // (computed from cohort_sessions - source of truth)
+    let cohortsCompleted = 0;
+    const { data: allSessions, error: sessionsErr } = await supabaseAdmin
+      .from('cohort_sessions')
+      .select('cohort_id, status');
 
-    if (cohortsError) {
-      console.error('Error fetching completed cohorts:', cohortsError);
+    if (!sessionsErr && allSessions && allSessions.length > 0) {
+      const sessionsByCohort = new Map<string, { total: number; completed: number }>();
+      for (const s of allSessions) {
+        const cid = s.cohort_id;
+        if (!sessionsByCohort.has(cid)) {
+          sessionsByCohort.set(cid, { total: 0, completed: 0 });
+        }
+        const t = sessionsByCohort.get(cid)!;
+        t.total++;
+        if (s.status === 'completed') t.completed++;
+      }
+      // Cohort is completed if it has at least 1 session and all are completed
+      for (const [, t] of sessionsByCohort) {
+        if (t.total > 0 && t.total === t.completed) {
+          cohortsCompleted++;
+        }
+      }
     }
 
     // 3. Countries Reached (distinct countries from students)
