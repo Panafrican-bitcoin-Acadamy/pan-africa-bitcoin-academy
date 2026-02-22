@@ -17,35 +17,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Fetch all admins with their profile information
+    // Fetch all admins - use select('*') to avoid failures from missing columns
     const { data: admins, error } = await supabaseAdmin
       .from('admins')
-      .select(`
-        id,
-        email,
-        first_name,
-        last_name,
-        position,
-        access_level,
-        role,
-        phone,
-        country,
-        city,
-        notes,
-        email_verified,
-        force_password_change,
-        password_changed_at,
-        created_at,
-        created_by,
-        locked_until,
-        failed_login_attempts
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching admins:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch admins' },
+        { error: 'Failed to fetch admins', details: error.message },
         { status: 500 }
       );
     }

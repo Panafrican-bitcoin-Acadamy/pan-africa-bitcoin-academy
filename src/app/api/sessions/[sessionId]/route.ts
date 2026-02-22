@@ -303,6 +303,29 @@ export async function PUT(
     // Note: Subsequent sessions were already shifted above in shift mode BEFORE updating the current session
     // This prevents conflicts and ensures the update succeeds
 
+    // When session is marked completed: check if all sessions in cohort are completed
+    // If so, update cohort status to 'Completed' (updates Impact page Cohorts Completed)
+    if (updateData.status === 'completed' && updatedSession?.cohort_id) {
+      const cohortId = updatedSession.cohort_id;
+      const { data: cohortSessions, error: cohortSessionsError } = await supabaseAdmin
+        .from('cohort_sessions')
+        .select('id, status')
+        .eq('cohort_id', cohortId);
+
+      if (!cohortSessionsError && cohortSessions && cohortSessions.length > 0) {
+        const allCompleted = cohortSessions.every((s: any) => s.status === 'completed');
+        if (allCompleted) {
+          const { error: cohortUpdateError } = await supabaseAdmin
+            .from('cohorts')
+            .update({ status: 'Completed' })
+            .eq('id', cohortId);
+          if (cohortUpdateError) {
+            console.error('Error updating cohort status to Completed:', cohortUpdateError);
+          }
+        }
+      }
+    }
+
     const res = NextResponse.json(
       { success: true, session: updatedSession },
       { status: 200 }

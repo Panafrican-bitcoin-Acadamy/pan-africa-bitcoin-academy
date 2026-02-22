@@ -52,29 +52,15 @@ export async function GET(_req: NextRequest) {
       );
     }
 
-    // 5. Teaching Hours (sum of live-class event durations)
-    const { data: liveClassEvents, error: eventsError } = await supabaseAdmin
-      .from('events')
-      .select('start_time, end_time')
-      .eq('type', 'live-class')
-      .not('start_time', 'is', null)
-      .not('end_time', 'is', null);
+    // 5. Teaching Hours (1 hour per completed cohort session)
+    const { count: completedSessionsCount, error: sessionsError } = await supabaseAdmin
+      .from('cohort_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'completed');
 
     let teachingHours = 0;
-    if (!eventsError && liveClassEvents) {
-      // Calculate total hours from event durations
-      const totalMs = liveClassEvents.reduce((total, event) => {
-        if (event.start_time && event.end_time) {
-          const start = new Date(event.start_time);
-          const end = new Date(event.end_time);
-          const durationMs = end.getTime() - start.getTime();
-          return total + Math.max(0, durationMs); // Only positive durations
-        }
-        return total;
-      }, 0);
-      
-      // Convert milliseconds to hours (round to 1 decimal place)
-      teachingHours = Math.round((totalMs / (1000 * 60 * 60)) * 10) / 10;
+    if (!sessionsError && completedSessionsCount != null) {
+      teachingHours = completedSessionsCount; // 1 teaching hour per completed session
     }
 
     return NextResponse.json(

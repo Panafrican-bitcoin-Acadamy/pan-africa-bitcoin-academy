@@ -358,7 +358,8 @@ export default function AdminDashboardPage() {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessionCohortFilter, setSessionCohortFilter] = useState<string | null>(null);
   const [sessionStatusFilter, setSessionStatusFilter] = useState<string>('all');
-  const [sessionDateFilter, setSessionDateFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+  const [sessionDateFilter, setSessionDateFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [updatingSessionId, setUpdatingSessionId] = useState<string | null>(null);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loadingAttendanceRecords, setLoadingAttendanceRecords] = useState(false);
@@ -1917,6 +1918,37 @@ export default function AdminDashboardPage() {
   
   // Update ref whenever function changes
   fetchSessionsRef.current = fetchSessions;
+
+  const handleUpdateSessionStatus = useCallback(async (sessionId: string, newStatus: 'completed' | 'scheduled' | 'cancelled' | 'rescheduled') => {
+    if (!admin) return;
+    setUpdatingSessionId(sessionId);
+    try {
+      const res = await fetchWithAuth(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to update session');
+      }
+      const data = await res.json();
+      if (data.session) {
+        setAllSessions((prev) =>
+          prev.map((s) => (s.id === sessionId ? { ...s, status: data.session.status } : s))
+        );
+      } else {
+        await fetchSessionsRef.current?.();
+      }
+      const label = newStatus === 'completed' ? 'Done' : newStatus === 'scheduled' ? 'Upcoming' : newStatus;
+      setNotification({ type: 'success', message: `Session marked as ${label}.${newStatus === 'completed' ? ' Impact page updated.' : ''}` });
+    } catch (err: any) {
+      console.error('[Session] Update status error:', err);
+      setNotification({ type: 'error', message: err.message || 'Failed to update session' });
+    } finally {
+      setUpdatingSessionId(null);
+    }
+  }, [admin, fetchWithAuth]);
 
   const fetchEvents = async () => {
     // Prevent duplicate simultaneous fetches
@@ -4629,8 +4661,14 @@ export default function AdminDashboardPage() {
                             {session.duration_minutes || 90} min
                           </td>
                           <td className="px-3 py-2">
-                            <span
-                              className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                            <select
+                              value={session.status === 'completed' ? 'completed' : session.status === 'cancelled' ? 'cancelled' : session.status === 'rescheduled' ? 'rescheduled' : 'scheduled'}
+                              onChange={(e) => {
+                                const val = e.target.value as 'completed' | 'scheduled' | 'cancelled' | 'rescheduled';
+                                handleUpdateSessionStatus(session.id, val);
+                              }}
+                              disabled={updatingSessionId === session.id}
+                              className={`rounded-full border px-2 py-1 text-xs font-medium cursor-pointer disabled:opacity-50 ${
                                 session.status === 'completed'
                                   ? 'border-green-500/50 bg-green-500/20 text-green-400'
                                   : session.status === 'cancelled'
@@ -4640,8 +4678,14 @@ export default function AdminDashboardPage() {
                                   : 'border-blue-500/50 bg-blue-500/20 text-blue-400'
                               }`}
                             >
-                              {session.status || 'scheduled'}
-                            </span>
+                              <option value="completed">Done</option>
+                              <option value="scheduled">Upcoming</option>
+                              <option value="cancelled">Cancelled</option>
+                              <option value="rescheduled">Rescheduled</option>
+                            </select>
+                            {updatingSessionId === session.id && (
+                              <span className="ml-1 text-xs text-zinc-500">...</span>
+                            )}
                           </td>
                           <td className="px-3 py-2">
                             {session.link ? (
