@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
         cc: emailData.cc || 'none',
         bcc: emailData.bcc || 'none',
         subject: emailData.subject,
-        bodyLength: emailData.html?.length || 0,
+        bodyLength: typeof emailData.html === 'string' ? emailData.html.length : 0,
       });
 
       const result = await resend.emails.send(emailData);
