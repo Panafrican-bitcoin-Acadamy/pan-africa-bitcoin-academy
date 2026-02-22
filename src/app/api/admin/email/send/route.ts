@@ -140,40 +140,33 @@ export async function POST(req: NextRequest) {
       if (parsed) fromEmail = parsed;
     }
 
-    const emailData: Record<string, unknown> = {
+    const replyToValid =
+      replyTo && typeof replyTo === 'string' && replyTo.trim().length > 0
+        ? validateAndNormalizeEmail(replyTo.trim())
+        : null;
+
+    const emailPayload = {
       from: fromEmail,
       to: toValidation.valid,
       subject: subject.trim(),
       html: body,
+      ...(ccValidation.valid.length > 0 && { cc: ccValidation.valid }),
+      ...(bccValidation.valid.length > 0 && { bcc: bccValidation.valid }),
+      ...(replyToValid?.valid && replyToValid.normalized && { replyTo: replyToValid.normalized }),
     };
-
-    if (ccValidation.valid.length > 0) {
-      emailData.cc = ccValidation.valid;
-    }
-
-    if (bccValidation.valid.length > 0) {
-      emailData.bcc = bccValidation.valid;
-    }
-
-    if (replyTo && typeof replyTo === 'string' && replyTo.trim().length > 0) {
-      const replyValidation = validateAndNormalizeEmail(replyTo.trim());
-      if (replyValidation.valid && replyValidation.normalized) {
-        emailData.replyTo = replyValidation.normalized;
-      }
-    }
 
     // Send email
     try {
       console.log('Attempting to send email:', {
-        from: emailData.from,
-        to: emailData.to,
-        cc: emailData.cc || 'none',
-        bcc: emailData.bcc || 'none',
-        subject: emailData.subject,
-        bodyLength: typeof emailData.html === 'string' ? emailData.html.length : 0,
+        from: emailPayload.from,
+        to: emailPayload.to,
+        cc: emailPayload.cc || 'none',
+        bcc: emailPayload.bcc || 'none',
+        subject: emailPayload.subject,
+        bodyLength: body.length,
       });
 
-      const result = await resend.emails.send(emailData);
+      const result = await resend.emails.send(emailPayload);
 
       if (result.error) {
         console.error('Resend API error:', result.error);
