@@ -2862,12 +2862,19 @@ export default function AdminDashboardPage() {
     try {
       switch (section) {
         case 'overview':
-          // Skip if already loaded
-          if (dataLoadedRef.current.has('overview')) {
-            return;
+          // Fetch overview (skip if already loaded, unless submenu needs blog data)
+          if (!dataLoadedRef.current.has('overview')) {
+            await fetchOverview();
+            dataLoadedRef.current.add('overview');
           }
-          await fetchOverview();
-          dataLoadedRef.current.add('overview');
+          // Explicitly fetch blog posts when Blog Posts submenu is active
+          if (subMenu === 'blog-posts' && fetchBlogPostsRef.current) {
+            blogPostsFetchedRef.current = false;
+            await fetchBlogPostsRef.current();
+          }
+          if (subMenu === 'blog-submissions' && fetchBlogSubmissionsRef.current) {
+            await fetchBlogSubmissionsRef.current();
+          }
           break;
           
         case 'applications':
@@ -4841,8 +4848,8 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* Assignment Submissions Section */}
-            {(activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || activeTab === 'assignments') && (
+            {/* Assignment Submissions, Blog Submissions, Blog Posts Section */}
+            {(activeSubMenu === 'assignments-submissions' || activeSubMenu === 'blog-submissions' || activeSubMenu === 'blog-posts' || activeTab === 'assignments') && (
               <>
         {/* Assignment Submissions Section */}
                 {(activeSubMenu === 'assignments-submissions' || activeTab === 'assignments') && (
@@ -5281,7 +5288,7 @@ export default function AdminDashboardPage() {
                 <span className="text-zinc-500"> Note: This is different from "Blog Submissions" which shows pending/awaiting review posts.</span>
               </p>
             </div>
-        </div>
+          </div>
 
           {/* Search and Filters */}
           {Array.isArray(blogPosts) && blogPosts.length > 0 && (
@@ -5457,7 +5464,7 @@ export default function AdminDashboardPage() {
                       <div className="mb-4 rounded bg-zinc-800/50 p-3">
                         <p className="text-xs font-medium text-zinc-300 mb-1">Excerpt:</p>
                         <p className="text-sm text-zinc-200">
-                          {expandedBlogPostId === post.id ? post.excerpt : (post.excerpt.length > 200 ? post.excerpt.substring(0, 200) + '...' : post.excerpt)}
+                          {expandedBlogPostId === post.id ? post.excerpt : (post.excerpt && post.excerpt.length > 200 ? post.excerpt.substring(0, 200) + '...' : post.excerpt)}
                         </p>
                       </div>
                     )}
@@ -5466,14 +5473,14 @@ export default function AdminDashboardPage() {
                       <div className="mb-4 rounded bg-zinc-800/50 p-3">
                         <p className="text-xs font-medium text-zinc-300 mb-2">Full Content:</p>
                         <div className="text-sm text-zinc-200 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                          {post.content}
+                          {post.content || '(No content)'}
                         </div>
                       </div>
                     )}
 
                     <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-4 text-xs text-zinc-400 flex-wrap">
-                        <span>Created: {new Date(post.created_at).toLocaleString()}</span>
+                        <span>Created: {post.created_at ? new Date(post.created_at).toLocaleString() : 'N/A'}</span>
                         {post.published_at && (
                           <span>• Published: {new Date(post.published_at).toLocaleString()}</span>
                         )}
@@ -5510,8 +5517,8 @@ export default function AdminDashboardPage() {
                           {expandedBlogPostId === post.id ? '▼ Hide Content' : '▶ View Full Content'}
                         </button>
                         
-                        {/* Status Management */}
-                        {post.status !== 'published' && (
+                        {/* Status Management - only for real blog posts (not from submission) */}
+                        {!post._isFromSubmission && post.status !== 'published' && (
                           <button
                             type="button"
                             onClick={() => handleUpdateBlogPost(post.id, { status: 'published' })}
@@ -5521,7 +5528,7 @@ export default function AdminDashboardPage() {
                             {processingBlogPost === post.id ? '...' : '✓ Publish'}
                           </button>
                         )}
-                        {post.status !== 'draft' && (
+                        {!post._isFromSubmission && post.status !== 'draft' && (
                           <button
                             type="button"
                             onClick={() => handleUpdateBlogPost(post.id, { status: 'draft' })}
@@ -5536,7 +5543,7 @@ export default function AdminDashboardPage() {
                             )}
                           </button>
                         )}
-                        {post.status !== 'archived' && (
+                        {!post._isFromSubmission && post.status !== 'archived' && (
                           <button
                             type="button"
                             onClick={() => handleUpdateBlogPost(post.id, { status: 'archived' })}
@@ -5548,6 +5555,8 @@ export default function AdminDashboardPage() {
                         )}
                       </div>
                       
+                      {/* Feature / BOM - only for real blog posts */}
+                      {!post._isFromSubmission && (
                       <div className="flex items-center gap-2 flex-wrap">
                         <button
                           type="button"
@@ -5584,6 +5593,7 @@ export default function AdminDashboardPage() {
                           )}
                         </button>
                       </div>
+                      )}
                     </div>
                   </div>
                 ))}
