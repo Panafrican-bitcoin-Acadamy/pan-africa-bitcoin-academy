@@ -22,6 +22,19 @@ import {
   Eye, EyeOff
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 // Cohort color palette - same as Calendar component
 const cohortColors = [
@@ -94,6 +107,7 @@ interface Cohort {
   level?: string | null;
   seats?: number | null;
   enrolled?: number | null;
+  sessions?: number | null;
 }
 
 interface EventItem {
@@ -351,6 +365,13 @@ export default function AdminDashboardPage() {
   const [attendanceSort, setAttendanceSort] = useState<'asc' | 'desc' | null>(null); // Sort by attendance
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingCohort, setCreatingCohort] = useState(false);
+  const [cohortListFilter, setCohortListFilter] = useState<'all' | 'upcoming' | 'in-progress' | 'past'>('all');
+  const [cohortSearch, setCohortSearch] = useState('');
+  const [cohortAnalytics, setCohortAnalytics] = useState<Array<{
+    id: string; name: string; enrolled: number; seats: number; avgProgress: number; avgAttendance: number;
+    sessionsTotal: number; sessionsCompleted: number; level?: string; status?: string;
+  }>>([]);
+  const [loadingCohortAnalytics, setLoadingCohortAnalytics] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
   const [rearrangingSessions, setRearrangingSessions] = useState<string | null>(null);
@@ -2011,6 +2032,25 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchCohortAnalytics = async () => {
+    try {
+      setLoadingCohortAnalytics(true);
+      const res = await fetchWithAuth('/api/admin/cohorts/analytics');
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('[Admin] Error fetching cohort analytics:', data.error);
+        setCohortAnalytics([]);
+        return;
+      }
+      setCohortAnalytics(data.analytics || []);
+    } catch (err) {
+      console.error('[Admin] Error fetching cohort analytics:', err);
+      setCohortAnalytics([]);
+    } finally {
+      setLoadingCohortAnalytics(false);
+    }
+  };
+
   const fetchMentorships = async () => {
     // Prevent duplicate simultaneous fetches
     if (mentorshipsFetchingRef.current) {
@@ -2907,6 +2947,10 @@ export default function AdminDashboardPage() {
           if (subMenu === 'blog-submissions' && fetchBlogSubmissionsRef.current) {
             await fetchBlogSubmissionsRef.current();
           }
+          if (subMenu === 'cohort-analytics') {
+            await fetchCohortAnalytics();
+            dataLoadedRef.current.add('cohort-analytics');
+          }
           break;
           
         case 'applications':
@@ -2977,12 +3021,9 @@ export default function AdminDashboardPage() {
               dataLoadedRef.current.add('sessions');
             }
           }
-          // cohort-analytics needs both cohorts and progress data
           if (subMenu === 'cohort-analytics') {
-            if (!dataLoadedRef.current.has('progress')) {
-              await fetchProgress();
-              dataLoadedRef.current.add('progress');
-            }
+            await fetchCohortAnalytics();
+            dataLoadedRef.current.add('cohort-analytics');
           }
           break;
       }
@@ -4217,255 +4258,607 @@ export default function AdminDashboardPage() {
                 {/* Manage Cohorts Section */}
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
                   <h3 className="mb-3 text-lg font-semibold text-zinc-50">Manage Cohorts</h3>
+                  
+                  {/* Filters */}
+                  {cohorts.length > 0 && (
+                    <div className="mb-4 space-y-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <input
+                          type="text"
+                          placeholder="Search by name..."
+                          value={cohortSearch}
+                          onChange={(e) => setCohortSearch(e.target.value)}
+                          className="flex-1 min-w-[180px] rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                        <div className="flex gap-2 flex-wrap">
+                          {(['all', 'upcoming', 'in-progress', 'past'] as const).map((f) => (
+                            <button
+                              key={f}
+                              type="button"
+                              onClick={() => setCohortListFilter(f)}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                                cohortListFilter === f
+                                  ? 'bg-cyan-400 text-black'
+                                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                              }`}
+                            >
+                              {f === 'all' ? 'All' : f === 'upcoming' ? 'Upcoming' : f === 'in-progress' ? 'In Progress' : 'Past'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Summary stats */}
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                          <div className="text-xs text-zinc-400">Total</div>
+                          <div className="text-lg font-semibold text-zinc-50">{cohorts.length}</div>
+                        </div>
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                          <div className="text-xs text-zinc-400">Upcoming</div>
+                          <div className="text-lg font-semibold text-yellow-400">
+                            {cohorts.filter((c) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return c.startDate && new Date(c.startDate) > today;
+                            }).length}
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                          <div className="text-xs text-zinc-400">In Progress</div>
+                          <div className="text-lg font-semibold text-green-400">
+                            {cohorts.filter((c) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const start = c.startDate ? new Date(c.startDate) : null;
+                              const end = c.endDate ? new Date(c.endDate) : null;
+                              return start && end && start <= today && end >= today;
+                            }).length}
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                          <div className="text-xs text-zinc-400">Past</div>
+                          <div className="text-lg font-semibold text-zinc-400">
+                            {cohorts.filter((c) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return c.endDate && new Date(c.endDate) < today;
+                            }).length}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {cohorts.length === 0 ? (
                     <p className="text-sm text-zinc-400">No cohorts found.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {cohorts.map((cohort) => (
-                        <div
-                          key={cohort.id}
-                          className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <h4 className="text-sm font-semibold text-zinc-50">{cohort.name}</h4>
-                              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-                                {cohort.startDate && (
-                                  <span>Start: {new Date(cohort.startDate).toLocaleDateString()}</span>
-                                )}
-                                {cohort.endDate && (
-                                  <span>End: {new Date(cohort.endDate).toLocaleDateString()}</span>
-                                )}
-                                {cohort.level && <span>Level: {cohort.level}</span>}
-                                {cohort.status && (
-                                  <span className={`px-2 py-0.5 rounded ${
-                                    cohort.status === 'Active' ? 'bg-green-500/20 text-green-400' :
-                                    cohort.status === 'Upcoming' ? 'bg-yellow-500/20 text-yellow-400' :
-                                    'bg-zinc-500/20 text-zinc-400'
-                                  }`}>
-                                    {cohort.status}
-                                  </span>
-                                )}
+                  ) : (() => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const getPhase = (c: Cohort) => {
+                      const start = c.startDate ? new Date(c.startDate) : null;
+                      const end = c.endDate ? new Date(c.endDate) : null;
+                      if (start && start > today) return 'upcoming';
+                      if (end && end < today) return 'past';
+                      if (start && end && start <= today && end >= today) return 'in-progress';
+                      return 'past'; // no dates = treat as past
+                    };
+                    const filtered = cohorts.filter((cohort) => {
+                      if (cohortSearch.trim()) {
+                        if (!cohort.name?.toLowerCase().includes(cohortSearch.toLowerCase().trim())) return false;
+                      }
+                      if (cohortListFilter !== 'all') {
+                        if (getPhase(cohort) !== cohortListFilter) return false;
+                      }
+                      return true;
+                    });
+                    if (filtered.length === 0) {
+                      return (
+                        <p className="text-sm text-zinc-400 py-4">No cohorts match your filters.</p>
+                      );
+                    }
+                    return (
+                      <div className="space-y-3">
+                        {filtered.map((cohort) => {
+                          const phase = getPhase(cohort);
+                          return (
+                            <div
+                              key={cohort.id}
+                              className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="text-sm font-semibold text-zinc-50">{cohort.name}</h4>
+                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                      phase === 'upcoming' ? 'bg-yellow-500/20 text-yellow-400' :
+                                      phase === 'in-progress' ? 'bg-green-500/20 text-green-400' :
+                                      'bg-zinc-500/20 text-zinc-400'
+                                    }`}>
+                                      {phase === 'upcoming' ? 'Upcoming' : phase === 'in-progress' ? 'In Progress' : 'Past'}
+                                    </span>
+                                  </div>
+                                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
+                                    {cohort.startDate && (
+                                      <span>Start: {new Date(cohort.startDate).toLocaleDateString()}</span>
+                                    )}
+                                    {cohort.endDate && (
+                                      <span>End: {new Date(cohort.endDate).toLocaleDateString()}</span>
+                                    )}
+                                    {cohort.level && <span>Level: {cohort.level}</span>}
+                                    {typeof cohort.sessions === 'number' && (
+                                      <span>{cohort.sessions} sessions</span>
+                                    )}
+                                    {typeof cohort.enrolled === 'number' && cohort.seats !== undefined && (
+                                      <span>{cohort.enrolled}/{cohort.seats} enrolled</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => { setSessionCohortFilter(cohort.id); setActiveSubMenu('sessions'); }}
+                                    className="rounded border border-zinc-500/40 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition cursor-pointer"
+                                    title="View sessions for this cohort"
+                                  >
+                                    View Sessions
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => regenerateSessions(cohort.id)}
+                                    disabled={regeneratingSessions === cohort.id}
+                                    className="rounded border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    title="Regenerate all sessions based on start/end dates"
+                                  >
+                                    {regeneratingSessions === cohort.id ? 'Regenerating...' : 'Regenerate'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => rearrangeSessions(cohort.id, cohort.name)}
+                                    disabled={rearrangingSessions === cohort.id}
+                                    className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    title="Rearrange sessions to Mon/Wed/Fri pattern"
+                                  >
+                                    {rearrangingSessions === cohort.id ? 'Rearranging...' : 'Rearrange'}
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 ml-4">
-                              <button
-                                type="button"
-                                onClick={() => regenerateSessions(cohort.id)}
-                                disabled={regeneratingSessions === cohort.id}
-                                className="rounded border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                title="Regenerate all sessions based on start/end dates"
-                              >
-                                {regeneratingSessions === cohort.id ? 'Regenerating...' : 'Regenerate Sessions'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => rearrangeSessions(cohort.id, cohort.name)}
-                                disabled={rearrangingSessions === cohort.id}
-                                className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                title="Rearrange sessions to Mon/Wed/Fri pattern"
-                              >
-                                {rearrangingSessions === cohort.id ? 'Rearranging...' : 'Rearrange Sessions'}
-                              </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+          </div>
+
+        {/* Create Cohort and Create Event - Side by Side */}
+        <div className="grid gap-6 lg:grid-cols-2 mt-6">
+            {/* Create Cohort */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-8 w-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
+                  <p className="text-xs text-zinc-500">Add a new learning cohort with start/end dates</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Cohort Name *</label>
+                  <input
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="e.g. Cohort 1 - 2025"
+                    value={cohortForm.name}
+                    onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start Date</label>
+                    <input
+                      type="date"
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      value={cohortForm.start_date}
+                      onChange={(e) => setCohortForm({ ...cohortForm, start_date: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">End Date</label>
+                    <input
+                      type="date"
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      value={cohortForm.end_date}
+                      onChange={(e) => setCohortForm({ ...cohortForm, end_date: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">Seats</label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      placeholder="Capacity"
+                      value={cohortForm.seats_total}
+                      onChange={(e) => setCohortForm({ ...cohortForm, seats_total: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">Level</label>
+                    <select
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      value={cohortForm.level}
+                      onChange={(e) => setCohortForm({ ...cohortForm, level: e.target.value })}
+                    >
+                      <option>Beginner</option>
+                      <option>Intermediate</option>
+                      <option>Advanced</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Status</label>
+                  <select
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    value={cohortForm.status}
+                    onChange={(e) => setCohortForm({ ...cohortForm, status: e.target.value })}
+                  >
+                    <option>Upcoming</option>
+                    <option>Active</option>
+                    <option>Completed</option>
+                  </select>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  Sessions are auto-generated (Mon/Wed/Fri) from start and end dates.
+                </p>
+                <button
+                  type="button"
+                  onClick={createCohort}
+                  disabled={creatingCohort || !cohortForm.name}
+                  className="w-full rounded-lg bg-cyan-500 px-4 py-3 text-sm font-semibold text-black transition hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer disabled:hover:bg-cyan-500"
+                >
+                  {creatingCohort ? 'Creating...' : 'Create Cohort'}
+                </button>
+              </div>
+            </div>
+
+            {/* Create Event */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-8 w-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                  <CalendarIcon className="h-4 w-4 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-zinc-50">Create Event</h3>
+                  <p className="text-xs text-zinc-500">Schedule live classes, workshops, and deadlines</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Event Name *</label>
+                  <input
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    placeholder="e.g. Chapter 1 - Introduction"
+                    value={eventForm.name}
+                    onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">Type</label>
+                    <select
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      value={eventForm.type}
+                      onChange={(e) => setEventForm({ ...eventForm, type: e.target.value })}
+                    >
+                      <option value="live-class">Live Class</option>
+                      <option value="assignment">Assignment</option>
+                      <option value="community">Community</option>
+                      <option value="workshop">Workshop</option>
+                      <option value="deadline">Deadline</option>
+                      <option value="quiz">Quiz</option>
+                      <option value="cohort">Cohort</option>
+                    </select>
+                  </div>
+                  {eventForm.type === 'live-class' && (
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400 mb-1.5">Chapter (optional)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        placeholder="1–20"
+                        value={eventForm.chapter_number}
+                        onChange={(e) => setEventForm({ ...eventForm, chapter_number: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start Date & Time *</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      value={eventForm.start_time}
+                      onChange={(e) => setEventForm({ ...eventForm, start_time: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">End Date & Time</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      value={eventForm.end_time}
+                      onChange={(e) => setEventForm({ ...eventForm, end_time: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Cohort</label>
+                  <select
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    value={eventForm.cohort_id}
+                    onChange={(e) => setEventForm({ ...eventForm, cohort_id: e.target.value })}
+                  >
+                    <option value="for_all">For everyone</option>
+                    {cohorts.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Link (optional)</label>
+                  <input
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    placeholder="https://..."
+                    value={eventForm.link}
+                    onChange={(e) => setEventForm({ ...eventForm, link: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Description (optional)</label>
+                  <textarea
+                    rows={2}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                    placeholder="Event description..."
+                    value={eventForm.description}
+                    onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={createEvent}
+                  disabled={creatingEvent || !eventForm.name || !eventForm.start_time}
+                  className="w-full rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-black transition hover:bg-orange-400 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer disabled:hover:bg-orange-500"
+                >
+                  {creatingEvent ? 'Creating...' : 'Create Event'}
+                </button>
+              </div>
+            </div>
+          </div>
+              </>
+            )}
+
+            {/* Cohort Analytics Sub-menu - API-driven with Charts */}
+            {activeSubMenu === 'cohort-analytics' && (
+              <div className="rounded-xl border border-zinc-700/80 bg-gradient-to-b from-zinc-900/60 to-zinc-900/40 p-4 shadow-sm ring-1 ring-zinc-800/50 md:p-6">
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-zinc-50">Cohort Analytics</h3>
+                    <p className="mt-1 text-sm text-zinc-400">Enrollment stats, completion rates, and participation metrics</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { dataLoadedRef.current.delete('cohort-analytics'); fetchCohortAnalytics(); }}
+                    disabled={loadingCohortAnalytics}
+                    className="flex min-w-[7rem] items-center justify-center gap-2 rounded-lg border border-cyan-500/30 bg-zinc-800/80 px-4 py-2 text-sm text-zinc-200 transition-all duration-200 hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:opacity-50 disabled:hover:border-cyan-500/30 disabled:hover:bg-zinc-800/80 disabled:hover:text-zinc-200"
+                  >
+                    {loadingCohortAnalytics ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    ) : (
+                      <BarChart3 className="h-4 w-4 shrink-0" />
+                    )}
+                    <span>{loadingCohortAnalytics ? 'Refreshing…' : 'Refresh'}</span>
+                  </button>
+                </div>
+
+                {loadingCohortAnalytics ? (
+                  <div className="flex min-h-[280px] items-center justify-center rounded-lg border border-zinc-700/50 bg-zinc-800/30 py-16">
+                    <Loader2 className="h-10 w-10 animate-spin text-cyan-400" />
+                  </div>
+                ) : cohortAnalytics.length === 0 ? (
+                  <div className="group flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-zinc-600 bg-zinc-800/20 py-16 transition-colors hover:border-cyan-500/30 hover:bg-zinc-800/30">
+                    <BarChart3 className="h-12 w-12 text-zinc-500 transition-colors group-hover:text-cyan-500/50" />
+                    <p className="text-sm text-zinc-400">No cohort analytics found.</p>
+                    <p className="text-xs text-zinc-500">Cohorts and enrollment data will appear here.</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Summary Cards - responsive grid */}
+                    <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {cohortAnalytics.map((c, i) => (
+                        <div
+                          key={c.id}
+                          className={`group relative rounded-lg border p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:shadow-cyan-500/5 hover:ring-1 hover:ring-cyan-400/20 ${cohortColors[i % cohortColors.length].border} ${cohortColors[i % cohortColors.length].bg}`}
+                        >
+                          <h4 className="mb-3 truncate text-sm font-semibold text-zinc-50" title={c.name}>{c.name}</h4>
+                          <div className="space-y-2.5 text-xs">
+                            <div className="flex justify-between gap-2">
+                              <span className="text-zinc-400">Enrolled</span>
+                              <span className="font-medium text-zinc-200 tabular-nums">{c.enrolled}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-zinc-400">Avg Progress</span>
+                              <span className="font-medium tabular-nums text-yellow-300">{c.avgProgress}%</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-zinc-400">Avg Attendance</span>
+                              <span className="font-medium tabular-nums text-blue-300">{c.avgAttendance}%</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-zinc-400">Capacity</span>
+                              <span className="font-medium tabular-nums text-zinc-200">
+                                {c.seats ? `${c.enrolled}/${c.seats}` : c.enrolled}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-zinc-400">Sessions</span>
+                              <span className="font-medium tabular-nums text-zinc-200">
+                                {c.sessionsCompleted}/{c.sessionsTotal}
+                              </span>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-          </div>
 
-        {/* Create Cohort and Create Event - Side by Side */}
-        <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-              <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
-              <div className="mt-3 space-y-3">
-                <input
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  placeholder="Cohort name"
-                  value={cohortForm.name}
-                  onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })}
-                />
-                <input
-                  type="date"
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={cohortForm.start_date}
-                  onChange={(e) => setCohortForm({ ...cohortForm, start_date: e.target.value })}
-                />
-                <input
-                  type="date"
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={cohortForm.end_date}
-                  onChange={(e) => setCohortForm({ ...cohortForm, end_date: e.target.value })}
-                />
-                <input
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  placeholder="Seats"
-                  value={cohortForm.seats_total}
-                  onChange={(e) => setCohortForm({ ...cohortForm, seats_total: e.target.value })}
-                />
-                <div className="text-xs text-zinc-400">
-                  Sessions are automatically generated (3 per week, excluding Sundays) when you provide start and end dates.
-                </div>
-                <select
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={cohortForm.level}
-                  onChange={(e) => setCohortForm({ ...cohortForm, level: e.target.value })}
-                >
-                  <option>Beginner</option>
-                  <option>Intermediate</option>
-                  <option>Advanced</option>
-                </select>
-                <select
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={cohortForm.status}
-                  onChange={(e) => setCohortForm({ ...cohortForm, status: e.target.value })}
-                >
-                  <option>Upcoming</option>
-                  <option>Active</option>
-                  <option>Completed</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={createCohort}
-                  disabled={creatingCohort || !cohortForm.name}
-                  className="w-full rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  {creatingCohort ? 'Saving...' : 'Create Cohort'}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-              <h3 className="text-lg font-semibold text-zinc-50">Create Event</h3>
-              <div className="mt-3 space-y-3">
-                <input
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  placeholder="Event name"
-                  value={eventForm.name}
-                  onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
-                />
-                <select
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={eventForm.type}
-                  onChange={(e) => setEventForm({ ...eventForm, type: e.target.value })}
-                >
-                  <option value="live-class">Live Class</option>
-                  <option value="assignment">Assignment</option>
-                  <option value="community">Community</option>
-                  <option value="workshop">Workshop</option>
-                  <option value="deadline">Deadline</option>
-                  <option value="quiz">Quiz</option>
-                  <option value="cohort">Cohort</option>
-                </select>
-                {eventForm.type === 'live-class' && (
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                    placeholder="Chapter number (1-20, optional)"
-                    value={eventForm.chapter_number}
-                    onChange={(e) => setEventForm({ ...eventForm, chapter_number: e.target.value })}
-                  />
-                )}
-                <input
-                  type="datetime-local"
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={eventForm.start_time}
-                  onChange={(e) => setEventForm({ ...eventForm, start_time: e.target.value })}
-                />
-                <input
-                  type="datetime-local"
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={eventForm.end_time}
-                  onChange={(e) => setEventForm({ ...eventForm, end_time: e.target.value })}
-                />
-                <input
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  placeholder="Link (optional)"
-                  value={eventForm.link}
-                  onChange={(e) => setEventForm({ ...eventForm, link: e.target.value })}
-                />
-                <textarea
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  placeholder="Description"
-                  value={eventForm.description}
-                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                />
-                <select
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100"
-                  value={eventForm.cohort_id}
-                  onChange={(e) => setEventForm({ ...eventForm, cohort_id: e.target.value })}
-                >
-                  <option value="for_all">For everyone</option>
-                  {cohorts.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={createEvent}
-                  disabled={creatingEvent || !eventForm.name || !eventForm.start_time}
-                  className="w-full rounded-lg bg-orange-400 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  {creatingEvent ? 'Saving...' : 'Create Event'}
-                </button>
-            </div>
-          </div>
-        </div>
-              </>
-            )}
-
-            {/* Cohort Analytics Sub-menu - Analytics Cards Only */}
-            {activeSubMenu === 'cohort-analytics' && (
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-zinc-50">Cohort Analytics</h3>
-                  <p className="text-xs text-zinc-400 mt-1">Enrollment stats, completion rates, and participation metrics</p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {cohorts.map((cohort) => {
-                    const cohortStudents = progress.filter(p => p.cohortId === cohort.id);
-                    const activeStudents = cohortStudents.filter(p => p.status === 'Active').length;
-                    const avgProgress = cohortStudents.length > 0
-                      ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.overallProgress || 0), 0) / cohortStudents.length)
-                      : 0;
-                    const avgAttendance = cohortStudents.length > 0
-                      ? Math.round(cohortStudents.reduce((sum, p) => sum + (p.attendancePercent || 0), 0) / cohortStudents.length)
-                      : 0;
-                    
-                    return (
-                      <div key={cohort.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-                        <h4 className="text-sm font-semibold text-zinc-50 mb-3">{cohort.name}</h4>
-                        <div className="space-y-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-zinc-400">Enrolled:</span>
-                            <span className="text-zinc-200 font-medium">{activeStudents}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-zinc-400">Avg Progress:</span>
-                            <span className="text-yellow-300 font-medium">{avgProgress}%</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-zinc-400">Avg Attendance:</span>
-                            <span className="text-blue-300 font-medium">{avgAttendance}%</span>
-                          </div>
-                          {cohort.seats && (
-                            <div className="flex justify-between">
-                              <span className="text-zinc-400">Capacity:</span>
-                              <span className="text-zinc-200">{activeStudents}/{cohort.seats}</span>
-                            </div>
-                          )}
+                    {/* Charts - 2-column grid on large screens */}
+                    <div className="grid gap-6 lg:grid-cols-2">
+                      {/* Enrolled vs Capacity */}
+                      <div className="group/chart rounded-lg border border-zinc-700/80 bg-zinc-800/40 p-4 transition-all duration-200 hover:border-cyan-500/30 hover:bg-zinc-800/60 hover:shadow-lg hover:shadow-cyan-500/5">
+                        <h4 className="mb-4 text-sm font-semibold text-zinc-50 transition-colors group-hover/chart:text-cyan-100">Enrolled vs Capacity</h4>
+                        <div className="h-56 min-h-[220px] lg:h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={cohortAnalytics.map((c) => ({
+                                name: c.name.length > 12 ? `${c.name.slice(0, 11)}…` : c.name,
+                                fullName: c.name,
+                                enrolled: c.enrolled,
+                                available: Math.max(0, (c.seats || 0) - c.enrolled),
+                              }))}
+                              margin={{ top: 8, right: 16, left: 0, bottom: 24 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="#52525b" />
+                              <XAxis
+                                dataKey="name"
+                                angle={-25}
+                                tick={{ fill: '#a1a1aa', fontSize: 10, textAnchor: 'end' }}
+                                interval={0}
+                                tickMargin={8}
+                              />
+                              <YAxis tick={{ fill: '#a1a1aa', fontSize: 11 }} />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #22d3ee40', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
+                                labelStyle={{ color: '#e4e4e7' }}
+                                labelFormatter={(_, payload) => (Array.isArray(payload) ? payload[0]?.payload?.fullName : '')}
+                              />
+                              <Legend wrapperStyle={{ fontSize: 11 }} />
+                              <Bar dataKey="enrolled" name="Enrolled" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+                              <Bar dataKey="available" name="Available" fill="#52525b" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-                {cohorts.length === 0 && (
-                  <p className="p-3 text-sm text-zinc-400 text-center">No cohorts found.</p>
+
+                      {/* Avg Progress */}
+                      <div className="group/chart rounded-lg border border-zinc-700/80 bg-zinc-800/40 p-4 transition-all duration-200 hover:border-amber-500/30 hover:bg-zinc-800/60 hover:shadow-lg hover:shadow-amber-500/5">
+                        <h4 className="mb-4 text-sm font-semibold text-zinc-50 transition-colors group-hover/chart:text-amber-100">Average Progress (%)</h4>
+                        <div className="h-56 min-h-[220px] lg:h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={cohortAnalytics.map((c) => ({
+                                name: c.name.length > 14 ? `${c.name.slice(0, 13)}…` : c.name,
+                                fullName: c.name,
+                                progress: c.avgProgress,
+                              }))}
+                              layout="vertical"
+                              margin={{ top: 4, right: 16, left: 90, bottom: 4 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="#52525b" />
+                              <XAxis type="number" domain={[0, 100]} tick={{ fill: '#a1a1aa', fontSize: 11 }} />
+                              <YAxis
+                                dataKey="name"
+                                type="category"
+                                width={88}
+                                tick={{ fill: '#a1a1aa', fontSize: 10 }}
+                              />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #eab30840', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
+                                labelStyle={{ color: '#e4e4e7' }}
+                                formatter={(val: number) => [`${val}%`, 'Progress']}
+                                labelFormatter={(_, payload) => (Array.isArray(payload) ? payload[0]?.payload?.fullName : '')}
+                              />
+                              <Bar dataKey="progress" fill="#eab308" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Avg Attendance */}
+                      <div className="group/chart rounded-lg border border-zinc-700/80 bg-zinc-800/40 p-4 transition-all duration-200 hover:border-blue-500/30 hover:bg-zinc-800/60 hover:shadow-lg hover:shadow-blue-500/5">
+                        <h4 className="mb-4 text-sm font-semibold text-zinc-50 transition-colors group-hover/chart:text-blue-100">Average Attendance (%)</h4>
+                        <div className="h-56 min-h-[220px] lg:h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={cohortAnalytics.map((c) => ({
+                                name: c.name.length > 12 ? `${c.name.slice(0, 11)}…` : c.name,
+                                fullName: c.name,
+                                attendance: c.avgAttendance,
+                              }))}
+                              margin={{ top: 8, right: 16, left: 0, bottom: 24 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="#52525b" />
+                              <XAxis
+                                dataKey="name"
+                                angle={-25}
+                                tick={{ fill: '#a1a1aa', fontSize: 10, textAnchor: 'end' }}
+                                interval={0}
+                                tickMargin={8}
+                              />
+                              <YAxis domain={[0, 100]} tick={{ fill: '#a1a1aa', fontSize: 11 }} />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3b82f640', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
+                                labelStyle={{ color: '#e4e4e7' }}
+                                formatter={(val: number) => [`${val}%`, 'Attendance']}
+                                labelFormatter={(_, payload) => (Array.isArray(payload) ? payload[0]?.payload?.fullName : '')}
+                              />
+                              <Bar dataKey="attendance" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Sessions Pie - full width on large */}
+                      <div className="group/chart rounded-lg border border-zinc-700/80 bg-zinc-800/40 p-4 transition-all duration-200 hover:border-violet-500/30 hover:bg-zinc-800/60 hover:shadow-lg hover:shadow-violet-500/5 lg:col-span-2">
+                        <h4 className="mb-4 text-sm font-semibold text-zinc-50 transition-colors group-hover/chart:text-violet-100">Sessions Completed by Cohort</h4>
+                        <div className="mx-auto flex min-h-[220px] max-w-lg items-center justify-center">
+                          <ResponsiveContainer width="100%" height={256}>
+                            <PieChart>
+                              <Pie
+                                data={cohortAnalytics.map((c, i) => ({
+                                  name: c.name,
+                                  value: c.sessionsCompleted,
+                                  total: c.sessionsTotal,
+                                }))}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={90}
+                                legendType="circle"
+                              >
+                                {cohortAnalytics.map((_, i) => (
+                                  <Cell key={i} fill={['#22d3ee', '#a78bfa', '#34d399', '#f59e0b', '#f472b6', '#06b6d4', '#8b5cf6'][i % 7]} />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #a78bfa40', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
+                                labelStyle={{ color: '#e4e4e7' }}
+                                formatter={(value: number, _name: string, props: { payload?: { total?: number } }) =>
+                                  `${value} / ${props?.payload?.total ?? 0} sessions`
+                                }
+                              />
+                              <Legend layout="horizontal" align="center" verticalAlign="bottom" />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             )}
