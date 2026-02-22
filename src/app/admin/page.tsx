@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition, useCallback } from
 import dynamic from 'next/dynamic';
 import { useSession } from '@/hooks/useSession';
 import EmailComposer from '@/components/EmailComposer';
+import { EmailInbox } from '@/components/admin/EmailInbox';
 import { StudentProgressModal } from '@/components/StudentProgressModal';
 import EventForm from '@/components/admin/EventForm';
 import EventsList from '@/components/admin/EventsList';
@@ -4662,22 +4663,25 @@ export default function AdminDashboardPage() {
             {/* Communications Section */}
             {(activeSubMenu === 'email-composition' || activeSubMenu === 'calendar' || activeSubMenu === 'events') && (
               <>
-                {/* Email Composition and Calendar */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Email Composition Interface */}
-                  {activeSubMenu === 'email-composition' && (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
-            <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
-            <p className="text-xs text-zinc-400 mb-3">
-              Send professional emails to students, applicants, or other recipients.
-            </p>
-            <div className="rounded-lg">
-              <EmailComposer />
-            </div>
-          </div>
-                  )}
+                {/* Email Composition + Inbox stacked when on email-composition */}
+                {activeSubMenu === 'email-composition' && (
+                  <div className="space-y-6">
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+                      <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
+                      <p className="text-xs text-zinc-400 mb-3">
+                        Send professional emails to students, applicants, or other recipients.
+                      </p>
+                      <div className="rounded-lg">
+                        <EmailComposer />
+                      </div>
+                    </div>
+                    <EmailInbox />
+                  </div>
+                )}
 
-          {/* Calendar - Events, Cohorts & Activities */}
+                {/* Calendar - Events, Cohorts & Activities */}
+                {activeSubMenu === 'calendar' && (
+        <div className="grid gap-6 lg:grid-cols-2">
                   {activeSubMenu === 'calendar' && (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
                       <div className="mb-3 flex items-center justify-between">
@@ -4702,6 +4706,7 @@ export default function AdminDashboardPage() {
           </div>
                   )}
         </div>
+                )}
 
                 {/* Events Section - Create and List Together */}
                 {activeSubMenu === 'events' && (
