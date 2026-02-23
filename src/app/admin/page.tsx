@@ -4854,8 +4854,8 @@ export default function AdminDashboardPage() {
                               <Tooltip
                                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #a78bfa40', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
                                 labelStyle={{ color: '#e4e4e7' }}
-                                formatter={(value: number, _name: string, props: { payload?: { total?: number } }) =>
-                                  `${value} / ${props?.payload?.total ?? 0} sessions`
+                                formatter={(value: number | undefined, _name: string, item: { payload?: { total?: number } }) =>
+                                  `${value ?? 0} / ${item?.payload?.total ?? 0} sessions`
                                 }
                               />
                               <Legend layout="horizontal" align="center" verticalAlign="bottom" />
