@@ -83,12 +83,6 @@ export function DatePicker({
           wrapperClassName="w-full"
           popperPlacement="bottom-start"
           popperClassName="datepicker-popper"
-          popperModifiers={[
-            {
-              name: 'offset',
-              options: { offset: [0, 4] },
-            },
-          ]}
         />
       </div>
     </div>
