@@ -776,14 +776,13 @@ export default function ApplyPage() {
                     value={selectedCountryCode}
                     onChange={handleCountryCodeChange}
                     aria-label="Country code"
-                    className="flex-shrink-0 rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-pointer min-w-[5rem]"
-                    style={{ minWidth: '80px', maxWidth: '100px' }}
+                    className="flex-1 min-w-0 max-w-full sm:max-w-[220px] rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-pointer"
                     title={selectedCountryCode ? sortedCountries.find(c => c.code === selectedCountryCode)?.name : "Select country code"}
                   >
-                    <option value="" className="bg-zinc-950 text-zinc-400">+291</option>
+                    <option value="" className="bg-zinc-950 text-zinc-400">Select country</option>
                     {sortedCountries.map((country) => (
                       <option key={country.code} value={country.code} className="bg-zinc-950 text-zinc-50">
-                        {country.flag} {country.code}
+                        {country.name} {country.code}
                       </option>
                     ))}
                   </select>
