@@ -14,6 +14,8 @@ export interface DatePickerProps {
   timeIntervals?: number;
   minDate?: Date;
   maxDate?: Date;
+  /** Show month/year dropdowns for easy jumping (default true when showTime is false) */
+  showMonthYearDropdowns?: boolean;
   className?: string;
   inputClassName?: string;
   label?: string;
@@ -32,6 +34,7 @@ export function DatePicker({
   timeIntervals = 15,
   minDate,
   maxDate,
+  showMonthYearDropdowns = !showTime,
   className,
   inputClassName,
   label,
@@ -78,6 +81,11 @@ export function DatePicker({
           minDate={minDate}
           maxDate={maxDate}
           disabled={disabled}
+          showMonthDropdown={showMonthYearDropdowns}
+          showYearDropdown={showMonthYearDropdowns}
+          dropdownMode="select"
+          scrollableYearDropdown
+          yearDropdownItemNumber={120}
           className={cn(baseInputClasses, inputClassName)}
           calendarClassName="datepicker-calendar-dark"
           wrapperClassName="w-full"
