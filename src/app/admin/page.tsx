@@ -4785,7 +4785,7 @@ export default function AdminDashboardPage() {
                               <Tooltip
                                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #eab30840', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
                                 labelStyle={{ color: '#e4e4e7' }}
-                                formatter={(val: number) => [`${val}%`, 'Progress']}
+                                formatter={(val: number | undefined) => [`${val ?? 0}%`, 'Progress']}
                                 labelFormatter={(_, payload) => (Array.isArray(payload) ? payload[0]?.payload?.fullName : '')}
                               />
                               <Bar dataKey="progress" fill="#eab308" radius={[0, 4, 4, 0]} />
@@ -4819,7 +4819,7 @@ export default function AdminDashboardPage() {
                               <Tooltip
                                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3b82f640', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
                                 labelStyle={{ color: '#e4e4e7' }}
-                                formatter={(val: number) => [`${val}%`, 'Attendance']}
+                                formatter={(val: number | undefined) => [`${val ?? 0}%`, 'Attendance']}
                                 labelFormatter={(_, payload) => (Array.isArray(payload) ? payload[0]?.payload?.fullName : '')}
                               />
                               <Bar dataKey="attendance" fill="#3b82f6" radius={[4, 4, 0, 0]} />
