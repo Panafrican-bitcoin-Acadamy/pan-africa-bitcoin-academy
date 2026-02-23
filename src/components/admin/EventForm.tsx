@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, AlertCircle, CheckCircle2, Image as ImageIcon, X, ZoomIn, Download, RotateCw, Camera, RefreshCw, Crop, Maximize2 } from 'lucide-react';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { 
   getImageDimensions, 
   validateImageDimensions, 
@@ -906,42 +907,33 @@ export default function EventForm({
         {/* Date/Time Fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="start-time" className="block text-sm font-medium text-zinc-300 mb-2">
-              Start Date & Time <span className="text-red-400">*</span>
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-              <input
-                id="start-time"
-                type="datetime-local"
-                value={formData.start_time}
-                onChange={(e) => handleChange('start_time', e.target.value)}
-                className={`w-full rounded-lg border bg-zinc-950 pl-10 pr-4 py-2.5 text-zinc-100 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 ${
-                  fieldErrors.start_time ? 'border-red-500/50' : 'border-zinc-700'
-                }`}
-              />
-            </div>
+            <DatePicker
+              label="Start Date & Time"
+              value={formData.start_time}
+              onChange={(v) => handleChange('start_time', v)}
+              placeholder="Pick date & time"
+              showTime
+              required
+              inputClassName={`focus:border-cyan-400 focus:ring-cyan-400 bg-zinc-950 ${
+                fieldErrors.start_time ? 'border-red-500/50' : 'border-zinc-700'
+              }`}
+            />
             {fieldErrors.start_time && (
               <p className="mt-1 text-xs text-red-400">{fieldErrors.start_time}</p>
             )}
           </div>
 
           <div>
-            <label htmlFor="end-time" className="block text-sm font-medium text-zinc-300 mb-2">
-              End Date & Time <span className="text-zinc-500 text-xs">(Optional)</span>
-            </label>
-            <div className="relative">
-              <Clock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-              <input
-                id="end-time"
-                type="datetime-local"
-                value={formData.end_time}
-                onChange={(e) => handleChange('end_time', e.target.value)}
-                className={`w-full rounded-lg border bg-zinc-950 pl-10 pr-4 py-2.5 text-zinc-100 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 ${
-                  fieldErrors.end_time ? 'border-red-500/50' : 'border-zinc-700'
-                }`}
-              />
-            </div>
+            <DatePicker
+              label="End Date & Time"
+              value={formData.end_time}
+              onChange={(v) => handleChange('end_time', v)}
+              placeholder="Pick end date & time"
+              showTime
+              inputClassName={`focus:border-cyan-400 focus:ring-cyan-400 bg-zinc-950 ${
+                fieldErrors.end_time ? 'border-red-500/50' : 'border-zinc-700'
+              }`}
+            />
             {fieldErrors.end_time && (
               <p className="mt-1 text-xs text-red-400">{fieldErrors.end_time}</p>
             )}
@@ -1365,21 +1357,14 @@ export default function EventForm({
                 </div>
 
                 {/* Registration Deadline */}
-                <div>
-                  <label htmlFor="registration-deadline" className="block text-sm font-medium text-zinc-300 mb-2">
-                    Registration Deadline <span className="text-zinc-500 text-xs">(Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                    <input
-                      id="registration-deadline"
-                      type="datetime-local"
-                      value={formData.registration_deadline}
-                      onChange={(e) => handleChange('registration_deadline', e.target.value)}
-                      className="w-full rounded-lg border bg-zinc-950 pl-10 pr-4 py-2.5 text-zinc-100 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 border-zinc-700"
-                    />
-                  </div>
-                </div>
+                <DatePicker
+                  label="Registration Deadline"
+                  value={formData.registration_deadline}
+                  onChange={(v) => handleChange('registration_deadline', v)}
+                  placeholder="Pick deadline date & time"
+                  showTime
+                  inputClassName="focus:border-cyan-400 focus:ring-cyan-400 bg-zinc-950 border-zinc-700"
+                />
               </div>
             )}
 

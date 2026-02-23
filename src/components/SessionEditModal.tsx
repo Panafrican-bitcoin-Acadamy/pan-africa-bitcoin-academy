@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 interface SessionEditModalProps {
   isOpen: boolean;
@@ -169,16 +170,13 @@ export function SessionEditModal({ isOpen, onClose, session, onUpdate }: Session
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4" id="session-edit-form">
-            <div>
-              <label className="mb-1 block text-sm text-zinc-300">Session Date</label>
-              <input
-                type="date"
-                required
-                className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none"
-                value={formData.session_date}
-                onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
-              />
-            </div>
+            <DatePicker
+              label="Session Date"
+              value={formData.session_date}
+              onChange={(v) => setFormData({ ...formData, session_date: v })}
+              placeholder="Pick session date"
+              required
+            />
 
             {/* Update Mode Selection - Only show if date is being changed */}
             {formData.session_date && session && (() => {

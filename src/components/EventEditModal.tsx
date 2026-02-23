@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 interface EventEditModalProps {
   isOpen: boolean;
@@ -222,26 +223,22 @@ export function EventEditModal({ isOpen, onClose, event, cohorts, onUpdate }: Ev
             </div>
           )}
 
-          <div>
-            <label className="mb-1 block text-sm text-zinc-300">Start Time</label>
-            <input
-              type="datetime-local"
-              required
-              className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none"
-              value={formData.start_time}
-              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-            />
-          </div>
+          <DatePicker
+            label="Start Time"
+            value={formData.start_time}
+            onChange={(v) => setFormData({ ...formData, start_time: v })}
+            placeholder="Pick date & time"
+            showTime
+            required
+          />
 
-          <div>
-            <label className="mb-1 block text-sm text-zinc-300">End Time (Optional)</label>
-            <input
-              type="datetime-local"
-              className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none"
-              value={formData.end_time}
-              onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-            />
-          </div>
+          <DatePicker
+            label="End Time (Optional)"
+            value={formData.end_time}
+            onChange={(v) => setFormData({ ...formData, end_time: v })}
+            placeholder="Pick end date & time"
+            showTime
+          />
 
           <div>
             <label className="mb-1 block text-sm text-zinc-300">Link (Optional)</label>

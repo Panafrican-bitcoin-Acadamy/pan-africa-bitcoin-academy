@@ -19,9 +19,10 @@ import {
   Clock, User, Info, Trash2, Award, Target, Briefcase, Heart,
   ClipboardList, Rocket, HelpCircle, Sparkles, Settings, 
   PenTool, GraduationCap, XCircle, Loader2, Shield, Lock, History, LogOut,
-  Eye, EyeOff
+  Eye, EyeOff, Download
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { DatePicker } from '@/components/ui/DatePicker';
 import {
   BarChart,
   Bar,
@@ -35,6 +36,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import * as XLSX from 'xlsx';
 
 // Cohort color palette - same as Calendar component
 const cohortColors = [
@@ -2051,6 +2053,27 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const exportCohortAnalyticsToExcel = () => {
+    if (cohortAnalytics.length === 0) return;
+    const rows = cohortAnalytics.map((c) => ({
+      'Cohort Name': c.name,
+      'Level': c.level || '—',
+      'Status': c.status || '—',
+      'Enrolled': c.enrolled,
+      'Capacity': c.seats ?? '—',
+      'Capacity Usage': c.seats ? `${c.enrolled}/${c.seats}` : String(c.enrolled),
+      'Avg Progress (%)': c.avgProgress,
+      'Avg Attendance (%)': c.avgAttendance,
+      'Sessions Completed': c.sessionsCompleted,
+      'Sessions Total': c.sessionsTotal,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cohort Analytics');
+    const fileName = `cohort-analytics-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   const fetchMentorships = async () => {
     // Prevent duplicate simultaneous fetches
     if (mentorshipsFetchingRef.current) {
@@ -3832,15 +3855,6 @@ export default function AdminDashboardPage() {
             {/* Security Section - render early so form is visible when Admin Access is selected */}
             {activeSection === 'security' && (
               <div className="space-y-8">
-                <div className="flex items-center gap-4 pb-4 border-b border-zinc-800/50">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/30">
-                    <Shield className="h-6 w-6 text-cyan-400" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-zinc-50">Security Management</h1>
-                    <p className="text-sm text-zinc-400 mt-0.5">Monitor and manage admin access, sessions, and security events</p>
-                  </div>
-                </div>
                 {activeSubMenu === 'admin-access' && <AdminAccessManagement />}
                 {activeSubMenu === 'login-history' && <SecurityLoginHistory />}
                 {activeSubMenu === 'account-lockouts' && <SecurityAccountLockouts />}
@@ -3913,18 +3927,21 @@ export default function AdminDashboardPage() {
                   ));
                 })()}
               </div>
-              <select
-                value={cohortFilter || ''}
-                onChange={(e) => setCohortFilter(e.target.value || null)}
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              >
-                <option value="">All Cohorts</option>
-                {cohorts.map((cohort) => (
-                  <option key={cohort.id} value={cohort.id}>
-                    {cohort.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Cohort</label>
+                <select
+                  value={cohortFilter || ''}
+                  onChange={(e) => setCohortFilter(e.target.value || null)}
+                  className="min-w-[10rem] rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="">All Cohorts</option>
+                  {cohorts.map((cohort) => (
+                    <option key={cohort.id} value={cohort.id}>
+                      {cohort.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
 
@@ -4454,24 +4471,18 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start Date</label>
-                    <input
-                      type="date"
-                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      value={cohortForm.start_date}
-                      onChange={(e) => setCohortForm({ ...cohortForm, start_date: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">End Date</label>
-                    <input
-                      type="date"
-                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      value={cohortForm.end_date}
-                      onChange={(e) => setCohortForm({ ...cohortForm, end_date: e.target.value })}
-                    />
-                  </div>
+                  <DatePicker
+                    label="Start Date"
+                    value={cohortForm.start_date}
+                    onChange={(v) => setCohortForm({ ...cohortForm, start_date: v })}
+                    placeholder="Pick start date"
+                  />
+                  <DatePicker
+                    label="End Date"
+                    value={cohortForm.end_date}
+                    onChange={(v) => setCohortForm({ ...cohortForm, end_date: v })}
+                    placeholder="Pick end date"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -4578,24 +4589,23 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start Date & Time *</label>
-                    <input
-                      type="datetime-local"
-                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      value={eventForm.start_time}
-                      onChange={(e) => setEventForm({ ...eventForm, start_time: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-1.5">End Date & Time</label>
-                    <input
-                      type="datetime-local"
-                      className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      value={eventForm.end_time}
-                      onChange={(e) => setEventForm({ ...eventForm, end_time: e.target.value })}
-                    />
-                  </div>
+                  <DatePicker
+                    label="Start Date & Time *"
+                    value={eventForm.start_time}
+                    onChange={(v) => setEventForm({ ...eventForm, start_time: v })}
+                    placeholder="Pick date & time"
+                    showTime
+                    required
+                    inputClassName="focus:border-orange-500 focus:ring-orange-500"
+                  />
+                  <DatePicker
+                    label="End Date & Time"
+                    value={eventForm.end_time}
+                    onChange={(v) => setEventForm({ ...eventForm, end_time: v })}
+                    placeholder="Pick end date & time"
+                    showTime
+                    inputClassName="focus:border-orange-500 focus:ring-orange-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">Cohort</label>
@@ -4653,16 +4663,12 @@ export default function AdminDashboardPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => { dataLoadedRef.current.delete('cohort-analytics'); fetchCohortAnalytics(); }}
-                    disabled={loadingCohortAnalytics}
-                    className="flex min-w-[7rem] items-center justify-center gap-2 rounded-lg border border-cyan-500/30 bg-zinc-800/80 px-4 py-2 text-sm text-zinc-200 transition-all duration-200 hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:opacity-50 disabled:hover:border-cyan-500/30 disabled:hover:bg-zinc-800/80 disabled:hover:text-zinc-200"
+                    onClick={exportCohortAnalyticsToExcel}
+                    disabled={loadingCohortAnalytics || cohortAnalytics.length === 0}
+                    className="flex min-w-[8rem] items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-zinc-800/80 px-4 py-2 text-sm text-zinc-200 transition-all duration-200 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-zinc-600 disabled:hover:bg-zinc-800/80 disabled:hover:text-zinc-400"
                   >
-                    {loadingCohortAnalytics ? (
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                    ) : (
-                      <BarChart3 className="h-4 w-4 shrink-0" />
-                    )}
-                    <span>{loadingCohortAnalytics ? 'Refreshing…' : 'Refresh'}</span>
+                    <Download className="h-4 w-4 shrink-0" />
+                    <span>Download Excel</span>
                   </button>
                 </div>
 
@@ -4876,41 +4882,50 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Filters */}
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <select
-              value={sessionCohortFilter || ''}
-              onChange={(e) => setSessionCohortFilter(e.target.value || null)}
-              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-            >
-              <option value="">All Cohorts</option>
-              {cohorts.map((cohort) => (
-                <option key={cohort.id} value={cohort.id}>
-                  {cohort.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={sessionStatusFilter}
-              onChange={(e) => setSessionStatusFilter(e.target.value)}
-              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-            >
-              <option value="all">All Status</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="rescheduled">Rescheduled</option>
-            </select>
-
-            <select
-              value={sessionDateFilter}
-              onChange={(e) => setSessionDateFilter(e.target.value as 'all' | 'upcoming' | 'past')}
-              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-            >
-              <option value="all">All Dates</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="past">Past</option>
-            </select>
+          <div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Cohort</label>
+                <select
+                  value={sessionCohortFilter || ''}
+                  onChange={(e) => setSessionCohortFilter(e.target.value || null)}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="">All Cohorts</option>
+                  {cohorts.map((cohort) => (
+                    <option key={cohort.id} value={cohort.id}>
+                      {cohort.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Status</label>
+                <select
+                  value={sessionStatusFilter}
+                  onChange={(e) => setSessionStatusFilter(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="rescheduled">Rescheduled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Date Range</label>
+                <select
+                  value={sessionDateFilter}
+                  onChange={(e) => setSessionDateFilter(e.target.value as 'all' | 'upcoming' | 'past')}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="all">All Dates</option>
+                  <option value="upcoming">Upcoming</option>
+                  <option value="past">Past</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Statistics */}
@@ -5729,27 +5744,33 @@ export default function AdminDashboardPage() {
 
           {/* Search and Filters */}
           {Array.isArray(blogPosts) && blogPosts.length > 0 && (
-            <div className="mb-6 space-y-3">
-              <div className="flex gap-3 flex-wrap">
-                <input
-                  type="text"
-                  placeholder="Search by title, author, or content..."
-                  value={blogPostsSearch}
-                  onChange={(e) => setBlogPostsSearch(e.target.value)}
-                  className="flex-1 min-w-[200px] rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                />
-                <select
-                  value={blogPostsCategoryFilter}
-                  onChange={(e) => setBlogPostsCategoryFilter(e.target.value)}
-                  className="rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                >
-                  <option value="all">All Categories</option>
-                  {Array.from(new Set(blogPosts.map((p: any) => p.category).filter(Boolean))).map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+            <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-zinc-400 mb-2">Search</label>
+                  <input
+                    type="text"
+                    placeholder="Search by title, author, or content..."
+                    value={blogPostsSearch}
+                    onChange={(e) => setBlogPostsSearch(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-2">Category</label>
+                  <select
+                    value={blogPostsCategoryFilter}
+                    onChange={(e) => setBlogPostsCategoryFilter(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  >
+                    <option value="all">All Categories</option>
+                    {Array.from(new Set(blogPosts.map((p: any) => p.category).filter(Boolean))).map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="mt-4 flex gap-2 flex-wrap">
                 {(['all', 'published', 'draft', 'archived'] as const).map((f) => (
                   <button
                     key={f}
@@ -5842,9 +5863,6 @@ export default function AdminDashboardPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="text-xs text-zinc-400 mb-2">
-                  Showing {filteredPosts.length} of {blogPosts.length} blog posts
-                </div>
                 {filteredPosts.map((post) => (
                   <div
                     key={post.id}
@@ -6285,22 +6303,7 @@ export default function AdminDashboardPage() {
                         View and manage all sats rewards for students across the academy.
                       </p>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      {!loadingSatsRewards && (
-                        <div className="text-xs sm:text-sm text-zinc-400">
-                          {studentSatsRewards.length > 0 ? (
-                            <>
-                              Showing <span className="text-cyan-300 font-medium">{studentSatsRewards.length}</span> of <span className="text-cyan-300 font-medium">{allSatsRewards.length}</span> reward{allSatsRewards.length !== 1 ? 's' : ''}
-                            </>
-                          ) : allSatsRewards.length > 0 ? (
-                            <>
-                              <span className="text-yellow-300">No rewards match filters</span> ({allSatsRewards.length} total)
-                            </>
-                          ) : (
-                            'No rewards found'
-                          )}
-                        </div>
-                      )}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
                       <div className="flex gap-2">
                         <button
                           onClick={handleCreateReward}
@@ -6315,15 +6318,15 @@ export default function AdminDashboardPage() {
                   </div>
 
                   {/* Filters */}
-                  <div className="mb-6 p-3 sm:p-4 rounded-lg border border-zinc-800 bg-zinc-900/30">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                      <div className="sm:col-span-2 lg:col-span-1">
-                        <label className="block text-xs text-zinc-400 mb-1.5">Student</label>
+                  <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-400 mb-2">Student</label>
                         <select
                           value={satsStudentFilter}
                           onChange={handleSatsStudentFilterChange}
                           disabled={loadingStudentsList}
-                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                         >
                           <option value="all">All Students</option>
                           {loadingStudentsList ? (
@@ -6340,11 +6343,11 @@ export default function AdminDashboardPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-zinc-400 mb-1.5">Status</label>
+                        <label className="block text-xs font-medium text-zinc-400 mb-2">Status</label>
                         <select
                           value={satsStatusFilter}
                           onChange={handleSatsStatusFilterChange}
-                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                         >
                           <option value="all">All Status</option>
                           <option value="pending">Pending</option>
@@ -6354,11 +6357,11 @@ export default function AdminDashboardPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-zinc-400 mb-1.5">Type</label>
+                        <label className="block text-xs font-medium text-zinc-400 mb-2">Type</label>
                         <select
                           value={satsTypeFilter}
                           onChange={handleSatsTypeFilterChange}
-                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                         >
                           <option value="all">All Types</option>
                           <option value="assignment">Assignment</option>
@@ -7570,17 +7573,15 @@ export default function AdminDashboardPage() {
               {/* Main Container */}
               <div className="space-y-6">
                 {/* Filter Section */}
-                <div className="w-full rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 backdrop-blur-sm shadow-xl p-6">
-                  <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-zinc-300">
-                      <span className="text-lg">🔍</span>
-                      <span>Filter by Event:</span>
-                    </div>
-                    <select
-                      value={attendanceEventFilter}
-                      onChange={(e) => setAttendanceEventFilter(e.target.value)}
-                      className="flex-1 w-full lg:w-auto rounded-lg border-2 border-zinc-700/50 bg-zinc-900/80 px-4 py-2.5 text-sm text-zinc-50 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all hover:border-zinc-600"
-                    >
+                <div className="w-full rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400 mb-2">Filter by Event</label>
+                      <select
+                        value={attendanceEventFilter}
+                        onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      >
                       <option value="all">All Events & Sessions</option>
                       {(() => {
                         const activeSessions = allSessions.filter((session: any) => {
@@ -7686,6 +7687,7 @@ export default function AdminDashboardPage() {
                           });
                       })()}
                     </select>
+                    </div>
                   </div>
                 </div>
 

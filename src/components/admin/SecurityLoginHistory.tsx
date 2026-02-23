@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { History, CheckCircle2, XCircle } from 'lucide-react';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface LoginAttempt {
@@ -135,24 +136,18 @@ export function SecurityLoginHistory() {
               <option value="false">Failed</option>
             </select>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-2">Start Date</label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-2">End Date</label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition"
-            />
-          </div>
+          <DatePicker
+            label="Start Date"
+            value={filters.startDate}
+            onChange={(v) => setFilters({ ...filters, startDate: v })}
+            placeholder="From date"
+          />
+          <DatePicker
+            label="End Date"
+            value={filters.endDate}
+            onChange={(v) => setFilters({ ...filters, endDate: v })}
+            placeholder="To date"
+          />
           <div className="flex items-end">
             <button
               onClick={handleApplyFilters}

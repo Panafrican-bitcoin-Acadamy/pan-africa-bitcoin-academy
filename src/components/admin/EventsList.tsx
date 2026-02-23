@@ -395,11 +395,6 @@ export default function EventsList({
         </div>
       </div>
 
-      {/* Events Count */}
-      <div className="mb-4 text-sm text-zinc-400">
-        Showing {sortedEvents.length} of {events.length} events
-      </div>
-
       {/* Events List */}
       {sortedEvents.length === 0 ? (
         <div className="rounded-lg border border-zinc-700/50 bg-zinc-900/30 p-12 text-center">
