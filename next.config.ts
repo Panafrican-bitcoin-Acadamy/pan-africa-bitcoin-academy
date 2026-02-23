@@ -1,11 +1,31 @@
 import type { NextConfig } from "next";
+import path from "path";
+
+const dateFnsRoot = path.join(process.cwd(), "node_modules", "date-fns");
+const toDateMjs = path.join(dateFnsRoot, "toDate.mjs");
+const toDateJs = path.join(dateFnsRoot, "toDate.js");
 
 const nextConfig: NextConfig = {
   /* config options here */
   // Performance optimizations
   compress: true,
   poweredByHeader: false,
-  
+
+  // Fix date-fns ESM resolution: _lib imports ../toDate.mjs but package ships toDate.js
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      [toDateMjs]: toDateJs,
+    };
+    return config;
+  },
+
+  turbopack: {
+    resolveAlias: {
+      [toDateMjs]: toDateJs,
+    },
+  },
+
   // Experimental features for better code splitting
   experimental: {
     optimizePackageImports: ['lucide-react'],

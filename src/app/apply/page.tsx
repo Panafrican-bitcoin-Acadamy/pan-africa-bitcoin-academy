@@ -781,7 +781,7 @@ export default function ApplyPage() {
                   >
                     <option value="" className="bg-zinc-950 text-zinc-400">Select country</option>
                     {sortedCountries.map((country) => (
-                      <option key={country.code} value={country.code} className="bg-zinc-950 text-zinc-50">
+                      <option key={country.name} value={country.code} className="bg-zinc-950 text-zinc-50">
                         {country.name} {country.code}
                       </option>
                     ))}

@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint"
   },
+  "overrides": {
+    "date-fns": "^4.1.0"
+  },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "@supabase/supabase-js": "^2.87.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/react-datepicker": "^6.2.0",
