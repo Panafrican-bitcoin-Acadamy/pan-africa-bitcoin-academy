@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { sortedCountries, getPhoneRule, type Country } from '@/lib/countries';
 import { inputStyles, labelStyles, formStyles, buttonStyles, cardStyles, alertStyles, cn } from '@/lib/styles';
 import { FormGrid } from '@/components/ui';
@@ -694,8 +695,9 @@ export default function ApplyPage() {
 
         {/* Registration Form */}
         <AnimatedSection animation="slideRight">
-          <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-          <h2 className="mb-6 text-xl font-semibold text-cyan-200">Application Form</h2>
+          <section className="rounded-2xl border border-cyan-400/30 bg-gradient-to-b from-zinc-900/90 to-black/90 p-6 sm:p-8 shadow-[0_0_40px_rgba(34,211,238,0.15)] ring-1 ring-cyan-400/10">
+          <h2 className="mb-2 text-xl font-semibold text-cyan-200">Application Form</h2>
+          <p className="mb-6 text-sm text-zinc-400">Fill in your details to join the next cohort.</p>
           {submitSuccess && (
             <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200">
               {submitSuccess}
@@ -710,8 +712,8 @@ export default function ApplyPage() {
             {/* First Name and Last Name */}
             <FormGrid>
               <div>
-                <label htmlFor="firstName" className="mb-2 block text-sm font-medium text-zinc-300">
-                  First Name <span className="text-red-400">*</span>
+                <label htmlFor="firstName" className={labelStyles.required}>
+                  First Name <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <input
                   id="firstName"
@@ -726,8 +728,8 @@ export default function ApplyPage() {
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="mb-2 block text-sm font-medium text-zinc-300">
-                  Last Name <span className="text-red-400">*</span>
+                <label htmlFor="lastName" className={labelStyles.required}>
+                  Last Name <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <input
                   id="lastName"
@@ -760,8 +762,8 @@ export default function ApplyPage() {
                 />
               </div>
               <div>
-                <label htmlFor="phone" className="mb-2 block text-sm font-medium text-zinc-300">
-                  Phone <span className="text-red-400">*</span>
+                <label htmlFor="phone" className={labelStyles.required}>
+                  Phone <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <div className="flex gap-2 w-full">
                   <label htmlFor="countryCode" className="sr-only">
@@ -774,7 +776,7 @@ export default function ApplyPage() {
                     value={selectedCountryCode}
                     onChange={handleCountryCodeChange}
                     aria-label="Country code"
-                    className="flex-shrink-0 rounded-lg border border-cyan-400/30 bg-zinc-950 px-2 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 appearance-none cursor-pointer"
+                    className="flex-shrink-0 rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-pointer min-w-[5rem]"
                     style={{ minWidth: '80px', maxWidth: '100px' }}
                     title={selectedCountryCode ? sortedCountries.find(c => c.code === selectedCountryCode)?.name : "Select country code"}
                   >
@@ -803,44 +805,18 @@ export default function ApplyPage() {
                   <p id="phone-error" className="mt-1 text-xs text-red-300" role="alert">{phoneError}</p>
                 )}
               </div>
-              <div>
-                <label htmlFor="birthDate" className={labelStyles.required}>
-                  Birth Date <span className={labelStyles.requiredStar}>*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    id="birthDate"
-                    name="birthDate"
-                    type="date"
-                    autoComplete="bday"
-                    required
-                    value={birthDate}
-                    onChange={(e) => {
-                      setBirthDate(e.target.value);
-                      setFormData({ ...formData, birthDate: e.target.value });
-                    }}
-                    className={inputStyles.date}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const input = document.getElementById('birthDate') as HTMLInputElement;
-                      if (input) {
-                        if (typeof input.showPicker === 'function') {
-                          input.showPicker();
-                        } else {
-                          input.focus();
-                        }
-                      }
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-zinc-400 transition hover:bg-cyan-400/10 hover:text-cyan-300"
-                    aria-label="Open calendar"
-                    title="Choose date from calendar"
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+              <DatePicker
+                label="Birth Date"
+                value={formData.birthDate}
+                onChange={(v) => {
+                  setBirthDate(v);
+                  setFormData({ ...formData, birthDate: v });
+                }}
+                placeholder="Select your birth date"
+                required
+                maxDate={new Date()}
+                inputClassName="border-cyan-400/30 bg-zinc-950 focus:border-cyan-400/50 focus:ring-cyan-400/20"
+              />
               <div>
                 <label htmlFor="preferredLanguage" className={labelStyles.required}>
                   Preferred Language <span className={labelStyles.requiredStar}>*</span>
@@ -851,8 +827,9 @@ export default function ApplyPage() {
                   value={formData.preferredLanguage}
                   onChange={(e) => setFormData({ ...formData, preferredLanguage: e.target.value })}
                   className={inputStyles.select}
+                  aria-label="Preferred language"
                 >
-                  <option value="" className="bg-zinc-950 text-zinc-400">Select</option>
+                  <option value="" className="bg-zinc-950 text-zinc-400">Select language</option>
                   <option value="english" className="bg-zinc-950 text-zinc-50">English</option>
                   <option value="tigrigna" className="bg-zinc-950 text-zinc-50">Tigrinya (ትግርኛ)</option>
                 </select>
@@ -872,7 +849,7 @@ export default function ApplyPage() {
                   required
                   value={selectedCountry}
                   onChange={handleCountryChange}
-                  className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-text"
+                  className={inputStyles.select}
                 >
                   <option value="" className="bg-zinc-950 text-zinc-400">Select your country</option>
                   {sortedCountries.map((country) => (
@@ -883,7 +860,7 @@ export default function ApplyPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="city" className={labelStyles.base}>City</label>
+                <label htmlFor="city" className={labelStyles.required}>City <span className="text-zinc-500 text-xs">(optional)</span></label>
                 <input
                   id="city"
                   name="city"
@@ -979,19 +956,17 @@ export default function ApplyPage() {
               </div>
             </FormGrid>
 
-            <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-4">
-              <p className="text-xs text-zinc-400">
-                <span className="font-semibold text-orange-300">Note:</span> We'll review and get back to you within 3-5 business days.
+            <div className="rounded-lg border border-cyan-400/20 bg-cyan-500/5 p-4">
+              <p className="text-sm text-zinc-300">
+                <span className="font-semibold text-cyan-300">Note:</span> We'll review and get back to you within 3-5 business days.
               </p>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center pt-2">
               <button
                 type="submit"
                 disabled={submitting}
-                className={`inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-base font-semibold text-black transition ${
-                  submitting ? 'opacity-70 cursor-not-allowed' : 'hover:brightness-110'
-                }`}
+                className="inline-flex min-h-[48px] min-w-[180px] items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 to-cyan-500 px-8 py-3.5 text-base font-semibold text-black shadow-lg shadow-cyan-500/20 transition hover:from-cyan-300 hover:to-cyan-400 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:from-cyan-400 disabled:hover:to-cyan-500"
               >
                 {submitting ? 'Submitting...' : 'Register'}
               </button>
