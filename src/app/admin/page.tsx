@@ -5269,6 +5269,9 @@ export default function AdminDashboardPage() {
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Phone</th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Country</th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Cohort</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">
+                                Send Password Link
+                              </th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Status</th>
                             </tr>
                           </thead>
@@ -5281,11 +5284,55 @@ export default function AdminDashboardPage() {
                                 <td className="p-3 text-sm text-zinc-400">{student.country || 'N/A'}</td>
                                 <td className="p-3 text-sm text-zinc-400">{student.cohortName || 'N/A'}</td>
                                 <td className="p-3 text-sm">
-                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                    student.status === 'Active' ? 'bg-green-500/20 text-green-400' :
-                                    student.status === 'Inactive' ? 'bg-red-500/20 text-red-400' :
-                                    'bg-zinc-500/20 text-zinc-400'
-                                  }`}>
+                                  <button
+                                    type="button"
+                                    className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/20 transition cursor-pointer"
+                                    onClick={async () => {
+                                      if (!student.email) {
+                                        window.alert('This student does not have an email address on file.');
+                                        return;
+                                      }
+
+                                      try {
+                                        const res = await fetchWithAuth('/api/admin/students/send-password-reminder', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ email: student.email }),
+                                        });
+
+                                        const data = await res.json().catch(() => ({}));
+
+                                        if (res.ok && data.success) {
+                                          window.alert(
+                                            data.message ||
+                                              'Password setup link sent. Let the student know this is their second chance to set a secure password.'
+                                          );
+                                        } else {
+                                          window.alert(
+                                            data.message ||
+                                              data.error ||
+                                              'Failed to send password setup link. Please try again.'
+                                          );
+                                        }
+                                      } catch (err) {
+                                        console.error('Error sending password setup link:', err);
+                                        window.alert('Failed to send password setup link. Please try again.');
+                                      }
+                                    }}
+                                  >
+                                    Send link
+                                  </button>
+                                </td>
+                                <td className="p-3 text-sm">
+                                  <span
+                                    className={`px-2 py-1 rounded text-xs font-medium ${
+                                      student.status === 'Active'
+                                        ? 'bg-green-500/20 text-green-400'
+                                        : student.status === 'Inactive'
+                                        ? 'bg-red-500/20 text-red-400'
+                                        : 'bg-zinc-500/20 text-zinc-400'
+                                    }`}
+                                  >
                                     {student.status || 'N/A'}
                                   </span>
                                 </td>

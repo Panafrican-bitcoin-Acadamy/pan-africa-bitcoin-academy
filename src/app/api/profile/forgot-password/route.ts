@@ -121,7 +121,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Create reset link (use normalized email for encoding)
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(emailValidation.normalized)}`;
+    // Prefer NEXT_PUBLIC_SITE_URL and fall back to production domain rather than localhost
+    const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.com';
+    const resetLink = `${SITE_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(emailValidation.normalized)}`;
     
     // Send password reset email
     const emailResult = await sendPasswordResetEmail({

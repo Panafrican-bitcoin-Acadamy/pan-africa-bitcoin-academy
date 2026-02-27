@@ -513,6 +513,12 @@ interface PasswordResetEmailData {
   userName: string;
   userEmail: string;
   resetLink: string;
+  /**
+   * When true, this is a follow-up reminder (for example,
+   * an admin sending a second password setup link to a
+   * student who hasn’t set their password yet).
+   */
+  isReminder?: boolean;
 }
 
 /**
@@ -669,7 +675,7 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
       return { success: false, error: 'Email service not configured' };
     }
 
-    const { userName, userEmail, resetLink } = data;
+    const { userName, userEmail, resetLink, isReminder } = data;
 
     // Validate email
     const emailValidation = validateAndNormalizeEmail(userEmail);
@@ -685,8 +691,14 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
     const normalizedEmail = emailValidation.normalized;
 
     // Create email content
-    const emailSubject = 'Reset Your Password - Pan-Africa Bitcoin Academy';
-    
+    const emailSubject = isReminder
+      ? 'Important: Set Up Your Password - Pan-Africa Bitcoin Academy'
+      : 'Reset Your Password - Pan-Africa Bitcoin Academy';
+
+    const introText = isReminder
+      ? 'This is the second time we are sending you a password setup link for your Pan-Africa Bitcoin Academy account. Please follow the steps carefully now to create your password and secure your access.'
+      : 'We received a request to reset your password for your Pan-Africa Bitcoin Academy account. Click the button below to create a new password.';
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -706,7 +718,7 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
             </p>
             
             <p style="font-size: 16px; margin-bottom: 20px;">
-              We received a request to reset your password for your Pan-Africa Bitcoin Academy account. Click the button below to create a new password.
+              ${introText}
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
