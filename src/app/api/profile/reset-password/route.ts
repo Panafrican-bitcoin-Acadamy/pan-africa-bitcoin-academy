@@ -121,13 +121,16 @@ export async function POST(req: NextRequest) {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // Update password and clear reset token
+    // Update password, clear reset token, and ensure status reflects that
+    // the student has a proper password set (no more "Pending Password Setup").
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
         password_hash: hashedPassword,
         reset_token: null,
         reset_token_expiry: null,
+        status: 'Active',
+        updated_at: new Date().toISOString(),
       })
       .eq('id', profile.id);
 
