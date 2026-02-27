@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin } from '@/lib/adminSession';
 import { validateAndNormalizeEmail } from '@/lib/validation';
 import { sendPasswordResetEmail } from '@/lib/email';
 import crypto from 'crypto';
@@ -9,9 +10,15 @@ import crypto from 'crypto';
  *
  * Admin endpoint to send a one-time password setup/reset link to a student.
  * Intended as a second reminder for students who have not yet set their password.
+ * Requires admin authentication.
  */
 export async function POST(req: NextRequest) {
   try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { email } = await req.json();
 
     if (!email) {

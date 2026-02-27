@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { secureEmailInput, validateRequestBody, addSecurityHeaders } from '@/lib/security-utils';
+import { checkRateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 import crypto from 'crypto';
 
 /**
@@ -9,16 +10,33 @@ import crypto from 'crypto';
  * 1. User requests password reset with email
  * 2. Generate secure reset token
  * 3. Store token in database with expiration
- * 4. Send email with reset link (in production, integrate with email service)
+ * 4. Send email with reset link
  * 5. User clicks link, enters new password
  * 6. Verify token and update password
  */
 
-// In production, use a proper email service (SendGrid, Resend, etc.)
-// For now, we'll generate the token and return it (you'll need to send email manually or integrate email service)
-
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting to prevent abuse and email enumeration
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`forgot-password:${clientIP}`, RATE_LIMITS.AUTH);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'If an account exists with this email, you will receive password reset instructions.',
+        },
+        {
+          status: 200,
+          headers: {
+            'X-RateLimit-Limit': RATE_LIMITS.AUTH.maxRequests.toString(),
+            'X-RateLimit-Remaining': '0',
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const body = await req.json();
 
     // Validate request body structure and size
@@ -74,12 +92,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (!profile) {
-      // Email not found - return response indicating account doesn't exist
+      // Don't reveal whether the email exists (prevents email enumeration)
       const response = NextResponse.json(
-        { 
-          success: false,
-          emailFound: false,
-          message: 'No account found with this email address.' 
+        {
+          success: true,
+          message: 'If an account exists with this email, you will receive password reset instructions.',
         },
         { status: 200 }
       );

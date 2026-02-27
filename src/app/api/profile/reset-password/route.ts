@@ -2,11 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/passwordValidation';
-import { secureEmailInput, secureTextInput, validateUUID } from '@/lib/security-utils';
-import { addSecurityHeaders } from '@/lib/security-utils';
+import { secureEmailInput, addSecurityHeaders } from '@/lib/security-utils';
+import { checkRateLimit, getClientIP, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting to prevent brute-force attempts on tokens
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`reset-password:${clientIP}`, RATE_LIMITS.AUTH);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const body = await req.json();
 
     // Validate request body

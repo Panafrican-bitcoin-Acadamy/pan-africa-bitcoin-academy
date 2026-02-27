@@ -76,7 +76,7 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '', onSign
 
       const data = await res.json();
 
-      // Check if email was found
+      // API returns same generic message whether or not email exists (security)
       if (data.success && data.emailFound) {
         // Email found - password reset email sent
         console.log('✅ Password reset request successful');
@@ -90,15 +90,17 @@ export function ForgotPasswordModal({ isOpen, onClose, initialEmail = '', onSign
           onClose();
           setSuccess(false);
         }, 3000);
-      } else if (data.success === false && data.emailFound === false) {
-        // Email not found - show sign up prompt
-        console.log('⚠️ Email not found in database');
-        setEmailNotFound(true);
-        setSuccess(false);
-        setError(null);
+      } else if (data.success) {
+        // Generic response (email may or may not exist - don't reveal)
+        setSuccess(true);
+        setEmailNotFound(false);
+        setEmail('');
+        setTimeout(() => {
+          onClose();
+          setSuccess(false);
+        }, 3000);
       } else {
-        // Error case
-        console.error('❌ Password reset request failed:', data.error || 'Unknown error');
+        // Error case (e.g. server error, rate limit message)
         setError(data.error || 'An error occurred. Please try again.');
         setEmailNotFound(false);
       }

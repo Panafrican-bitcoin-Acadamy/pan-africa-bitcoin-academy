@@ -122,19 +122,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if status is "Pending Password Setup"
-    if (profile.status === 'Pending Password Setup') {
-      return NextResponse.json(
-        { 
-          error: 'Please complete your registration by setting a password.',
-          found: true,
-          needsPasswordSetup: true,
-          setupPasswordUrl: `/setup-password?email=${encodeURIComponent(profile.email)}`
-        },
-        { status: 401 }
-      );
-    }
-
     // Check if it's an old-style hash (for migration)
     const isOldHash = profile.password_hash.startsWith('hashed_');
     let passwordValid = false;
@@ -161,6 +148,23 @@ export async function POST(req: NextRequest) {
         { error: 'Invalid email or password', found: false },
         { status: 401 }
       );
+    }
+
+    // If the profile has a password but status is still "Pending Password Setup"
+    // (e.g. they set their password via "Forgot Password"), migrate to "Active"
+    // only after we have verified the password, so they are not asked to set password again.
+    if (profile.status === 'Pending Password Setup' && profile.password_hash) {
+      try {
+        await supabaseAdmin
+          .from('profiles')
+          .update({
+            status: 'Active',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', profile.id);
+      } catch (e) {
+        console.error('Error auto-updating profile status from Pending Password Setup to Active:', e);
+      }
     }
 
     // Check email verification status
