@@ -3,6 +3,37 @@ import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/passwordValidation';
 
+/**
+ * GET /api/applications/setup-password?email=...
+ * Check if this email still needs to set a password. Used by setup-password page
+ * to redirect users who already have a password (set via forgot-password or setup).
+ * Returns needsSetup: true only when profile exists and has no password_hash.
+ * Otherwise returns needsSetup: false (don't reveal if email exists or not).
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const email = req.nextUrl.searchParams.get('email');
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json({ needsSetup: false }, { status: 200 });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('password_hash')
+      .eq('email', emailLower)
+      .maybeSingle();
+
+    // needsSetup only when profile exists AND has no password
+    const needsSetup = !!profile && !profile.password_hash;
+
+    return NextResponse.json({ needsSetup }, { status: 200 });
+  } catch {
+    return NextResponse.json({ needsSetup: false }, { status: 200 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, password, applicationId } = await req.json();

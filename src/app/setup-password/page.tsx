@@ -17,12 +17,35 @@ function SetupPasswordContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [checking, setChecking] = useState(true);
 
+  // If they've already set a password (via forgot or setup), don't show the form at all
   useEffect(() => {
     if (!email) {
+      setChecking(false);
       setError('Email is required. Please use the link from your approval email.');
+      return;
     }
-  }, [email]);
+
+    let cancelled = false;
+    fetch(`/api/applications/setup-password?email=${encodeURIComponent(email)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setChecking(false);
+        if (!data.needsSetup) {
+          // Already have a password - redirect to sign in, never show the form
+          router.replace('/?message=already-have-password');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setChecking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [email, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +98,16 @@ function SetupPasswordContent() {
       setSubmitting(false);
     }
   };
+
+  if (checking) {
+    return (
+      <PageContainer title="Set Up Your Password" subtitle="Loading...">
+        <div className="mx-auto max-w-md space-y-4 rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center text-zinc-200">
+          Checking...
+        </div>
+      </PageContainer>
+    );
+  }
 
   if (success) {
     return (

@@ -2959,8 +2959,8 @@ export default function AdminDashboardPage() {
         case 'overview':
           // Fetch overview (skip if already loaded, unless submenu needs blog data)
           if (!dataLoadedRef.current.has('overview')) {
-            await fetchOverview();
-            dataLoadedRef.current.add('overview');
+          await fetchOverview();
+          dataLoadedRef.current.add('overview');
           }
           // Explicitly fetch blog posts when Blog Posts submenu is active
           if (subMenu === 'blog-posts' && fetchBlogPostsRef.current) {
@@ -3860,8 +3860,8 @@ export default function AdminDashboardPage() {
                 {activeSubMenu === 'account-lockouts' && <SecurityAccountLockouts />}
                 {activeSubMenu === 'session-management' && <SecuritySessionManagement />}
                 {activeSection === 'security' && !activeSubMenu && <AdminAccessManagement />}
-              </div>
-            )}
+          </div>
+        )}
 
             {/* Overview cards - show on dashboard or when no specific sub-menu is selected */}
             {(!activeSubMenu || (activeTab === 'overview' && !activeSubMenu)) && (
@@ -3929,18 +3929,18 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-2">Cohort</label>
-                <select
-                  value={cohortFilter || ''}
-                  onChange={(e) => setCohortFilter(e.target.value || null)}
+              <select
+                value={cohortFilter || ''}
+                onChange={(e) => setCohortFilter(e.target.value || null)}
                   className="min-w-[10rem] rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="">All Cohorts</option>
-                  {cohorts.map((cohort) => (
-                    <option key={cohort.id} value={cohort.id}>
-                      {cohort.name}
-                    </option>
-                  ))}
-                </select>
+              >
+                <option value="">All Cohorts</option>
+                {cohorts.map((cohort) => (
+                  <option key={cohort.id} value={cohort.id}>
+                    {cohort.name}
+                  </option>
+                ))}
+              </select>
               </div>
             </div>
 
@@ -4374,18 +4374,18 @@ export default function AdminDashboardPage() {
                       );
                     }
                     return (
-                      <div className="space-y-3">
+                    <div className="space-y-3">
                         {filtered.map((cohort) => {
                           const phase = getPhase(cohort);
                           return (
-                            <div
-                              key={cohort.id}
+                        <div
+                          key={cohort.id}
                               className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4"
-                            >
+                        >
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <h4 className="text-sm font-semibold text-zinc-50">{cohort.name}</h4>
+                              <h4 className="text-sm font-semibold text-zinc-50">{cohort.name}</h4>
                                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                       phase === 'upcoming' ? 'bg-yellow-500/20 text-yellow-400' :
                                       phase === 'in-progress' ? 'bg-green-500/20 text-green-400' :
@@ -4395,21 +4395,21 @@ export default function AdminDashboardPage() {
                                     </span>
                                   </div>
                                   <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-                                    {cohort.startDate && (
-                                      <span>Start: {new Date(cohort.startDate).toLocaleDateString()}</span>
-                                    )}
-                                    {cohort.endDate && (
-                                      <span>End: {new Date(cohort.endDate).toLocaleDateString()}</span>
-                                    )}
-                                    {cohort.level && <span>Level: {cohort.level}</span>}
+                                {cohort.startDate && (
+                                  <span>Start: {new Date(cohort.startDate).toLocaleDateString()}</span>
+                                )}
+                                {cohort.endDate && (
+                                  <span>End: {new Date(cohort.endDate).toLocaleDateString()}</span>
+                                )}
+                                {cohort.level && <span>Level: {cohort.level}</span>}
                                     {typeof cohort.sessions === 'number' && (
                                       <span>{cohort.sessions} sessions</span>
                                     )}
                                     {typeof cohort.enrolled === 'number' && cohort.seats !== undefined && (
                                       <span>{cohort.enrolled}/{cohort.seats} enrolled</span>
-                                    )}
-                                  </div>
-                                </div>
+                                )}
+                              </div>
+                            </div>
                                 <div className="flex flex-wrap items-center gap-2">
                                   <button
                                     type="button"
@@ -4419,30 +4419,30 @@ export default function AdminDashboardPage() {
                                   >
                                     View Sessions
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => regenerateSessions(cohort.id)}
-                                    disabled={regeneratingSessions === cohort.id}
-                                    className="rounded border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                    title="Regenerate all sessions based on start/end dates"
-                                  >
+                              <button
+                                type="button"
+                                onClick={() => regenerateSessions(cohort.id)}
+                                disabled={regeneratingSessions === cohort.id}
+                                className="rounded border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                title="Regenerate all sessions based on start/end dates"
+                              >
                                     {regeneratingSessions === cohort.id ? 'Regenerating...' : 'Regenerate'}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => rearrangeSessions(cohort.id, cohort.name)}
-                                    disabled={rearrangingSessions === cohort.id}
-                                    className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                    title="Rearrange sessions to Mon/Wed/Fri pattern"
-                                  >
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => rearrangeSessions(cohort.id, cohort.name)}
+                                disabled={rearrangingSessions === cohort.id}
+                                className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                title="Rearrange sessions to Mon/Wed/Fri pattern"
+                              >
                                     {rearrangingSessions === cohort.id ? 'Rearranging...' : 'Rearrange'}
-                                  </button>
-                                </div>
-                              </div>
+                              </button>
                             </div>
+                          </div>
+                        </div>
                           );
                         })}
-                      </div>
+                    </div>
                     );
                   })()}
           </div>
@@ -4456,70 +4456,70 @@ export default function AdminDashboardPage() {
                   <Users className="h-4 w-4 text-cyan-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
+              <h3 className="text-lg font-semibold text-zinc-50">Create Cohort</h3>
                   <p className="text-xs text-zinc-500">Add a new learning cohort with start/end dates</p>
                 </div>
               </div>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">Cohort Name *</label>
-                  <input
+                <input
                     className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     placeholder="e.g. Cohort 1 - 2025"
-                    value={cohortForm.name}
-                    onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })}
-                  />
+                  value={cohortForm.name}
+                  onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })}
+                />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <DatePicker
                     label="Start Date"
-                    value={cohortForm.start_date}
+                  value={cohortForm.start_date}
                     onChange={(v) => setCohortForm({ ...cohortForm, start_date: v })}
                     placeholder="Pick start date"
-                  />
+                />
                   <DatePicker
                     label="End Date"
-                    value={cohortForm.end_date}
+                  value={cohortForm.end_date}
                     onChange={(v) => setCohortForm({ ...cohortForm, end_date: v })}
                     placeholder="Pick end date"
-                  />
+                />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-zinc-400 mb-1.5">Seats</label>
-                    <input
+                <input
                       type="number"
                       min="1"
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                       placeholder="Capacity"
-                      value={cohortForm.seats_total}
-                      onChange={(e) => setCohortForm({ ...cohortForm, seats_total: e.target.value })}
-                    />
-                  </div>
+                  value={cohortForm.seats_total}
+                  onChange={(e) => setCohortForm({ ...cohortForm, seats_total: e.target.value })}
+                />
+                </div>
                   <div>
                     <label className="block text-xs font-medium text-zinc-400 mb-1.5">Level</label>
-                    <select
+                <select
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      value={cohortForm.level}
-                      onChange={(e) => setCohortForm({ ...cohortForm, level: e.target.value })}
-                    >
-                      <option>Beginner</option>
-                      <option>Intermediate</option>
-                      <option>Advanced</option>
-                    </select>
+                  value={cohortForm.level}
+                  onChange={(e) => setCohortForm({ ...cohortForm, level: e.target.value })}
+                >
+                  <option>Beginner</option>
+                  <option>Intermediate</option>
+                  <option>Advanced</option>
+                </select>
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">Status</label>
-                  <select
+                <select
                     className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    value={cohortForm.status}
-                    onChange={(e) => setCohortForm({ ...cohortForm, status: e.target.value })}
-                  >
-                    <option>Upcoming</option>
-                    <option>Active</option>
-                    <option>Completed</option>
-                  </select>
+                  value={cohortForm.status}
+                  onChange={(e) => setCohortForm({ ...cohortForm, status: e.target.value })}
+                >
+                  <option>Upcoming</option>
+                  <option>Active</option>
+                  <option>Completed</option>
+                </select>
                 </div>
                 <p className="text-xs text-zinc-500">
                   Sessions are auto-generated (Mon/Wed/Fri) from start and end dates.
@@ -4542,56 +4542,56 @@ export default function AdminDashboardPage() {
                   <CalendarIcon className="h-4 w-4 text-orange-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-50">Create Event</h3>
+              <h3 className="text-lg font-semibold text-zinc-50">Create Event</h3>
                   <p className="text-xs text-zinc-500">Schedule live classes, workshops, and deadlines</p>
                 </div>
               </div>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">Event Name *</label>
-                  <input
+                <input
                     className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                     placeholder="e.g. Chapter 1 - Introduction"
-                    value={eventForm.name}
-                    onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
-                  />
+                  value={eventForm.name}
+                  onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
+                />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-zinc-400 mb-1.5">Type</label>
-                    <select
+                <select
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      value={eventForm.type}
-                      onChange={(e) => setEventForm({ ...eventForm, type: e.target.value })}
-                    >
-                      <option value="live-class">Live Class</option>
-                      <option value="assignment">Assignment</option>
-                      <option value="community">Community</option>
-                      <option value="workshop">Workshop</option>
-                      <option value="deadline">Deadline</option>
-                      <option value="quiz">Quiz</option>
-                      <option value="cohort">Cohort</option>
-                    </select>
+                  value={eventForm.type}
+                  onChange={(e) => setEventForm({ ...eventForm, type: e.target.value })}
+                >
+                  <option value="live-class">Live Class</option>
+                  <option value="assignment">Assignment</option>
+                  <option value="community">Community</option>
+                  <option value="workshop">Workshop</option>
+                  <option value="deadline">Deadline</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="cohort">Cohort</option>
+                </select>
                   </div>
-                  {eventForm.type === 'live-class' && (
+                {eventForm.type === 'live-class' && (
                     <div>
                       <label className="block text-xs font-medium text-zinc-400 mb-1.5">Chapter (optional)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="20"
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
                         className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                         placeholder="1–20"
-                        value={eventForm.chapter_number}
-                        onChange={(e) => setEventForm({ ...eventForm, chapter_number: e.target.value })}
-                      />
+                    value={eventForm.chapter_number}
+                    onChange={(e) => setEventForm({ ...eventForm, chapter_number: e.target.value })}
+                  />
                     </div>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <DatePicker
                     label="Start Date & Time *"
-                    value={eventForm.start_time}
+                  value={eventForm.start_time}
                     onChange={(v) => setEventForm({ ...eventForm, start_time: v })}
                     placeholder="Pick date & time"
                     showTime
@@ -4600,7 +4600,7 @@ export default function AdminDashboardPage() {
                   />
                   <DatePicker
                     label="End Date & Time"
-                    value={eventForm.end_time}
+                  value={eventForm.end_time}
                     onChange={(v) => setEventForm({ ...eventForm, end_time: v })}
                     placeholder="Pick end date & time"
                     showTime
@@ -4609,16 +4609,16 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">Cohort</label>
-                  <select
+                <select
                     className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                    value={eventForm.cohort_id}
-                    onChange={(e) => setEventForm({ ...eventForm, cohort_id: e.target.value })}
-                  >
-                    <option value="for_all">For everyone</option>
-                    {cohorts.map((c) => (
+                  value={eventForm.cohort_id}
+                  onChange={(e) => setEventForm({ ...eventForm, cohort_id: e.target.value })}
+                >
+                  <option value="for_all">For everyone</option>
+                  {cohorts.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                  ))}
+                </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5">Link (optional)</label>
@@ -4647,9 +4647,9 @@ export default function AdminDashboardPage() {
                 >
                   {creatingEvent ? 'Creating...' : 'Create Event'}
                 </button>
-              </div>
             </div>
           </div>
+        </div>
               </>
             )}
 
@@ -4660,7 +4660,7 @@ export default function AdminDashboardPage() {
                   <div>
                     <h3 className="text-xl font-semibold text-zinc-50">Cohort Analytics</h3>
                     <p className="mt-1 text-sm text-zinc-400">Enrollment stats, completion rates, and participation metrics</p>
-                  </div>
+                </div>
                   <button
                     type="button"
                     onClick={exportCohortAnalyticsToExcel}
@@ -4675,13 +4675,13 @@ export default function AdminDashboardPage() {
                 {loadingCohortAnalytics ? (
                   <div className="flex min-h-[280px] items-center justify-center rounded-lg border border-zinc-700/50 bg-zinc-800/30 py-16">
                     <Loader2 className="h-10 w-10 animate-spin text-cyan-400" />
-                  </div>
+                          </div>
                 ) : cohortAnalytics.length === 0 ? (
                   <div className="group flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-zinc-600 bg-zinc-800/20 py-16 transition-colors hover:border-cyan-500/30 hover:bg-zinc-800/30">
                     <BarChart3 className="h-12 w-12 text-zinc-500 transition-colors group-hover:text-cyan-500/50" />
                     <p className="text-sm text-zinc-400">No cohort analytics found.</p>
                     <p className="text-xs text-zinc-500">Cohorts and enrollment data will appear here.</p>
-                  </div>
+                          </div>
                 ) : (
                   <>
                     {/* Summary Cards - responsive grid */}
@@ -4696,7 +4696,7 @@ export default function AdminDashboardPage() {
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Enrolled</span>
                               <span className="font-medium text-zinc-200 tabular-nums">{c.enrolled}</span>
-                            </div>
+                          </div>
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Avg Progress</span>
                               <span className="font-medium tabular-nums text-yellow-300">{c.avgProgress}%</span>
@@ -4704,19 +4704,19 @@ export default function AdminDashboardPage() {
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Avg Attendance</span>
                               <span className="font-medium tabular-nums text-blue-300">{c.avgAttendance}%</span>
-                            </div>
+                        </div>
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Capacity</span>
                               <span className="font-medium tabular-nums text-zinc-200">
                                 {c.seats ? `${c.enrolled}/${c.seats}` : c.enrolled}
                               </span>
-                            </div>
+                      </div>
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Sessions</span>
                               <span className="font-medium tabular-nums text-zinc-200">
                                 {c.sessionsCompleted}/{c.sessionsTotal}
                               </span>
-                            </div>
+                </div>
                           </div>
                         </div>
                       ))}
@@ -4886,44 +4886,44 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-2">Cohort</label>
-                <select
-                  value={sessionCohortFilter || ''}
-                  onChange={(e) => setSessionCohortFilter(e.target.value || null)}
+            <select
+              value={sessionCohortFilter || ''}
+              onChange={(e) => setSessionCohortFilter(e.target.value || null)}
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="">All Cohorts</option>
-                  {cohorts.map((cohort) => (
-                    <option key={cohort.id} value={cohort.id}>
-                      {cohort.name}
-                    </option>
-                  ))}
-                </select>
+            >
+              <option value="">All Cohorts</option>
+              {cohorts.map((cohort) => (
+                <option key={cohort.id} value={cohort.id}>
+                  {cohort.name}
+                </option>
+              ))}
+            </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-2">Status</label>
-                <select
-                  value={sessionStatusFilter}
-                  onChange={(e) => setSessionStatusFilter(e.target.value)}
+            <select
+              value={sessionStatusFilter}
+              onChange={(e) => setSessionStatusFilter(e.target.value)}
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="rescheduled">Rescheduled</option>
-                </select>
+            >
+              <option value="all">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="rescheduled">Rescheduled</option>
+            </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-2">Date Range</label>
-                <select
-                  value={sessionDateFilter}
-                  onChange={(e) => setSessionDateFilter(e.target.value as 'all' | 'upcoming' | 'past')}
+            <select
+              value={sessionDateFilter}
+              onChange={(e) => setSessionDateFilter(e.target.value as 'all' | 'upcoming' | 'past')}
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="all">All Dates</option>
-                  <option value="upcoming">Upcoming</option>
-                  <option value="past">Past</option>
-                </select>
+            >
+              <option value="all">All Dates</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="past">Past</option>
+            </select>
               </div>
             </div>
           </div>
@@ -5123,22 +5123,22 @@ export default function AdminDashboardPage() {
             {(activeSubMenu === 'email-composition' || activeSubMenu === 'calendar' || activeSubMenu === 'events') && (
               <>
                 {/* Email Composition + Inbox stacked when on email-composition */}
-                {activeSubMenu === 'email-composition' && (
+                  {activeSubMenu === 'email-composition' && (
                   <div className="space-y-6">
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
-                      <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
-                      <p className="text-xs text-zinc-400 mb-3">
-                        Send professional emails to students, applicants, or other recipients.
-                      </p>
-                      <div className="rounded-lg">
-                        <EmailComposer />
-                      </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+            <h2 className="text-lg font-semibold text-zinc-50 mb-2">Email Composition</h2>
+            <p className="text-xs text-zinc-400 mb-3">
+              Send professional emails to students, applicants, or other recipients.
+            </p>
+            <div className="rounded-lg">
+              <EmailComposer />
+            </div>
                     </div>
                     <EmailInbox />
-                  </div>
-                )}
+          </div>
+                  )}
 
-                {/* Calendar - Events, Cohorts & Activities */}
+          {/* Calendar - Events, Cohorts & Activities */}
                 {activeSubMenu === 'calendar' && (
         <div className="grid gap-6 lg:grid-cols-2">
                   {activeSubMenu === 'calendar' && (
@@ -5787,7 +5787,7 @@ export default function AdminDashboardPage() {
                 <span className="text-zinc-500"> Note: This is different from "Blog Submissions" which shows pending/awaiting review posts.</span>
               </p>
             </div>
-          </div>
+        </div>
 
           {/* Search and Filters */}
           {Array.isArray(blogPosts) && blogPosts.length > 0 && (
@@ -5795,27 +5795,27 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-zinc-400 mb-2">Search</label>
-                  <input
-                    type="text"
-                    placeholder="Search by title, author, or content..."
-                    value={blogPostsSearch}
-                    onChange={(e) => setBlogPostsSearch(e.target.value)}
+                <input
+                  type="text"
+                  placeholder="Search by title, author, or content..."
+                  value={blogPostsSearch}
+                  onChange={(e) => setBlogPostsSearch(e.target.value)}
                     className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  />
+                />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-2">Category</label>
-                  <select
-                    value={blogPostsCategoryFilter}
-                    onChange={(e) => setBlogPostsCategoryFilter(e.target.value)}
+                <select
+                  value={blogPostsCategoryFilter}
+                  onChange={(e) => setBlogPostsCategoryFilter(e.target.value)}
                     className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  >
-                    <option value="all">All Categories</option>
-                    {Array.from(new Set(blogPosts.map((p: any) => p.category).filter(Boolean))).map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
+                >
+                  <option value="all">All Categories</option>
+                  {Array.from(new Set(blogPosts.map((p: any) => p.category).filter(Boolean))).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
               </div>
               <div className="mt-4 flex gap-2 flex-wrap">
                 {(['all', 'published', 'draft', 'archived'] as const).map((f) => (
@@ -7624,11 +7624,11 @@ export default function AdminDashboardPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-zinc-400 mb-2">Filter by Event</label>
-                      <select
-                        value={attendanceEventFilter}
-                        onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                    <select
+                      value={attendanceEventFilter}
+                      onChange={(e) => setAttendanceEventFilter(e.target.value)}
                         className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      >
+                    >
                       <option value="all">All Events & Sessions</option>
                       {(() => {
                         const activeSessions = allSessions.filter((session: any) => {

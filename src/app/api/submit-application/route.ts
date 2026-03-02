@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     // Check if user already has a profile (they're already registered) - use admin client
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, status')
+      .select('id, email, status, password_hash')
       .eq('email', emailLower)
       .maybeSingle();
 
@@ -127,11 +127,13 @@ export async function POST(req: NextRequest) {
           .single();
         
         if (appData?.status === 'Approved') {
+          // Only ask to set password if they have no password_hash (source of truth)
+          // Status can be stale; password_hash confirms they've set a password (forgot or setup)
           return NextResponse.json(
             { 
               error: 'You already have an approved application. Please sign in to access your account.',
               hasProfile: !!existingProfile,
-              needsPassword: existingProfile && !existingProfile.status?.includes('Active')
+              needsPassword: existingProfile && !existingProfile.password_hash
             },
             { status: 409 }
           );
