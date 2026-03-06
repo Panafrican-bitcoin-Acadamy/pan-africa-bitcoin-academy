@@ -363,6 +363,8 @@ export default function AdminDashboardPage() {
   const [cohortFilter, setCohortFilter] = useState<string | null>(null); // Filter by cohort
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [updatingStudent, setUpdatingStudent] = useState(false);
+  const [approvedStudentsCohortFilter, setApprovedStudentsCohortFilter] = useState<string>('');
+  const [approvedStudentsSearch, setApprovedStudentsSearch] = useState('');
   const [editStudentForm, setEditStudentForm] = useState<{
     name: string;
     email: string;
@@ -5275,13 +5277,60 @@ export default function AdminDashboardPage() {
                     </div>
                   ) : (
                     <>
+                      {/* Filter by cohort + Search */}
+                      <div className="mb-4 flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <label htmlFor="approved-cohort-filter" className="text-xs font-medium text-zinc-400 whitespace-nowrap">
+                            Filter by cohort
+                          </label>
+                          <select
+                            id="approved-cohort-filter"
+                            value={approvedStudentsCohortFilter}
+                            onChange={(e) => setApprovedStudentsCohortFilter(e.target.value)}
+                            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                          >
+                            <option value="">All cohorts</option>
+                            {cohorts.map((c) => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                          <label htmlFor="approved-students-search" className="text-xs font-medium text-zinc-400 whitespace-nowrap">
+                            Search
+                          </label>
+                          <input
+                            id="approved-students-search"
+                            type="text"
+                            placeholder="Name or email..."
+                            value={approvedStudentsSearch}
+                            onChange={(e) => setApprovedStudentsSearch(e.target.value)}
+                            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                          />
+                        </div>
+                      </div>
+
                       {/* Summary Stats */}
                       <div className="mb-6">
                         <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800 inline-block">
                           <div className="text-2xl font-bold text-green-400 mb-1">
-                            {approvedStudents.length}
+                            {(approvedStudentsCohortFilter || approvedStudentsSearch.trim())
+                              ? approvedStudents.filter((s) => {
+                                  const cohortId = (s as any).cohortId ?? s.cohort_id ?? null;
+                                  if (approvedStudentsCohortFilter && cohortId !== approvedStudentsCohortFilter) return false;
+                                  const q = approvedStudentsSearch.trim().toLowerCase();
+                                  if (q) {
+                                    const name = (s.name || '').toLowerCase();
+                                    const email = (s.email || '').toLowerCase();
+                                    if (!name.includes(q) && !email.includes(q)) return false;
+                                  }
+                                  return true;
+                                }).length
+                              : approvedStudents.length}
                           </div>
-                          <div className="text-sm text-zinc-400">Approved Students</div>
+                          <div className="text-sm text-zinc-400">
+                            {(approvedStudentsCohortFilter || approvedStudentsSearch.trim()) ? 'Showing' : 'Approved Students'}
+                          </div>
                         </div>
                       </div>
 
@@ -5303,7 +5352,19 @@ export default function AdminDashboardPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {approvedStudents.map((student) => (
+                            {approvedStudents
+                              .filter((s) => {
+                                const cohortId = (s as any).cohortId ?? s.cohort_id ?? null;
+                                if (approvedStudentsCohortFilter && cohortId !== approvedStudentsCohortFilter) return false;
+                                const q = approvedStudentsSearch.trim().toLowerCase();
+                                if (q) {
+                                  const name = (s.name || '').toLowerCase();
+                                  const email = (s.email || '').toLowerCase();
+                                  if (!name.includes(q) && !email.includes(q)) return false;
+                                }
+                                return true;
+                              })
+                              .map((student) => (
                               <tr key={student.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/30">
                                 <td className="p-3 text-sm text-zinc-200">{student.name || 'N/A'}</td>
                                 <td className="p-3 text-sm text-zinc-300">{student.email || 'N/A'}</td>
