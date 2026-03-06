@@ -99,12 +99,13 @@ export async function POST(req: NextRequest) {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Update profile with password and set status to Active
+    // Update profile with password, status to Active, and mark email verified (they proved ownership by using the link)
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
         password_hash: passwordHash,
         status: 'Active',
+        email_verified_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', profile.id);
