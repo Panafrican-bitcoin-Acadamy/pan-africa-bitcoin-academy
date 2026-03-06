@@ -5302,7 +5302,7 @@ export default function AdminDashboardPage() {
                           <input
                             id="approved-students-search"
                             type="text"
-                            placeholder="Name or email..."
+                            placeholder="Search name, email, phone, country, city, cohort..."
                             value={approvedStudentsSearch}
                             onChange={(e) => setApprovedStudentsSearch(e.target.value)}
                             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-500 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
@@ -5320,9 +5320,18 @@ export default function AdminDashboardPage() {
                                   if (approvedStudentsCohortFilter && cohortId !== approvedStudentsCohortFilter) return false;
                                   const q = approvedStudentsSearch.trim().toLowerCase();
                                   if (q) {
-                                    const name = (s.name || '').toLowerCase();
-                                    const email = (s.email || '').toLowerCase();
-                                    if (!name.includes(q) && !email.includes(q)) return false;
+                                    const searchable = [
+                                      s.name,
+                                      s.email,
+                                      s.phone,
+                                      s.country,
+                                      (s as any).city,
+                                      s.cohortName,
+                                      s.status,
+                                    ]
+                                      .filter(Boolean)
+                                      .map((v) => String(v).toLowerCase());
+                                    if (!searchable.some((v) => v.includes(q))) return false;
                                   }
                                   return true;
                                 }).length
@@ -5358,9 +5367,18 @@ export default function AdminDashboardPage() {
                                 if (approvedStudentsCohortFilter && cohortId !== approvedStudentsCohortFilter) return false;
                                 const q = approvedStudentsSearch.trim().toLowerCase();
                                 if (q) {
-                                  const name = (s.name || '').toLowerCase();
-                                  const email = (s.email || '').toLowerCase();
-                                  if (!name.includes(q) && !email.includes(q)) return false;
+                                  const searchable = [
+                                    s.name,
+                                    s.email,
+                                    s.phone,
+                                    s.country,
+                                    (s as any).city,
+                                    s.cohortName,
+                                    s.status,
+                                  ]
+                                    .filter(Boolean)
+                                    .map((v) => String(v).toLowerCase());
+                                  if (!searchable.some((v) => v.includes(q))) return false;
                                 }
                                 return true;
                               })
