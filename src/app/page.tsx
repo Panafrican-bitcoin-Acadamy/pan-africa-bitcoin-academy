@@ -4,6 +4,8 @@ import { Facebook, Twitter, Instagram, Music2, Video, Users, GraduationCap, Rock
 import { StructuredData } from "@/components/StructuredData";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
+import { HeroHeadline } from "@/components/HeroHeadline";
+import { TrueFocus } from "@/components/TrueFocus";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
@@ -359,26 +361,50 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
   }
 }
 
+const homeStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'EducationalOrganization',
+  name: 'Pan-African Bitcoin Academy',
+  description: 'Learn Bitcoin the right way with clear, technical guidance. Comprehensive Bitcoin education, developer resources, and community support across Africa.',
+  url: 'https://panafricanbitcoin.com',
+  logo: 'https://panafricanbitcoin.com/images/logo_3.png',
+  sameAs: [
+    'https://github.com/Joie199/pan-africa-bitcoin-academy',
+    'https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji',
+    'https://jumble.social/users/npub1q659nzy6j3mn8nr8ljznzumplesd40276tefj6gjz72npmqqg5cqmh70vv',
+    'https://discord.gg/4G4TUAP7',
+    'https://www.facebook.com/profile.php?id=61586743276906',
+    'https://x.com/panafricanbtc',
+    'https://www.instagram.com/panafricanbitcoin/',
+    'https://www.tiktok.com/@panafricanbitcoin',
+  ],
+  address: {
+    '@type': 'PostalAddress',
+    addressCountry: 'UG',
+  },
+  offers: {
+    '@type': 'Offer',
+    category: 'Education',
+    description: 'Bitcoin education courses and developer training',
+  },
+};
+
 export default async function Home() {
   const mentors = await getMentors();
   const impactStats = await getImpactStats();
   const upcomingEvents = await getUpcomingEvents();
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      {/* Full-page Hero Section - Edge-to-edge on mobile */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center w-full">
-        {/* Background effects */}
-        <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+      {/* Full-page Hero Section - Edge-to-edge on mobile, fade in on load */}
+      <AnimatedSection animation="fadeIn" duration={700} threshold={0.05}>
+        <section className="relative flex min-h-screen flex-col items-center justify-center w-full">
+          {/* Background effects */}
+          <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute left-0 top-32 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl" />
         
         {/* Hero Content - Full width on mobile, max-width only on larger screens */}
         <div className="relative z-10 w-full px-4 space-y-6 sm:space-y-8 text-center sm:max-w-4xl ml-auto lg:px-6">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-zinc-50 leading-tight">
-            <b>Scaling Bitcoin adoption </b>
-          </h1>
-          <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-orange-400 leading-tight">
-            Turning Africa orange
-          </p>
+          <HeroHeadline />
           <p className="w-full text-base sm:text-lg text-zinc-400 leading-relaxed sm:max-w-2xl sm:mx-auto">
             Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
           </p>
@@ -448,7 +474,8 @@ export default async function Home() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
+      </AnimatedSection>
 
       {/* Content Sections - Full Width - Edge-to-edge on mobile */}
       <div className="relative z-10 w-full bg-black/60 backdrop-blur-sm">
@@ -459,7 +486,16 @@ export default async function Home() {
             <section className="mb-32 space-y-8">
               <div className="text-center">
                 <h2 className="text-3xl font-semibold text-orange-200 sm:text-4xl lg:text-5xl">
-                  How It Started: From Bailouts to Blockchain
+                  How It Started:{' '}
+                  <TrueFocus
+                    sentence="Bailouts to Blockchain"
+                    focusOnlyIndices={[0, 2]}
+                    pauseBetweenAnimations={5}
+                    blurAmount={5}
+                    borderColor="#22d3ee"
+                    glowColor="rgba(34, 211, 238, 0.6)"
+                    animationDuration={3}
+                  />
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg w-full sm:max-w-3xl sm:mx-auto">
                   In 2008, the global financial crisis exposed the fragility of traditional banking. While governments bailed out the banks, ordinary people lost homes, jobs, and savings. Bitcoin was born from this crisis — a decentralized alternative that doesn't require trust in banks or governments.
@@ -1095,35 +1131,7 @@ export default async function Home() {
           </AnimatedSection>
         </div>
       </div>
-      <StructuredData
-        data={{
-          '@context': 'https://schema.org',
-          '@type': 'EducationalOrganization',
-          name: 'Pan-African Bitcoin Academy',
-          description: 'Learn Bitcoin the right way with clear, technical guidance. Comprehensive Bitcoin education, developer resources, and community support across Africa.',
-          url: 'https://panafricanbitcoin.com',
-          logo: 'https://panafricanbitcoin.com/images/logo_3.png',
-          sameAs: [
-            'https://github.com/Joie199/pan-africa-bitcoin-academy',
-            'https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji',
-            'https://jumble.social/users/npub1q659nzy6j3mn8nr8ljznzumplesd40276tefj6gjz72npmqqg5cqmh70vv',
-            'https://discord.gg/4G4TUAP7',
-            'https://www.facebook.com/profile.php?id=61586743276906',
-            'https://x.com/panafricanbtc',
-            'https://www.instagram.com/panafricanbitcoin/',
-            'https://www.tiktok.com/@panafricanbitcoin',
-          ],
-          address: {
-            '@type': 'PostalAddress',
-            addressCountry: 'UG',
-          },
-          offers: {
-            '@type': 'Offer',
-            category: 'Education',
-            description: 'Bitcoin education courses and developer training',
-          },
-        }}
-      />
+      <StructuredData data={homeStructuredData} />
       <Analytics />
     </div>
   );

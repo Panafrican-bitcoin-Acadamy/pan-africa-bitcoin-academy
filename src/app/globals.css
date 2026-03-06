@@ -392,6 +392,59 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
   display: none !important;
 }
 
+/* Home page: section and text animations (keyframes so they always run when class is added) */
+@keyframes homeFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes homeFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes homeSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes homeSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.home-animate-fade-up {
+  opacity: 0;
+  animation: homeFadeUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+.home-animate-fade-in {
+  opacity: 0;
+  animation: homeFadeIn 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+.home-animate-slide-left {
+  opacity: 0;
+  animation: homeSlideLeft 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+.home-animate-slide-right {
+  opacity: 0;
+  animation: homeSlideRight 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
 /* Chapter section animations – technological scroll-reveal, section to section */
 @keyframes chapter-section-glow {
   0%, 100% {

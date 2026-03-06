@@ -11,88 +11,86 @@ interface AnimatedSectionProps {
   duration?: number;
   className?: string;
   threshold?: number;
+  /** When true, section fades out when scrolling past. Default true. */
+  fadeOut?: boolean;
 }
+
+const OBSERVER_DELAY_MS = 100;
+
+const ANIMATION_CLASS: Record<AnimationType, string> = {
+  slideUp: 'home-animate-fade-up',
+  slideLeft: 'home-animate-slide-left',
+  slideRight: 'home-animate-slide-right',
+  fadeIn: 'home-animate-fade-in',
+};
 
 export function AnimatedSection({
   children,
   animation = 'slideUp',
   delay = 0,
-  duration = 800,
+  duration = 950,
   className = '',
-  threshold = 0.1,
+  threshold = 0.05,
+  fadeOut = true,
 }: AnimatedSectionProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [canObserve, setCanObserve] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // Check for reduced motion preference
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mq.matches);
+    const h = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
   }, []);
 
   useEffect(() => {
-    // Skip animation if user prefers reduced motion
     if (prefersReducedMotion) {
       setIsVisible(true);
       return;
     }
+    const t = setTimeout(() => setCanObserve(true), OBSERVER_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [prefersReducedMotion]);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          // Disconnect after first trigger for performance
-          observer.disconnect();
-        }
-      },
+  useEffect(() => {
+    if (!canObserve || prefersReducedMotion) return;
+    const el = ref.current;
+    if (!el) return;
+
+    observerRef.current = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
       {
         threshold,
-        rootMargin: '-50px 0px', // Start animation slightly before element is fully visible
+        rootMargin: fadeOut ? '-50px 0px -50px 0px' : '-30px 0px',
       }
     );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
+    observerRef.current.observe(el);
     return () => {
-      observer.disconnect();
+      observerRef.current?.disconnect();
+      observerRef.current = null;
     };
-  }, [threshold, prefersReducedMotion]);
+  }, [canObserve, prefersReducedMotion, threshold, fadeOut]);
 
-  // Mobile-first: Shorter, lighter animations for better performance
-  const actualDuration = prefersReducedMotion ? 0 : Math.min(duration, 600);
+  const show = isVisible || prefersReducedMotion;
+  const useAnimation = show && !prefersReducedMotion;
+  const animateClass = useAnimation ? ANIMATION_CLASS[animation] : '';
   const actualDelay = prefersReducedMotion ? 0 : delay;
 
-  const animationClasses = {
-    slideUp: isVisible || prefersReducedMotion
-      ? 'opacity-100 translate-y-0'
-      : 'opacity-0 translate-y-5', // Reduced movement for mobile
-    slideLeft: isVisible || prefersReducedMotion
-      ? 'opacity-100 translate-x-0'
-      : 'opacity-0 -translate-x-5', // Reduced movement
-    slideRight: isVisible || prefersReducedMotion
-      ? 'opacity-100 translate-x-0'
-      : 'opacity-0 translate-x-5', // Reduced movement
-    fadeIn: isVisible || prefersReducedMotion ? 'opacity-100' : 'opacity-0',
+  const style: React.CSSProperties = {
+    opacity: show ? undefined : 0,
+    transition: show ? undefined : 'opacity 0.35s ease-out',
+    animationDelay: actualDelay ? `${actualDelay}ms` : undefined,
   };
 
   return (
     <div
       ref={ref}
-      className={`transition-all ease-out ${animationClasses[animation]} ${className}`}
-      style={{
-        transitionDuration: `${actualDuration}ms`,
-        transitionDelay: `${actualDelay}ms`,
-      }}
+      className={`${className} ${animateClass}`.trim()}
+      style={style}
     >
       {children}
     </div>

@@ -744,20 +744,20 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                     section.heading === "1.3 Properties of Sound Money" && section.images.length > 1 ? (
                       <div className="mt-6 space-y-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                          {section.images.map((image, idx) => (
-                            <div key={idx} className="flex flex-col items-center space-y-3">
-                              <img
-                                src={image.src}
-                                alt={image.alt}
-                                className="w-full rounded-lg border border-orange-400/20 shadow-lg"
-                              />
-                              {image.caption && (
-                                <p className="text-center text-sm text-zinc-200 leading-relaxed px-2">
-                                  {image.caption}
-                                </p>
-                              )}
-                            </div>
-                          ))}
+                        {section.images.map((image, idx) => (
+                          <div key={idx} className="flex flex-col items-center space-y-3">
+                            <img
+                              src={image.src}
+                              alt={image.alt}
+                              className="w-full rounded-lg border border-orange-400/20 shadow-lg"
+                            />
+                            {image.caption && (
+                              <p className="text-center text-sm text-zinc-200 leading-relaxed px-2">
+                                {image.caption}
+                              </p>
+                            )}
+                          </div>
+                        ))}
                         </div>
                         <div>
                           <h4 className="mb-4 text-base font-semibold text-cyan-200">Quality comparison: Bitcoin vs Gold vs Fiat / Cash</h4>

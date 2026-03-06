@@ -10,6 +10,7 @@ import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
 import { SyllabusModal } from "@/components/SyllabusModal";
+import SplitText from "@/components/SplitText";
 import type { Metadata } from "next";
 
 // Note: Metadata cannot be exported from client components
@@ -601,7 +602,20 @@ export default function ChaptersPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
               <h1 className="text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Learning Path
+                <SplitText
+                  text="Learning Path"
+                  tag="span"
+                  className="inline-block"
+                  delay={50}
+                  duration={1.25}
+                  ease="bounce.out"
+                  splitType="chars"
+                  from={{ opacity: 0, y: 40 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="-100px"
+                  textAlign="center"
+                />
               </h1>
               <div className="mx-auto mt-8 max-w-4xl">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-xl sm:text-2xl lg:text-3xl font-semibold">

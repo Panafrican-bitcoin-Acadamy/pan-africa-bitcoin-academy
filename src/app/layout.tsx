@@ -4,6 +4,7 @@ import "./globals.css";
 import dynamic from "next/dynamic";
 import { ResourceHints } from "@/components/ResourceHints";
 import { StructuredData } from "@/components/StructuredData";
+import { ClickSparkWrapper } from "@/components/ClickSparkWrapper";
 import { organizationStructuredData, websiteStructuredData } from "@/lib/structured-data";
 
 // Lazy load Navbar and Footer to reduce initial bundle size
@@ -198,12 +199,14 @@ export default function RootLayout({
         {/* Cookie Consent Popup - shows on first visit */}
         <CookieConsentWrapper />
         
-        <div className="flex min-h-screen flex-col">
-          <Navbar />
-          {/* Mobile-first: Full width on mobile, max-width only on larger screens */}
-          <main className="flex-1 relative z-10 w-full">{children}</main>
-          <Footer />
-        </div>
+        <ClickSparkWrapper>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            {/* Mobile-first: Full width on mobile, max-width only on larger screens */}
+            <main className="flex-1 relative z-10 w-full">{children}</main>
+            <Footer />
+          </div>
+        </ClickSparkWrapper>
       </body>
     </html>
   );
