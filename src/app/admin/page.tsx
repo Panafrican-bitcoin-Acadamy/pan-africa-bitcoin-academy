@@ -5348,6 +5348,7 @@ export default function AdminDashboardPage() {
                         <table className="w-full border-collapse">
                           <thead>
                             <tr className="border-b border-zinc-800">
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase w-12">#</th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Name</th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Email</th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Phone</th>
@@ -5382,8 +5383,9 @@ export default function AdminDashboardPage() {
                                 }
                                 return true;
                               })
-                              .map((student) => (
+                              .map((student, index) => (
                               <tr key={student.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/30">
+                                <td className="p-3 text-sm text-zinc-500 tabular-nums">{index + 1}</td>
                                 <td className="p-3 text-sm text-zinc-200">{student.name || 'N/A'}</td>
                                 <td className="p-3 text-sm text-zinc-300">{student.email || 'N/A'}</td>
                                 <td className="p-3 text-sm text-zinc-400">{student.phone || 'N/A'}</td>
