@@ -316,7 +316,8 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
                 <div style="text-align: center; margin: 24px 0;">
                   <a href="${setupPasswordUrl}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);">Set up your password</a>
                 </div>
-                <p style="font-size: 13px; margin: 0 0 24px; color: #71717a;">Or copy and paste into your browser: <a href="${setupPasswordUrl}" style="color: #0891b2; word-break: break-all;">${setupPasswordUrl}</a></p>
+                <p style="font-size: 13px; margin: 0 0 8px; color: #71717a;">Or copy and paste into your browser: <a href="${setupPasswordUrl}" style="color: #0891b2; word-break: break-all;">${setupPasswordUrl}</a></p>
+                <p style="font-size: 12px; margin: 0 0 24px; color: #71717a;">This link expires in 72 hours.</p>
                 <div style="background: #f4f4f5; padding: 20px 22px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #0891b2;">
                   <h3 style="margin: 0 0 10px; color: #18181b; font-size: 16px;">What’s next?</h3>
                   <ul style="margin: 0; padding-left: 20px; color: #3f3f46; font-size: 14px;">
@@ -459,7 +460,8 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
               <div style="text-align: center; margin: 24px 0;">
                 <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">Set up your password</a>
               </div>
-              <p style="font-size: 13px; margin: 0 0 24px; color: #a3a3a3;">Or copy and paste into your browser: <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a></p>
+              <p style="font-size: 13px; margin: 0 0 8px; color: #a3a3a3;">Or copy and paste into your browser: <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a></p>
+              <p style="font-size: 12px; margin: 0 0 24px; color: #a3a3a3;">This link expires in 72 hours.</p>
               <div style="background: #262626; padding: 20px 22px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #06b6d4;">
                 <h3 style="margin: 0 0 10px; color: #fff; font-size: 16px;">What’s next?</h3>
                 <ul style="margin: 0; padding-left: 20px; color: #d4d4d4; font-size: 14px;">

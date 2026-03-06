@@ -8,6 +8,7 @@ function SetupPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get('email');
+  const token = searchParams.get('token');
   const applicationId = searchParams.get('applicationId');
 
   const [password, setPassword] = useState('');
@@ -20,8 +21,9 @@ function SetupPasswordContent() {
   const [checking, setChecking] = useState(true);
   const [studentName, setStudentName] = useState<string | null>(null);
   const [cohortName, setCohortName] = useState<string | null>(null);
+  const [linkExpired, setLinkExpired] = useState(false);
 
-  // If they've already set a password (via forgot or setup), don't show the form at all
+  // Check if link is valid and if user still needs to set password (token required for 72h link)
   useEffect(() => {
     if (!email) {
       setChecking(false);
@@ -30,11 +32,18 @@ function SetupPasswordContent() {
     }
 
     let cancelled = false;
-    fetch(`/api/applications/setup-password?email=${encodeURIComponent(email)}`)
+    const url = new URL('/api/applications/setup-password', window.location.origin);
+    url.searchParams.set('email', email);
+    if (token) url.searchParams.set('token', token);
+    fetch(url.toString())
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
         setChecking(false);
+        if (data.linkExpired) {
+          setLinkExpired(true);
+          return;
+        }
         if (!data.needsSetup) {
           router.replace('/?message=already-have-password');
           return;
@@ -49,7 +58,7 @@ function SetupPasswordContent() {
     return () => {
       cancelled = true;
     };
-  }, [email, router]);
+  }, [email, token, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +90,7 @@ function SetupPasswordContent() {
         body: JSON.stringify({
           email: email,
           password: password,
+          token: token || null,
           applicationId: applicationId || null,
         }),
       });
@@ -108,6 +118,28 @@ function SetupPasswordContent() {
       <div className="px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-lg rounded-xl bg-white p-8 text-center text-gray-600 shadow-sm">
           Checking...
+        </div>
+      </div>
+    );
+  }
+
+  if (linkExpired) {
+    return (
+      <div className="px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
+          <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-5 text-center">
+            <h1 className="text-xl font-bold text-white">Link expired</h1>
+          </div>
+          <div className="bg-gray-50 px-6 py-8">
+            <p className="text-center text-gray-700">
+              This link has expired. Please ask your admin to send a new password setup link.
+            </p>
+            <p className="mt-4 text-center">
+              <a href="/" className="text-cyan-600 hover:text-cyan-700 font-medium">
+                Back to sign in
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     );

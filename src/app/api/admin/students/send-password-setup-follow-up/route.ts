@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/adminSession';
 import { validateAndNormalizeEmail } from '@/lib/validation';
 import { sendPasswordSetupFollowUpEmail } from '@/lib/email';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.com';
+const SETUP_PASSWORD_TOKEN_EXPIRY_HOURS = 72;
 
 /**
  * POST /api/admin/students/send-password-setup-follow-up
@@ -69,12 +73,33 @@ export async function POST(req: NextRequest) {
       cohortEndDate = cohort?.end_date ? String(cohort.end_date) : undefined;
     }
 
+    const setupToken = crypto.randomBytes(32).toString('hex');
+    const setupTokenExpiry = new Date();
+    setupTokenExpiry.setHours(setupTokenExpiry.getHours() + SETUP_PASSWORD_TOKEN_EXPIRY_HOURS);
+    const { error: tokenError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        reset_token: setupToken,
+        reset_token_expiry: setupTokenExpiry.toISOString(),
+      })
+      .eq('id', profile.id);
+
+    if (tokenError) {
+      return NextResponse.json(
+        { error: 'Failed to generate setup link' },
+        { status: 500 }
+      );
+    }
+
+    const setupPasswordUrl = `${SITE_URL}/setup-password?email=${encodeURIComponent(profile.email)}&token=${encodeURIComponent(setupToken)}`;
+
     const emailResult = await sendPasswordSetupFollowUpEmail({
       studentName: profile.name || 'Student',
       studentEmail: profile.email,
       cohortName,
       cohortStartDate,
       cohortEndDate,
+      setupPasswordUrl,
     });
 
     if (!emailResult.success) {

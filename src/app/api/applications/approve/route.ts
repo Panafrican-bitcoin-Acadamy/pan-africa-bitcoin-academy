@@ -475,6 +475,24 @@ export async function POST(req: NextRequest) {
         cohortEndDate = cohortData?.end_date ? String(cohortData.end_date) : undefined;
       }
 
+      const needsPasswordSetup = !existingProfile || existingProfile.status === 'Pending Password Setup';
+      let setupPasswordUrl: string | undefined;
+      if (needsPasswordSetup) {
+        const setupToken = crypto.randomBytes(32).toString('hex');
+        const setupTokenExpiry = new Date();
+        setupTokenExpiry.setHours(setupTokenExpiry.getHours() + SETUP_PASSWORD_TOKEN_EXPIRY_HOURS);
+        const { error: tokenError } = await supabaseAdmin
+          .from('profiles')
+          .update({
+            reset_token: setupToken,
+            reset_token_expiry: setupTokenExpiry.toISOString(),
+          })
+          .eq('id', profileId);
+        if (!tokenError) {
+          setupPasswordUrl = `${SITE_URL}/setup-password?email=${encodeURIComponent(emailLower)}&token=${encodeURIComponent(setupToken)}`;
+        }
+      }
+
       // Send approval email
       if (process.env.NODE_ENV === 'development') {
         console.log('📧 Attempting to send approval email to:', emailLower);
@@ -486,7 +504,8 @@ export async function POST(req: NextRequest) {
         cohortName,
         cohortStartDate,
         cohortEndDate,
-        needsPasswordSetup: !existingProfile || existingProfile.status === 'Pending Password Setup',
+        needsPasswordSetup,
+        setupPasswordUrl,
       });
 
       emailSent = emailResult.success;

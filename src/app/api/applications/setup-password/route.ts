@@ -4,15 +4,17 @@ import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/passwordValidation';
 
 /**
- * GET /api/applications/setup-password?email=...
- * Check if this email still needs to set a password. Used by setup-password page
- * to redirect users who already have a password (set via forgot-password or setup).
- * Returns needsSetup: true only when profile exists and has no password_hash.
- * Otherwise returns needsSetup: false (don't reveal if email exists or not).
+ * GET /api/applications/setup-password?email=...&token=...
+ * Check if this email still needs to set a password. When token is present, it must
+ * match the profile's reset_token and not be expired (72h set-password link).
+ * Returns needsSetup: true only when profile exists, has no password_hash, and
+ * (no token in URL or token valid and not expired). linkExpired: true when token
+ * was provided but is invalid or expired.
  */
 export async function GET(req: NextRequest) {
   try {
     const email = req.nextUrl.searchParams.get('email');
+    const token = req.nextUrl.searchParams.get('token');
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ needsSetup: false }, { status: 200 });
     }
@@ -21,9 +23,27 @@ export async function GET(req: NextRequest) {
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('password_hash, name, cohort_id')
+      .select('password_hash, name, cohort_id, reset_token, reset_token_expiry')
       .eq('email', emailLower)
       .maybeSingle();
+
+    if (token != null && token !== '') {
+      const now = new Date();
+      const validToken =
+        profile?.reset_token != null &&
+        profile.reset_token !== '' &&
+        profile.reset_token === token &&
+        profile.reset_token_expiry != null &&
+        new Date(profile.reset_token_expiry) > now;
+      if (!validToken) {
+        return NextResponse.json({
+          needsSetup: false,
+          linkExpired: true,
+          studentName: null,
+          cohortName: null,
+        }, { status: 200 });
+      }
+    }
 
     // needsSetup only when profile exists AND has no password
     const needsSetup = !!profile && !profile.password_hash;
@@ -40,6 +60,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       needsSetup,
+      linkExpired: false,
       studentName: needsSetup && profile?.name ? profile.name : null,
       cohortName,
     }, { status: 200 });
@@ -50,11 +71,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, applicationId } = await req.json();
+    const { email, password, token: bodyToken, applicationId } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
+        { status: 400 }
+      );
+    }
+
+    const token = bodyToken != null && bodyToken !== '' ? bodyToken : null;
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Invalid or expired link. Please use the link from your approval email or ask your admin to send a new link.' },
         { status: 400 }
       );
     }
@@ -70,10 +99,10 @@ export async function POST(req: NextRequest) {
 
     const emailLower = email.toLowerCase().trim();
 
-    // Find profile by email
+    // Find profile by email and validate set-password token (72h link)
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, status, password_hash')
+      .select('id, email, status, password_hash, reset_token, reset_token_expiry')
       .eq('email', emailLower)
       .single();
 
@@ -81,6 +110,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Profile not found. Please ensure your application was approved.' },
         { status: 404 }
+      );
+    }
+
+    const now = new Date();
+    const validToken =
+      profile.reset_token != null &&
+      profile.reset_token !== '' &&
+      profile.reset_token === token &&
+      profile.reset_token_expiry != null &&
+      new Date(profile.reset_token_expiry) > now;
+    if (!validToken) {
+      return NextResponse.json(
+        { error: 'This link has expired. Please ask your admin to send a new password setup link.' },
+        { status: 400 }
       );
     }
 
@@ -113,7 +156,7 @@ export async function POST(req: NextRequest) {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Update profile with password, status to Active, and mark email verified (they proved ownership by using the link)
+    // Update profile: set password, clear reset token/expiry, set status and email_verified_at
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -121,6 +164,8 @@ export async function POST(req: NextRequest) {
         status: 'Active',
         email_verified_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        reset_token: null,
+        reset_token_expiry: null,
       })
       .eq('id', profile.id);
 
