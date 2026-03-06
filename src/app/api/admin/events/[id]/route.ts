@@ -2,17 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 
-type RouteParams = {
-  params: Promise<{ id: string }>;
-};
-
 /**
  * Update an existing event
  * PUT /api/admin/events/[id]
  */
 export async function PUT(
   req: NextRequest,
-  { params }: RouteParams
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = requireAdmin(req);
@@ -20,7 +16,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id: eventId } = await params;
+    const { id: eventId } = await context.params;
     const { 
       name, 
       type, 
@@ -228,7 +224,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: RouteParams
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = requireAdmin(req);
@@ -236,7 +232,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id: eventId } = await params;
+    const { id: eventId } = await context.params;
 
     // First, fetch the event to get the image URL before deleting
     const { data: event, error: fetchError } = await supabaseAdmin
