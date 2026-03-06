@@ -19,7 +19,7 @@ import {
   Clock, User, Info, Trash2, Award, Target, Briefcase, Heart,
   ClipboardList, Rocket, HelpCircle, Sparkles, Settings, 
   PenTool, GraduationCap, XCircle, Loader2, Shield, Lock, History, LogOut,
-  Eye, EyeOff, Download
+  Eye, EyeOff, Download, X
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -361,7 +361,33 @@ export default function AdminDashboardPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [processing, setProcessing] = useState<string | null>(null);
   const [cohortFilter, setCohortFilter] = useState<string | null>(null); // Filter by cohort
-  
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [updatingStudent, setUpdatingStudent] = useState(false);
+  const [editStudentForm, setEditStudentForm] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    country: string;
+    city: string;
+    cohort_id: string;
+    status: string;
+  }>({ name: '', email: '', phone: '', country: '', city: '', cohort_id: '', status: 'Active' });
+
+  useEffect(() => {
+    if (editingStudent) {
+      const s = editingStudent as Student & { cohortId?: string; city?: string };
+      setEditStudentForm({
+        name: s.name || '',
+        email: s.email || '',
+        phone: s.phone || '',
+        country: s.country || '',
+        city: s.city || '',
+        cohort_id: (s as any).cohortId ?? s.cohort_id ?? '',
+        status: s.status || 'Active',
+      });
+    }
+  }, [editingStudent]);
+
   // Event editing state
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [attendanceSort, setAttendanceSort] = useState<'asc' | 'desc' | null>(null); // Sort by attendance
@@ -5273,6 +5299,7 @@ export default function AdminDashboardPage() {
                                 Send Password Link
                               </th>
                               <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Status</th>
+                              <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -5335,6 +5362,15 @@ export default function AdminDashboardPage() {
                                   >
                                     {student.status || 'N/A'}
                                   </span>
+                                </td>
+                                <td className="p-3 text-sm">
+                                  <button
+                                    type="button"
+                                    className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-500/20 transition cursor-pointer"
+                                    onClick={() => setEditingStudent(student)}
+                                  >
+                                    Update
+                                  </button>
                                 </td>
                               </tr>
                             ))}
@@ -7201,6 +7237,150 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </main>
+
+      {/* Edit Student Modal */}
+      {editingStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-amber-500/30 bg-zinc-900 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-zinc-50">Update student data</h3>
+              <button
+                type="button"
+                onClick={() => setEditingStudent(null)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!editingStudent?.id) return;
+                setUpdatingStudent(true);
+                try {
+                  const res = await fetchWithAuth(`/api/admin/students/${editingStudent.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      name: editStudentForm.name.trim() || undefined,
+                      email: editStudentForm.email.trim() || undefined,
+                      phone: editStudentForm.phone.trim() || undefined,
+                      country: editStudentForm.country.trim() || undefined,
+                      city: editStudentForm.city.trim() || undefined,
+                      cohort_id: editStudentForm.cohort_id || undefined,
+                      status: editStudentForm.status || undefined,
+                    }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (res.ok && data.success) {
+                    setNotification({ type: 'success', message: 'Student data updated successfully.' });
+                    setEditingStudent(null);
+                    if (fetchApprovedStudentsRef.current) fetchApprovedStudentsRef.current();
+                  } else {
+                    setNotification({ type: 'error', message: data.error || 'Failed to update student.' });
+                  }
+                } catch (err) {
+                  setNotification({ type: 'error', message: (err as Error).message || 'Failed to update student.' });
+                } finally {
+                  setUpdatingStudent(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={editStudentForm.name}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, name: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editStudentForm.email}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, email: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Phone</label>
+                <input
+                  type="text"
+                  value={editStudentForm.phone}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+                <input
+                  type="text"
+                  value={editStudentForm.country}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, country: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+                <input
+                  type="text"
+                  value={editStudentForm.city}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, city: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Cohort</label>
+                <select
+                  value={editStudentForm.cohort_id}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, cohort_id: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                >
+                  <option value="">No cohort</option>
+                  {cohorts.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Status</label>
+                <select
+                  value={editStudentForm.status}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, status: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="Pending Password Setup">Pending Password Setup</option>
+                  <option value="Enrolled">Enrolled</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingStudent(null)}
+                  className="flex-1 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingStudent}
+                  className="flex-1 rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/30 transition disabled:opacity-50"
+                >
+                  {updatingStudent ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Session Expired Modal - only show when session expired and admin is logged out */}
       {showSessionExpired && !admin && (
