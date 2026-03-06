@@ -318,8 +318,8 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
             ` : ''}
             
             <div style="text-align: center; margin-top: 30px;">
-              <a href="${SITE_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
-                Access Your Dashboard
+              <a href="${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Set up your password
               </a>
             </div>
             

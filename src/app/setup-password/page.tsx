@@ -86,7 +86,7 @@ function SetupPasswordContent() {
       if (response.ok) {
         setSuccess(true);
         setTimeout(() => {
-          router.push('/?message=password-set-success');
+          router.push('/dashboard');
         }, 2000);
       } else {
         setError(data.error || 'Failed to set password. Please try again.');
@@ -121,7 +121,7 @@ function SetupPasswordContent() {
             </div>
             <h2 className="mb-2 text-xl font-semibold text-green-200">Password Set Successfully!</h2>
             <p className="text-zinc-300">You can now sign in to your account.</p>
-            <p className="mt-4 text-sm text-zinc-400">Redirecting to sign in...</p>
+            <p className="mt-4 text-sm text-zinc-400">Redirecting to dashboard...</p>
           </div>
         </div>
       </PageContainer>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from '@/components/AuthModal';
 // Lazy load heavy dashboard components
 const StudentDashboard = dynamic(() => import("@/components/StudentDashboard").then(mod => ({ default: mod.StudentDashboard })), {
   ssr: false,
@@ -25,13 +26,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [showSessionExpired, setShowSessionExpired] = useState(false);
+  const [showSignInModal, setShowSignInModal] = useState(false);
 
-  // Redirect if not authenticated (after auth check completes)
+  // When not authenticated, show sign-in modal instead of redirecting
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/');
+      setShowSignInModal(true);
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated]);
 
   useEffect(() => {
     // Don't proceed if not authenticated
@@ -58,7 +60,8 @@ export default function DashboardPage() {
         }
 
         if (!storedEmail) {
-          router.push('/');
+          setShowSignInModal(true);
+          setLoading(false);
           return;
         }
 
@@ -78,14 +81,16 @@ export default function DashboardPage() {
             return;
           }
           localStorage.removeItem('profileEmail');
-          router.push('/');
+          setShowSignInModal(true);
+          setLoading(false);
           return;
         }
 
         const data = await res.json();
         if (!data.profile) {
           localStorage.removeItem('profileEmail');
-          router.push('/');
+          setShowSignInModal(true);
+          setLoading(false);
           return;
         }
 
@@ -95,12 +100,30 @@ export default function DashboardPage() {
       } catch (error) {
         console.error('Error checking auth:', error);
         localStorage.removeItem('profileEmail');
-        router.push('/');
+        setShowSignInModal(true);
+        setLoading(false);
       }
     };
 
     checkAuth();
   }, [router, isAuthenticated, authLoading]);
+
+  // Show sign-in modal when not authenticated or check failed (user can sign in and land on dashboard)
+  if (showSignInModal) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+        <AuthModal
+          isOpen={true}
+          onClose={() => {
+            setShowSignInModal(false);
+            router.push('/');
+          }}
+          mode="signin"
+          redirectAfterLogin="/dashboard"
+        />
+      </div>
+    );
+  }
 
   // Show loading while checking authentication or fetching user data
   if (authLoading || loading || !isAuthenticated) {

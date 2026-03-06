@@ -39,6 +39,13 @@ const nextConfig: NextConfig = {
     qualities: [75, 95], // Add quality 95 to supported qualities
   },
   
+  // Redirect common typos to correct paths
+  async redirects() {
+    return [
+      { source: '/dashbaord', destination: '/dashboard', permanent: true },
+    ];
+  },
+
   // Headers for security and performance
   async headers() {
     return [
