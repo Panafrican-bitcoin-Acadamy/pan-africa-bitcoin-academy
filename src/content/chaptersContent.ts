@@ -107,18 +107,21 @@ export const chaptersContent: ChapterContent[] = [
         heading: "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account",
         paragraphs: [
           "Money isn't just paper or numbers on a screen. It has three powerful functions that make it unique:",
+          "1. Medium of Exchange\n\nMoney removes the need for awkward bartering. Instead of finding someone who both wants your maize and has what you need, you can sell maize for money, then later buy anything else.",
+          "Example: In Uganda today, you don't exchange sugarcane directly for airtime. You sell the sugarcane for shillings and use the shillings to buy airtime.",
+          "2. Store of Value\n\nGood money allows you to save for the future. If you work hard today, you want your earnings to keep their value tomorrow. But when money loses value, savings can vanish overnight.",
+          "3. Unit of Account\n\nMoney provides a standard measure for prices. Instead of saying, \"one goat equals five chickens or three baskets of millet,\" you simply say, \"one goat is 150,000 shillings.\" This makes trade clear, simple, and consistent.",
           "Together, these functions explain why money is far more than paper. It is the organizer of trade, savings, and planning in every society.",
-        ],
-        bullets: [
-          "Medium of Exchange: Money removes the need for awkward bartering. Instead of finding someone who both wants your maize and has what you need, you can sell maize for money, then later buy anything else.",
-          "Store of Value: Good money allows you to save for the future. If you work hard today, you want your earnings to keep their value tomorrow. But when money loses value, savings can vanish overnight.",
-          "Unit of Account: Money provides a standard measure for prices. Instead of saying, 'one goat equals five chickens or three baskets of millet,' you simply say, 'one goat is 150,000 shillings.' This makes trade clear, simple, and consistent.",
         ],
         callouts: [
           {
             type: "example",
             content: "In Uganda today, you don't exchange sugarcane directly for airtime. You sell the sugarcane for shillings and use the shillings to buy airtime.",
           },
+        ],
+        images: [
+          { src: "", alt: "1st", caption: "1st image here" },
+          { src: "", alt: "2nd", caption: "2nd image here" },
         ],
       },
       {

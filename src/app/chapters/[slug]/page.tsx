@@ -160,7 +160,38 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 <h3 className="text-lg font-bold text-zinc-100 sm:text-xl mb-3 pb-2 border-b border-zinc-800/50">
                   {section.heading}
                 </h3>
-                {section.paragraphs?.map((p, pIdx) => {
+                {section.heading === "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account" ? (
+                  <div className="space-y-4">
+                    <p className="mt-3 text-zinc-200 leading-relaxed">{section.paragraphs?.[0]}</p>
+                    <div>
+                      <p className="mt-3 text-zinc-200 leading-relaxed whitespace-pre-line">{section.paragraphs?.[1]}</p>
+                      <div className="mt-4 rounded-lg border border-orange-900/50 p-4 bg-zinc-900/80 text-orange-100">
+                        <span className="font-semibold">📖 Example:</span>
+                        <span className="ml-2">{section.callouts?.[0]?.content}</span>
+                      </div>
+                      <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 text-zinc-500">
+                        {section.images?.[0]?.src ? (
+                          <img src={section.images[0].src} alt={section.images[0].alt} className="max-h-64 w-auto object-contain" />
+                        ) : (
+                          <span className="text-sm font-medium">1st image here</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mt-3 text-zinc-200 leading-relaxed whitespace-pre-line">{section.paragraphs?.[3]}</p>
+                      <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 text-zinc-500">
+                        {section.images?.[1]?.src ? (
+                          <img src={section.images[1].src} alt={section.images[1].alt} className="max-h-64 w-auto object-contain" />
+                        ) : (
+                          <span className="text-sm font-medium">2nd image here</span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="mt-3 text-zinc-200 leading-relaxed whitespace-pre-line">{section.paragraphs?.[4]}</p>
+                    <p className="mt-3 text-zinc-200 leading-relaxed">{section.paragraphs?.[5]}</p>
+                  </div>
+                ) : null}
+                {section.heading !== "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account" && section.paragraphs?.map((p, pIdx) => {
                   // Check if this paragraph is a subsection heading
                   const isSubHeading = p === "Decentralization Explained" || 
                                        p === "Transparency Without Identity" || 
@@ -248,7 +279,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                     ))}
                   </ul>
                 ) : null}
-                {section.callouts?.map((callout, idx) => {
+                {section.heading !== "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account" && section.callouts?.map((callout, idx) => {
                   // Skip example callout for section 3.1 - it will be rendered after images
                   if (section.heading === "3.1 Inflation and Loss of Purchasing Power" && callout.type === "example") {
                     return null;
@@ -537,7 +568,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       </div>
                     </div>
                   </div>
-                ) : section.images && section.images.length > 0 && (
+                ) : section.heading !== "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account" && section.images && section.images.length > 0 && (
                   section.heading === "Introduction" && section.images.length === 5 ? (
                     // Circular layout for Introduction section with 5 images
                     <div className="mt-16 sm:mt-24 lg:mt-12 mb-24 sm:mb-32 lg:mb-6 flex items-center justify-center w-full overflow-hidden lg:overflow-visible">
