@@ -431,15 +431,19 @@ export async function POST(req: NextRequest) {
     );
 
     // Update application status to Approved
-    // Only set profile_id if profile exists
+    // approved_by column is UUID (references admin); use session.adminId, not email
+    const updatePayload: Record<string, unknown> = {
+      status: 'Approved',
+      approved_at: new Date().toISOString(),
+      profile_id: profileId,
+    };
+    if (session.adminId && validateUUID(session.adminId)) {
+      updatePayload.approved_by = session.adminId;
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('applications')
-      .update({
-        status: 'Approved',
-        approved_by: sanitizedApprovedBy,
-        approved_at: new Date().toISOString(),
-        profile_id: profileId, // Use verified profileId
-      })
+      .update(updatePayload)
       .eq('id', applicationId);
 
     if (updateError) {
