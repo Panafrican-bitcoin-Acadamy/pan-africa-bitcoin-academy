@@ -246,7 +246,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                   }
                   
                   // Numbered topic style: "1. Topic Name\n\nBody..." → render as small bold header + body
-                  const hasNumberedTopic = /^\d+\.\s+.+\n\n/s.test(p);
+                  const hasNumberedTopic = /^\d+\.\s+[\s\S]+\n\n/.test(p);
                   if (hasNumberedTopic) {
                     const [topicLine, ...bodyParts] = p.split("\n\n");
                     const body = bodyParts.join("\n\n").trim();
