@@ -49,9 +49,11 @@ export async function GET() {
         if (pendingError) console.error(`Error counting pending for cohort ${cohort.id}:`, pendingError);
         if (enrolledError) console.error(`Error counting enrollment for cohort ${cohort.id}:`, enrolledError);
 
-        const approvedForCohort = approvedCount ?? 0;
-        const pendingApplications = pendingCount ?? 0;
+        // Approved: use max of applications (Approved) and cohort_enrollment so we count all approved in the whole DB
+        const approvedFromApplications = approvedCount ?? 0;
         const enrolled = enrolledCount ?? 0;
+        const approvedForCohort = Math.max(approvedFromApplications, enrolled);
+        const pendingApplications = pendingCount ?? 0;
 
         // Available = total seats minus (approved + pending) for this cohort
         const takenByApplications = approvedForCohort + pendingApplications;

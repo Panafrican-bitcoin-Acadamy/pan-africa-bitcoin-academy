@@ -102,8 +102,10 @@ export async function PATCH(
 
     if (studentError) {
       console.error('[Update Student] Students update error:', studentError);
-      // Profile already updated - don't fail the request, but log
-      // Some schemas may not have name/email on students; try updating only cohort_id/status if needed
+      return NextResponse.json(
+        { error: 'Failed to update student record', details: studentError.message },
+        { status: 500 }
+      );
     }
 
     // If cohort changed, update cohort_enrollment (student_id references profiles.id)

@@ -7337,6 +7337,9 @@ export default function AdminDashboardPage() {
                   if (res.ok && data.success) {
                     setNotification({ type: 'success', message: 'Student data updated successfully.' });
                     setEditingStudent(null);
+                    // Force refetch so list shows updated data from database (bypass rate limit)
+                    lastApprovedStudentsFetchRef.current = 0;
+                    approvedStudentsFetchedRef.current = false;
                     if (fetchApprovedStudentsRef.current) fetchApprovedStudentsRef.current();
                   } else {
                     setNotification({ type: 'error', message: data.error || 'Failed to update student.' });
