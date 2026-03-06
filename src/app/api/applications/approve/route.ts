@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 import { sendApprovalEmail } from '@/lib/email';
 import { validateUUID, secureTextInput } from '@/lib/security-utils';
 import { logAdminAction, AUDIT_ACTIONS } from '@/lib/audit-log';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.com';
+const SETUP_PASSWORD_TOKEN_EXPIRY_HOURS = 72;
 
 export async function POST(req: NextRequest) {
   try {
@@ -456,15 +460,19 @@ export async function POST(req: NextRequest) {
       console.warn('Invalid email address, skipping email send:', emailLower);
       emailError = 'Invalid email address format';
     } else {
-      // Get cohort name for email (if cohort exists)
+      // Get cohort name and dates for email (if cohort exists)
       let cohortName: string | undefined = undefined;
+      let cohortStartDate: string | undefined = undefined;
+      let cohortEndDate: string | undefined = undefined;
       if (studentRecord.cohort_id) {
         const { data: cohortData } = await supabaseAdmin
           .from('cohorts')
-          .select('name')
+          .select('name, start_date, end_date')
           .eq('id', studentRecord.cohort_id)
           .maybeSingle();
         cohortName = cohortData?.name || undefined;
+        cohortStartDate = cohortData?.start_date ? String(cohortData.start_date) : undefined;
+        cohortEndDate = cohortData?.end_date ? String(cohortData.end_date) : undefined;
       }
 
       // Send approval email
@@ -475,7 +483,9 @@ export async function POST(req: NextRequest) {
       const emailResult = await sendApprovalEmail({
         studentName: fullName,
         studentEmail: emailLower,
-        cohortName: cohortName,
+        cohortName,
+        cohortStartDate,
+        cohortEndDate,
         needsPasswordSetup: !existingProfile || existingProfile.status === 'Pending Password Setup',
       });
 

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const tokenExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours
 
     // Store verification token
     const { error: updateError } = await supabaseAdmin

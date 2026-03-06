@@ -18,6 +18,18 @@ const getFromEmail = () => {
 
 const FROM_EMAIL = getFromEmail();
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.com';
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || process.env.ADMIN_EMAIL || 'support@panafricanbitcoin.com';
+
+function formatCohortDate(isoDate: string | undefined): string | undefined {
+  if (!isoDate) return undefined;
+  try {
+    const d = new Date(isoDate + 'T12:00:00Z');
+    if (isNaN(d.getTime())) return isoDate;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch {
+    return isoDate;
+  }
+}
 
 // Initialize Resend client only if API key is available
 // Use a placeholder during build time to avoid errors
@@ -46,7 +58,11 @@ interface ApprovalEmailData {
   studentName: string;
   studentEmail: string;
   cohortName?: string;
+  cohortStartDate?: string;
+  cohortEndDate?: string;
   needsPasswordSetup: boolean;
+  /** If provided, used as the set-password link (includes token for 72h expiry). Otherwise built from email only. */
+  setupPasswordUrl?: string;
 }
 
 interface WithdrawalRequestData {
@@ -245,7 +261,7 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
       return { success: false, error: 'Email service not configured' };
     }
 
-    const { studentName, studentEmail, cohortName, needsPasswordSetup } = data;
+    const { studentName, studentEmail, cohortName, cohortStartDate, cohortEndDate, needsPasswordSetup, setupPasswordUrl: providedSetupUrl } = data;
 
     // Validate email
     const emailValidation = validateAndNormalizeEmail(studentEmail);
@@ -260,12 +276,22 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
 
     const normalizedEmail = emailValidation.normalized;
 
-    // Create email content
+    // Create email content — strong subject line
     const emailSubject = needsPasswordSetup
-      ? `Welcome to Pan-Africa Bitcoin Academy - Set Up Your Password`
-      : `Welcome to Pan-Africa Bitcoin Academy - Your Application is Approved!`;
+      ? `You’re In! Set Up Your Password – Pan-Africa Bitcoin Academy`
+      : `You’re In! Your Place at Pan-Africa Bitcoin Academy is Confirmed`;
 
-    const setupPasswordUrl = `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
+    const setupPasswordUrl = providedSetupUrl ?? `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
+
+    const startLabel = formatCohortDate(cohortStartDate);
+    const endLabel = formatCohortDate(cohortEndDate);
+    const cohortTimelineHtml = (cohortName || startLabel || endLabel) ? `
+                <div style="background: #e4e4e7; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; border-left: 5px solid #ea580c;">
+                  <p style="margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a;">Your cohort</p>
+                  ${cohortName ? `<p style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #ea580c;">${cohortName}</p>` : ''}
+                  ${(startLabel || endLabel) ? `<p style="margin: 0; font-size: 14px; color: #3f3f46;">${startLabel ? `Starts: ${startLabel}` : ''}${startLabel && endLabel ? ' · ' : ''}${endLabel ? `Ends: ${endLabel}` : ''}</p>` : ''}
+                </div>
+                ` : '';
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -279,43 +305,32 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
           <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
             <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
               <div style="background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); padding: 32px 24px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">🎉 Congratulations!</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">You’re In – Welcome to Pan-Africa Bitcoin Academy</h1>
               </div>
               <div style="background: #fafafa; padding: 32px 28px; border-radius: 0 0 12px 12px;">
-                <p style="font-size: 16px; margin: 0 0 8px; color: #111827;">
-                  Dear ${studentName},
-                </p>
-                <p style="font-size: 16px; margin: 0 0 24px; color: #374151;">
-                  We're thrilled to inform you that your application to <span style="color: #ea580c; font-weight: 600;">Pan-Africa Bitcoin Academy</span> has been <span style="color: #ea580c; font-weight: 600;">approved!</span>
-                </p>
-                ${cohortName ? `
-                <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; margin: 0 0 8px;">Your cohort</p>
-                <div style="background: #e4e4e7; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;">
-                  <p style="margin: 0; font-size: 18px; font-weight: 600; color: #ea580c;">${cohortName}</p>
-                </div>
-                ` : ''}
-                <p style="font-size: 16px; margin: 0 0 20px; color: #374151;">
-                  To get started, you'll need to set up your account password. Click the button below to complete your registration:
-                </p>
+                <p style="font-size: 16px; margin: 0 0 16px; color: #111827;">Dear ${studentName},</p>
+                <p style="font-size: 16px; margin: 0 0 24px; color: #374151;">We are pleased to confirm that your application to <strong>Pan-Africa Bitcoin Academy</strong> has been <strong>accepted</strong>. You now have a place in our programme.</p>
+                ${cohortTimelineHtml}
+                <h2 style="font-size: 17px; font-weight: 700; color: #18181b; margin: 0 0 12px;">Complete your registration – set your password</h2>
+                <p style="font-size: 15px; margin: 0 0 20px; color: #374151;">To access your dashboard and join your cohort, set up your account password using the link below. This is the only step left before you can start learning.</p>
                 <div style="text-align: center; margin: 24px 0;">
-                  <a href="${setupPasswordUrl}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);">
-                    Set up your password
-                  </a>
+                  <a href="${setupPasswordUrl}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);">Set up your password</a>
                 </div>
-                <p style="font-size: 14px; margin: 0 0 6px; color: #71717a;">Or copy and paste this link into your browser:</p>
-                <p style="margin: 0 0 28px; font-size: 14px;"><a href="${setupPasswordUrl}" style="color: #0891b2; word-break: break-all;">${setupPasswordUrl}</a></p>
-                <div style="background: #f4f4f5; padding: 20px 22px; border-radius: 10px; margin-bottom: 24px; border-left: 5px solid #0891b2;">
-                  <h2 style="margin: 0 0 12px; color: #18181b; font-size: 17px; font-weight: 700;">What's Next?</h2>
-                  <ul style="margin: 0; padding-left: 20px; color: #3f3f46;">
+                <p style="font-size: 13px; margin: 0 0 24px; color: #71717a;">Or copy and paste into your browser: <a href="${setupPasswordUrl}" style="color: #0891b2; word-break: break-all;">${setupPasswordUrl}</a></p>
+                <div style="background: #f4f4f5; padding: 20px 22px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #0891b2;">
+                  <h3 style="margin: 0 0 10px; color: #18181b; font-size: 16px;">What’s next?</h3>
+                  <ul style="margin: 0; padding-left: 20px; color: #3f3f46; font-size: 14px;">
                     <li style="margin-bottom: 6px;">Start earning sats as you progress</li>
                     <li style="margin-bottom: 6px;">Complete assignments and chapters</li>
-                    <li style="margin-bottom: 6px;">Join live sessions and community discussions</li>
+                    <li style="margin-bottom: 6px;">Join live sessions and your cohort community</li>
                     <li style="margin-bottom: 0;">Build your Bitcoin knowledge step by step</li>
                   </ul>
                 </div>
-                <p style="font-size: 14px; color: #71717a; margin: 0; padding-top: 20px; border-top: 1px solid #e4e4e7;">
-                  We're excited to have you join us on this Bitcoin journey!
-                </p>
+                <p style="font-size: 14px; margin: 0 0 16px; color: #374151;"><strong>Security reminder:</strong> Never share your password, recovery phrases, or private keys with anyone. The Academy will never ask for them by email or message.</p>
+                <p style="font-size: 14px; margin: 0 0 20px; color: #374151;">Pan-Africa Bitcoin Academy exists to empower learners across the continent with sound Bitcoin education, in a supportive cohort-based community.</p>
+                <p style="font-size: 14px; margin: 0 0 4px; color: #111827;">Best regards,</p>
+                <p style="font-size: 14px; margin: 0 0 2px; color: #374151;"><strong>Pan-Africa Bitcoin Academy</strong></p>
+                <p style="font-size: 13px; margin: 0; color: #71717a;">Support: <a href="mailto:${SUPPORT_EMAIL}" style="color: #0891b2;">${SUPPORT_EMAIL}</a></p>
               </div>
             </div>
           </div>
@@ -373,6 +388,10 @@ interface PasswordSetupFollowUpEmailData {
   studentName: string;
   studentEmail: string;
   cohortName?: string;
+  cohortStartDate?: string;
+  cohortEndDate?: string;
+  /** If provided, used as the set-password link (includes token for 72h expiry). Otherwise built from email only. */
+  setupPasswordUrl?: string;
 }
 
 /**
@@ -392,7 +411,7 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
       return { success: false, error: 'Email service not configured' };
     }
 
-    const { studentName, studentEmail, cohortName } = data;
+    const { studentName, studentEmail, cohortName, cohortStartDate, cohortEndDate, setupPasswordUrl: providedSetupUrl } = data;
 
     const emailValidation = validateAndNormalizeEmail(studentEmail);
     if (!emailValidation.valid || !emailValidation.normalized) {
@@ -404,9 +423,19 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
     }
 
     const normalizedEmail = emailValidation.normalized;
-    const setupPasswordLink = `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
+    const setupPasswordLink = providedSetupUrl ?? `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
 
-    const emailSubject = 'Set Up Your Password - Pan-Africa Bitcoin Academy';
+    const emailSubject = 'Action required: Set your password – Pan-Africa Bitcoin Academy';
+
+    const startLabel = formatCohortDate(cohortStartDate);
+    const endLabel = formatCohortDate(cohortEndDate);
+    const cohortTimelineHtml = (cohortName || startLabel || endLabel) ? `
+              <div style="background: #262626; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; border-left: 5px solid #f97316;">
+                <p style="margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #a3a3a3;">Your cohort</p>
+                ${cohortName ? `<p style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #f97316;">${cohortName}</p>` : ''}
+                ${(startLabel || endLabel) ? `<p style="margin: 0; font-size: 14px; color: #d4d4d4;">${startLabel ? `Starts: ${startLabel}` : ''}${startLabel && endLabel ? ' · ' : ''}${endLabel ? `Ends: ${endLabel}` : ''}</p>` : ''}
+              </div>
+              ` : '';
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -416,58 +445,35 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Set Up Your Password</title>
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #000;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-              <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">🎉 Congratulations!</h1>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #0a0a0a;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
+            <div style="background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">Set your password – Pan-Africa Bitcoin Academy</h1>
             </div>
-
-            <div style="background: #171717; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #262626; border-top: none;">
-              <p style="font-size: 16px; margin-bottom: 20px; color: #fff;">
-                Dear ${studentName},
-              </p>
-
-              <p style="font-size: 16px; margin-bottom: 20px; color: #fff;">
-                Please <strong style="color: #fff;">disregard our previous email</strong>. Use this email and the link below to set up your account password.
-              </p>
-
-              <p style="font-size: 16px; margin-bottom: 24px; color: #fff;">
-                We're thrilled to inform you that your application to <span style="color: #f97316;">Pan-Africa Bitcoin Academy</span> has been <span style="color: #f97316;">approved!</span>
-              </p>
-
-              ${cohortName ? `
-              <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #a3a3a3; margin-bottom: 8px;">Your cohort</p>
-              <div style="background: #262626; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-                <p style="margin: 0; font-size: 18px; font-weight: 600; color: #f97316;">${cohortName}</p>
+            <div style="background: #171717; padding: 32px 28px; border-radius: 0 0 12px 12px; border: 1px solid #262626; border-top: none;">
+              <p style="font-size: 16px; margin: 0 0 16px; color: #fff;">Dear ${studentName},</p>
+              <p style="font-size: 16px; margin: 0 0 16px; color: #d4d4d4;">Please use <strong>this email only</strong> and disregard any earlier link. Your application to <strong>Pan-Africa Bitcoin Academy</strong> is <strong>accepted</strong>, and you have a place in our programme.</p>
+              ${cohortTimelineHtml}
+              <h2 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 12px;">Complete your registration – set your password</h2>
+              <p style="font-size: 15px; margin: 0 0 20px; color: #d4d4d4;">Click the button below to set up your account password. This is the only step left before you can access your dashboard and join your cohort community.</p>
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">Set up your password</a>
               </div>
-              ` : ''}
-
-              <p style="font-size: 16px; margin-bottom: 20px; color: #fff;">
-                To get started, you'll need to set up your account password. Click the button below to complete your registration:
-              </p>
-
-              <div style="text-align: center; margin: 28px 0;">
-                <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  Set Up Your Password
-                </a>
-              </div>
-
-              <p style="font-size: 14px; margin-bottom: 8px; color: #a3a3a3;">
-                Or copy and paste this link into your browser:
-              </p>
-              <p style="margin: 0 0 28px; font-size: 14px;">
-                <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a>
-              </p>
-
-              <div style="border-top: 1px solid #262626; padding-top: 24px; margin-top: 24px;">
-                <h2 style="margin: 0 0 16px; color: #fff; font-size: 18px;">What's Next?</h2>
-                <ul style="color: #d4d4d4; padding-left: 20px; margin: 0;">
-                  <li style="margin-bottom: 8px;">Complete your profile setup</li>
-                  <li style="margin-bottom: 8px;">Explore the learning chapters and curriculum</li>
-                  <li style="margin-bottom: 8px;">Join live sessions and connect with mentors</li>
-                  <li style="margin-bottom: 8px;">Start earning sats as you progress</li>
+              <p style="font-size: 13px; margin: 0 0 24px; color: #a3a3a3;">Or copy and paste into your browser: <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a></p>
+              <div style="background: #262626; padding: 20px 22px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #06b6d4;">
+                <h3 style="margin: 0 0 10px; color: #fff; font-size: 16px;">What’s next?</h3>
+                <ul style="margin: 0; padding-left: 20px; color: #d4d4d4; font-size: 14px;">
+                  <li style="margin-bottom: 6px;">Join your cohort community and live sessions</li>
+                  <li style="margin-bottom: 6px;">Complete assignments and chapters</li>
+                  <li style="margin-bottom: 6px;">Start earning sats as you progress</li>
+                  <li style="margin-bottom: 0;">Build your Bitcoin knowledge step by step</li>
                 </ul>
               </div>
+              <p style="font-size: 14px; margin: 0 0 16px; color: #d4d4d4;"><strong style="color: #fff;">Security reminder:</strong> Never share your password, recovery phrases, or private keys with anyone. The Academy will never ask for them by email or message.</p>
+              <p style="font-size: 14px; margin: 0 0 20px; color: #d4d4d4;">Pan-Africa Bitcoin Academy exists to empower learners across the continent with sound Bitcoin education, in a supportive cohort-based community.</p>
+              <p style="font-size: 14px; margin: 0 0 4px; color: #fff;">Best regards,</p>
+              <p style="font-size: 14px; margin: 0 0 2px; color: #d4d4d4;"><strong>Pan-Africa Bitcoin Academy</strong></p>
+              <p style="font-size: 13px; margin: 0; color: #a3a3a3;">Support: <a href="mailto:${SUPPORT_EMAIL}" style="color: #38bdf8;">${SUPPORT_EMAIL}</a></p>
             </div>
           </div>
         </body>
@@ -722,7 +728,7 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
             
             <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 15px; margin-top: 20px;">
               <p style="margin: 0; color: #92400e; font-size: 14px;">
-                <strong>⚠️ Important:</strong> This verification link will expire in 24 hours. If you didn't create an account with us, please ignore this email.
+                <strong>⚠️ Important:</strong> This verification link will expire in 72 hours. If you didn't create an account with us, please ignore this email.
               </p>
             </div>
             

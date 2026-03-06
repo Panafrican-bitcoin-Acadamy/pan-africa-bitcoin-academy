@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       // Generate new verification token
       const verificationToken = crypto.randomBytes(32).toString('hex');
       const tokenExpiry = new Date();
-      tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Expires in 24 hours
+      tokenExpiry.setHours(tokenExpiry.getHours() + 72); // Expires in 72 hours
       
       // Invalidate old verification and set new token
       updateObject.email_verified_at = null;

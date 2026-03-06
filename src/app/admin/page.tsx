@@ -387,9 +387,12 @@ export default function AdminDashboardPage() {
   };
   const [confirmPopup, setConfirmPopup] = useState<ConfirmPopupConfig | null>(null);
   const [confirmPopupLoading, setConfirmPopupLoading] = useState(false);
+  // Acknowledgement popup: message + OK button (user must click to dismiss)
+  const [ackPopup, setAckPopup] = useState<{ title?: string; message: string } | null>(null);
   const [rearrangePopup, setRearrangePopup] = useState<{ cohortId: string; cohortName: string } | null>(null);
   const [rearrangeStartDate, setRearrangeStartDate] = useState('');
   const [rearrangeSubmitting, setRearrangeSubmitting] = useState(false);
+  const [sendingLinkEmail, setSendingLinkEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (editingStudent) {
@@ -1758,7 +1761,7 @@ export default function AdminDashboardPage() {
           const errorData = await res.json();
           throw new Error(errorData.error || 'Failed to delete reward');
         }
-        setNotification({ type: 'success', message: 'Reward deleted successfully' });
+        setAckPopup({ title: 'Success', message: 'Reward deleted successfully.' });
         satsLastFetchKeyRef.current = '';
         satsFetchingRef.current = false;
         setTimeout(() => fetchStudentSatsRewards(), 300);
@@ -2845,7 +2848,7 @@ export default function AdminDashboardPage() {
       }
       
       const detail = `Processed: ${data.processed}. Created: ${data.created}. Skipped: ${data.skipped}.`;
-      setNotification({ type: 'success', message: data.message ? `${data.message} ${detail}` : detail });
+      setAckPopup({ title: 'Success', message: data.message ? `${data.message} ${detail}` : detail });
       
       // Refresh sats rewards if that section is active
       if (activeSubMenu === 'student-sats-rewards') {
@@ -2924,7 +2927,7 @@ export default function AdminDashboardPage() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to revoke access');
-        setNotification({ type: 'success', message: data.message || 'Exam access revoked' });
+        setAckPopup({ title: 'Success', message: data.message || 'Exam access revoked.' });
         await fetchExamAccess();
       },
     });
@@ -3252,18 +3255,19 @@ export default function AdminDashboardPage() {
             const msg = data.emailSent
               ? `Application for ${email} approved. Approval email sent to ${email}.`
               : `Application for ${email} approved.${data.emailError ? ` Email not sent: ${data.emailError}` : ''}`;
-            startTransition(() => setNotification({ type: 'success', message: msg }));
+            setAckPopup({ title: 'Success', message: msg });
             if (process.env.NODE_ENV === 'development') console.log('Approval response:', data);
             Promise.all([fetchApplications(), fetchOverview()]).catch(err => console.error('Error refreshing data:', err));
           } else {
             const errorMsg = (typeof data.error === 'string' ? data.error : null) || (res.status ? `Request failed (${res.status})` : 'Failed to approve application');
-            startTransition(() => setNotification({ type: 'error', message: errorMsg }));
+            setAckPopup({ title: 'Error', message: errorMsg });
             if (Object.keys(data).length > 0 || !res.ok) {
               console.error('Approval error:', res.status, res.statusText, data);
             }
           }
         } catch (err: any) {
-          startTransition(() => setNotification({ type: 'error', message: err.message || 'Failed to approve application' }));
+          setConfirmPopup(null);
+          setAckPopup({ title: 'Error', message: err.message || 'Failed to approve application' });
           throw err;
         } finally {
           setProcessing(null);
@@ -3485,7 +3489,7 @@ export default function AdminDashboardPage() {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Failed to regenerate sessions');
-          setNotification({ type: 'success', message: `Sessions regenerated. ${data.sessionsGenerated || 0} sessions created.` });
+          setAckPopup({ title: 'Success', message: `Sessions regenerated. ${data.sessionsGenerated || 0} sessions created.` });
           await fetchCohorts();
           await fetchOverview();
           sessionsFetchedRef.current = false;
@@ -3517,10 +3521,10 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to rearrange sessions');
-      setNotification({
-        type: 'success',
-        message: `Sessions rearranged. ${data.sessionsUpdated || 0} sessions updated. Start: ${data.startDate}.`,
-      });
+          setAckPopup({
+            title: 'Success',
+            message: `Sessions rearranged. ${data.sessionsUpdated || 0} sessions updated. Start: ${data.startDate}.`,
+          });
       setRearrangePopup(null);
       await fetchCohorts();
       await fetchOverview();
@@ -5357,34 +5361,44 @@ export default function AdminDashboardPage() {
                                 <td className="p-3 text-sm">
                                   <button
                                     type="button"
-                                    className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/20 transition cursor-pointer"
+                                    disabled={sendingLinkEmail === (student.email || '')}
+                                    className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     onClick={async () => {
-                                      if (!student.email) {
+                                      const email = student.email;
+                                      if (!email) {
                                         setNotification({ type: 'error', message: 'This student does not have an email address on file.' });
                                         return;
                                       }
-
+                                      setSendingLinkEmail(email);
                                       try {
                                         const res = await fetchWithAuth('/api/admin/students/send-password-setup-follow-up', {
                                           method: 'POST',
                                           headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ email: student.email }),
+                                          body: JSON.stringify({ email }),
                                         });
 
                                         const data = await res.json().catch(() => ({}));
 
                                         if (res.ok && data.success) {
-                                          setNotification({ type: 'success', message: data.message || 'Follow-up email sent. Student can use the link in that email to set up their password.' });
+                                          setAckPopup({
+                                            title: 'Success',
+                                            message: data.message || 'Password setup link sent. Let the student know this is their second chance to set a secure password.',
+                                          });
                                         } else {
-                                          setNotification({ type: 'error', message: data.message || data.error || 'Failed to send follow-up email. Please try again.' });
+                                          setAckPopup({
+                                            title: 'Error',
+                                            message: (typeof data.message === 'string' ? data.message : null) || (typeof data.error === 'string' ? data.error : null) || 'Failed to send follow-up email. Please try again.',
+                                          });
                                         }
                                       } catch (err) {
                                         console.error('Error sending follow-up email:', err);
-                                        setNotification({ type: 'error', message: 'Failed to send follow-up email. Please try again.' });
+                                        setAckPopup({ title: 'Error', message: 'Failed to send follow-up email. Please try again.' });
+                                      } finally {
+                                        setSendingLinkEmail(null);
                                       }
                                     }}
                                   >
-                                    Send link
+                                    {sendingLinkEmail === (student.email || '') ? 'Sending…' : 'Send link'}
                                   </button>
                                 </td>
                                 <td className="p-3 text-sm">
@@ -7318,7 +7332,7 @@ export default function AdminDashboardPage() {
                   });
                   const data = await res.json().catch(() => ({}));
                   if (res.ok && data.success) {
-                    setNotification({ type: 'success', message: 'Student data updated successfully.' });
+                    setAckPopup({ title: 'Success', message: 'Student data updated successfully.' });
                     setEditingStudent(null);
                     // Force refetch so list shows updated data from database (bypass rate limit)
                     lastApprovedStudentsFetchRef.current = 0;
@@ -7456,7 +7470,7 @@ export default function AdminDashboardPage() {
                     const res = await fetchWithAuth(`/api/admin/students/${studentToDelete.id}`, { method: 'DELETE' });
                     const data = await res.json().catch(() => ({}));
                     if (res.ok && data.success) {
-                      setNotification({ type: 'success', message: 'Student deleted from all records.' });
+                      setAckPopup({ title: 'Success', message: 'Student deleted from all records.' });
                       setStudentToDelete(null);
                       if (fetchApprovedStudentsRef.current) await fetchApprovedStudentsRef.current();
                     } else {
@@ -7472,6 +7486,27 @@ export default function AdminDashboardPage() {
                 className="rounded-lg border border-red-500/50 bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 hover:bg-red-500/30 transition disabled:opacity-50"
               >
                 {deletingStudent ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Acknowledgement popup: message + OK (user must click to dismiss) */}
+      {ackPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 w-full max-w-md shadow-xl">
+            {ackPopup.title && (
+              <h3 className="text-lg font-semibold text-zinc-50 mb-2">{ackPopup.title}</h3>
+            )}
+            <p className="text-sm text-zinc-300 whitespace-pre-line mb-6">{ackPopup.message}</p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setAckPopup(null)}
+                className="rounded-lg border border-cyan-500/50 bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 transition"
+              >
+                OK
               </button>
             </div>
           </div>

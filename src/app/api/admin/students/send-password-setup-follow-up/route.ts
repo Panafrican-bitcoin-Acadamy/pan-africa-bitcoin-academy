@@ -56,19 +56,25 @@ export async function POST(req: NextRequest) {
     }
 
     let cohortName: string | undefined;
+    let cohortStartDate: string | undefined;
+    let cohortEndDate: string | undefined;
     if (profile.cohort_id) {
       const { data: cohort } = await supabaseAdmin
         .from('cohorts')
-        .select('name')
+        .select('name, start_date, end_date')
         .eq('id', profile.cohort_id)
         .maybeSingle();
       cohortName = cohort?.name ?? undefined;
+      cohortStartDate = cohort?.start_date ? String(cohort.start_date) : undefined;
+      cohortEndDate = cohort?.end_date ? String(cohort.end_date) : undefined;
     }
 
     const emailResult = await sendPasswordSetupFollowUpEmail({
       studentName: profile.name || 'Student',
       studentEmail: profile.email,
       cohortName,
+      cohortStartDate,
+      cohortEndDate,
     });
 
     if (!emailResult.success) {
