@@ -75,7 +75,10 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json({ cohorts: cohortsWithSeats }, { status: 200 });
+    // Prevent caching so apply page always gets fresh seat counts after approvals
+    const res = NextResponse.json({ cohorts: cohortsWithSeats }, { status: 200 });
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return res;
   } catch (error: any) {
     console.error('Error in cohorts API:', error);
     return NextResponse.json(

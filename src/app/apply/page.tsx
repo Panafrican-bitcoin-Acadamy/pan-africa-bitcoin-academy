@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/hooks/useAuth';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -301,59 +301,64 @@ export default function ApplyPage() {
     }
   };
 
-  // Fetch cohorts from Supabase
-  useEffect(() => {
-    const fetchCohorts = async () => {
-      try {
-        setCohortsLoading(true);
-        setCohortsError(null);
-        const res = await fetch('/api/cohorts');
-        if (!res.ok) {
-          throw new Error(`Failed to fetch cohorts: ${res.status}`);
-        }
-        const data = await res.json();
-        
-        // Format dates and transform data
-        const formatDate = (dateStr: string) => {
-          if (!dateStr) return 'TBD';
-          try {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-US', { 
-              month: 'long', 
-              day: 'numeric', 
-              year: 'numeric' 
-            });
-          } catch {
-            return dateStr;
-          }
-        };
-        
-        const formattedCohorts: Cohort[] = (data.cohorts || []).map((cohort: any) => ({
-          id: cohort.id,
-          name: cohort.name || 'Unnamed Cohort',
-          startDate: formatDate(cohort.startDate),
-          endDate: formatDate(cohort.endDate),
-          status: cohort.status || '',
-          sessions: cohort.sessions || 0,
-          level: cohort.level || 'Beginner',
-          seats: cohort.seats || 0,
-          available: cohort.available || 0,
-          enrolled: cohort.enrolled || 0,
-        }));
-        
-        setCohorts(formattedCohorts);
-      } catch (err: any) {
-        console.error('Error fetching cohorts:', err);
-        setCohortsError(err.message || 'Failed to load cohorts');
-        // Fallback to empty array
-        setCohorts([]);
-      } finally {
-        setCohortsLoading(false);
+  // Fetch cohorts from API (no cache so seat counts stay correct after approvals)
+  const fetchCohorts = useCallback(async () => {
+    try {
+      setCohortsLoading(true);
+      setCohortsError(null);
+      const res = await fetch('/api/cohorts', { cache: 'no-store' });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch cohorts: ${res.status}`);
       }
-    };
-    
-    fetchCohorts();
+      const data = await res.json();
+
+      const formatDate = (dateStr: string) => {
+        if (!dateStr) return 'TBD';
+        try {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          });
+        } catch {
+          return dateStr;
+        }
+      };
+
+      const formattedCohorts: Cohort[] = (data.cohorts || []).map((cohort: any) => ({
+        id: cohort.id,
+        name: cohort.name || 'Unnamed Cohort',
+        startDate: formatDate(cohort.startDate),
+        endDate: formatDate(cohort.endDate),
+        status: cohort.status || '',
+        sessions: cohort.sessions || 0,
+        level: cohort.level || 'Beginner',
+        seats: cohort.seats || 0,
+        available: cohort.available || 0,
+        enrolled: cohort.enrolled || 0,
+      }));
+
+      setCohorts(formattedCohorts);
+    } catch (err: any) {
+      console.error('Error fetching cohorts:', err);
+      setCohortsError(err.message || 'Failed to load cohorts');
+      setCohorts([]);
+    } finally {
+      setCohortsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchCohorts();
+  }, [fetchCohorts]);
+
+  // Refetch when tab/window gains focus so returning from admin shows updated seat counts
+  useEffect(() => {
+    const onFocus = () => fetchCohorts();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchCohorts]);
 
   // Helper function to normalize cohort level to match select option values
   const normalizeLevel = (level: string | undefined): string => {
