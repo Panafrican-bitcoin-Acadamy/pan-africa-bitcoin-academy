@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { PageContainer } from '@/components/PageContainer';
+import { Eye, EyeOff } from 'lucide-react';
 
 function SetupPasswordContent() {
   const searchParams = useSearchParams();
@@ -18,6 +18,8 @@ function SetupPasswordContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [studentName, setStudentName] = useState<string | null>(null);
+  const [cohortName, setCohortName] = useState<string | null>(null);
 
   // If they've already set a password (via forgot or setup), don't show the form at all
   useEffect(() => {
@@ -34,9 +36,11 @@ function SetupPasswordContent() {
         if (cancelled) return;
         setChecking(false);
         if (!data.needsSetup) {
-          // Already have a password - redirect to sign in, never show the form
           router.replace('/?message=already-have-password');
+          return;
         }
+        if (data.studentName) setStudentName(data.studentName);
+        if (data.cohortName) setCohortName(data.cohortName);
       })
       .catch(() => {
         if (!cancelled) setChecking(false);
@@ -101,140 +105,154 @@ function SetupPasswordContent() {
 
   if (checking) {
     return (
-      <PageContainer title="Set Up Your Password" subtitle="Loading...">
-        <div className="mx-auto max-w-md space-y-4 rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center text-zinc-200">
+      <div className="px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-lg rounded-xl bg-white p-8 text-center text-gray-600 shadow-sm">
           Checking...
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   if (success) {
     return (
-      <PageContainer title="Password Set Successfully" subtitle="You can now sign in to your account">
-        <div className="mx-auto max-w-md space-y-6 rounded-xl border border-green-500/25 bg-black/80 p-6">
-          <div className="text-center">
-            <div className="mb-4 inline-block rounded-full bg-green-500/20 p-3">
-              <svg className="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+      <div className="px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
+          <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-5 text-center">
+            <h1 className="text-xl font-bold text-white">Welcome to Pan-Africa Bitcoin Academy</h1>
+          </div>
+          <div className="bg-gray-50 px-6 py-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4 rounded-full bg-green-100 p-3">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900">Password set successfully!</h2>
+              <p className="mt-1 text-gray-600">You can now sign in to your account.</p>
+              <p className="mt-4 text-sm text-gray-500">Redirecting to dashboard...</p>
             </div>
-            <h2 className="mb-2 text-xl font-semibold text-green-200">Password Set Successfully!</h2>
-            <p className="text-zinc-300">You can now sign in to your account.</p>
-            <p className="mt-4 text-sm text-zinc-400">Redirecting to dashboard...</p>
           </div>
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer
-      title="Set Up Your Password"
-      subtitle="Complete your registration by setting a secure password"
-    >
-      <div className="mx-auto max-w-md space-y-6 rounded-xl border border-cyan-400/25 bg-black/80 p-6">
-        {email ? (
-          <div className="mb-4 rounded-lg border border-cyan-400/20 bg-cyan-500/10 p-3 text-sm text-cyan-200">
-            Setting up password for: <span className="font-semibold">{email}</span>
-          </div>
-        ) : null}
+    <div className="px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
+        {/* Gradient header - matches approval email */}
+        <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-6 text-center">
+          <h1 className="text-xl font-bold text-white">Welcome to Pan-Africa Bitcoin Academy</h1>
+        </div>
 
-        {error && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
+        <div className="bg-gray-50 px-6 py-6 sm:px-8 sm:py-8">
+          <p className="text-gray-900 font-medium">
+            Hi {studentName ? `${studentName},` : 'there,'}
+          </p>
+          <p className="mt-2 text-gray-700">
+            Great news! Your application to the Pan-Africa Bitcoin Academy has been approved! 🎉
+          </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
-              Password <span className="text-red-400">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2 pr-10 text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
-              >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
-            </div>
-            <p className="mt-1 text-xs text-zinc-400">
-              Must be at least 8 characters with uppercase, lowercase, number, and special character
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
-              Confirm Password <span className="text-red-400">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2 pr-10 text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                placeholder="Confirm your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
-              >
-                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3 text-xs text-zinc-400">
-            <p className="font-semibold text-orange-300">Password Requirements:</p>
-            <ul className="mt-1 list-disc space-y-1 pl-5">
-              <li>At least 8 characters long</li>
-              <li>Contains uppercase and lowercase letters</li>
-              <li>Contains at least one number</li>
-              <li>Contains at least one special character</li>
+          {/* What's Next - teal left border */}
+          <div className="mt-6 rounded-lg bg-gray-100 py-4 pl-5 pr-4 border-l-4 border-cyan-500">
+            <h2 className="font-semibold text-gray-900">What&apos;s Next?</h2>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 text-sm">
+              <li>Start earning sats as you progress</li>
+              <li>Complete assignments and chapters</li>
+              <li>Join live sessions and community discussions</li>
+              <li>Build your Bitcoin knowledge step by step</li>
             </ul>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting || !email}
-            className={`w-full rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-4 py-2 font-semibold text-black transition ${
-              submitting || !email
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:brightness-110'
-            }`}
-          >
-            {submitting ? 'Setting Password...' : 'Set Password'}
-          </button>
-        </form>
+          {/* Cohort - orange left border */}
+          {cohortName && (
+            <div className="mt-4 rounded-lg bg-gray-100 py-3 pl-5 pr-4 border-l-4 border-orange-500">
+              <p className="text-gray-900 text-sm"><strong>Cohort:</strong> {cohortName}</p>
+            </div>
+          )}
 
-        <div className="text-center">
-          <p className="text-sm text-zinc-400">
+          {/* Set up your password - form */}
+          <div className="mt-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-3">Set up your password</h2>
+            {error && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 text-gray-900 placeholder:text-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">At least 8 characters with uppercase, lowercase, number, and special character</p>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 text-gray-900 placeholder:text-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="Confirm your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={submitting || !email}
+                className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-cyan-500 px-4 py-3 font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Setting password…' : 'Set up your password'}
+              </button>
+            </form>
+          </div>
+
+          <p className="mt-6 border-t border-gray-200 pt-5 text-sm text-gray-500">
+            We&apos;re excited to have you join us on this Bitcoin journey!
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
             Already have a password?{' '}
-            <a href="/" className="text-cyan-400 hover:text-cyan-300">
+            <a href="/" className="text-cyan-600 hover:text-cyan-700 font-medium">
               Sign in
             </a>
           </p>
         </div>
       </div>
-    </PageContainer>
+    </div>
   );
 }
 
@@ -242,11 +260,11 @@ export default function SetupPasswordPage() {
   return (
     <Suspense
       fallback={
-        <PageContainer title="Set Up Your Password" subtitle="Loading...">
-          <div className="mx-auto max-w-md space-y-4 rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center text-zinc-200">
+        <div className="px-4 py-8 sm:px-6">
+          <div className="mx-auto max-w-lg rounded-xl bg-white p-8 text-center text-gray-600 shadow-sm">
             Loading password setup...
           </div>
-        </PageContainer>
+        </div>
       }
     >
       <SetupPasswordContent />

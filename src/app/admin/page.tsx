@@ -3241,7 +3241,13 @@ export default function AdminDashboardPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ applicationId }),
           });
-          const data = await res.json();
+          let data: Record<string, unknown> = {};
+          try {
+            const text = await res.text();
+            if (text) data = JSON.parse(text) as Record<string, unknown>;
+          } catch {
+            // response was not JSON
+          }
           if (res.ok && data.success) {
             const msg = data.emailSent
               ? `Application for ${email} approved. Approval email sent to ${email}.`
@@ -3250,9 +3256,11 @@ export default function AdminDashboardPage() {
             if (process.env.NODE_ENV === 'development') console.log('Approval response:', data);
             Promise.all([fetchApplications(), fetchOverview()]).catch(err => console.error('Error refreshing data:', err));
           } else {
-            const errorMsg = data.error || 'Failed to approve application';
+            const errorMsg = (typeof data.error === 'string' ? data.error : null) || (res.status ? `Request failed (${res.status})` : 'Failed to approve application');
             startTransition(() => setNotification({ type: 'error', message: errorMsg }));
-            console.error('Approval error:', data);
+            if (Object.keys(data).length > 0 || !res.ok) {
+              console.error('Approval error:', res.status, res.statusText, data);
+            }
           }
         } catch (err: any) {
           startTransition(() => setNotification({ type: 'error', message: err.message || 'Failed to approve application' }));

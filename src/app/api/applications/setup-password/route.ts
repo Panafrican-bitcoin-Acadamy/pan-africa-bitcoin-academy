@@ -21,14 +21,28 @@ export async function GET(req: NextRequest) {
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('password_hash')
+      .select('password_hash, name, cohort_id')
       .eq('email', emailLower)
       .maybeSingle();
 
     // needsSetup only when profile exists AND has no password
     const needsSetup = !!profile && !profile.password_hash;
 
-    return NextResponse.json({ needsSetup }, { status: 200 });
+    let cohortName: string | null = null;
+    if (profile?.cohort_id) {
+      const { data: cohort } = await supabaseAdmin
+        .from('cohorts')
+        .select('name')
+        .eq('id', profile.cohort_id)
+        .maybeSingle();
+      cohortName = cohort?.name ?? null;
+    }
+
+    return NextResponse.json({
+      needsSetup,
+      studentName: needsSetup && profile?.name ? profile.name : null,
+      cohortName,
+    }, { status: 200 });
   } catch {
     return NextResponse.json({ needsSetup: false }, { status: 200 });
   }

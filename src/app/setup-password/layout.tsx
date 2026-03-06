@@ -17,6 +17,10 @@ export default function SetupPasswordLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {children}
+    </div>
+  );
 }
 
