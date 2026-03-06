@@ -164,44 +164,95 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                   <div className="space-y-4">
                     <p className="mt-3 text-zinc-200 leading-relaxed">{section.paragraphs?.[0]}</p>
                     <div>
-                      <p className="mt-3 text-zinc-200 leading-relaxed whitespace-pre-line">{section.paragraphs?.[1]}</p>
+                      {(() => {
+                        const p1 = section.paragraphs?.[1] ?? "";
+                        const [head1, body1] = p1.includes("\n\n") ? [p1.split("\n\n")[0], p1.split("\n\n").slice(1).join("\n\n")] : [p1, ""];
+                        return (
+                          <>
+                            <h4 className="mt-5 mb-2 text-base font-bold text-cyan-200 sm:text-lg border-b border-cyan-400/30 pb-1.5">{head1}</h4>
+                            {body1 ? <p className="mt-1 text-zinc-200 leading-relaxed">{body1}</p> : null}
+                          </>
+                        );
+                      })()}
                       <div className="mt-4 rounded-lg border border-orange-900/50 p-4 bg-zinc-900/80 text-orange-100">
                         <span className="font-semibold">📖 Example:</span>
                         <span className="ml-2">{section.callouts?.[0]?.content}</span>
                       </div>
-                      <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 text-zinc-500">
+                      <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg bg-zinc-900/30">
                         {section.images?.[0]?.src ? (
-                          <img src={section.images[0].src} alt={section.images[0].alt} className="max-h-64 w-auto object-contain" />
+                          <img src={section.images[0].src} alt={section.images[0].alt} className="max-h-96 w-full max-w-2xl object-contain rounded-lg shadow-lg shadow-cyan-900/20" />
                         ) : (
-                          <span className="text-sm font-medium">1st image here</span>
+                          <span className="rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 px-8 py-6 text-sm font-medium text-zinc-500">1st image here</span>
                         )}
                       </div>
                     </div>
                     <div>
-                      <p className="mt-3 text-zinc-200 leading-relaxed whitespace-pre-line">{section.paragraphs?.[3]}</p>
-                      <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 text-zinc-500">
+                      {(() => {
+                        const p3 = section.paragraphs?.[3] ?? "";
+                        const [head3, body3] = p3.includes("\n\n") ? [p3.split("\n\n")[0], p3.split("\n\n").slice(1).join("\n\n")] : [p3, ""];
+                        return (
+                          <>
+                            <h4 className="mt-5 mb-2 text-base font-bold text-cyan-200 sm:text-lg border-b border-cyan-400/30 pb-1.5">{head3}</h4>
+                            {body3 ? <p className="mt-1 text-zinc-200 leading-relaxed">{body3}</p> : null}
+                          </>
+                        );
+                      })()}
+                      <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg bg-zinc-900/30">
                         {section.images?.[1]?.src ? (
-                          <img src={section.images[1].src} alt={section.images[1].alt} className="max-h-64 w-auto object-contain" />
+                          <img src={section.images[1].src} alt={section.images[1].alt} className="max-h-96 w-full max-w-2xl object-contain rounded-lg shadow-lg shadow-cyan-900/20" />
                         ) : (
-                          <span className="text-sm font-medium">2nd image here</span>
+                          <span className="rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 px-8 py-6 text-sm font-medium text-zinc-500">2nd image here</span>
                         )}
                       </div>
                     </div>
-                    <p className="mt-3 text-zinc-200 leading-relaxed whitespace-pre-line">{section.paragraphs?.[4]}</p>
+                    <div>
+                      {(() => {
+                        const p4 = section.paragraphs?.[4] ?? "";
+                        const [head4, body4] = p4.includes("\n\n") ? [p4.split("\n\n")[0], p4.split("\n\n").slice(1).join("\n\n")] : [p4, ""];
+                        return (
+                          <>
+                            <h4 className="mt-5 mb-2 text-base font-bold text-cyan-200 sm:text-lg border-b border-cyan-400/30 pb-1.5">{head4}</h4>
+                            {body4 ? <p className="mt-1 text-zinc-200 leading-relaxed">{body4}</p> : null}
+                          </>
+                        );
+                      })()}
+                      <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg bg-zinc-900/30">
+                        {section.images?.[2]?.src ? (
+                          <img src={section.images[2].src} alt={section.images[2].alt} className="max-h-96 w-full max-w-2xl object-contain rounded-lg shadow-lg shadow-cyan-900/20" />
+                        ) : (
+                          <span className="rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 px-8 py-6 text-sm font-medium text-zinc-500">Unit of Account image</span>
+                        )}
+                      </div>
+                    </div>
                     <p className="mt-3 text-zinc-200 leading-relaxed">{section.paragraphs?.[5]}</p>
                   </div>
                 ) : null}
                 {section.heading !== "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account" && section.paragraphs?.map((p, pIdx) => {
-                  // Check if this paragraph is a subsection heading
+                  // Check if this paragraph is a subsection heading (exact match)
                   const isSubHeading = p === "Decentralization Explained" || 
                                        p === "Transparency Without Identity" || 
                                        p === "Scarcity";
                   
                   if (isSubHeading) {
                     return (
-                      <h4 key={p} className="mt-6 mb-3 text-base font-bold text-cyan-200 sm:text-lg">
+                      <h4 key={p} className="mt-6 mb-3 text-base font-bold text-cyan-200 sm:text-lg border-b border-cyan-400/30 pb-1.5">
                         {p}
                       </h4>
+                    );
+                  }
+                  
+                  // Numbered topic style: "1. Topic Name\n\nBody..." → render as small bold header + body
+                  const hasNumberedTopic = /^\d+\.\s+.+\n\n/s.test(p);
+                  if (hasNumberedTopic) {
+                    const [topicLine, ...bodyParts] = p.split("\n\n");
+                    const body = bodyParts.join("\n\n").trim();
+                    return (
+                      <div key={`${p}-${pIdx}`}>
+                        <h4 className="mt-6 mb-2 text-base font-bold text-cyan-200 sm:text-lg border-b border-cyan-400/30 pb-1.5">
+                          {topicLine}
+                        </h4>
+                        {body ? <p className="mt-2 text-zinc-200 leading-relaxed">{body}</p> : null}
+                      </div>
                     );
                   }
                   
@@ -687,21 +738,70 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                   ) : (
                     // Default layout for other sections
                     section.heading === "1.3 Properties of Sound Money" && section.images.length > 1 ? (
-                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {section.images.map((image, idx) => (
-                          <div key={idx} className="flex flex-col items-center space-y-3">
-                            <img
-                              src={image.src}
-                              alt={image.alt}
-                              className="w-full rounded-lg border border-orange-400/20 shadow-lg"
-                            />
-                            {image.caption && (
-                              <p className="text-center text-sm text-zinc-200 leading-relaxed px-2">
-                                {image.caption}
-                              </p>
-                            )}
+                      <div className="mt-6 space-y-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {section.images.map((image, idx) => (
+                            <div key={idx} className="flex flex-col items-center space-y-3">
+                              <img
+                                src={image.src}
+                                alt={image.alt}
+                                className="w-full rounded-lg border border-orange-400/20 shadow-lg"
+                              />
+                              {image.caption && (
+                                <p className="text-center text-sm text-zinc-200 leading-relaxed px-2">
+                                  {image.caption}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div>
+                          <h4 className="mb-4 text-base font-semibold text-cyan-200">Quality comparison: Bitcoin vs Gold vs Fiat / Cash</h4>
+                          <div className="overflow-x-auto rounded-lg border border-cyan-400/25 bg-zinc-950/70">
+                            <table className="w-full border-collapse text-sm">
+                              <thead>
+                                <tr className="border-b border-cyan-400/30 bg-cyan-500/10">
+                                  <th className="px-4 py-3 text-left font-semibold text-cyan-200">Quality</th>
+                                  <th className="px-4 py-3 text-left font-semibold text-cyan-200">Bitcoin</th>
+                                  <th className="px-4 py-3 text-left font-semibold text-cyan-200">Gold</th>
+                                  <th className="px-4 py-3 text-left font-semibold text-cyan-200">Fiat / Cash</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-zinc-300">
+                                <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                                  <td className="px-4 py-3 font-semibold text-cyan-200">Scarcity</td>
+                                  <td className="px-4 py-3">21 Million coins (fixed Supply)</td>
+                                  <td className="px-4 py-3">Limited but new gold found</td>
+                                  <td className="px-4 py-3">Unlimited supply, central banks can print more</td>
+                                </tr>
+                                <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                                  <td className="px-4 py-3 font-semibold text-cyan-200">Portability</td>
+                                  <td className="px-4 py-3">Digital, accessible on phone</td>
+                                  <td className="px-4 py-3">Heavy, physical asset</td>
+                                  <td className="px-4 py-3">Physical bills/coins are harder to move large amounts across borders</td>
+                                </tr>
+                                <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                                  <td className="px-4 py-3 font-semibold text-cyan-200">Durability</td>
+                                  <td className="px-4 py-3">Digital, no wear or tear</td>
+                                  <td className="px-4 py-3">Physical can degrade over time</td>
+                                  <td className="px-4 py-3">Physical cash can get damaged, lost, or destroyed</td>
+                                </tr>
+                                <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                                  <td className="px-4 py-3 font-semibold text-cyan-200">Divisibility</td>
+                                  <td className="px-4 py-3">Fractional transactions possible</td>
+                                  <td className="px-4 py-3">Hard to divide without loss</td>
+                                  <td className="px-4 py-3">Limited divisibility (usually to cents)</td>
+                                </tr>
+                                <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                                  <td className="px-4 py-3 font-semibold text-cyan-200">Acceptance</td>
+                                  <td className="px-4 py-3">Growing globally, especially in Africa</td>
+                                  <td className="px-4 py-3">Accepted worldwide historically</td>
+                                  <td className="px-4 py-3">Universally accepted by governments, businesses, and people</td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
-                        ))}
+                        </div>
                       </div>
                     ) : section.heading === "3.1 Inflation and Loss of Purchasing Power" && section.images.length >= 4 ? (
                       // Special layout: first 3 images (animals, arrow, animals) in a row, then the 4th image below, then Zimbabwe images side by side

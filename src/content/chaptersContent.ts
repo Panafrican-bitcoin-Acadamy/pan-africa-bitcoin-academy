@@ -121,7 +121,8 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           { src: "/images/book_images/1st.png", alt: "1st", caption: "1st image here" },
-          { src: "", alt: "2nd", caption: "2nd image here" },
+          { src: "/images/book_images/2nd.png", alt: "2nd", caption: "2nd image here" },
+          { src: "/images/book_images/unit.png", alt: "Unit of Account", caption: "Unit of Account" },
         ],
       },
       {
