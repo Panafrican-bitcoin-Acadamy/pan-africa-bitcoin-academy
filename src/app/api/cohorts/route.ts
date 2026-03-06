@@ -19,20 +19,25 @@ export async function GET() {
       );
     }
 
+    // Use admin client for counts so RLS cannot hide cohort_enrollment or applications rows.
+    // Otherwise "seats available" can stay at total (e.g. 23) after approving students.
     // For each cohort, count enrolled students, applications, and sessions
     const cohortsWithSeats = await Promise.all(
       (cohorts || []).map(async (cohort: any) => {
-        // Count enrolled students from cohort_enrollment
-        const { count: enrolledCount, error: countError } = await supabase
+        // Count enrolled students from cohort_enrollment (admin so count is accurate after approvals)
+        const { count: enrolledCount, error: countError } = await supabaseAdmin
           .from('cohort_enrollment')
           .select('*', { count: 'exact', head: true })
           .eq('cohort_id', cohort.id);
 
-        const enrolled = enrolledCount || 0;
+        if (countError) {
+          console.error(`Error counting enrollment for cohort ${cohort.id}:`, countError);
+        }
+        const enrolled = enrolledCount ?? 0;
 
         // Count only Pending applications (Approved applications are already counted as enrolled)
         // When an application is approved, it creates a cohort_enrollment record, so we don't want to double count
-        const { count: pendingApplicationsCount, error: applicationsError } = await supabase
+        const { count: pendingApplicationsCount, error: applicationsError } = await supabaseAdmin
           .from('applications')
           .select('*', { count: 'exact', head: true })
           .eq('preferred_cohort_id', cohort.id)
@@ -42,7 +47,7 @@ export async function GET() {
           console.error(`Error counting applications for cohort ${cohort.id}:`, applicationsError);
         }
 
-        const pendingApplications = pendingApplicationsCount || 0;
+        const pendingApplications = pendingApplicationsCount ?? 0;
 
         // Calculate available seats: total - enrolled - pending applications
         // (Approved applications are already included in enrolled count)
