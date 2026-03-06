@@ -306,20 +306,6 @@ export const chaptersContent: ChapterContent[] = [
           },
         ],
       },
-      {
-        heading: "2.5 Precursors to Bitcoin — Haber & Stornetta Time-Stamping (1991–92)",
-        paragraphs: [
-          "Long before Bitcoin, a quiet breakthrough took place. In 1991–92, two researchers, Stuart Haber and W. Scott Stornetta, invented a system to time-stamp digital documents. Their idea was simple but powerful: once a document was recorded, no one could change it without leaving evidence.",
-          "They used cryptography to make records permanent and tamper-proof — a kind of digital 'seal of authenticity.' Though their invention wasn't money, it planted a seed. It demonstrated that technology can create trust without the need for central authorities.",
-          "Years later, Satoshi Nakamoto built on these ideas to launch Bitcoin in 2009. However, the roots of Bitcoin can be traced back to Haber and Stornetta's time-stamping system.",
-        ],
-        callouts: [
-          {
-            type: "note",
-            content: "This early cryptographic work showed that trust could be created through mathematics and code, rather than relying solely on institutions.",
-          },
-        ],
-      },
     ],
     activities: [
       "Timeline of Money (Open Discussion):",
@@ -335,16 +321,13 @@ export const chaptersContent: ChapterContent[] = [
       "Coins standardized value and enabled long-distance trade across regions.",
       "Paper money lightened trade but required gold backing for trust.",
       "Fiat money (post-1971) relies on government decree, creating inflation risks when trust weakens.",
-      "Early cryptographic work (Haber & Stornetta) showed technology could create trust without central authorities, paving the way for Bitcoin.",
     ],
     keyTerms: [
       "Commodity money",
       "Fiat money",
       "Inflation",
-      "Time-stamping",
       "Gold standard",
       "Central bank",
-      "Cryptography",
     ],
     nextSlug: "problems-with-traditional-fiat-money",
   },
@@ -534,6 +517,20 @@ export const chaptersContent: ChapterContent[] = [
           },
         ],
       },
+      {
+        heading: "4.2 Precursors to Bitcoin — Haber & Stornetta Time-Stamping (1991–92)",
+        paragraphs: [
+          "Long before Bitcoin, a quiet breakthrough took place. In 1991–92, two researchers, Stuart Haber and W. Scott Stornetta, invented a system to time-stamp digital documents. Their idea was simple but powerful: once a document was recorded, no one could change it without leaving evidence.",
+          "They used cryptography to make records permanent and tamper-proof — a kind of digital 'seal of authenticity.' Though their invention wasn't money, it planted a seed. It demonstrated that technology can create trust without the need for central authorities.",
+          "Years later, Satoshi Nakamoto built on these ideas to launch Bitcoin in 2009. However, the roots of Bitcoin can be traced back to Haber and Stornetta's time-stamping system.",
+        ],
+        callouts: [
+          {
+            type: "note",
+            content: "This early cryptographic work showed that trust could be created through mathematics and code, rather than relying solely on institutions.",
+          },
+        ],
+      },
     ],
     activities: [
       "End-of-Chapter Reflection:",
@@ -542,6 +539,7 @@ export const chaptersContent: ChapterContent[] = [
     summary: [
       "The old financial system's failures — inflation, debt, inequality — created the conditions for Bitcoin's emergence.",
       "Cypherpunks in the 1990s experimented with digital cash but early attempts were either centralized or shut down.",
+      "Haber & Stornetta's time-stamping work (1991–92) showed that technology could create trust without central authorities, paving the way for Bitcoin.",
       "The 2008 financial crisis exposed the fragility of the traditional system and created the perfect moment for Bitcoin.",
       "Satoshi Nakamoto's breakthrough solved the problem of creating decentralized, trustless digital money.",
     ],
@@ -553,6 +551,8 @@ export const chaptersContent: ChapterContent[] = [
       "Proof of work",
       "Financial crisis",
       "Decentralization",
+      "Time-stamping",
+      "Cryptography",
     ],
     nextSlug: "the-birth-of-bitcoin",
   },

@@ -302,11 +302,21 @@ export default function ApplyPage() {
   };
 
   // Fetch cohorts from API (no cache so seat counts stay correct after approvals)
-  const fetchCohorts = useCallback(async () => {
+  const fetchCohorts = useCallback(async (retryAfter429 = true) => {
     try {
       setCohortsLoading(true);
       setCohortsError(null);
       const res = await fetch('/api/cohorts', { cache: 'no-store' });
+      if (res.status === 429) {
+        const data = await res.json().catch(() => ({}));
+        const retryAfter = data.retryAfter ?? 60;
+        setCohortsError(`Too many requests. Retrying in ${retryAfter} seconds…`);
+        if (retryAfter429) {
+          setTimeout(() => fetchCohorts(false), retryAfter * 1000);
+          return;
+        }
+        throw new Error('Too many requests. Please wait a moment and refresh the page.');
+      }
       if (!res.ok) {
         throw new Error(`Failed to fetch cohorts: ${res.status}`);
       }

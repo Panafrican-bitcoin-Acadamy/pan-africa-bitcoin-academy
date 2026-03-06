@@ -16,6 +16,8 @@ import { Chapter14HalvingPuzzle } from "@/components/Chapter14HalvingPuzzle";
 import { ChapterExplorerAssignment } from "@/components/ChapterExplorerAssignment";
 import { SeedPhraseGrid } from "@/components/SeedPhraseGrid";
 import { BtcSatsConverter } from "@/components/BtcSatsConverter";
+import { ChapterSectionAnimated } from "@/components/chapters/ChapterSectionAnimated";
+import { ChapterTechVectors } from "@/components/chapters/ChapterTechVectors";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -148,15 +150,17 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         </section>
 
         {/* Main lesson content */}
-        <section className="space-y-4 rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
-          <h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
+        <section className="relative space-y-4 rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
+          <ChapterTechVectors />
+          <h2 className="relative text-base font-semibold text-zinc-100 sm:text-lg">
             Main Lesson Content
           </h2>
-          <div className="space-y-5">
+          <div className="relative space-y-5">
             {chapter.sections.map((section, sectionIdx) => {
               const sectionId = `section-${sectionIdx}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
               return (
-              <div key={section.heading} id={sectionId} className="scroll-mt-20 rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner">
+              <ChapterSectionAnimated key={section.heading} sectionId={sectionId} sectionIdx={sectionIdx}>
+              <div id={sectionId} className="chapter-section-inner scroll-mt-20 rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner transition-shadow duration-300">
                 <h3 className="text-lg font-bold text-zinc-100 sm:text-xl mb-3 pb-2 border-b border-zinc-800/50">
                   {section.heading}
                 </h3>
@@ -934,6 +938,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                   )
                 )}
               </div>
+              </ChapterSectionAnimated>
               );
             })}
           </div>

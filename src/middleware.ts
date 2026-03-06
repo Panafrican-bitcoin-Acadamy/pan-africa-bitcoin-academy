@@ -38,11 +38,12 @@ export function middleware(request: NextRequest) {
   }
 
   // Security: Check concurrent connections per IP
-  // Skip for admin routes (they may need more concurrent connections)
+  // Skip for admin routes and public read-only endpoints (e.g. apply page needs /api/cohorts)
   const isAdminRoute = pathname.startsWith('/api/admin/');
+  const isPublicReadOnly = pathname === '/api/cohorts' || pathname === '/api/health' || pathname === '/api/status';
   let connectionCheck = { allowed: true, active: 0, max: 20 };
   
-  if (!isAdminRoute) {
+  if (!isAdminRoute && !isPublicReadOnly) {
     connectionCheck = checkConcurrentConnections(clientIP);
     if (!connectionCheck.allowed) {
       console.warn(`[SECURITY] IP ${clientIP} exceeded concurrent connection limit`);

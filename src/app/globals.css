@@ -392,3 +392,79 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
   display: none !important;
 }
 
+/* Chapter section animations – technological scroll-reveal, section to section */
+@keyframes chapter-section-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.12),
+      0 0 20px -4px rgba(34, 211, 238, 0.06),
+      0 4px 24px -4px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.2),
+      0 0 28px -4px rgba(249, 115, 22, 0.08),
+      0 4px 24px -4px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes chapter-tech-border {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.chapter-section-initial {
+  opacity: 0;
+  transform: translateY(40px) scale(0.97);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s ease;
+}
+
+.chapter-section-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s ease;
+}
+
+.chapter-section-visible .chapter-section-inner {
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.12),
+    0 0 20px -4px rgba(34, 211, 238, 0.06),
+    0 4px 24px -4px rgba(0, 0, 0, 0.4);
+  animation: chapter-section-glow 4s ease-in-out infinite;
+}
+
+.chapter-section-visible .chapter-section-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 211, 238, 0.25) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(249, 115, 22, 0.2) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: chapter-tech-border 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-section-visible .chapter-section-inner,
+  .chapter-section-visible .chapter-section-inner::before {
+    animation: none;
+  }
+}
+
