@@ -19,39 +19,43 @@ export async function GET() {
       );
     }
 
-    // Use admin client for counts so RLS cannot hide cohort_enrollment or applications rows.
-    // Otherwise "seats available" can stay at total (e.g. 23) after approving students.
-    // For each cohort, count enrolled students, applications, and sessions
+    // Base seat counts on applications per cohort: approved + pending for that cohort.
+    // Use admin client so RLS cannot hide rows.
     const cohortsWithSeats = await Promise.all(
       (cohorts || []).map(async (cohort: any) => {
-        // Count enrolled students from cohort_enrollment (admin so count is accurate after approvals)
-        const { count: enrolledCount, error: countError } = await supabaseAdmin
-          .from('cohort_enrollment')
-          .select('*', { count: 'exact', head: true })
-          .eq('cohort_id', cohort.id);
+        // Count applications for this cohort: Approved and Pending (source of truth for "taken" seats)
+        const [
+          { count: approvedCount, error: approvedError },
+          { count: pendingCount, error: pendingError },
+          { count: enrolledCount, error: enrolledError },
+        ] = await Promise.all([
+          supabaseAdmin
+            .from('applications')
+            .select('*', { count: 'exact', head: true })
+            .eq('preferred_cohort_id', cohort.id)
+            .eq('status', 'Approved'),
+          supabaseAdmin
+            .from('applications')
+            .select('*', { count: 'exact', head: true })
+            .eq('preferred_cohort_id', cohort.id)
+            .eq('status', 'Pending'),
+          supabaseAdmin
+            .from('cohort_enrollment')
+            .select('*', { count: 'exact', head: true })
+            .eq('cohort_id', cohort.id),
+        ]);
 
-        if (countError) {
-          console.error(`Error counting enrollment for cohort ${cohort.id}:`, countError);
-        }
+        if (approvedError) console.error(`Error counting approved for cohort ${cohort.id}:`, approvedError);
+        if (pendingError) console.error(`Error counting pending for cohort ${cohort.id}:`, pendingError);
+        if (enrolledError) console.error(`Error counting enrollment for cohort ${cohort.id}:`, enrolledError);
+
+        const approvedForCohort = approvedCount ?? 0;
+        const pendingApplications = pendingCount ?? 0;
         const enrolled = enrolledCount ?? 0;
 
-        // Count only Pending applications (Approved applications are already counted as enrolled)
-        // When an application is approved, it creates a cohort_enrollment record, so we don't want to double count
-        const { count: pendingApplicationsCount, error: applicationsError } = await supabaseAdmin
-          .from('applications')
-          .select('*', { count: 'exact', head: true })
-          .eq('preferred_cohort_id', cohort.id)
-          .eq('status', 'Pending');
-
-        if (applicationsError) {
-          console.error(`Error counting applications for cohort ${cohort.id}:`, applicationsError);
-        }
-
-        const pendingApplications = pendingApplicationsCount ?? 0;
-
-        // Calculate available seats: total - enrolled - pending applications
-        // (Approved applications are already included in enrolled count)
-        const available = Math.max(0, (cohort.seats_total || 0) - enrolled - pendingApplications);
+        // Available = total seats minus (approved + pending) for this cohort
+        const takenByApplications = approvedForCohort + pendingApplications;
+        const available = Math.max(0, (cohort.seats_total || 0) - takenByApplications);
 
         // Get sessions count from cohorts.sessions column
         const sessions = cohort.sessions || 0;
