@@ -138,3 +138,89 @@ export async function PATCH(
     );
   }
 }
+
+/**
+ * DELETE /api/admin/students/[id]
+ * Permanently delete a student from all database tables (profile, students, applications, cohort_enrollment, sats, achievements, etc.).
+ * Id is profile_id.
+ */
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id: profileId } = await context.params;
+    if (!profileId || !validateUUID(profileId)) {
+      return NextResponse.json({ error: 'Invalid student ID' }, { status: 400 });
+    }
+
+    const { data: profile, error: profileFetchError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email')
+      .eq('id', profileId)
+      .maybeSingle();
+
+    if (profileFetchError || !profile) {
+      return NextResponse.json(
+        { error: 'Student not found' },
+        { status: 404 }
+      );
+    }
+
+    const email = profile.email?.toLowerCase();
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Profile has no email; cannot clean up applications' },
+        { status: 400 }
+      );
+    }
+
+    // Null out optional FK references so profile can be deleted (no ON DELETE SET NULL on these)
+    await supabaseAdmin.from('sats_rewards').update({ awarded_by: null }).eq('awarded_by', profileId);
+    await supabaseAdmin.from('assignment_submissions').update({ graded_by: null }).eq('graded_by', profileId);
+    await supabaseAdmin.from('assignments').update({ created_by: null }).eq('created_by', profileId);
+    await supabaseAdmin.from('exam_access').update({ granted_by: null }).eq('granted_by', profileId);
+
+    // Remove applications for this email (no FK to profile)
+    await supabaseAdmin.from('applications').delete().eq('email', email);
+
+    // Remove event registrations for this email
+    await supabaseAdmin.from('event_registrations').delete().eq('email', email);
+
+    // Delete profile; CASCADE will remove: students, cohort_enrollment, sats_rewards (student_id),
+    // achievements, chapter_progress, assignment_submissions, exam_access, exam_results, etc.
+    const { error: deleteError } = await supabaseAdmin
+      .from('profiles')
+      .delete()
+      .eq('id', profileId);
+
+    if (deleteError) {
+      console.error('[Delete Student] Profile delete error:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to delete student', details: deleteError.message },
+        { status: 500 }
+      );
+    }
+
+    const res = NextResponse.json({
+      success: true,
+      message: 'Student deleted from all records',
+    });
+    attachRefresh(res, session);
+    return res;
+  } catch (error: unknown) {
+    console.error('[Delete Student] Error:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        ...(process.env.NODE_ENV === 'development' && error instanceof Error ? { details: error.message } : {}),
+      },
+      { status: 500 }
+    );
+  }
+}

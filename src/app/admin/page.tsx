@@ -374,6 +374,22 @@ export default function AdminDashboardPage() {
     cohort_id: string;
     status: string;
   }>({ name: '', email: '', phone: '', country: '', city: '', cohort_id: '', status: 'Active' });
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [deletingStudent, setDeletingStudent] = useState(false);
+  // Reusable confirmation popup (replaces window.confirm)
+  type ConfirmPopupConfig = {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    variant?: 'danger' | 'warning' | 'primary';
+    onConfirm: () => void | Promise<void>;
+  };
+  const [confirmPopup, setConfirmPopup] = useState<ConfirmPopupConfig | null>(null);
+  const [confirmPopupLoading, setConfirmPopupLoading] = useState(false);
+  const [rearrangePopup, setRearrangePopup] = useState<{ cohortId: string; cohortName: string } | null>(null);
+  const [rearrangeStartDate, setRearrangeStartDate] = useState('');
+  const [rearrangeSubmitting, setRearrangeSubmitting] = useState(false);
 
   useEffect(() => {
     if (editingStudent) {
@@ -1730,38 +1746,24 @@ export default function AdminDashboardPage() {
   }, [fetchWithAuth, fetchStudentSatsRewards]);
 
   // Handle delete reward
-  const handleDeleteReward = useCallback(async (rewardId: string) => {
-    if (!confirm('Are you sure you want to delete this reward? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const res = await fetchWithAuth(`/api/admin/sats/${rewardId}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to delete reward');
-      }
-
-      setNotification({
-        type: 'success',
-        message: 'Reward deleted successfully',
-      });
-      // Refresh data after deletion
-      satsLastFetchKeyRef.current = '';
-      satsFetchingRef.current = false;
-      setTimeout(() => {
-        fetchStudentSatsRewards();
-      }, 300);
-    } catch (err: any) {
-      console.error('Error deleting reward:', err);
-      setNotification({
-        type: 'error',
-        message: err.message || 'Failed to delete reward. Please try again.',
-      });
-    }
+  const handleDeleteReward = useCallback((rewardId: string) => {
+    setConfirmPopup({
+      title: 'Delete reward',
+      message: 'Are you sure you want to delete this reward? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        const res = await fetchWithAuth(`/api/admin/sats/${rewardId}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to delete reward');
+        }
+        setNotification({ type: 'success', message: 'Reward deleted successfully' });
+        satsLastFetchKeyRef.current = '';
+        satsFetchingRef.current = false;
+        setTimeout(() => fetchStudentSatsRewards(), 300);
+      },
+    });
   }, [fetchWithAuth, fetchStudentSatsRewards]);
 
   // Track which data has been loaded to prevent duplicate fetches
@@ -2820,17 +2822,15 @@ export default function AdminDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAwardSatsRetroactively = async () => {
+  const handleAwardSatsRetroactively = () => {
     if (!admin) return;
-    
-    const confirmed = confirm(
-      'This will award sats to all students who have approved blog posts but don\'t have sats rewards yet.\n\n' +
-      'Do you want to continue?'
-    );
-    
-    if (!confirmed) return;
-    
-    setAwardingSats(true);
+    setConfirmPopup({
+      title: 'Award sats retroactively',
+      message: "This will award sats to all students who have approved blog posts but don't have sats rewards yet.\n\nDo you want to continue?",
+      confirmLabel: 'Continue',
+      variant: 'primary',
+      onConfirm: async () => {
+        setAwardingSats(true);
     try {
       const res = await fetchWithAuth('/api/admin/blog/award-sats', {
         method: 'POST',
@@ -2844,18 +2844,8 @@ export default function AdminDashboardPage() {
         throw new Error(data.error || 'Failed to award sats');
       }
       
-      // Show detailed results
-      const message = 
-        `${data.message}\n\n` +
-        `Details:\n` +
-        `- Processed: ${data.processed} blog posts\n` +
-        `- Created: ${data.created} rewards\n` +
-        `- Skipped: ${data.skipped} (already have rewards or no profile)\n` +
-        (data.errors && data.errors.length > 0 
-          ? `\nErrors: ${data.errors.length}\n${data.errors.map((e: any) => `  • ${e.title}: ${e.error}`).join('\n')}`
-          : '');
-      
-      alert(message);
+      const detail = `Processed: ${data.processed}. Created: ${data.created}. Skipped: ${data.skipped}.`;
+      setNotification({ type: 'success', message: data.message ? `${data.message} ${detail}` : detail });
       
       // Refresh sats rewards if that section is active
       if (activeSubMenu === 'student-sats-rewards') {
@@ -2868,10 +2858,13 @@ export default function AdminDashboardPage() {
         }, 500);
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to award sats retroactively');
+      setNotification({ type: 'error', message: err.message || 'Failed to award sats retroactively' });
+      throw err;
     } finally {
       setAwardingSats(false);
     }
+      },
+    });
   };
 
   const handleRejectBlog = async (submissionId: string, reason?: string) => {
@@ -2917,21 +2910,24 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const revokeExamAccess = async (studentId: string) => {
-    if (!confirm('Are you sure you want to revoke exam access?')) return;
-    try {
-      const res = await fetchWithAuth('/api/admin/exam/revoke-access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to revoke access');
-      alert(data.message || 'Exam access revoked');
-      await fetchExamAccess();
-    } catch (err: any) {
-      alert(err.message || 'Failed to revoke exam access');
-    }
+  const revokeExamAccess = (studentId: string) => {
+    setConfirmPopup({
+      title: 'Revoke exam access',
+      message: 'Are you sure you want to revoke exam access?',
+      confirmLabel: 'Revoke',
+      variant: 'danger',
+      onConfirm: async () => {
+        const res = await fetchWithAuth('/api/admin/exam/revoke-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to revoke access');
+        setNotification({ type: 'success', message: data.message || 'Exam access revoked' });
+        await fetchExamAccess();
+      },
+    });
   };
 
   const fetchLiveClassEvents = async () => {
@@ -3231,75 +3227,41 @@ export default function AdminDashboardPage() {
     setMentorships([]);
   };
 
-  const handleApprove = async (applicationId: string, email: string) => {
-    // Defer confirm to next tick to prevent blocking click handler
-    if (!confirm(`Approve application for ${email}?`)) return;
-    
-    // Set processing state immediately for responsive UI
-    setProcessing(applicationId);
-    
-    try {
-      const res = await fetchWithAuth('/api/applications/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId }),
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        let message = `Application for ${email} approved successfully!`;
-        if (data.emailSent) {
-          message += `\n\nApproval email sent to ${email}`;
-        } else {
-          // Always show email status, even if not sent
-          if (data.emailError) {
-            message += `\n\nEmail not sent: ${data.emailError}`;
-            message += `\n\nCheck server console for details.`;
+  const handleApprove = (applicationId: string, email: string) => {
+    setConfirmPopup({
+      title: 'Approve application',
+      message: `Approve application for ${email}?`,
+      confirmLabel: 'Approve',
+      variant: 'primary',
+      onConfirm: async () => {
+        setProcessing(applicationId);
+        try {
+          const res = await fetchWithAuth('/api/applications/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ applicationId }),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            const msg = data.emailSent
+              ? `Application for ${email} approved. Approval email sent to ${email}.`
+              : `Application for ${email} approved.${data.emailError ? ` Email not sent: ${data.emailError}` : ''}`;
+            startTransition(() => setNotification({ type: 'success', message: msg }));
+            if (process.env.NODE_ENV === 'development') console.log('Approval response:', data);
+            Promise.all([fetchApplications(), fetchOverview()]).catch(err => console.error('Error refreshing data:', err));
           } else {
-            message += `\n\nEmail status unknown - check server console for details.`;
+            const errorMsg = data.error || 'Failed to approve application';
+            startTransition(() => setNotification({ type: 'error', message: errorMsg }));
+            console.error('Approval error:', data);
           }
+        } catch (err: any) {
+          startTransition(() => setNotification({ type: 'error', message: err.message || 'Failed to approve application' }));
+          throw err;
+        } finally {
+          setProcessing(null);
         }
-        
-        // Use startTransition for non-urgent state updates
-        startTransition(() => {
-          setNotification({ type: 'success', message: `Application for ${email} approved successfully!` });
-        });
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Approval response:', data);
-        }
-        
-        // Fetch data in parallel for better performance
-        Promise.all([
-          fetchApplications(),
-          fetchOverview()
-        ]).catch(err => console.error('Error refreshing data:', err));
-        
-        // Show alert after a short delay to not block UI
-        setTimeout(() => alert(message), 50);
-      } else {
-        // Show detailed error message
-        const errorMsg = data.error || 'Failed to approve application';
-        const details = data.details ? `\n\nDetails: ${data.details}` : '';
-        const hint = data.hint ? `\n\nHint: ${data.hint}` : '';
-        const code = data.code ? `\n\nError Code: ${data.code}` : '';
-        
-        startTransition(() => {
-          setNotification({ type: 'error', message: errorMsg });
-        });
-        
-        setTimeout(() => alert(`Error: ${errorMsg}${details}${hint}${code}`), 50);
-        console.error('Approval error:', data);
-      }
-    } catch (err: any) {
-      startTransition(() => {
-        setNotification({ type: 'error', message: err.message || 'Failed to approve application' });
-      });
-      setTimeout(() => alert(err.message || 'Failed to approve application'), 50);
-    } finally {
-      // Clear processing state immediately
-      setProcessing(null);
-    }
+      },
+    });
   };
 
   const fetchApplicationDetails = async (applicationId: string) => {
@@ -3499,74 +3461,67 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const regenerateSessions = async (cohortId: string) => {
-    if (!confirm('This will delete all existing sessions for this cohort and regenerate them based on the current start/end dates. Continue?')) {
-      return;
-    }
-    setRegeneratingSessions(cohortId);
-    try {
-      const res = await fetchWithAuth('/api/cohorts/generate-sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cohortId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to regenerate sessions');
-      alert(`Sessions regenerated successfully! ${data.sessionsGenerated || 0} sessions created.`);
-      await fetchCohorts();
-      await fetchOverview();
-      // Force refresh sessions by resetting the fetched flag
-      sessionsFetchedRef.current = false;
-      if (fetchSessionsRef.current) {
-        await fetchSessionsRef.current();
-      }
-    } catch (err: any) {
-      alert(err.message || 'Failed to regenerate sessions');
-    } finally {
-      setRegeneratingSessions(null);
-    }
+  const regenerateSessions = (cohortId: string) => {
+    setConfirmPopup({
+      title: 'Regenerate sessions',
+      message: 'This will delete all existing sessions for this cohort and regenerate them based on the current start/end dates.\n\nContinue?',
+      confirmLabel: 'Regenerate',
+      variant: 'warning',
+      onConfirm: async () => {
+        setRegeneratingSessions(cohortId);
+        try {
+          const res = await fetchWithAuth('/api/cohorts/generate-sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cohortId }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to regenerate sessions');
+          setNotification({ type: 'success', message: `Sessions regenerated. ${data.sessionsGenerated || 0} sessions created.` });
+          await fetchCohorts();
+          await fetchOverview();
+          sessionsFetchedRef.current = false;
+          if (fetchSessionsRef.current) await fetchSessionsRef.current();
+        } catch (err: any) {
+          setNotification({ type: 'error', message: err.message || 'Failed to regenerate sessions' });
+          throw err;
+        } finally {
+          setRegeneratingSessions(null);
+        }
+      },
+    });
   };
 
-  const rearrangeSessions = async (cohortId: string, cohortName: string) => {
-    const startDate = prompt(`Rearrange sessions for ${cohortName}?\n\nEnter start date for Session 1 (YYYY-MM-DD):`);
-    if (!startDate || !startDate.trim()) return;
-    
-    if (!confirm(`This will rearrange all sessions for ${cohortName} starting from ${startDate}.\n\nSchedule Pattern:\n- 3 working days per week: Monday, Wednesday, Friday\n- Sundays are always excluded\n- All sessions will be rescheduled (none removed)\n\nContinue?`)) {
-      return;
-    }
-    
-    setRearrangingSessions(cohortId);
+  const rearrangeSessions = (cohortId: string, cohortName: string) => {
+    setRearrangePopup({ cohortId, cohortName });
+    setRearrangeStartDate('');
+  };
+
+  const submitRearrangeSessions = async () => {
+    if (!rearrangePopup || !rearrangeStartDate.trim()) return;
+    const startDate = rearrangeStartDate.trim();
+    setRearrangeSubmitting(true);
     try {
       const res = await fetchWithAuth('/api/admin/cohorts/rearrange-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cohortId, startDate }),
+        body: JSON.stringify({ cohortId: rearrangePopup.cohortId, startDate }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to rearrange sessions');
-      
-      // Show detailed schedule in alert
-      let scheduleText = `Sessions rearranged successfully!\n\n${data.sessionsUpdated || 0} sessions updated.\nStart: ${data.startDate}\nEnd: ${data.endDate}\n\nSchedule (first 15 sessions):\n`;
-      if (data.schedule && data.schedule.length > 0) {
-        data.schedule.slice(0, 15).forEach((s: any) => {
-          scheduleText += `Session ${s.session_number}: ${s.date} (${s.day})\n`;
-        });
-        if (data.schedule.length > 15) {
-          scheduleText += `... and ${data.schedule.length - 15} more sessions`;
-        }
-      }
-      alert(scheduleText);
+      setNotification({
+        type: 'success',
+        message: `Sessions rearranged. ${data.sessionsUpdated || 0} sessions updated. Start: ${data.startDate}.`,
+      });
+      setRearrangePopup(null);
       await fetchCohorts();
       await fetchOverview();
-      // Force refresh sessions by resetting the fetched flag
       sessionsFetchedRef.current = false;
-      if (fetchSessionsRef.current) {
-        await fetchSessionsRef.current();
-      }
+      if (fetchSessionsRef.current) await fetchSessionsRef.current();
     } catch (err: any) {
-      alert(err.message || 'Failed to rearrange sessions');
+      setNotification({ type: 'error', message: err.message || 'Failed to rearrange sessions' });
     } finally {
-      setRearrangingSessions(null);
+      setRearrangeSubmitting(false);
     }
   };
 
@@ -5397,12 +5352,12 @@ export default function AdminDashboardPage() {
                                     className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/20 transition cursor-pointer"
                                     onClick={async () => {
                                       if (!student.email) {
-                                        window.alert('This student does not have an email address on file.');
+                                        setNotification({ type: 'error', message: 'This student does not have an email address on file.' });
                                         return;
                                       }
 
                                       try {
-                                        const res = await fetchWithAuth('/api/admin/students/send-password-reminder', {
+                                        const res = await fetchWithAuth('/api/admin/students/send-password-setup-follow-up', {
                                           method: 'POST',
                                           headers: { 'Content-Type': 'application/json' },
                                           body: JSON.stringify({ email: student.email }),
@@ -5411,20 +5366,13 @@ export default function AdminDashboardPage() {
                                         const data = await res.json().catch(() => ({}));
 
                                         if (res.ok && data.success) {
-                                          window.alert(
-                                            data.message ||
-                                              'Password setup link sent. Let the student know this is their second chance to set a secure password.'
-                                          );
+                                          setNotification({ type: 'success', message: data.message || 'Follow-up email sent. Student can use the link in that email to set up their password.' });
                                         } else {
-                                          window.alert(
-                                            data.message ||
-                                              data.error ||
-                                              'Failed to send password setup link. Please try again.'
-                                          );
+                                          setNotification({ type: 'error', message: data.message || data.error || 'Failed to send follow-up email. Please try again.' });
                                         }
                                       } catch (err) {
-                                        console.error('Error sending password setup link:', err);
-                                        window.alert('Failed to send password setup link. Please try again.');
+                                        console.error('Error sending follow-up email:', err);
+                                        setNotification({ type: 'error', message: 'Failed to send follow-up email. Please try again.' });
                                       }
                                     }}
                                   >
@@ -5444,13 +5392,20 @@ export default function AdminDashboardPage() {
                                     {student.status || 'N/A'}
                                   </span>
                                 </td>
-                                <td className="p-3 text-sm">
+                                <td className="p-3 text-sm flex items-center gap-2">
                                   <button
                                     type="button"
                                     className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-500/20 transition cursor-pointer"
                                     onClick={() => setEditingStudent(student)}
                                   >
                                     Update
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20 transition cursor-pointer"
+                                    onClick={() => setStudentToDelete(student)}
+                                  >
+                                    Delete
                                   </button>
                                 </td>
                               </tr>
@@ -7462,6 +7417,137 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete student confirmation popup */}
+      {studentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-red-500/30 bg-zinc-900 p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-zinc-50 mb-2">Delete student</h3>
+            <p className="text-sm text-zinc-300 mb-4">
+              Permanently delete <strong className="text-zinc-100">{studentToDelete.name || studentToDelete.email}</strong> from the academy? This will remove them from all database records (profile, enrollment, applications, progress, etc.) and cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={deletingStudent}
+                onClick={() => setStudentToDelete(null)}
+                className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deletingStudent}
+                onClick={async () => {
+                  if (!studentToDelete?.id) return;
+                  setDeletingStudent(true);
+                  try {
+                    const res = await fetchWithAuth(`/api/admin/students/${studentToDelete.id}`, { method: 'DELETE' });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.success) {
+                      setNotification({ type: 'success', message: 'Student deleted from all records.' });
+                      setStudentToDelete(null);
+                      if (fetchApprovedStudentsRef.current) await fetchApprovedStudentsRef.current();
+                    } else {
+                      setNotification({ type: 'error', message: data.error || 'Failed to delete student.' });
+                    }
+                  } catch (err) {
+                    console.error('Error deleting student:', err);
+                    setNotification({ type: 'error', message: 'Failed to delete student.' });
+                  } finally {
+                    setDeletingStudent(false);
+                  }
+                }}
+                className="rounded-lg border border-red-500/50 bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 hover:bg-red-500/30 transition disabled:opacity-50"
+              >
+                {deletingStudent ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reusable confirmation popup (replaces window.confirm) */}
+      {confirmPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-lg font-semibold text-zinc-50 mb-2">{confirmPopup.title}</h3>
+            <p className="text-sm text-zinc-300 whitespace-pre-line mb-6">{confirmPopup.message}</p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={confirmPopupLoading}
+                onClick={() => { setConfirmPopup(null); setConfirmPopupLoading(false); }}
+                className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 transition disabled:opacity-50"
+              >
+                {confirmPopup.cancelLabel ?? 'Cancel'}
+              </button>
+              <button
+                type="button"
+                disabled={confirmPopupLoading}
+                onClick={async () => {
+                  setConfirmPopupLoading(true);
+                  try {
+                    await confirmPopup.onConfirm();
+                    setConfirmPopup(null);
+                  } catch (e) {
+                    // Keep popup open; error shown via setNotification
+                  } finally {
+                    setConfirmPopupLoading(false);
+                  }
+                }}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${
+                  confirmPopup.variant === 'danger'
+                    ? 'border border-red-500/50 bg-red-500/20 text-red-200 hover:bg-red-500/30'
+                    : confirmPopup.variant === 'warning'
+                    ? 'border border-amber-500/50 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30'
+                    : 'border border-cyan-500/50 bg-cyan-500/20 text-cyan-200 hover:bg-cyan-500/30'
+                }`}
+              >
+                {confirmPopupLoading ? 'Please wait…' : (confirmPopup.confirmLabel ?? 'Confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rearrange sessions popup (date input + confirm) */}
+      {rearrangePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-lg font-semibold text-zinc-50 mb-2">Rearrange sessions</h3>
+            <p className="text-sm text-zinc-300 mb-4">
+              Rearrange all sessions for {rearrangePopup.cohortName}. Schedule: 3 working days per week (Mon, Wed, Fri). Sundays excluded. All sessions will be rescheduled (none removed).
+            </p>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Start date for Session 1 (YYYY-MM-DD)</label>
+            <input
+              type="text"
+              value={rearrangeStartDate}
+              onChange={(e) => setRearrangeStartDate(e.target.value)}
+              placeholder="e.g. 2025-03-01"
+              className="w-full rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none mb-6"
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={rearrangeSubmitting}
+                onClick={() => { setRearrangePopup(null); setRearrangeStartDate(''); }}
+                className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={rearrangeSubmitting || !rearrangeStartDate.trim()}
+                onClick={submitRearrangeSessions}
+                className="rounded-lg border border-amber-500/50 bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/30 transition disabled:opacity-50"
+              >
+                {rearrangeSubmitting ? 'Rearranging…' : 'Rearrange'}
+              </button>
+            </div>
           </div>
         </div>
       )}
