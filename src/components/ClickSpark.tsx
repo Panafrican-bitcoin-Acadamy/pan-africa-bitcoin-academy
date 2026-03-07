@@ -81,7 +81,12 @@ function ClickSpark({
   );
 
   return (
-    <div ref={containerRef} onClick={handleClick} style={{ cursor: 'default' }}>
+    <div
+      ref={containerRef}
+      onClick={handleClick}
+      className="min-h-screen w-full"
+      style={{ cursor: 'default', position: 'relative' }}
+    >
       {children}
     </div>
   );
