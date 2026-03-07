@@ -516,6 +516,13 @@ export const chaptersContent: ChapterContent[] = [
             content: "The cypherpunk movement combined cryptography, privacy advocacy, and libertarian ideals to create tools that would protect individual freedom from state control.",
           },
         ],
+        images: [
+          {
+            src: "/images/book_images/cypher_punks.jpeg",
+            alt: "The Cypherpunks and early digital currency pioneers",
+            caption: "The Cypherpunks & early digital currencies",
+          },
+        ],
       },
       {
         heading: "4.2 Precursors to Bitcoin — Haber & Stornetta Time-Stamping (1991–92)",
