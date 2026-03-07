@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatedSection } from "@/components/AnimatedSection";
+import SplitText from "@/components/SplitText";
 
 const ONCHAIN_ADDRESS = 'bc1q4pg073ws86qdnxac3y8zhk4t8vtkg2vx529jrj';
 const ONCHAIN_QR_SRC = '/images/onchain-btc-qr.jpeg'; // Using provided JPEG QR image
@@ -16,7 +17,20 @@ export default function DonatePage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Support Bitcoin Education
+                <SplitText
+                  text="Support Bitcoin Education"
+                  tag="span"
+                  className="inline-block"
+                  delay={50}
+                  duration={1.25}
+                  ease="bounce.out"
+                  splitType="chars"
+                  from={{ opacity: 0, y: 40 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="-100px"
+                  textAlign="center"
+                />
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Help us build Bitcoin sovereignty and education in Africa. Every sat counts.

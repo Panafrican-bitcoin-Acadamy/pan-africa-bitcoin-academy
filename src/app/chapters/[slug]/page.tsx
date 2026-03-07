@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/PageContainer";
@@ -158,8 +159,71 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           <div className="relative space-y-5">
             {chapter.sections.map((section, sectionIdx) => {
               const sectionId = `section-${sectionIdx}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+              const comparisonSection = chapter.slug === "the-birth-of-bitcoin" && section.heading === "What Are Sats?" ? (
+                <ChapterSectionAnimated key="bitcoin-gold-fiat-comparison" sectionId="section-bitcoin-gold-fiat-comparison" sectionIdx={chapter.sections.length}>
+                  <div id="section-bitcoin-gold-fiat-comparison" className="chapter-section-inner scroll-mt-20 rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner transition-shadow duration-300">
+                    <h3 className="text-lg font-bold text-zinc-100 sm:text-xl mb-3 pb-2 border-b border-zinc-800/50">
+                      Bitcoin vs Gold vs Fiat/Cash Comparison
+                    </h3>
+                    <div className="space-y-4 text-zinc-200 leading-relaxed">
+                      <p>
+                        Gold and fiat currencies represent two major stages in the history of money. Gold gained acceptance because of its natural scarcity and durability, making it a reliable store of value for thousands of years. Fiat currencies later replaced gold-backed systems in many countries, allowing governments and central banks to issue and manage money more flexibly. While this made modern economies easier to operate, it also removed the natural supply limits that precious metals once imposed.
+                      </p>
+                      <p>
+                        Bitcoin introduces a different model by combining digital technology with programmed scarcity. Unlike gold, which depends on physical mining, and fiat currencies, which can be expanded by central authorities, Bitcoin has a fixed supply of 21 million coins enforced by the protocol. This design attempts to preserve the scarcity that made gold valuable while improving portability and divisibility through a fully digital network.
+                      </p>
+                    </div>
+                    <div className="mt-6 overflow-x-auto rounded-lg border border-cyan-400/25 bg-zinc-950/70">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-cyan-400/30 bg-cyan-500/10">
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Quality</th>
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Bitcoin</th>
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Gold</th>
+                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Fiat / Cash</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-zinc-300">
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Scarcity</td>
+                            <td className="px-4 py-3">21 Million coins (fixed Supply)</td>
+                            <td className="px-4 py-3">Limited but new gold found</td>
+                            <td className="px-4 py-3">Unlimited supply, central banks can print more</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Portability</td>
+                            <td className="px-4 py-3">Digital, accessible on phone</td>
+                            <td className="px-4 py-3">Heavy, physical asset</td>
+                            <td className="px-4 py-3">Physical bills/coins are harder to move large amounts across borders</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Durability</td>
+                            <td className="px-4 py-3">Digital, no wear or tear</td>
+                            <td className="px-4 py-3">Physical can degrade over time</td>
+                            <td className="px-4 py-3">Physical cash can get damaged, lost, or destroyed</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Divisibility</td>
+                            <td className="px-4 py-3">Fractional transactions possible</td>
+                            <td className="px-4 py-3">Hard to divide without loss</td>
+                            <td className="px-4 py-3">Limited divisibility (usually to cents)</td>
+                          </tr>
+                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                            <td className="px-4 py-3 font-semibold text-cyan-200">Acceptance</td>
+                            <td className="px-4 py-3">Growing globally, especially in Africa</td>
+                            <td className="px-4 py-3">Accepted worldwide historically</td>
+                            <td className="px-4 py-3">Universally accepted by governments, businesses, and people</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </ChapterSectionAnimated>
+              ) : null;
               return (
-              <ChapterSectionAnimated key={section.heading} sectionId={sectionId} sectionIdx={sectionIdx}>
+              <React.Fragment key={section.heading}>
+                {comparisonSection}
+              <ChapterSectionAnimated sectionId={sectionId} sectionIdx={sectionIdx}>
               <div id={sectionId} className="chapter-section-inner scroll-mt-20 rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner transition-shadow duration-300">
                 <h3 className="text-lg font-bold text-zinc-100 sm:text-xl mb-3 pb-2 border-b border-zinc-800/50">
                   {section.heading}
@@ -477,55 +541,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       <p className="mt-3 text-xs text-zinc-400">
                         This demo covers: Hash functions, Block structure, Blockchain linking, and Distributed consensus
                       </p>
-                    </div>
-                  </div>
-                ) : section.heading === "5.1 The 2008 Financial Crisis Context" ? (
-                  // Special rendering for Bitcoin vs Gold vs Fiat comparison table
-                  <div className="mt-6">
-                    <h4 className="mb-4 text-base font-semibold text-cyan-200">Bitcoin vs Gold vs Fiat/Cash Comparison</h4>
-                    <div className="overflow-x-auto rounded-lg border border-cyan-400/25 bg-zinc-950/70">
-                      <table className="w-full border-collapse text-sm">
-                        <thead>
-                          <tr className="border-b border-cyan-400/30 bg-cyan-500/10">
-                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Quality</th>
-                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Bitcoin</th>
-                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Gold</th>
-                            <th className="px-4 py-3 text-left font-semibold text-cyan-200">Fiat / Cash</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-zinc-300">
-                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
-                            <td className="px-4 py-3 font-semibold text-cyan-200">Scarcity</td>
-                            <td className="px-4 py-3">21 Million coins (fixed Supply)</td>
-                            <td className="px-4 py-3">Limited but new gold found</td>
-                            <td className="px-4 py-3">Unlimited supply, central banks can print more</td>
-                          </tr>
-                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
-                            <td className="px-4 py-3 font-semibold text-cyan-200">Portability</td>
-                            <td className="px-4 py-3">Digital, accessible on phone</td>
-                            <td className="px-4 py-3">Heavy, physical asset</td>
-                            <td className="px-4 py-3">Physical bills/coins are harder to move large amounts across borders</td>
-                          </tr>
-                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
-                            <td className="px-4 py-3 font-semibold text-cyan-200">Durability</td>
-                            <td className="px-4 py-3">Digital, no wear or tear</td>
-                            <td className="px-4 py-3">Physical can degrade over time</td>
-                            <td className="px-4 py-3">Physical cash can get damaged, lost, or destroyed</td>
-                          </tr>
-                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
-                            <td className="px-4 py-3 font-semibold text-cyan-200">Divisibility</td>
-                            <td className="px-4 py-3">Fractional transactions possible</td>
-                            <td className="px-4 py-3">Hard to divide without loss</td>
-                            <td className="px-4 py-3">Limited divisibility (usually to cents)</td>
-                          </tr>
-                          <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
-                            <td className="px-4 py-3 font-semibold text-cyan-200">Acceptance</td>
-                            <td className="px-4 py-3">Growing globally, especially in Africa</td>
-                            <td className="px-4 py-3">Accepted worldwide historically</td>
-                            <td className="px-4 py-3">Universally accepted by governments, businesses, and people</td>
-                          </tr>
-                        </tbody>
-                      </table>
                     </div>
                   </div>
                 ) : section.heading === "13.2 Halving Schedule and Fixed Supply (Declining Inflation)" ? (
@@ -939,6 +954,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 )}
               </div>
               </ChapterSectionAnimated>
+              </React.Fragment>
               );
             })}
           </div>

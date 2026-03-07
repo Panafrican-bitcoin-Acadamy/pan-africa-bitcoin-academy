@@ -34,6 +34,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
   const [resendingVerification, setResendingVerification] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [rememberMe, setRememberMe] = useState(false);
+  const [signupSuccessMessage, setSignupSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -194,8 +195,15 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
           const data = await res.json();
           
           if (!res.ok) {
-            const errorMsg = data.details || data.error || `Sign up failed (${res.status})`;
-            throw new Error(errorMsg);
+            const rawMsg = data.details || data.error || `Sign up failed (${res.status})`;
+            const isAlreadyExists = /already exists|already registered/i.test(rawMsg);
+            setServerError(
+              isAlreadyExists
+                ? 'An account with this email already exists. Please sign in or use a different email.'
+                : rawMsg
+            );
+            setLoading(false);
+            return;
           }
           
           // Success - profile was created
@@ -207,13 +215,8 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
             } catch {
               // ignore
             }
-            // Keep loading spinner visible during redirect/reload
-            // Don't set loading to false - let it show during page reload
-            onClose();
-            // Show success message about email verification
-            alert('Account created successfully! Please check your email to verify your address before logging in.');
-            // Reload page to update navbar with new auth state - spinner will disappear when page unloads
-            window.location.reload();
+            setLoading(false);
+            setSignupSuccessMessage('Account created successfully! Please check your email to verify your address before logging in.');
           } else {
             throw new Error(data.error || 'Sign up failed');
           }
@@ -283,6 +286,34 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
           zIndex: 100000
         }}
       >
+        {signupSuccessMessage ? (
+          /* Success popup */
+          <div className="py-4 text-center">
+            <div className="mb-6 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+                <svg className="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-xl font-semibold text-zinc-100 mb-3">Account created</h3>
+            <p className="text-zinc-300 text-sm leading-relaxed mb-8">
+              {signupSuccessMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSignupSuccessMessage(null);
+                onClose();
+                window.location.reload();
+              }}
+              className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-black transition hover:from-orange-400 hover:to-orange-500"
+            >
+              OK
+            </button>
+          </div>
+        ) : (
+          <>
         {/* Close button */}
         <button
           onClick={onClose}
@@ -567,6 +598,8 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
             </button>
           </p>
         </div>
+          </>
+        )}
       </div>
     </div>
     </>

@@ -336,6 +336,10 @@ export default function AdminDashboardPage() {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [loadingAllStudents, setLoadingAllStudents] = useState(false);
   
+  // Leaderboard (students ranked by sats) for admin view
+  const [leaderboardData, setLeaderboardData] = useState<Array<{ studentId: string; name: string; sats: number; rank: number; email?: string; cohortName?: string | null; overallProgress?: number }>>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  
   // New state for additional database tables
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loadingAchievements, setLoadingAchievements] = useState(false);
@@ -452,6 +456,8 @@ export default function AdminDashboardPage() {
         { id: 'approved-students', label: 'Approved Students' },
         { id: 'pending-students', label: 'Pending Students' },
         { id: 'rejected-students', label: 'Rejected Students' },
+        { id: 'student-leaderboard', label: 'Leaderboard' },
+        { id: 'student-certification', label: 'Certification' },
         { id: 'assignments-submissions', label: 'Assignment Submissions' },
         { id: 'blog-submissions', label: 'Blog Submissions' },
         { id: 'blog-posts', label: 'Blog Posts' },
@@ -559,6 +565,8 @@ export default function AdminDashboardPage() {
       'approved-students': 'students',
       'pending-students': 'applications',
       'rejected-students': 'applications',
+      'student-leaderboard': 'students',
+      'student-certification': 'students',
       'assignments-submissions': 'assignments',
       'blog-submissions': 'overview',
       'blog-posts': 'overview',
@@ -706,6 +714,9 @@ export default function AdminDashboardPage() {
   const mentorsFetchingRef = useRef(false);
   const assignmentsFetchedRef = useRef(false);
   const assignmentsFetchingRef = useRef(false);
+  const leaderboardFetchedRef = useRef(false);
+  const leaderboardFetchingRef = useRef(false);
+  const certificationFetchedRef = useRef(false);
   
   // Refs to store current filter values (to avoid including them in callback dependencies)
   const satsStatusFilterRef = useRef<string>(satsStatusFilter);
@@ -1187,6 +1198,9 @@ export default function AdminDashboardPage() {
       assignmentsFetchedRef.current = false;
       approvedStudentsFetchedRef.current = false;
       approvedStudentsFetchingRef.current = false;
+      leaderboardFetchedRef.current = false;
+      leaderboardFetchingRef.current = false;
+      certificationFetchedRef.current = false;
       allStudentsFetchedRef.current = false;
       allStudentsFetchingRef.current = false;
       prevActiveSubMenuRef.current = null;
@@ -1226,6 +1240,13 @@ export default function AdminDashboardPage() {
       if (prevSubMenu === 'assignments') {
         assignmentsFetchedRef.current = false;
         assignmentsFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'student-leaderboard') {
+        leaderboardFetchedRef.current = false;
+        leaderboardFetchingRef.current = false;
+      }
+      if (prevSubMenu === 'student-certification') {
+        certificationFetchedRef.current = false;
       }
       if (prevSubMenu === 'approved-students') {
         approvedStudentsFetchedRef.current = false;
@@ -1272,6 +1293,15 @@ export default function AdminDashboardPage() {
       if (!approvedStudentsFetchingRef.current) {
         fetchApprovedStudentsRef.current();
       }
+    } else if (currentSubMenu === 'student-leaderboard' && !leaderboardFetchedRef.current && !leaderboardFetchingRef.current) {
+      leaderboardFetchedRef.current = true;
+      leaderboardFetchingRef.current = true;
+      fetchLeaderboard().finally(() => {
+        leaderboardFetchingRef.current = false;
+      });
+    } else if (currentSubMenu === 'student-certification' && !certificationFetchedRef.current) {
+      certificationFetchedRef.current = true;
+      fetchProgress();
     } else if ((currentSubMenu === 'pending-students' || currentSubMenu === 'rejected-students')) {
       // Fetch applications when pending or rejected students submenu is active
       // The fetchApplications function handles rate limiting internally
@@ -2064,6 +2094,26 @@ export default function AdminDashboardPage() {
       setProgress([]);
     } finally {
       progressFetchingRef.current = false;
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    if (!admin) return;
+    try {
+      setLoadingLeaderboard(true);
+      const res = await fetchWithAuth('/api/leaderboard');
+      const data = await res.json();
+      if (!res.ok) {
+        setLeaderboardData([]);
+        return;
+      }
+      const list = Array.isArray(data.leaderboard) ? data.leaderboard : [];
+      setLeaderboardData(list);
+    } catch (err) {
+      console.error('[Admin] Error fetching leaderboard:', err);
+      setLeaderboardData([]);
+    } finally {
+      setLoadingLeaderboard(false);
     }
   };
 
@@ -3013,15 +3063,19 @@ export default function AdminDashboardPage() {
           
         case 'students':
           // Student data is loaded by specific submenu hooks (approved-students, etc.)
-          // These are handled by the useEffect hooks that watch activeSubMenu
           if (subMenu === 'approved-students') {
             if (!approvedStudentsFetchedRef.current && !approvedStudentsFetchingRef.current && fetchApprovedStudentsRef.current) {
-              // Reset flags to allow fresh fetch
               approvedStudentsFetchedRef.current = false;
               approvedStudentsFetchingRef.current = false;
               await fetchApprovedStudentsRef.current();
               dataLoadedRef.current.add('approved-students');
             }
+          } else if (subMenu === 'student-leaderboard') {
+            await fetchLeaderboard();
+            dataLoadedRef.current.add('student-leaderboard');
+          } else if (subMenu === 'student-certification') {
+            await fetchProgress();
+            dataLoadedRef.current.add('student-certification');
           }
           break;
           
@@ -5436,6 +5490,156 @@ export default function AdminDashboardPage() {
                         </table>
                       </div>
                     </>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Leaderboard - Students ranked by sats with status */}
+            {activeSubMenu === 'student-leaderboard' && (
+              <>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-5 w-5 text-amber-400" />
+                        <h3 className="text-xl font-semibold text-zinc-50">Leaderboard</h3>
+                      </div>
+                      <p className="text-sm text-zinc-400 mt-1">
+                        Students ranked by sats earned (rewards). Status from progress and cohort.
+                      </p>
+                    </div>
+                  </div>
+                  {loadingLeaderboard ? (
+                    <div className="text-center py-12 text-zinc-400">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400 mb-2"></div>
+                      <p>Loading leaderboard...</p>
+                    </div>
+                  ) : leaderboardData.length === 0 ? (
+                    <div className="text-center py-12 text-zinc-400">
+                      <p className="text-lg mb-2">No leaderboard data yet</p>
+                      <p className="text-sm">Sats rewards will appear here once students earn rewards.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-800">
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase w-16">Rank</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Name</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Email</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Cohort</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Progress %</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Sats</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {leaderboardData.map((entry) => {
+                            const prog = progress.find((p) => p.id === entry.studentId);
+                            return (
+                              <tr key={entry.studentId} className="border-b border-zinc-800/80 hover:bg-zinc-800/30">
+                                <td className="p-3">
+                                  <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
+                                    entry.rank === 1 ? 'bg-amber-500/20 text-amber-400' :
+                                    entry.rank === 2 ? 'bg-zinc-400/20 text-zinc-300' :
+                                    entry.rank === 3 ? 'bg-amber-700/30 text-amber-600' :
+                                    'bg-zinc-800 text-zinc-400'
+                                  }`}>
+                                    {entry.rank}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-sm text-zinc-200">{entry.name}</td>
+                                <td className="p-3 text-sm text-zinc-400">{prog?.email ?? '—'}</td>
+                                <td className="p-3 text-sm text-zinc-400">{prog?.cohortName ?? '—'}</td>
+                                <td className="p-3 text-sm">
+                                  {prog != null ? (
+                                    <span className="text-zinc-300">{prog.overallProgress ?? 0}%</span>
+                                  ) : (
+                                    <span className="text-zinc-500">—</span>
+                                  )}
+                                </td>
+                                <td className="p-3 text-sm font-medium text-amber-400">{entry.sats}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Certification - Student certification status */}
+            {activeSubMenu === 'student-certification' && (
+              <>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Award className="h-5 w-5 text-cyan-400" />
+                        <h3 className="text-xl font-semibold text-zinc-50">Certification Status</h3>
+                      </div>
+                      <p className="text-sm text-zinc-400 mt-1">
+                        Student progress toward certification (chapters completed, exam, overall status).
+                      </p>
+                    </div>
+                  </div>
+                  {progress.length === 0 && !progressFetchingRef.current ? (
+                    <div className="text-center py-12 text-zinc-400">
+                      <p className="text-lg mb-2">No student progress data</p>
+                      <p className="text-sm">Progress is loaded when you open this section.</p>
+                      <button
+                        type="button"
+                        onClick={() => fetchProgress()}
+                        className="mt-3 rounded-lg bg-cyan-500/20 text-cyan-300 px-4 py-2 text-sm font-medium hover:bg-cyan-500/30 transition"
+                      >
+                        Load progress
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-800">
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Name</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Email</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Cohort</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Chapters</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Progress %</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Attendance</th>
+                            <th className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {progress.map((p) => {
+                            const totalCh = p.totalChapters ?? 20;
+                            const completed = p.completedChapters ?? 0;
+                            const pct = totalCh > 0 ? Math.round((completed / totalCh) * 100) : 0;
+                            const student = approvedStudents.find((s) => s.email === p.email);
+                            const examDone = !!(student && student.exam_completed_at);
+                            const certified = pct >= 100 && examDone;
+                            return (
+                              <tr key={p.id} className="border-b border-zinc-800/80 hover:bg-zinc-800/30">
+                                <td className="p-3 text-sm text-zinc-200">{p.name}</td>
+                                <td className="p-3 text-sm text-zinc-400">{p.email}</td>
+                                <td className="p-3 text-sm text-zinc-400">{p.cohortName ?? '—'}</td>
+                                <td className="p-3 text-sm text-zinc-300">{completed}/{totalCh}</td>
+                                <td className="p-3 text-sm text-zinc-300">{p.overallProgress ?? 0}%</td>
+                                <td className="p-3 text-sm text-zinc-400">{p.attendancePercent ?? 0}%</td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    certified ? 'bg-green-500/20 text-green-400' : pct >= 100 ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-500/20 text-zinc-400'
+                                  }`}>
+                                    {certified ? 'Certified' : pct >= 100 ? 'Eligible (exam pending)' : 'In progress'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </>
