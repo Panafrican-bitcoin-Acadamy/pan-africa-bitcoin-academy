@@ -310,22 +310,22 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                   }
                   
                   // After "Decentralization Explained" content (paragraph index 8 in 5.3), show dec.jpeg
+                  const decImg = section.images?.[0];
                   const isAfterDecentralization = section.heading === "5.3 Bitcoin as Peer-to-Peer Electronic Cash"
                     && pIdx === 8
-                    && section.images?.[0]?.src?.includes("dec.jpeg");
-                  if (isAfterDecentralization) {
-                    const img = section.images[0];
+                    && decImg?.src?.includes("dec.jpeg");
+                  if (isAfterDecentralization && decImg) {
                     return (
                       <div key={`${p}-${pIdx}-dec`}>
                         <p className="mt-3 text-zinc-200 leading-relaxed">{p}</p>
                         <div className="mt-4 flex flex-col items-center">
                           <img
-                            src={img.src}
-                            alt={img.alt}
+                            src={decImg.src}
+                            alt={decImg.alt}
                             className="w-full max-w-xl rounded-lg border border-cyan-400/20 object-contain"
                           />
-                          {img.caption && (
-                            <p className="mt-2 text-center text-sm text-cyan-200/90 italic">{img.caption}</p>
+                          {decImg.caption && (
+                            <p className="mt-2 text-center text-sm text-cyan-200/90 italic">{decImg.caption}</p>
                           )}
                         </div>
                       </div>
