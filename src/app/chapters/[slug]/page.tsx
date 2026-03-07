@@ -926,6 +926,24 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           <p className="text-lg font-semibold text-orange-200">Centralized control over money</p>
                         </div>
                       </div>
+                    ) : section.heading === "4.1 The Cypherpunks & Early Digital Currencies → Satoshi's Breakthrough" && section.images.length >= 1 ? (
+                      // 4.1 Cypherpunks: images at half size
+                      <div className="mt-6 flex flex-col items-center space-y-4">
+                        {section.images.map((image, idx) => (
+                          <div key={idx} className="flex flex-col items-center w-full max-w-[50%] min-w-0">
+                            <img
+                              src={image.src}
+                              alt={image.alt}
+                              className="w-full rounded-lg border border-orange-400/20 shadow-lg object-contain"
+                            />
+                            {image.caption && (
+                              <p className="mt-2 text-center text-xs text-zinc-400 italic">
+                                {image.caption}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     ) : section.heading === "6.2 Peer-to-Peer Transactions (P2P)" && section.images.length === 1 ? (
                       // P2P transaction flow diagram: one image with flow steps and caption
                       <div className="mt-6 flex flex-col items-center space-y-4">

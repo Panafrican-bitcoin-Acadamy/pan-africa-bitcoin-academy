@@ -537,6 +537,18 @@ export const chaptersContent: ChapterContent[] = [
             content: "This early cryptographic work showed that trust could be created through mathematics and code, rather than relying solely on institutions.",
           },
         ],
+        images: [
+          {
+            src: "/images/book_images/time.jpeg",
+            alt: "Haber & Stornetta time-stamping and precursors to Bitcoin",
+            caption: "Time-stamping and digital trust",
+          },
+          {
+            src: "/images/book_images/timesta.jpeg",
+            alt: "Time-stamping system (1991–92) — roots of blockchain",
+            caption: "Haber & Stornetta time-stamping",
+          },
+        ],
       },
     ],
     activities: [
