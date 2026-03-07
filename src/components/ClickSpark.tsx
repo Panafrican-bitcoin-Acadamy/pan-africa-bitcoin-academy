@@ -36,7 +36,7 @@ function ClickSpark({
         sparksEl = document.createElement('div');
         sparksEl.setAttribute('aria-hidden', 'true');
         sparksEl.style.cssText =
-          'position:absolute;inset:0;pointer-events:none;overflow:hidden;';
+          'position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:2147483647;';
         container.style.position = 'relative';
         container.appendChild(sparksEl);
         sparksRef.current = sparksEl;

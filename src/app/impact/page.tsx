@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import SplitText from '@/components/SplitText';
 
 interface ImpactMetrics {
   totalStudentsTrained: number;
@@ -188,7 +189,20 @@ export default function ImpactPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Our Impact in Building Bitcoin Education & Sovereignty in Africa
+                <SplitText
+                  text="Our Impact in Building Bitcoin Education & Sovereignty in Africa"
+                  tag="span"
+                  className="inline-block"
+                  delay={50}
+                  duration={1.25}
+                  ease="bounce.out"
+                  splitType="chars"
+                  from={{ opacity: 0, y: 40 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="-100px"
+                  textAlign="center"
+                />
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Tracking our progress openly. Updated after every cohort.

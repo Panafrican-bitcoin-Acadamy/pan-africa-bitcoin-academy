@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AnimatedSection } from "@/components/AnimatedSection";
+import SplitText from "@/components/SplitText";
 import { AnimatedList } from "@/components/AnimatedList";
 
 const roles = [
@@ -102,7 +103,20 @@ export default function MentorshipPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center w-full">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Mentorship & Volunteer
+                <SplitText
+                  text="Mentorship & Volunteer"
+                  tag="span"
+                  className="inline-block"
+                  delay={50}
+                  duration={1.25}
+                  ease="bounce.out"
+                  splitType="chars"
+                  from={{ opacity: 0, y: 40 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="-100px"
+                  textAlign="center"
+                />
               </h1>
               <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
                 Join us in building Bitcoin education and sovereignty in Africa.

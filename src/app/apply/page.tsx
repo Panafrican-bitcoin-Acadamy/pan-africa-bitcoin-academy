@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from '@/hooks/useAuth';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import SplitText from '@/components/SplitText';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { sortedCountries, getPhoneRule, type Country } from '@/lib/countries';
 import { inputStyles, labelStyles, formStyles, buttonStyles, cardStyles, alertStyles, cn } from '@/lib/styles';
@@ -530,7 +531,20 @@ export default function ApplyPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center w-full">
               <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
-                Join our Program
+                <SplitText
+                  text="Join our Program"
+                  tag="span"
+                  className="inline-block"
+                  delay={50}
+                  duration={1.25}
+                  ease="bounce.out"
+                  splitType="chars"
+                  from={{ opacity: 0, y: 40 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="-100px"
+                  textAlign="center"
+                />
               </h1>
               <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
                 Apply to join the Pan-Africa Bitcoin Academy and <b>start</b> your journey toward financial sovereignty.

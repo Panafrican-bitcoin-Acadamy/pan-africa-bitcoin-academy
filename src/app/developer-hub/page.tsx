@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ExternalLink, Code, GitBranch, Users, Calendar, Award, BookOpen, Rocket, HelpCircle, Github, Mail, Zap, Database, TrendingUp, FlaskConical } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import SplitText from '@/components/SplitText';
 import { AnimatedList } from '@/components/AnimatedList';
 
 interface DeveloperResource {
@@ -80,7 +81,20 @@ export default function DeveloperHubPage() {
                 </div>
               </div>
               <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
-                Developer Hub
+                <SplitText
+                  text="Developer Hub"
+                  tag="span"
+                  className="inline-block"
+                  delay={50}
+                  duration={1.25}
+                  ease="bounce.out"
+                  splitType="chars"
+                  from={{ opacity: 0, y: 40 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="-100px"
+                  textAlign="center"
+                />
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Your roadmap to becoming a Bitcoin developer. Connect, learn, and contribute to the global Bitcoin ecosystem.

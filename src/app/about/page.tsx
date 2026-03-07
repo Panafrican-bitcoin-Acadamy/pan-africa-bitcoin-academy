@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import SplitText from '@/components/SplitText';
 
 export const metadata: Metadata = {
   title: 'About PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
@@ -45,7 +46,20 @@ export default function AboutPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-14 text-center">
               <h1 className="mt-4 text-4xl tracking-tight text-zinc-30 sm:text-5xl lg:text-6xl">
-                Understand Bitcoin the right way — through precise explanations, transparent guidance, and meaningful technical depth
+                <SplitText
+                  text="Understand Bitcoin the right way — through precise explanations, transparent guidance, and meaningful technical depth"
+                  tag="span"
+                  className="inline-block"
+                  delay={50}
+                  duration={1.25}
+                  ease="bounce.out"
+                  splitType="words"
+                  from={{ opacity: 0, y: 40 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="-100px"
+                  textAlign="center"
+                />
               </h1>
             </div>
           </AnimatedSection>
