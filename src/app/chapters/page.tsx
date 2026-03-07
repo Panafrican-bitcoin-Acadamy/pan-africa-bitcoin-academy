@@ -1056,14 +1056,16 @@ export default function ChaptersPage() {
           </AnimatedSection>
 
           {/* Study Materials */}
-          <AnimatedSection animation="slideLeft">
-            <div className="mb-16">
-            <h2 className="mb-3 text-2xl font-semibold text-orange-300 sm:text-3xl">Study Materials</h2>
-            <p className="mb-8 text-base text-zinc-300 sm:text-lg">
-              Download essential Bitcoin resources and books to deepen your understanding:
-            </p>
+          <div className="mb-16">
+            <AnimatedSection animation="slideUp">
+              <h2 className="mb-3 text-2xl font-semibold text-orange-300 sm:text-3xl">Study Materials</h2>
+              <p className="mb-8 text-base text-zinc-300 sm:text-lg">
+                Download essential Bitcoin resources and books to deepen your understanding:
+              </p>
+            </AnimatedSection>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Bitcoin White Paper */}
+              <AnimatedSection animation="slideUp" delay={0}>
               <a
                 href="https://bitcoin.org/bitcoin.pdf"
                 target="_blank"
@@ -1094,8 +1096,10 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
 
               {/* The Little Book of Bitcoin */}
+              <AnimatedSection animation="slideUp" delay={80}>
               <a
                 href="https://www.littlebitcoinbook.com/"
                 target="_blank"
@@ -1126,8 +1130,10 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
 
               {/* Mastering Bitcoin */}
+              <AnimatedSection animation="slideUp" delay={160}>
               <a
                 href="https://github.com/bitcoinbook/bitcoinbook"
                 target="_blank"
@@ -1158,8 +1164,10 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
 
               {/* The Bitcoin Standard */}
+              <AnimatedSection animation="slideUp" delay={240}>
               <a
                 href="https://saifedean.com/thebitcoinstandard/"
                 target="_blank"
@@ -1190,8 +1198,10 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
 
               {/* Programming Bitcoin */}
+              <AnimatedSection animation="slideUp" delay={320}>
               <a
                 href="https://github.com/jimmysong/programmingbitcoin"
                 target="_blank"
@@ -1222,8 +1232,10 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
 
               {/* Layered Money */}
+              <AnimatedSection animation="slideUp" delay={400}>
               <a
                 href="https://www.layeredmoney.com/"
                 target="_blank"
@@ -1254,8 +1266,10 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
 
               {/* The Little Book of Bitcoin in Tigrigna */}
+              <AnimatedSection animation="slideUp" delay={480}>
               <a
                 href="https://drive.google.com/file/d/1YcU6OIHZEsp4c6KOwAVDUGI2BfNtxx5T/view?usp=drive_link"
                 target="_blank"
@@ -1286,8 +1300,10 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
 
               {/* Bitcoin Development Philosophy */}
+              <AnimatedSection animation="slideUp" delay={560}>
               <a
                 href="http://bitcoindevphilosophy.com/"
                 target="_blank"
@@ -1318,9 +1334,9 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
             </div>
-            </div>
-          </AnimatedSection>
+          </div>
 
           {/* Chapters by Level */}
           {levels.map((level, levelIndex) => {
