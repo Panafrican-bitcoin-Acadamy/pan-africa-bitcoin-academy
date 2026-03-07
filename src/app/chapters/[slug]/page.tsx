@@ -903,6 +903,25 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           <p className="text-lg font-semibold text-orange-200">Centralized control over money</p>
                         </div>
                       </div>
+                    ) : section.heading === "6.2 Peer-to-Peer Transactions (P2P)" && section.images.length === 1 ? (
+                      // P2P transaction flow diagram: one image with flow steps and caption
+                      <div className="mt-6 flex flex-col items-center space-y-4">
+                        <div className="w-full max-w-2xl rounded-lg border border-cyan-400/20 bg-zinc-900/50 p-4 shadow-lg">
+                          <img
+                            src={section.images[0].src}
+                            alt={section.images[0].alt}
+                            className="w-full rounded-lg object-contain"
+                          />
+                          {section.images[0].caption && (
+                            <p className="mt-3 text-center text-sm font-medium text-cyan-200">
+                              {section.images[0].caption}
+                            </p>
+                          )}
+                          <p className="mt-2 text-center text-xs text-zinc-400">
+                            Diagram showing the flow: Alice creates transaction → broadcasts → nodes verify → miners confirm
+                          </p>
+                        </div>
+                      </div>
                     ) : section.images.length === 2 ? (
                       // Side by side layout for sections with exactly 2 images
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">

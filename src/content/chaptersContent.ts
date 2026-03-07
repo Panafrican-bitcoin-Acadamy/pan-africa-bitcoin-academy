@@ -765,7 +765,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/p2p.jpg",
+            src: "/images/book_images/P2P.jpg",
             alt: "Diagram showing the flow: Alice creates transaction → broadcasts → nodes verify → miners confirm",
             caption: "Peer-to-peer transaction flow",
           },
