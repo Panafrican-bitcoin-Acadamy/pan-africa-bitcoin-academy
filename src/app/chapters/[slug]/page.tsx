@@ -309,6 +309,29 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                     );
                   }
                   
+                  // After "Decentralization Explained" content (paragraph index 8 in 5.3), show dec.jpeg
+                  const isAfterDecentralization = section.heading === "5.3 Bitcoin as Peer-to-Peer Electronic Cash"
+                    && pIdx === 8
+                    && section.images?.[0]?.src?.includes("dec.jpeg");
+                  if (isAfterDecentralization) {
+                    const img = section.images[0];
+                    return (
+                      <div key={`${p}-${pIdx}-dec`}>
+                        <p className="mt-3 text-zinc-200 leading-relaxed">{p}</p>
+                        <div className="mt-4 flex flex-col items-center">
+                          <img
+                            src={img.src}
+                            alt={img.alt}
+                            className="w-full max-w-xl rounded-lg border border-cyan-400/20 object-contain"
+                          />
+                          {img.caption && (
+                            <p className="mt-2 text-center text-sm text-cyan-200/90 italic">{img.caption}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
                   // Numbered topic style: "1. Topic Name\n\nBody..." → render as small bold header + body
                   const hasNumberedTopic = /^\d+\.\s+[\s\S]+\n\n/.test(p);
                   if (hasNumberedTopic) {
@@ -941,7 +964,11 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         ))}
                       </div>
                     ) : (
-                      section.images.map((image, idx) => (
+                      // Skip dec.jpeg in 5.3 (already shown under Decentralization Explained)
+                      (section.heading === "5.3 Bitcoin as Peer-to-Peer Electronic Cash"
+                        ? section.images.filter((img) => !img.src.includes("dec.jpeg"))
+                        : section.images
+                      ).map((image, idx) => (
                         <div key={idx} className={`mt-4 ${image.src.includes('money_usage') || image.src.includes('chinese_first_fiat_money') || image.src.includes('jade.png') ? 'flex flex-col items-center' : ''}`}>
                           <img
                             src={image.src}
