@@ -879,6 +879,13 @@ export const chaptersContent: ChapterContent[] = [
         paragraphs: [
           "New blocks don't appear by magic; they are added by people called miners. Miners gather fresh transactions and bundle them into a block. To seal the block, they solve a math puzzle that requires time and computing power. Once a miner finds the correct solution, the block is locked in place and added to the chain, and everyone else on the network updates their copy of the notebook. This process, known as Proof of Work, ensures that no one can cheaply rewrite history — it's always far easier to be honest than to try to cheat.",
         ],
+        images: [
+          {
+            src: "/images/book_images/miners.jpeg",
+            alt: "Miners add new blocks to the blockchain by solving Proof of Work puzzles",
+            caption: "Who adds the blocks? Miners seal and add blocks to the chain",
+          },
+        ],
       },
       {
         heading: "7.4 Why Blockchain Matters",
