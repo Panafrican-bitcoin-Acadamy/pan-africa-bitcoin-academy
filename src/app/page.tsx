@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, Twitter, Instagram, Music2, Video, Users, GraduationCap, Rocket, FileText, Calendar as CalendarIcon } from "lucide-react";
+import { Facebook, Twitter, Instagram, Music2 } from "lucide-react";
 import { StructuredData } from "@/components/StructuredData";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
 import { HeroHeadline } from "@/components/HeroHeadline";
 import { TrueFocus } from "@/components/TrueFocus";
+import { UpcomingEventsWithModal } from "@/components/UpcomingEventsWithModal";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
@@ -258,16 +259,6 @@ interface UpcomingEvent {
   is_registration_enabled?: boolean;
   cohort_id?: string | null;
 }
-
-const EVENT_TYPE_LABELS: Record<string, string> = {
-  'live-class': 'Live Class',
-  'assignment': 'Assignment',
-  'community': 'Community',
-  'workshop': 'Workshop',
-  'deadline': 'Deadline',
-  'quiz': 'Quiz',
-  'cohort': 'Cohort',
-};
 
 async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
   try {
@@ -985,144 +976,21 @@ export default async function Home() {
                   Join our upcoming sessions and workshops.
                 </p>
               </div>
-              {upcomingEvents.length > 0 ? (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {upcomingEvents.map((event, index) => {
-                    const isClosestEvent = index === 0; // First event is the closest
-                    const getEventTypeStyle = (type: string) => {
-                      const styles: Record<string, { border: string; bg: string; text: string; icon: any }> = {
-                        'live-class': {
-                          border: 'border-blue-500/30',
-                          bg: 'bg-blue-500/10',
-                          text: 'text-blue-300',
-                          icon: Video,
-                        },
-                        'community': {
-                          border: 'border-purple-500/30',
-                          bg: 'bg-purple-500/10',
-                          text: 'text-purple-300',
-                          icon: Users,
-                        },
-                        'workshop': {
-                          border: 'border-cyan-500/30',
-                          bg: 'bg-cyan-500/10',
-                          text: 'text-cyan-300',
-                          icon: GraduationCap,
-                        },
-                        'cohort': {
-                          border: 'border-green-500/30',
-                          bg: 'bg-green-500/10',
-                          text: 'text-green-300',
-                          icon: Rocket,
-                        },
-                        'assignment': {
-                          border: 'border-yellow-500/30',
-                          bg: 'bg-yellow-500/10',
-                          text: 'text-yellow-300',
-                          icon: FileText,
-                        },
-                      };
-                      return styles[type] || {
-                        border: 'border-zinc-500/30',
-                        bg: 'bg-zinc-500/10',
-                        text: 'text-zinc-300',
-                        icon: CalendarIcon,
-                      };
-                    };
-
-                    const style = getEventTypeStyle(event.type);
-                    const IconComponent = style.icon;
-                    return (
-                      <div
-                        key={event.id}
-                        className={`rounded-xl border overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
-                          isClosestEvent
-                            ? 'border-yellow-500/50 bg-gradient-to-br from-yellow-500/20 via-yellow-400/15 to-yellow-500/20 shadow-[0_0_40px_rgba(234,179,8,0.4)] ring-2 ring-yellow-500/30'
-                            : `${style.border} ${style.bg} hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]`
-                        }`}
-                      >
-                        {/* Event Image - Improved presentation */}
-                        {event.image_url && (
-                          <div className="w-full h-48 bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center overflow-hidden relative">
-                            <img
-                              src={event.image_url}
-                              alt={event.image_alt_text || event.title}
-                              className="w-full h-full object-contain p-3"
-                              loading="lazy"
-                            />
-                            {/* Subtle overlay gradient at bottom for text readability if needed */}
-                            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-zinc-950/50 to-transparent pointer-events-none" />
-                          </div>
-                        )}
-                        
-                        <div className="p-5">
-                          {/* Badge and Date/Time Section */}
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex-1 min-w-0">
-                              {isClosestEvent && (
-                                <div className="mb-2">
-                                  <span className="inline-flex items-center rounded-full bg-yellow-500/30 px-2.5 py-1 text-xs font-semibold text-yellow-200">
-                                    Next Up
-                                  </span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                                <IconComponent className={`h-4 w-4 ${isClosestEvent ? 'text-yellow-300' : style.text} flex-shrink-0`} />
-                                <span className={`font-medium ${isClosestEvent ? 'text-yellow-300' : style.text}`}>
-                                  {event.dateString}
-                                </span>
-                                {event.time && (
-                                  <>
-                                    <span className="text-zinc-600">•</span>
-                                    <span className="text-zinc-400">{event.time}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Title - Better typography */}
-                          <h3 className={`mb-3 text-xl font-bold leading-tight ${isClosestEvent ? 'text-yellow-100' : 'text-zinc-50'} line-clamp-2`}>
-                            {event.title}
-                          </h3>
-
-                          {/* Description - Improved spacing and readability */}
-                          {event.description && (
-                            <p className={`text-sm leading-relaxed ${isClosestEvent ? 'text-yellow-200/80' : 'text-zinc-400'} line-clamp-3 mb-4`}>
-                              {event.description}
-                            </p>
-                          )}
-
-                          {/* Event Type Badge and Register Button */}
-                          <div className="flex items-center justify-between gap-2 mt-4">
-                            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${style.bg} ${style.text} border ${style.border}`}>
-                              {EVENT_TYPE_LABELS[event.type] || event.type}
-                            </span>
-                            {/* Register Button - Only show for non-cohort events with registration enabled */}
-                            {event.is_registration_enabled && !event.cohort_id && (
-                              <Link
-                                href={`/events/${event.id}/register`}
-                                className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                                  isClosestEvent
-                                    ? 'bg-yellow-500/20 text-yellow-200 border border-yellow-500/30 hover:bg-yellow-500/30'
-                                    : 'bg-orange-500/20 text-orange-200 border border-orange-500/30 hover:bg-orange-500/30'
-                                }`}
-                              >
-                                Register
-                              </Link>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/30 p-12 text-center">
-                  <p className="text-lg text-zinc-400 mb-2">No upcoming events scheduled</p>
-                  <p className="text-sm text-zinc-500">Check back soon for new sessions and events!</p>
-                </div>
-              )}
+              <UpcomingEventsWithModal
+                events={upcomingEvents.map((e) => ({
+                  id: e.id,
+                  title: e.title,
+                  type: e.type,
+                  dateString: e.dateString,
+                  time: e.time,
+                  description: e.description,
+                  link: e.link,
+                  image_url: e.image_url,
+                  image_alt_text: e.image_alt_text,
+                  is_registration_enabled: e.is_registration_enabled,
+                  cohort_id: e.cohort_id,
+                }))}
+              />
               <div className="text-center">
                 <Link
                   href="/apply"
