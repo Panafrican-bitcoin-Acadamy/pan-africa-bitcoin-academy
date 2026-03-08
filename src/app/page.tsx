@@ -271,21 +271,24 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 
 async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
   try {
-    const today = new Date();
+    const now = new Date();
+    const today = new Date(now);
     today.setHours(0, 0, 0, 0);
     const todayISO = today.toISOString();
+    // Use a 12-hour buffer so events that are "today" in timezones ahead of UTC still get fetched
+    const cutoff = new Date(today.getTime() - 12 * 60 * 60 * 1000);
+    const cutoffISO = cutoff.toISOString();
 
     // Fetch all events (for everyone - cohort_id is null) and upcoming cohort sessions
+    // Important: Only events with cohort_id = null ("For Everyone" in admin) appear here.
     const [eventsResult, sessionsResult] = await Promise.all([
-      // Fetch events for everyone (cohort_id is null) that are upcoming
-      // Note: Events with cohort_id = null are visible to everyone on the homepage
       supabaseAdmin
         .from('events')
         .select('*')
         .is('cohort_id', null)
-        .gte('start_time', todayISO)
+        .gte('start_time', cutoffISO)
         .order('start_time', { ascending: true })
-        .limit(20), // Increased limit to show more events
+        .limit(100),
       // Fetch upcoming cohort sessions
       supabaseAdmin
         .from('cohort_sessions')
@@ -297,10 +300,11 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
 
     const upcomingEvents: UpcomingEvent[] = [];
 
-    // Transform events
+    // Transform events (only include those that haven't started yet)
     if (eventsResult.data) {
       eventsResult.data.forEach((event: any) => {
         const startTime = event.start_time ? new Date(event.start_time) : new Date();
+        if (startTime < now) return; // skip past events
         upcomingEvents.push({
           id: event.id,
           title: event.name || 'Untitled Event',
