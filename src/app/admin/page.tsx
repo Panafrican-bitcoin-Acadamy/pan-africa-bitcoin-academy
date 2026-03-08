@@ -8,6 +8,7 @@ import { EmailInbox } from '@/components/admin/EmailInbox';
 import { StudentProgressModal } from '@/components/StudentProgressModal';
 import EventForm from '@/components/admin/EventForm';
 import EventsList from '@/components/admin/EventsList';
+import EventRegistrationsList from '@/components/admin/EventRegistrationsList';
 import MentorRegistrationForm from '@/components/admin/MentorRegistrationForm';
 import { AdminAccessManagement } from '@/components/admin/AdminAccessManagement';
 import { SecurityLoginHistory } from '@/components/admin/SecurityLoginHistory';
@@ -5264,6 +5265,9 @@ export default function AdminDashboardPage() {
                         }, 100);
                       }}
                     />
+
+                    {/* Event Registrations - people who registered for events */}
+                    <EventRegistrationsList />
                   </div>
                 )}
               </>
