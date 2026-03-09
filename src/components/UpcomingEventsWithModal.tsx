@@ -90,10 +90,10 @@ const TOPIC_LABELS = {
 } as const;
 
 function TopicSections({
-  theory,
-  practice,
-  liveSession,
-  quiz,
+  topic_theory: theory,
+  topic_practice: practice,
+  topic_live_session: liveSession,
+  topic_quiz: quiz,
   variant,
 }: TopicSectionProps & { variant: 'card' | 'modal' }) {
   const isCard = variant === 'card';
@@ -114,7 +114,7 @@ function TopicSections({
             {TOPIC_LABELS.theory.label}
           </p>
           <ul className={isCard ? 'ml-3 list-disc space-y-0.5 text-zinc-400 line-clamp-2' : ''} style={listStyle}>
-            {renderList(theory, TOPIC_LABELS.theory.colorHex)}
+            {renderList(theory)}
           </ul>
         </div>
       ) : null}
@@ -124,7 +124,7 @@ function TopicSections({
             {TOPIC_LABELS.practice.label}
           </p>
           <ul className={isCard ? 'ml-3 list-disc space-y-0.5 text-zinc-400 line-clamp-2' : ''} style={listStyle}>
-            {renderList(practice, TOPIC_LABELS.practice.colorHex)}
+            {renderList(practice)}
           </ul>
         </div>
       ) : null}
