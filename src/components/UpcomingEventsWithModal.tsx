@@ -12,6 +12,7 @@ import {
   Calendar as CalendarIcon,
   X,
   ExternalLink,
+  BookOpen,
 } from 'lucide-react';
 
 export interface UpcomingEventForModal {
@@ -26,6 +27,13 @@ export interface UpcomingEventForModal {
   image_alt_text: string | null;
   is_registration_enabled?: boolean;
   cohort_id?: string | null;
+  /** Cohort session topic linked to chapter (from DB); show "View chapter" when set */
+  chapter_slug?: string | null;
+  chapter_title?: string | null;
+  /** What the topic is about (chapter hook) */
+  topic_detail?: string | null;
+  /** What you'll learn (first few points from chapter) */
+  topic_learn?: string[] | null;
 }
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -147,19 +155,36 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
                     </div>
                   </div>
                 </div>
-                <h3 className={`mb-3 text-xl font-bold leading-tight ${isClosestEvent ? 'text-yellow-100' : 'text-zinc-50'} line-clamp-2`}>
+                <h3 className={`mb-2 text-xl font-bold leading-tight ${isClosestEvent ? 'text-yellow-100' : 'text-zinc-50'} line-clamp-2`}>
                   {event.title}
                 </h3>
-                {event.description && (
-                  <p className={`text-sm leading-relaxed ${isClosestEvent ? 'text-yellow-200/80' : 'text-zinc-400'} line-clamp-3 mb-4`}>
-                    {event.description}
+                {event.chapter_title && (
+                  <p className={`text-xs font-medium ${isClosestEvent ? 'text-yellow-300/90' : 'text-cyan-400'} mb-1`}>
+                    Topic: {event.chapter_title}
                   </p>
                 )}
-                <div className="flex items-center justify-between gap-2 mt-4">
+                {(event.topic_detail || event.description) && (
+                  <p className={`text-sm leading-relaxed ${isClosestEvent ? 'text-yellow-200/80' : 'text-zinc-400'} line-clamp-3 mb-4`}>
+                    {event.topic_detail || event.description}
+                  </p>
+                )}
+                {!event.topic_detail && !event.description && <div className="mb-4" />}
+                <div className="flex items-center justify-between gap-2 mt-4 flex-wrap">
                   <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${style.bg} ${style.text} border ${style.border}`}>
                     {EVENT_TYPE_LABELS[event.type] || event.type}
                   </span>
-                  {event.is_registration_enabled && !event.cohort_id && (
+                  <div className="flex items-center gap-2">
+                    {event.chapter_slug && (
+                      <Link
+                        href={`/chapters/${event.chapter_slug}`}
+                        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-cyan-300 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 transition"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        View chapter
+                      </Link>
+                    )}
+                    {event.is_registration_enabled && !event.cohort_id && (
                     <span
                       onClick={(e) => e.stopPropagation()}
                       className="inline-block"
@@ -176,6 +201,7 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
                       </Link>
                     </span>
                   )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -282,7 +308,35 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
                 {EVENT_TYPE_LABELS[selectedEvent.type] || selectedEvent.type}
               </span>
 
-              {selectedEvent.description && (
+              {(selectedEvent.chapter_title || selectedEvent.topic_detail || (selectedEvent.topic_learn && selectedEvent.topic_learn.length > 0)) && (
+                <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #3f3f46' }}>
+                  <h3 style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                    Topic
+                  </h3>
+                  {selectedEvent.chapter_title && (
+                    <p style={{ color: '#67e8f9', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+                      {selectedEvent.chapter_title}
+                    </p>
+                  )}
+                  {selectedEvent.topic_detail && (
+                    <p style={{ color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6, marginBottom: selectedEvent.topic_learn?.length ? '12px' : 0 }}>
+                      {selectedEvent.topic_detail}
+                    </p>
+                  )}
+                  {selectedEvent.topic_learn && selectedEvent.topic_learn.length > 0 && (
+                    <>
+                      <p style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', marginBottom: '6px' }}>What you&apos;ll learn</p>
+                      <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 }}>
+                        {selectedEvent.topic_learn.map((item, i) => (
+                          <li key={i} style={{ marginBottom: '4px' }}>{item}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {selectedEvent.description && !selectedEvent.topic_detail && (
                 <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #3f3f46' }}>
                   <p style={{ color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
                     {selectedEvent.description}
@@ -291,6 +345,27 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
               )}
 
               <div style={{ marginTop: '1rem', paddingTop: '12px', borderTop: '1px solid #3f3f46', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {selectedEvent.chapter_slug && (
+                  <Link
+                    href={`/chapters/${selectedEvent.chapter_slug}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      border: '2px solid rgba(6, 182, 212, 0.5)',
+                      background: 'rgba(6, 182, 212, 0.2)',
+                      color: '#67e8f9',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <BookOpen className="h-4 w-4" style={{ flexShrink: 0 }} />
+                    View chapter{selectedEvent.chapter_title ? `: ${selectedEvent.chapter_title}` : ''}
+                  </Link>
+                )}
                 {selectedEvent.link && selectedEvent.link !== '#' && (
                   <a
                     href={selectedEvent.link}

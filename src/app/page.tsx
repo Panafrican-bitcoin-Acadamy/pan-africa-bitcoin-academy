@@ -8,6 +8,7 @@ import { HeroHeadline } from "@/components/HeroHeadline";
 import { TrueFocus } from "@/components/TrueFocus";
 import { UpcomingEventsWithModal } from "@/components/UpcomingEventsWithModal";
 import { supabaseAdmin } from "@/lib/supabase";
+import { chaptersContent } from "@/content/chaptersContent";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -258,6 +259,13 @@ interface UpcomingEvent {
   image_alt_text: string | null;
   is_registration_enabled?: boolean;
   cohort_id?: string | null;
+  /** When this event is a cohort session with a topic linked to a chapter (saved in DB as topic) */
+  chapter_slug?: string | null;
+  chapter_title?: string | null;
+  /** Short line about what the topic is about (from chapter hook) */
+  topic_detail?: string | null;
+  /** What you'll learn (from chapter, first few points) */
+  topic_learn?: string[] | null;
 }
 
 async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
@@ -313,22 +321,28 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
       });
     }
 
-    // Transform sessions (sessions don't have images)
+    // Transform sessions (topic is stored in DB; match to chapter for link)
     if (sessionsResult.data) {
       sessionsResult.data.forEach((session: any) => {
         const sessionDate = new Date(session.session_date);
         const cohortName = session.cohorts?.name || 'Cohort';
+        const topic = session.topic || '';
+        const chapter = topic ? chaptersContent.find((c) => c.title === topic) : null;
         upcomingEvents.push({
           id: `session-${session.id}`,
-          title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
+          title: `${cohortName} - Session ${session.session_number}${topic ? `: ${topic}` : ''}`,
           type: 'live-class',
           date: sessionDate,
           dateString: sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
-          description: session.topic || `Cohort session ${session.session_number}`,
+          description: topic || `Cohort session ${session.session_number}`,
           link: session.link || null,
           image_url: null,
           image_alt_text: null,
+          chapter_slug: chapter?.slug ?? null,
+          chapter_title: chapter?.title ?? null,
+          topic_detail: chapter?.hook ?? null,
+          topic_learn: chapter?.learn?.slice(0, 5) ?? null,
         });
       });
     }
@@ -989,6 +1003,10 @@ export default async function Home() {
                   image_alt_text: e.image_alt_text,
                   is_registration_enabled: e.is_registration_enabled,
                   cohort_id: e.cohort_id,
+                  chapter_slug: e.chapter_slug ?? null,
+                  chapter_title: e.chapter_title ?? null,
+                  topic_detail: e.topic_detail ?? null,
+                  topic_learn: e.topic_learn ?? null,
                 }))}
               />
               <div className="text-center">

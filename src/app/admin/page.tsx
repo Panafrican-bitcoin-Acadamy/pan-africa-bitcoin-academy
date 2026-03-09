@@ -405,6 +405,7 @@ export default function AdminDashboardPage() {
     status: 'Upcoming',
     sessions: '',
   });
+  const [applySessionChapterMappingAfterCreate, setApplySessionChapterMappingAfterCreate] = useState(false);
   const [editCohortSubmitting, setEditCohortSubmitting] = useState(false);
   const [sendingLinkEmail, setSendingLinkEmail] = useState<string | null>(null);
 
@@ -2137,6 +2138,101 @@ export default function AdminDashboardPage() {
     return ch?.slug ?? null;
   };
 
+  const getChapterByTitle = (title: string | null | undefined): { number: number; title: string; slug: string } | null => {
+    if (!title?.trim()) return null;
+    const ch = chaptersContent.find((c) => c.title === title.trim());
+    return ch ? { number: ch.number, title: ch.title, slug: ch.slug } : null;
+  };
+
+  const [sessionTopicFilter, setSessionTopicFilter] = useState<string>('');
+  const [updatingTopicSessionId, setUpdatingTopicSessionId] = useState<string | null>(null);
+  const [applyingMappingCohortId, setApplyingMappingCohortId] = useState<string | null>(null);
+
+  const quickSetSessionTopic = async (sessionId: string, chapterTitle: string) => {
+    setUpdatingTopicSessionId(sessionId);
+    try {
+      const res = await fetchWithAuth(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: chapterTitle }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to set topic');
+      setAllSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, topic: chapterTitle } : s))
+      );
+      setNotification({ type: 'success', message: 'Topic set.' });
+    } catch (err: unknown) {
+      setNotification({ type: 'error', message: err instanceof Error ? err.message : 'Failed to set topic' });
+    } finally {
+      setUpdatingTopicSessionId(null);
+    }
+  };
+
+  const applySessionChapterMappingForCohort = async (cohortId: string, sessionsOverride?: Session[]) => {
+    setApplyingMappingCohortId(cohortId);
+    let cohortSessions = (sessionsOverride || allSessions)
+      .filter((s) => s.cohort_id === cohortId)
+      .sort((a, b) => (a.session_number || 0) - (b.session_number || 0));
+    if (cohortSessions.length === 0) {
+      try {
+        const res = await fetchWithAuth('/api/sessions?admin=true');
+        const data = await res.json();
+        if (res.ok && data.sessions) {
+          cohortSessions = data.sessions
+            .filter((s: Session) => s.cohort_id === cohortId)
+            .sort((a: Session, b: Session) => (a.session_number || 0) - (b.session_number || 0));
+          if (cohortSessions.length > 0) {
+            setAllSessions((prev) => {
+              const byId = new Map(prev.map((s) => [s.id, s]));
+              cohortSessions.forEach((s: Session) => byId.set(s.id, s));
+              return Array.from(byId.values());
+            });
+          }
+        }
+      } catch {
+        setApplyingMappingCohortId(null);
+        setNotification({ type: 'error', message: 'Could not load sessions for cohort.' });
+        return;
+      }
+    }
+    let updated = 0;
+    try {
+      for (let i = 0; i < chaptersContent.length; i++) {
+        const ch = chaptersContent[i];
+        const sessionNum = i + 1;
+        const session = cohortSessions.find((s) => s.session_number === sessionNum);
+        if (!session) continue;
+        const res = await fetchWithAuth(`/api/sessions/${session.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic: ch.title }),
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.session) {
+          setAllSessions((prev) =>
+            prev.map((s) => (s.id === session.id ? { ...s, topic: ch.title } : s))
+          );
+          updated++;
+        }
+      }
+      setNotification({
+        type: 'success',
+        message: updated
+          ? `Linked ${updated} sessions to chapters (1→1) for this cohort.`
+          : 'No sessions updated.',
+      });
+    } catch (err: unknown) {
+      setNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to apply session–chapter mapping',
+      });
+    } finally {
+      setApplyingMappingCohortId(null);
+    }
+  };
+
   const deleteSession = (session: Session) => {
     setConfirmPopup({
       title: 'Delete session',
@@ -3627,7 +3723,8 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create cohort');
-      alert('Cohort created successfully! Sessions have been auto-generated.');
+      const newCohortId = data.cohort?.id;
+      const willApplyMapping = applySessionChapterMappingAfterCreate && !!newCohortId;
       await fetchCohorts();
       await fetchOverview();
       setCohortForm({
@@ -3639,8 +3736,18 @@ export default function AdminDashboardPage() {
         status: 'Upcoming',
         sessions: '',
       });
+      if (willApplyMapping) {
+        setApplySessionChapterMappingAfterCreate(false);
+        await applySessionChapterMappingForCohort(newCohortId);
+        sessionsFetchedRef.current = false;
+        if (fetchSessionsRef.current) await fetchSessionsRef.current();
+      }
+      setNotification({
+        type: 'success',
+        message: 'Cohort created successfully! Sessions auto-generated.' + (willApplyMapping ? ' Session–chapter links applied.' : ''),
+      });
     } catch (err: any) {
-      alert(err.message || 'Failed to create cohort');
+      setNotification({ type: 'error', message: err.message || 'Failed to create cohort' });
     } finally {
       setCreatingCohort(false);
     }
@@ -4705,6 +4812,17 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-zinc-500">
                   Sessions are auto-generated (Mon/Wed/Fri) from start and end dates.
                 </p>
+                <label className="flex items-start gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={applySessionChapterMappingAfterCreate}
+                    onChange={(e) => setApplySessionChapterMappingAfterCreate(e.target.checked)}
+                    className="mt-1 rounded border-zinc-600 bg-zinc-800 text-cyan-500 focus:ring-cyan-500"
+                  />
+                  <span className="text-xs text-zinc-400 group-hover:text-zinc-300">
+                    Link sessions to chapters after creation (Session 1→Ch.1, Session 2→Ch.2, … Session {chaptersContent.length}→Ch.{chaptersContent.length})
+                  </span>
+                </label>
                 <button
                   type="button"
                   onClick={createCohort}
@@ -5073,7 +5191,7 @@ export default function AdminDashboardPage() {
 
           {/* Filters */}
           <div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-2">Cohort</label>
             <select
@@ -5088,6 +5206,21 @@ export default function AdminDashboardPage() {
                 </option>
               ))}
             </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Topic / Chapter</label>
+                <select
+                  value={sessionTopicFilter}
+                  onChange={(e) => setSessionTopicFilter(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="">All topics</option>
+                  {chaptersContent.map((ch) => (
+                    <option key={ch.slug} value={ch.slug}>
+                      Ch. {ch.number} · {ch.title}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-2">Status</label>
@@ -5167,10 +5300,10 @@ export default function AdminDashboardPage() {
                     <th className="px-3 py-2">Date</th>
                     <th className="px-3 py-2">Day</th>
                     <th className="px-3 py-2">Cohort</th>
-                    <th className="px-3 py-2">Topic</th>
+                    <th className="px-3 py-2 w-0 max-w-[180px]">Topic</th>
                     <th className="px-3 py-2">Instructor</th>
                     <th className="px-3 py-2">Duration</th>
-                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2 w-0 max-w-[100px]">Status</th>
                     <th className="px-3 py-2">Link</th>
                     <th className="px-3 py-2">Actions</th>
                   </tr>
@@ -5181,6 +5314,11 @@ export default function AdminDashboardPage() {
                       // Apply cohort filter
                       if (sessionCohortFilter && session.cohort_id !== sessionCohortFilter) {
                         return false;
+                      }
+                      // Apply topic/chapter filter
+                      if (sessionTopicFilter) {
+                        const slug = getChapterSlugByTitle(session.topic);
+                        if (slug !== sessionTopicFilter) return false;
                       }
                       // Apply status filter
                       if (sessionStatusFilter !== 'all' && session.status !== sessionStatusFilter) {
@@ -5246,32 +5384,56 @@ export default function AdminDashboardPage() {
                               </span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-zinc-300">
-                            <div className="flex flex-col gap-1">
+                          <td className="px-3 py-2 text-zinc-300 max-w-[180px] w-0">
+                            <div className="flex flex-col gap-1.5 min-w-0 max-w-[180px]">
                               {session.topic ? (
-                                getChapterSlugByTitle(session.topic) ? (
-                                  <a
-                                    href={`/chapters/${getChapterSlugByTitle(session.topic)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 hover:underline font-medium"
-                                    title="Open chapter in curriculum"
-                                  >
-                                    <BookOpen className="h-3.5 w-3.5 shrink-0" />
-                                    {session.topic}
-                                    <span className="text-xs opacity-80">↗</span>
-                                  </a>
-                                ) : (
-                                  <span>{session.topic}</span>
-                                )
+                                (() => {
+                                  const ch = getChapterByTitle(session.topic);
+                                  if (ch) {
+                                    return (
+                                      <a
+                                        href={`/chapters/${ch.slug}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 hover:underline font-medium truncate min-w-0"
+                                        title={`Open chapter: Ch.${ch.number} · ${ch.title}`}
+                                      >
+                                        <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate">Ch. {ch.number} · {ch.title}</span>
+                                        <span className="text-xs opacity-80 shrink-0">↗</span>
+                                      </a>
+                                    );
+                                  }
+                                  return <span className="truncate">{session.topic}</span>;
+                                })()
                               ) : (
                                 <span className="text-zinc-500 italic">No topic</span>
                               )}
-                              {getChapterSlugByTitle(session.topic) && (
-                                <span className="text-xs text-zinc-500">
-                                  Linked to chapter · <a href={`/chapters/${getChapterSlugByTitle(session.topic)}`} target="_blank" rel="noopener noreferrer" className="text-cyan-500/80 hover:text-cyan-400">Open in new tab</a>
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                <select
+                                  value=""
+                                  onChange={(e) => {
+                                    const slug = e.target.value;
+                                    if (!slug) return;
+                                    const ch = chaptersContent.find((c) => c.slug === slug);
+                                    if (ch) quickSetSessionTopic(session.id, ch.title);
+                                    e.target.value = '';
+                                  }}
+                                  disabled={updatingTopicSessionId === session.id}
+                                  className="max-w-[140px] rounded border border-zinc-600 bg-zinc-800/80 px-1.5 py-0.5 text-[11px] text-zinc-300 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:opacity-50"
+                                  title="Set topic from chapter (saves to database)"
+                                >
+                                  <option value="">Set topic…</option>
+                                  {chaptersContent.map((c) => (
+                                    <option key={c.slug} value={c.slug}>
+                                      Ch.{c.number} · {c.title}
+                                    </option>
+                                  ))}
+                                </select>
+                                {updatingTopicSessionId === session.id && (
+                                  <span className="text-[11px] text-zinc-500">Saving…</span>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-3 py-2 text-zinc-300">
@@ -5282,7 +5444,7 @@ export default function AdminDashboardPage() {
                           <td className="px-3 py-2 text-zinc-300">
                             {session.duration_minutes || 90} min
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 max-w-[100px] w-0">
                             <select
                               value={session.status === 'completed' ? 'completed' : session.status === 'cancelled' ? 'cancelled' : session.status === 'rescheduled' ? 'rescheduled' : 'scheduled'}
                               onChange={(e) => {
@@ -5290,7 +5452,7 @@ export default function AdminDashboardPage() {
                                 handleUpdateSessionStatus(session.id, val);
                               }}
                               disabled={updatingSessionId === session.id}
-                              className={`rounded-full border px-2 py-1 text-xs font-medium cursor-pointer disabled:opacity-50 ${
+                              className={`w-full max-w-[92px] rounded-full border px-1.5 py-0.5 text-[11px] font-medium cursor-pointer disabled:opacity-50 ${
                                 session.status === 'completed'
                                   ? 'border-green-500/50 bg-green-500/20 text-green-400'
                                   : session.status === 'cancelled'
@@ -5306,7 +5468,7 @@ export default function AdminDashboardPage() {
                               <option value="rescheduled">Rescheduled</option>
                             </select>
                             {updatingSessionId === session.id && (
-                              <span className="ml-1 text-xs text-zinc-500">...</span>
+                              <span className="ml-1 text-[11px] text-zinc-500">...</span>
                             )}
                           </td>
                           <td className="px-3 py-2">
@@ -5339,24 +5501,26 @@ export default function AdminDashboardPage() {
                             </div>
                           </td>
                           <td className="px-3 py-2">
-                            <button
-                              type="button"
-                              onClick={() => openEditSession(session)}
-                              className="rounded border border-cyan-500/40 px-2 py-1 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition cursor-pointer inline-flex items-center gap-1"
-                              title="Edit session (topic, date, link, instructor, duration)"
-                            >
-                              <PenTool className="h-3 w-3" />
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => deleteSession(session)}
-                              className="rounded border border-red-500/40 px-2 py-1 text-xs font-medium text-red-300 hover:bg-red-500/10 transition cursor-pointer inline-flex items-center gap-1"
-                              title="Delete this session"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
-                            </button>
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => openEditSession(session)}
+                                className="rounded border border-cyan-500/40 px-2 py-1 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition cursor-pointer inline-flex items-center gap-1"
+                                title="Edit session (topic, date, link, instructor, duration)"
+                              >
+                                <PenTool className="h-3 w-3" />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteSession(session)}
+                                className="rounded border border-red-500/40 px-2 py-1 text-xs font-medium text-red-300 hover:bg-red-500/10 transition cursor-pointer inline-flex items-center gap-1"
+                                title="Delete this session"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -5365,6 +5529,7 @@ export default function AdminDashboardPage() {
               </table>
             </div>
           )}
+
         </div>
             )}
 
@@ -8094,6 +8259,17 @@ export default function AdminDashboardPage() {
                   value={editCohortForm.sessions}
                   onChange={(e) => setEditCohortForm({ ...editCohortForm, sessions: e.target.value })}
                 />
+              </div>
+              <div className="pt-2 border-t border-zinc-800">
+                <p className="text-xs text-zinc-400 mb-2">Link sessions to chapters (Session 1→Ch.1, Session 2→Ch.2, … Session {chaptersContent.length}→Ch.{chaptersContent.length})</p>
+                <button
+                  type="button"
+                  onClick={() => editCohortPopup && applySessionChapterMappingForCohort(editCohortPopup.id)}
+                  disabled={applyingMappingCohortId === editCohortPopup?.id}
+                  className="w-full rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-cyan-500/20 transition disabled:opacity-50"
+                >
+                  {applyingMappingCohortId === editCohortPopup?.id ? 'Applying…' : `Apply 1:1 for this cohort`}
+                </button>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
