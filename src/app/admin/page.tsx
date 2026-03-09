@@ -7700,13 +7700,13 @@ export default function AdminDashboardPage() {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      name: editStudentForm.name.trim() || undefined,
-                      email: editStudentForm.email.trim() || undefined,
-                      phone: editStudentForm.phone.trim() || undefined,
-                      country: editStudentForm.country.trim() || undefined,
-                      city: editStudentForm.city.trim() || undefined,
-                      cohort_id: editStudentForm.cohort_id || undefined,
-                      status: editStudentForm.status || undefined,
+                      name: editStudentForm.name.trim(),
+                      email: editStudentForm.email.trim(),
+                      phone: editStudentForm.phone.trim() || null,
+                      country: editStudentForm.country.trim() || null,
+                      city: editStudentForm.city.trim() || null,
+                      cohort_id: editStudentForm.cohort_id.trim() || null,
+                      status: editStudentForm.status.trim(),
                     }),
                   });
                   const data = await res.json().catch(() => ({}));
