@@ -394,9 +394,17 @@ export default function AdminDashboardPage() {
   const [confirmPopupLoading, setConfirmPopupLoading] = useState(false);
   // Acknowledgement popup: message + OK button (user must click to dismiss)
   const [ackPopup, setAckPopup] = useState<{ title?: string; message: string } | null>(null);
-  const [rearrangePopup, setRearrangePopup] = useState<{ cohortId: string; cohortName: string } | null>(null);
-  const [rearrangeStartDate, setRearrangeStartDate] = useState('');
-  const [rearrangeSubmitting, setRearrangeSubmitting] = useState(false);
+  const [editCohortPopup, setEditCohortPopup] = useState<Cohort | null>(null);
+  const [editCohortForm, setEditCohortForm] = useState({
+    name: '',
+    start_date: '',
+    end_date: '',
+    seats_total: '',
+    level: 'Beginner',
+    status: 'Upcoming',
+    sessions: '',
+  });
+  const [editCohortSubmitting, setEditCohortSubmitting] = useState(false);
   const [sendingLinkEmail, setSendingLinkEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -428,7 +436,6 @@ export default function AdminDashboardPage() {
   const [loadingCohortAnalytics, setLoadingCohortAnalytics] = useState(false);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
-  const [rearrangingSessions, setRearrangingSessions] = useState<string | null>(null);
   const [allSessions, setAllSessions] = useState<Session[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessionCohortFilter, setSessionCohortFilter] = useState<string | null>(null);
@@ -3559,36 +3566,49 @@ export default function AdminDashboardPage() {
     });
   };
 
-  const rearrangeSessions = (cohortId: string, cohortName: string) => {
-    setRearrangePopup({ cohortId, cohortName });
-    setRearrangeStartDate('');
+  const openEditCohort = (cohort: Cohort) => {
+    setEditCohortPopup(cohort);
+    setEditCohortForm({
+      name: cohort.name ?? '',
+      start_date: cohort.startDate ? new Date(cohort.startDate).toISOString().split('T')[0] : '',
+      end_date: cohort.endDate ? new Date(cohort.endDate).toISOString().split('T')[0] : '',
+      seats_total: cohort.seats != null ? String(cohort.seats) : '',
+      level: cohort.level ?? 'Beginner',
+      status: cohort.status ?? 'Upcoming',
+      sessions: cohort.sessions != null ? String(cohort.sessions) : '',
+    });
   };
 
-  const submitRearrangeSessions = async () => {
-    if (!rearrangePopup || !rearrangeStartDate.trim()) return;
-    const startDate = rearrangeStartDate.trim();
-    setRearrangeSubmitting(true);
+  const submitEditCohort = async () => {
+    if (!editCohortPopup || !editCohortForm.name.trim()) return;
+    setEditCohortSubmitting(true);
     try {
-      const res = await fetchWithAuth('/api/admin/cohorts/rearrange-sessions', {
-        method: 'POST',
+      const res = await fetchWithAuth(`/api/admin/cohorts/${editCohortPopup.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cohortId: rearrangePopup.cohortId, startDate }),
+        body: JSON.stringify({
+          name: editCohortForm.name.trim(),
+          start_date: editCohortForm.start_date || null,
+          end_date: editCohortForm.end_date || null,
+          seats_total: editCohortForm.seats_total ? Number(editCohortForm.seats_total) : null,
+          level: editCohortForm.level || 'Beginner',
+          status: editCohortForm.status || 'Upcoming',
+          sessions: editCohortForm.sessions ? Number(editCohortForm.sessions) : 0,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to rearrange sessions');
-          setAckPopup({
-            title: 'Success',
-            message: `Sessions rearranged. ${data.sessionsUpdated || 0} sessions updated. Start: ${data.startDate}.`,
-          });
-      setRearrangePopup(null);
+      if (!res.ok) throw new Error(data.error || 'Failed to update cohort');
+      setNotification({ type: 'success', message: 'Cohort updated successfully.' });
+      setEditCohortPopup(null);
       await fetchCohorts();
       await fetchOverview();
-      sessionsFetchedRef.current = false;
-      if (fetchSessionsRef.current) await fetchSessionsRef.current();
-    } catch (err: any) {
-      setNotification({ type: 'error', message: err.message || 'Failed to rearrange sessions' });
+    } catch (err: unknown) {
+      setNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to update cohort',
+      });
     } finally {
-      setRearrangeSubmitting(false);
+      setEditCohortSubmitting(false);
     }
   };
 
@@ -4480,12 +4500,12 @@ export default function AdminDashboardPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => rearrangeSessions(cohort.id, cohort.name)}
-                                disabled={rearrangingSessions === cohort.id}
+                                onClick={() => openEditCohort(cohort)}
+                                disabled={editCohortSubmitting && editCohortPopup?.id === cohort.id}
                                 className="rounded border border-cyan-500/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                title="Rearrange sessions to Mon/Wed/Fri pattern"
+                                title="Edit full cohort data (name, dates, seats, level, status)"
                               >
-                                    {rearrangingSessions === cohort.id ? 'Rearranging...' : 'Rearrange'}
+                                    {editCohortSubmitting && editCohortPopup?.id === cohort.id ? 'Saving...' : 'Edit'}
                               </button>
                             </div>
                           </div>
@@ -7765,38 +7785,101 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Rearrange sessions popup (date input + confirm) */}
-      {rearrangePopup && (
+      {/* Edit cohort popup (full cohort data) */}
+      {editCohortPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-semibold text-zinc-50 mb-2">Rearrange sessions</h3>
-            <p className="text-sm text-zinc-300 mb-4">
-              Rearrange all sessions for {rearrangePopup.cohortName}. Schedule: 3 working days per week (Mon, Wed, Fri). Sundays excluded. All sessions will be rescheduled (none removed).
-            </p>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Start date for Session 1 (YYYY-MM-DD)</label>
-            <input
-              type="text"
-              value={rearrangeStartDate}
-              onChange={(e) => setRearrangeStartDate(e.target.value)}
-              placeholder="e.g. 2025-03-01"
-              className="w-full rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500/50 focus:outline-none mb-6"
-            />
-            <div className="flex justify-end gap-3">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-zinc-50 mb-2">Edit cohort</h3>
+            <p className="text-sm text-zinc-400 mb-4">Update the full data for this cohort.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Cohort Name *</label>
+                <input
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="e.g. Cohort 1 - 2025"
+                  value={editCohortForm.name}
+                  onChange={(e) => setEditCohortForm({ ...editCohortForm, name: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <DatePicker
+                  label="Start Date"
+                  value={editCohortForm.start_date}
+                  onChange={(v) => setEditCohortForm({ ...editCohortForm, start_date: v })}
+                  placeholder="Pick start date"
+                />
+                <DatePicker
+                  label="End Date"
+                  value={editCohortForm.end_date}
+                  onChange={(v) => setEditCohortForm({ ...editCohortForm, end_date: v })}
+                  placeholder="Pick end date"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Seats</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="Capacity"
+                    value={editCohortForm.seats_total}
+                    onChange={(e) => setEditCohortForm({ ...editCohortForm, seats_total: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Level</label>
+                  <select
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    value={editCohortForm.level}
+                    onChange={(e) => setEditCohortForm({ ...editCohortForm, level: e.target.value })}
+                  >
+                    <option>Beginner</option>
+                    <option>Intermediate</option>
+                    <option>Advanced</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Status</label>
+                <select
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  value={editCohortForm.status}
+                  onChange={(e) => setEditCohortForm({ ...editCohortForm, status: e.target.value })}
+                >
+                  <option>Upcoming</option>
+                  <option>Active</option>
+                  <option>Completed</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Sessions (count)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="Number of sessions"
+                  value={editCohortForm.sessions}
+                  onChange={(e) => setEditCohortForm({ ...editCohortForm, sessions: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
               <button
                 type="button"
-                disabled={rearrangeSubmitting}
-                onClick={() => { setRearrangePopup(null); setRearrangeStartDate(''); }}
+                disabled={editCohortSubmitting}
+                onClick={() => { setEditCohortPopup(null); }}
                 className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 transition disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={rearrangeSubmitting || !rearrangeStartDate.trim()}
-                onClick={submitRearrangeSessions}
-                className="rounded-lg border border-amber-500/50 bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/30 transition disabled:opacity-50"
+                disabled={editCohortSubmitting || !editCohortForm.name.trim()}
+                onClick={submitEditCohort}
+                className="rounded-lg border border-cyan-500/50 bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 transition disabled:opacity-50"
               >
-                {rearrangeSubmitting ? 'Rearranging…' : 'Rearrange'}
+                {editCohortSubmitting ? 'Saving…' : 'Save changes'}
               </button>
             </div>
           </div>
