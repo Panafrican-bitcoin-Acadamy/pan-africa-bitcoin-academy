@@ -5219,21 +5219,30 @@ export default function AdminDashboardPage() {
                             </div>
                           </td>
                           <td className="px-3 py-2 text-zinc-300">
-                            <div className="flex flex-col gap-0.5">
+                            <div className="flex flex-col gap-1">
                               {session.topic ? (
-                                <span>{session.topic}</span>
+                                getChapterSlugByTitle(session.topic) ? (
+                                  <a
+                                    href={`/chapters/${getChapterSlugByTitle(session.topic)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 hover:underline font-medium"
+                                    title="Open chapter in curriculum"
+                                  >
+                                    <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                                    {session.topic}
+                                    <span className="text-xs opacity-80">↗</span>
+                                  </a>
+                                ) : (
+                                  <span>{session.topic}</span>
+                                )
                               ) : (
                                 <span className="text-zinc-500 italic">No topic</span>
                               )}
                               {getChapterSlugByTitle(session.topic) && (
-                                <a
-                                  href={`/chapters/${getChapterSlugByTitle(session.topic)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-cyan-400 hover:text-cyan-300"
-                                >
-                                  View chapter →
-                                </a>
+                                <span className="text-xs text-zinc-500">
+                                  Linked to chapter · <a href={`/chapters/${getChapterSlugByTitle(session.topic)}`} target="_blank" rel="noopener noreferrer" className="text-cyan-500/80 hover:text-cyan-400">Open in new tab</a>
+                                </span>
                               )}
                             </div>
                           </td>
