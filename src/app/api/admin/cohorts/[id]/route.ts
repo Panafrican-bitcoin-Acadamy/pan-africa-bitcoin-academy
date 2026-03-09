@@ -46,6 +46,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
+    let cohortData: unknown = null;
+
     if (Object.keys(updates).length > 0) {
       const { data, error } = await supabaseAdmin
         .from('cohorts')
@@ -64,6 +66,7 @@ export async function PATCH(
           { status: 500 }
         );
       }
+      cohortData = data;
     }
 
     // If session_duration_minutes provided, update all sessions of this cohort
@@ -88,18 +91,21 @@ export async function PATCH(
       }
     }
 
-    // Fetch current cohort for response if we only updated sessions duration
-    const { data: cohortData, error: fetchError } = await supabaseAdmin
-      .from('cohorts')
-      .select('*')
-      .eq('id', cohortId)
-      .single();
+    // Use cohort from update when available; otherwise fetch (e.g. when only session duration was updated)
+    if (cohortData == null) {
+      const { data, error: fetchError } = await supabaseAdmin
+        .from('cohorts')
+        .select('*')
+        .eq('id', cohortId)
+        .single();
 
-    if (fetchError) {
-      return NextResponse.json(
-        { error: 'Failed to fetch updated cohort', ...(process.env.NODE_ENV === 'development' ? { details: fetchError.message } : {}) },
-        { status: 500 }
-      );
+      if (fetchError) {
+        return NextResponse.json(
+          { error: 'Failed to fetch updated cohort', ...(process.env.NODE_ENV === 'development' ? { details: fetchError.message } : {}) },
+          { status: 500 }
+        );
+      }
+      cohortData = data;
     }
 
     return NextResponse.json({ cohort: cohortData }, { status: 200 });

@@ -68,6 +68,98 @@ function getEventTypeStyle(type: string) {
   };
 }
 
+type TopicSectionProps = Pick<
+  UpcomingEventForModal,
+  'topic_theory' | 'topic_practice' | 'topic_live_session' | 'topic_quiz'
+>;
+
+function hasTopicSections(e: TopicSectionProps): boolean {
+  return !!(
+    e.topic_theory?.length ||
+    e.topic_practice?.length ||
+    e.topic_live_session ||
+    e.topic_quiz
+  );
+}
+
+const TOPIC_LABELS = {
+  theory: { label: '📘 Theory:', color: 'text-cyan-200', colorHex: '#67e8f9' },
+  practice: { label: '🛠 Practice:', color: 'text-orange-200', colorHex: '#fdba74' },
+  liveSession: { label: '🎥 Live Session:', color: 'text-purple-200', colorHex: '#c084fc' },
+  quiz: { label: 'Quiz:', color: 'text-cyan-200', colorHex: '#67e8f9' },
+} as const;
+
+function TopicSections({
+  theory,
+  practice,
+  liveSession,
+  quiz,
+  variant,
+}: TopicSectionProps & { variant: 'card' | 'modal' }) {
+  const isCard = variant === 'card';
+  const maxItems = isCard ? 2 : undefined;
+  const listStyle = isCard ? undefined : { margin: 0, paddingLeft: '1.25rem', color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 };
+  const labelStyle = isCard ? undefined : { fontSize: '12px', fontWeight: 600, marginBottom: '4px' };
+
+  const renderList = (items: string[]) =>
+    (maxItems ? items.slice(0, maxItems) : items).map((item, idx) => (
+      <li key={idx} style={!isCard ? { marginBottom: '2px' } : undefined}>{item}</li>
+    ));
+
+  return (
+    <div className={isCard ? 'space-y-2 mb-4 text-xs' : ''} style={!isCard ? { display: 'flex', flexDirection: 'column', gap: '12px' } : undefined}>
+      {theory?.length ? (
+        <div>
+          <p className={isCard ? `font-medium mb-0.5 ${TOPIC_LABELS.theory.color}` : undefined} style={!isCard ? { ...labelStyle, color: TOPIC_LABELS.theory.colorHex } : undefined}>
+            {TOPIC_LABELS.theory.label}
+          </p>
+          <ul className={isCard ? 'ml-3 list-disc space-y-0.5 text-zinc-400 line-clamp-2' : ''} style={listStyle}>
+            {renderList(theory, TOPIC_LABELS.theory.colorHex)}
+          </ul>
+        </div>
+      ) : null}
+      {practice?.length ? (
+        <div>
+          <p className={isCard ? `font-medium mb-0.5 ${TOPIC_LABELS.practice.color}` : undefined} style={!isCard ? { ...labelStyle, color: TOPIC_LABELS.practice.colorHex } : undefined}>
+            {TOPIC_LABELS.practice.label}
+          </p>
+          <ul className={isCard ? 'ml-3 list-disc space-y-0.5 text-zinc-400 line-clamp-2' : ''} style={listStyle}>
+            {renderList(practice, TOPIC_LABELS.practice.colorHex)}
+          </ul>
+        </div>
+      ) : null}
+      {liveSession ? (
+        <div>
+          {isCard ? (
+            <p className={`font-medium ${TOPIC_LABELS.liveSession.color}`}>
+              {TOPIC_LABELS.liveSession.label} <span className="font-normal text-zinc-400">{liveSession}</span>
+            </p>
+          ) : (
+            <>
+              <p style={{ ...labelStyle, color: TOPIC_LABELS.liveSession.colorHex }}>{TOPIC_LABELS.liveSession.label}</p>
+              <p style={{ margin: 0, color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 }}>{liveSession}</p>
+            </>
+          )}
+        </div>
+      ) : null}
+      {quiz ? (
+        <div>
+          {isCard ? (
+            <p className={`font-medium ${TOPIC_LABELS.quiz.color}`}>
+              {TOPIC_LABELS.quiz.label} <span className="font-normal text-zinc-400">{quiz}</span>
+            </p>
+          ) : (
+            <>
+              <p style={{ ...labelStyle, color: TOPIC_LABELS.quiz.colorHex }}>{TOPIC_LABELS.quiz.label}</p>
+              <p style={{ margin: 0, color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 }}>{quiz}</p>
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForModal[] }) {
   const [selectedEvent, setSelectedEvent] = useState<UpcomingEventForModal | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -168,35 +260,8 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
                     Topic: {event.chapter_title}
                   </p>
                 )}
-                {(event.topic_theory?.length || event.topic_practice?.length || event.topic_live_session || event.topic_quiz) ? (
-                  <div className="space-y-2 mb-4 text-xs">
-                    {event.topic_theory && event.topic_theory.length > 0 && (
-                      <div>
-                        <p className="font-medium text-cyan-200 mb-0.5">📘 Theory:</p>
-                        <ul className="ml-3 list-disc space-y-0.5 text-zinc-400 line-clamp-2">
-                          {event.topic_theory.slice(0, 2).map((item, idx) => (
-                            <li key={idx}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {event.topic_practice && event.topic_practice.length > 0 && (
-                      <div>
-                        <p className="font-medium text-orange-200 mb-0.5">🛠 Practice:</p>
-                        <ul className="ml-3 list-disc space-y-0.5 text-zinc-400 line-clamp-2">
-                          {event.topic_practice.slice(0, 2).map((item, idx) => (
-                            <li key={idx}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {event.topic_live_session && (
-                      <p className="font-medium text-purple-200">🎥 Live Session: <span className="font-normal text-zinc-400">{event.topic_live_session}</span></p>
-                    )}
-                    {event.topic_quiz && (
-                      <p className="font-medium text-cyan-200">Quiz: <span className="font-normal text-zinc-400">{event.topic_quiz}</span></p>
-                    )}
-                  </div>
+                {hasTopicSections(event) ? (
+                  <TopicSections topic_theory={event.topic_theory} topic_practice={event.topic_practice} topic_live_session={event.topic_live_session} topic_quiz={event.topic_quiz} variant="card" />
                 ) : (event.topic_detail || event.description) ? (
                   <p className={`text-sm leading-relaxed ${isClosestEvent ? 'text-yellow-200/80' : 'text-zinc-400'} line-clamp-3 mb-4`}>
                     {event.topic_detail || event.description}
@@ -343,7 +408,7 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
                 {EVENT_TYPE_LABELS[selectedEvent.type] || selectedEvent.type}
               </span>
 
-              {(selectedEvent.chapter_title || selectedEvent.topic_theory?.length || selectedEvent.topic_practice?.length || selectedEvent.topic_live_session || selectedEvent.topic_quiz || selectedEvent.topic_detail || (selectedEvent.topic_learn && selectedEvent.topic_learn.length > 0)) && (
+              {(selectedEvent.chapter_title || hasTopicSections(selectedEvent) || selectedEvent.topic_detail || selectedEvent.topic_learn?.length) && (
                 <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #3f3f46' }}>
                   <h3 style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
                     Topic
@@ -353,41 +418,8 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
                       {selectedEvent.chapter_title}
                     </p>
                   )}
-                  {(selectedEvent.topic_theory?.length || selectedEvent.topic_practice?.length || selectedEvent.topic_live_session || selectedEvent.topic_quiz) ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {selectedEvent.topic_theory && selectedEvent.topic_theory.length > 0 && (
-                        <div>
-                          <p style={{ fontSize: '12px', fontWeight: 600, color: '#67e8f9', marginBottom: '4px' }}>📘 Theory:</p>
-                          <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 }}>
-                            {selectedEvent.topic_theory.map((item, i) => (
-                              <li key={i} style={{ marginBottom: '2px' }}>{item}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {selectedEvent.topic_practice && selectedEvent.topic_practice.length > 0 && (
-                        <div>
-                          <p style={{ fontSize: '12px', fontWeight: 600, color: '#fdba74', marginBottom: '4px' }}>🛠 Practice:</p>
-                          <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 }}>
-                            {selectedEvent.topic_practice.map((item, i) => (
-                              <li key={i} style={{ marginBottom: '2px' }}>{item}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {selectedEvent.topic_live_session && (
-                        <div>
-                          <p style={{ fontSize: '12px', fontWeight: 600, color: '#c084fc', marginBottom: '4px' }}>🎥 Live Session:</p>
-                          <p style={{ margin: 0, paddingLeft: '0', color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 }}>{selectedEvent.topic_live_session}</p>
-                        </div>
-                      )}
-                      {selectedEvent.topic_quiz && (
-                        <div>
-                          <p style={{ fontSize: '12px', fontWeight: 600, color: '#67e8f9', marginBottom: '4px' }}>Quiz:</p>
-                          <p style={{ margin: 0, paddingLeft: '0', color: '#d4d4d8', fontSize: '14px', lineHeight: 1.6 }}>{selectedEvent.topic_quiz}</p>
-                        </div>
-                      )}
-                    </div>
+                  {hasTopicSections(selectedEvent) ? (
+                    <TopicSections topic_theory={selectedEvent.topic_theory} topic_practice={selectedEvent.topic_practice} topic_live_session={selectedEvent.topic_live_session} topic_quiz={selectedEvent.topic_quiz} variant="modal" />
                   ) : (
                     <>
                       {selectedEvent.topic_detail && (

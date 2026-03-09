@@ -328,12 +328,13 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
     }
 
     // Transform sessions (topic is stored in DB; match to chapter for link)
+    const chapterByTitle = new Map(chaptersContent.map((c) => [c.title, c]));
     if (sessionsResult.data) {
       sessionsResult.data.forEach((session: any) => {
         const sessionDate = new Date(session.session_date);
         const cohortName = session.cohorts?.name || 'Cohort';
         const topic = session.topic || '';
-        const chapter = topic ? chaptersContent.find((c) => c.title === topic) : null;
+        const chapter = topic ? chapterByTitle.get(topic) ?? null : null;
         const chapterList = topic ? getChapterListByTitle(topic) : null;
         upcomingEvents.push({
           id: `session-${session.id}`,

@@ -43,7 +43,10 @@ export const chaptersList: ChapterListItem[] = [
   { id: 21, level: 3, number: 21, title: "Wrap-Up & Resources", difficulty: "Advanced", time: "40 min", icon: "📘", type: "theory", activities: ["Final Reflection — 'From Failing Fiat to Sovereign Bitcoin'"], learnPoints: ["Glossary of key terms", "Primary Sources & Local-First Tools", "Final Reflection on the journey"], theory: ["Course summary", "Resources", "Next steps"], practice: ["Final reflection", "Activity: Reflection exercise"], LiveSession: "Course wrap-up", quiz: "Final assessment" },
 ];
 
+/** O(1) lookup by title (used by home page upcoming events). */
+const chapterListByTitle = new Map(chaptersList.map((c) => [c.title, c]));
+
 /** Get chapter list item by title (for upcoming events topic matching). */
 export function getChapterListByTitle(title: string): ChapterListItem | undefined {
-  return chaptersList.find((c) => c.title === title);
+  return chapterListByTitle.get(title);
 }
