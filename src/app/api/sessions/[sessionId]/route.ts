@@ -344,4 +344,48 @@ export async function PUT(
   }
 }
 
+/**
+ * Delete a single cohort session
+ * DELETE /api/sessions/[sessionId]
+ */
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ sessionId: string }> }
+) {
+  try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { sessionId } = await context.params;
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('cohort_sessions')
+      .delete()
+      .eq('id', sessionId);
+
+    if (error) {
+      console.error('Error deleting session:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete session', ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {}) },
+        { status: 500 }
+      );
+    }
+
+    const res = NextResponse.json({ success: true }, { status: 200 });
+    attachRefresh(res, session);
+    return res;
+  } catch (err: unknown) {
+    console.error('Error in DELETE /api/sessions/[sessionId]:', err);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 

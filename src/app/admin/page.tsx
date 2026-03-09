@@ -38,6 +38,7 @@ import {
   Cell,
 } from 'recharts';
 import * as XLSX from 'xlsx';
+import { chaptersContent } from '@/content/chaptersContent';
 
 // Cohort color palette - same as Calendar component
 const cohortColors = [
@@ -442,6 +443,16 @@ export default function AdminDashboardPage() {
   const [sessionStatusFilter, setSessionStatusFilter] = useState<string>('all');
   const [sessionDateFilter, setSessionDateFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const [updatingSessionId, setUpdatingSessionId] = useState<string | null>(null);
+  const [editSessionPopup, setEditSessionPopup] = useState<Session | null>(null);
+  const [editSessionForm, setEditSessionForm] = useState({
+    topic: '',
+    session_date: '',
+    instructor: '',
+    duration_minutes: '',
+    link: '',
+    status: 'scheduled' as 'scheduled' | 'completed' | 'cancelled' | 'rescheduled',
+  });
+  const [editSessionSubmitting, setEditSessionSubmitting] = useState(false);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loadingAttendanceRecords, setLoadingAttendanceRecords] = useState(false);
@@ -2043,6 +2054,78 @@ export default function AdminDashboardPage() {
       setUpdatingSessionId(null);
     }
   }, [admin, fetchWithAuth]);
+
+  const openEditSession = (session: Session) => {
+    setEditSessionPopup(session);
+    setEditSessionForm({
+      topic: session.topic ?? '',
+      session_date: session.session_date ? new Date(session.session_date).toISOString().split('T')[0] : '',
+      instructor: session.instructor ?? '',
+      duration_minutes: session.duration_minutes != null ? String(session.duration_minutes) : '90',
+      link: session.link ?? '',
+      status: (session.status === 'completed' ? 'completed' : session.status === 'cancelled' ? 'cancelled' : session.status === 'rescheduled' ? 'rescheduled' : 'scheduled') as 'scheduled' | 'completed' | 'cancelled' | 'rescheduled',
+    });
+  };
+
+  const submitEditSession = async () => {
+    if (!editSessionPopup) return;
+    setEditSessionSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = {
+        topic: editSessionForm.topic.trim() || null,
+        instructor: editSessionForm.instructor.trim() || null,
+        link: editSessionForm.link.trim() || null,
+        status: editSessionForm.status,
+      };
+      if (editSessionForm.session_date) payload.session_date = editSessionForm.session_date;
+      const duration = parseInt(editSessionForm.duration_minutes, 10);
+      if (!isNaN(duration) && duration > 0) payload.duration_minutes = duration;
+      const res = await fetchWithAuth(`/api/sessions/${editSessionPopup.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update session');
+      if (data.session) {
+        setAllSessions((prev) =>
+          prev.map((s) => (s.id === editSessionPopup.id ? { ...s, ...data.session, topic: data.session.topic ?? s.topic, session_date: data.session.session_date ?? s.session_date, instructor: data.session.instructor ?? s.instructor, duration_minutes: data.session.duration_minutes ?? s.duration_minutes, link: data.session.link ?? s.link, status: data.session.status ?? s.status } : s))
+        );
+      } else {
+        await fetchSessionsRef.current?.();
+      }
+      setNotification({ type: 'success', message: 'Session updated.' });
+      setEditSessionPopup(null);
+    } catch (err: unknown) {
+      setNotification({ type: 'error', message: err instanceof Error ? err.message : 'Failed to update session' });
+    } finally {
+      setEditSessionSubmitting(false);
+    }
+  };
+
+  const getChapterSlugByTitle = (title: string | null | undefined): string | null => {
+    if (!title?.trim()) return null;
+    const ch = chaptersContent.find((c) => c.title === title.trim());
+    return ch?.slug ?? null;
+  };
+
+  const deleteSession = (session: Session) => {
+    setConfirmPopup({
+      title: 'Delete session',
+      message: `Delete Session ${session.session_number} (${session.session_date}${session.topic ? ` · ${session.topic}` : ''}) for ${session.cohorts?.name ?? 'this cohort'}? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        const res = await fetchWithAuth(`/api/sessions/${session.id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to delete session');
+        }
+        setAllSessions((prev) => prev.filter((s) => s.id !== session.id));
+        setNotification({ type: 'success', message: 'Session deleted.' });
+      },
+    });
+  };
 
   const fetchEvents = async () => {
     // Prevent duplicate simultaneous fetches
@@ -4942,13 +5025,22 @@ export default function AdminDashboardPage() {
             {/* Sessions Sub-menu - Sessions List/Table View Only */}
             {activeSubMenu === 'sessions' && (
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
             <div>
               <h3 className="text-lg font-semibold text-zinc-50">All Sessions</h3>
               <p className="text-xs text-zinc-400 mt-1">
-                View and manage all cohort sessions in a structured format
+                View and manage all cohort sessions. Edit topic, date, link, and link topics to chapters.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => fetchSessionsRef.current?.()}
+              disabled={loadingSessions}
+              className="rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 transition disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              {loadingSessions ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Refresh
+            </button>
           </div>
 
           {/* Filters */}
@@ -5052,6 +5144,7 @@ export default function AdminDashboardPage() {
                     <th className="px-3 py-2">Duration</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Link</th>
+                    <th className="px-3 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
@@ -5126,9 +5219,23 @@ export default function AdminDashboardPage() {
                             </div>
                           </td>
                           <td className="px-3 py-2 text-zinc-300">
-                            {session.topic || (
-                              <span className="text-zinc-500 italic">No topic</span>
-                            )}
+                            <div className="flex flex-col gap-0.5">
+                              {session.topic ? (
+                                <span>{session.topic}</span>
+                              ) : (
+                                <span className="text-zinc-500 italic">No topic</span>
+                              )}
+                              {getChapterSlugByTitle(session.topic) && (
+                                <a
+                                  href={`/chapters/${getChapterSlugByTitle(session.topic)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-cyan-400 hover:text-cyan-300"
+                                >
+                                  View chapter →
+                                </a>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-2 text-zinc-300">
                             {session.instructor || (
@@ -5166,18 +5273,53 @@ export default function AdminDashboardPage() {
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            {session.link ? (
-                              <a
-                                href={session.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-cyan-400 hover:text-cyan-300 text-xs"
-                              >
-                                Join
-                              </a>
-                            ) : (
-                              <span className="text-zinc-500 text-xs">—</span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {session.link ? (
+                                <>
+                                  <a
+                                    href={session.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-cyan-400 hover:text-cyan-300 text-xs"
+                                  >
+                                    Join
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(session.link || '');
+                                      setNotification({ type: 'success', message: 'Link copied to clipboard' });
+                                    }}
+                                    className="text-zinc-500 hover:text-zinc-300 p-0.5"
+                                    title="Copy link"
+                                  >
+                                    <ClipboardList className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-zinc-500 text-xs">—</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditSession(session)}
+                              className="rounded border border-cyan-500/40 px-2 py-1 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10 transition cursor-pointer inline-flex items-center gap-1"
+                              title="Edit session (topic, date, link, instructor, duration)"
+                            >
+                              <PenTool className="h-3 w-3" />
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteSession(session)}
+                              className="rounded border border-red-500/40 px-2 py-1 text-xs font-medium text-red-300 hover:bg-red-500/10 transition cursor-pointer inline-flex items-center gap-1"
+                              title="Delete this session"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       );
@@ -7880,6 +8022,118 @@ export default function AdminDashboardPage() {
                 className="rounded-lg border border-cyan-500/50 bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 transition disabled:opacity-50"
               >
                 {editCohortSubmitting ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit session popup (topic linked to chapters, date, link, instructor, duration, status) */}
+      {editSessionPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-zinc-50 mb-2">Edit session</h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              Session {editSessionPopup.session_number} · {editSessionPopup.cohorts?.name ?? 'Cohort'}
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Topic</label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="e.g. The Nature of Money"
+                  value={editSessionForm.topic}
+                  onChange={(e) => setEditSessionForm({ ...editSessionForm, topic: e.target.value })}
+                />
+                <p className="text-xs text-zinc-500 mt-1.5">Link to chapter: pick one below to set topic and enable &quot;View chapter&quot; in the table.</p>
+                <select
+                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  value={chaptersContent.find((c) => c.title === editSessionForm.topic)?.slug ?? ''}
+                  onChange={(e) => {
+                    const slug = e.target.value;
+                    const ch = chaptersContent.find((c) => c.slug === slug);
+                    if (ch) setEditSessionForm((f) => ({ ...f, topic: ch.title }));
+                  }}
+                >
+                  <option value="">— Set topic from chapter —</option>
+                  {chaptersContent.map((ch) => (
+                    <option key={ch.slug} value={ch.slug}>
+                      {ch.number}. {ch.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Session date</label>
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  value={editSessionForm.session_date}
+                  onChange={(e) => setEditSessionForm({ ...editSessionForm, session_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Instructor</label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="Instructor name"
+                  value={editSessionForm.instructor}
+                  onChange={(e) => setEditSessionForm({ ...editSessionForm, instructor: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Duration (minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="90"
+                  value={editSessionForm.duration_minutes}
+                  onChange={(e) => setEditSessionForm({ ...editSessionForm, duration_minutes: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Meeting / join link</label>
+                <input
+                  type="url"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="https://..."
+                  value={editSessionForm.link}
+                  onChange={(e) => setEditSessionForm({ ...editSessionForm, link: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Status</label>
+                <select
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  value={editSessionForm.status}
+                  onChange={(e) => setEditSessionForm({ ...editSessionForm, status: e.target.value as 'scheduled' | 'completed' | 'cancelled' | 'rescheduled' })}
+                >
+                  <option value="scheduled">Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="rescheduled">Rescheduled</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                disabled={editSessionSubmitting}
+                onClick={() => setEditSessionPopup(null)}
+                className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={editSessionSubmitting}
+                onClick={submitEditSession}
+                className="rounded-lg border border-cyan-500/50 bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 transition disabled:opacity-50"
+              >
+                {editSessionSubmitting ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
