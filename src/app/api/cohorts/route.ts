@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, start_date, end_date, seats_total, level, status, sessions } = await req.json();
+    const { name, start_date, end_date, seats_total, level, status, sessions, session_duration_minutes } = await req.json();
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -142,11 +142,13 @@ export async function POST(req: NextRequest) {
           );
 
           if (sessionDates.length > 0) {
+            const durationMins = session_duration_minutes != null && session_duration_minutes !== '' ? Number(session_duration_minutes) : 90;
             const sessionsToInsert = sessionDates.map(({ date, sessionNumber }) => ({
               cohort_id: data.id,
               session_date: date.toISOString().split('T')[0],
               session_number: sessionNumber,
               status: 'scheduled',
+              duration_minutes: durationMins,
             }));
 
             await supabaseAdmin

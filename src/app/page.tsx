@@ -9,6 +9,7 @@ import { TrueFocus } from "@/components/TrueFocus";
 import { UpcomingEventsWithModal } from "@/components/UpcomingEventsWithModal";
 import { supabaseAdmin } from "@/lib/supabase";
 import { chaptersContent } from "@/content/chaptersContent";
+import { getChapterListByTitle } from "@/content/chaptersListContent";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -266,6 +267,11 @@ interface UpcomingEvent {
   topic_detail?: string | null;
   /** What you'll learn (from chapter, first few points) */
   topic_learn?: string[] | null;
+  /** Chapter list layout: theory / practice / live session / quiz (from chapters list) */
+  topic_theory?: string[] | null;
+  topic_practice?: string[] | null;
+  topic_live_session?: string | null;
+  topic_quiz?: string | null;
 }
 
 async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
@@ -328,6 +334,7 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
         const cohortName = session.cohorts?.name || 'Cohort';
         const topic = session.topic || '';
         const chapter = topic ? chaptersContent.find((c) => c.title === topic) : null;
+        const chapterList = topic ? getChapterListByTitle(topic) : null;
         upcomingEvents.push({
           id: `session-${session.id}`,
           title: `${cohortName} - Session ${session.session_number}${topic ? `: ${topic}` : ''}`,
@@ -343,6 +350,10 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
           chapter_title: chapter?.title ?? null,
           topic_detail: chapter?.hook ?? null,
           topic_learn: chapter?.learn?.slice(0, 5) ?? null,
+          topic_theory: chapterList?.theory ?? null,
+          topic_practice: chapterList?.practice ?? null,
+          topic_live_session: chapterList?.LiveSession ?? null,
+          topic_quiz: chapterList?.quiz ?? null,
         });
       });
     }
@@ -1007,6 +1018,10 @@ export default async function Home() {
                   chapter_title: e.chapter_title ?? null,
                   topic_detail: e.topic_detail ?? null,
                   topic_learn: e.topic_learn ?? null,
+                  topic_theory: e.topic_theory ?? null,
+                  topic_practice: e.topic_practice ?? null,
+                  topic_live_session: e.topic_live_session ?? null,
+                  topic_quiz: e.topic_quiz ?? null,
                 }))}
               />
               <div className="text-center">

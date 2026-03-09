@@ -404,6 +404,7 @@ export default function AdminDashboardPage() {
     level: 'Beginner',
     status: 'Upcoming',
     sessions: '',
+    session_duration_minutes: '',
   });
   const [applySessionChapterMappingAfterCreate, setApplySessionChapterMappingAfterCreate] = useState(false);
   const [editCohortSubmitting, setEditCohortSubmitting] = useState(false);
@@ -795,6 +796,7 @@ export default function AdminDashboardPage() {
     level: 'Beginner',
     status: 'Upcoming',
     sessions: '',
+    session_duration_minutes: '90',
   });
 
   // Load only essential data when authenticated
@@ -3719,6 +3721,7 @@ export default function AdminDashboardPage() {
           ...cohortForm,
           seats_total: cohortForm.seats_total ? Number(cohortForm.seats_total) : null,
           sessions: cohortForm.sessions ? Number(cohortForm.sessions) : 0,
+          session_duration_minutes: cohortForm.session_duration_minutes ? Number(cohortForm.session_duration_minutes) : 90,
         }),
       });
       const data = await res.json();
@@ -3735,6 +3738,7 @@ export default function AdminDashboardPage() {
         level: 'Beginner',
         status: 'Upcoming',
         sessions: '',
+        session_duration_minutes: '90',
       });
       if (willApplyMapping) {
         setApplySessionChapterMappingAfterCreate(false);
@@ -3786,6 +3790,8 @@ export default function AdminDashboardPage() {
 
   const openEditCohort = (cohort: Cohort) => {
     setEditCohortPopup(cohort);
+    const firstSession = allSessions.find((s) => s.cohort_id === cohort.id);
+    const durationFromSession = firstSession?.duration_minutes != null ? String(firstSession.duration_minutes) : '';
     setEditCohortForm({
       name: cohort.name ?? '',
       start_date: cohort.startDate ? new Date(cohort.startDate).toISOString().split('T')[0] : '',
@@ -3794,6 +3800,7 @@ export default function AdminDashboardPage() {
       level: cohort.level ?? 'Beginner',
       status: cohort.status ?? 'Upcoming',
       sessions: cohort.sessions != null ? String(cohort.sessions) : '',
+      session_duration_minutes: durationFromSession,
     });
   };
 
@@ -3812,6 +3819,7 @@ export default function AdminDashboardPage() {
           level: editCohortForm.level || 'Beginner',
           status: editCohortForm.status || 'Upcoming',
           sessions: editCohortForm.sessions ? Number(editCohortForm.sessions) : 0,
+          session_duration_minutes: editCohortForm.session_duration_minutes ? Number(editCohortForm.session_duration_minutes) : null,
         }),
       });
       const data = await res.json();
@@ -3820,6 +3828,8 @@ export default function AdminDashboardPage() {
       setEditCohortPopup(null);
       await fetchCohorts();
       await fetchOverview();
+      sessionsFetchedRef.current = false;
+      if (fetchSessionsRef.current) await fetchSessionsRef.current();
     } catch (err: unknown) {
       setNotification({
         type: 'error',
@@ -4808,6 +4818,18 @@ export default function AdminDashboardPage() {
                   <option>Active</option>
                   <option>Completed</option>
                 </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Session duration (minutes)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="90"
+                    value={cohortForm.session_duration_minutes}
+                    onChange={(e) => setCohortForm({ ...cohortForm, session_duration_minutes: e.target.value })}
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">Applied to all auto-generated sessions.</p>
                 </div>
                 <p className="text-xs text-zinc-500">
                   Sessions are auto-generated (Mon/Wed/Fri) from start and end dates.
@@ -8259,6 +8281,18 @@ export default function AdminDashboardPage() {
                   value={editCohortForm.sessions}
                   onChange={(e) => setEditCohortForm({ ...editCohortForm, sessions: e.target.value })}
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Session duration (minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="e.g. 90"
+                  value={editCohortForm.session_duration_minutes}
+                  onChange={(e) => setEditCohortForm({ ...editCohortForm, session_duration_minutes: e.target.value })}
+                />
+                <p className="text-xs text-zinc-500 mt-1">Change duration for all sessions of this cohort when you save.</p>
               </div>
               <div className="pt-2 border-t border-zinc-800">
                 <p className="text-xs text-zinc-400 mb-2">Link sessions to chapters (Session 1→Ch.1, Session 2→Ch.2, … Session {chaptersContent.length}→Ch.{chaptersContent.length})</p>
