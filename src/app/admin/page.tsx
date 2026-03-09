@@ -623,6 +623,8 @@ export default function AdminDashboardPage() {
   const [satsStudentFilter, setSatsStudentFilter] = useState<string>('all');
   const [studentsList, setStudentsList] = useState<any[]>([]);
   const [loadingStudentsList, setLoadingStudentsList] = useState(false);
+  const [satsStudentsList, setSatsStudentsList] = useState<any[]>([]);
+  const [loadingSatsStudentsList, setLoadingSatsStudentsList] = useState(false);
   
   // Blog summary state (for blog posts with authors and sats)
   const [blogSummary, setBlogSummary] = useState<{
@@ -663,6 +665,8 @@ export default function AdminDashboardPage() {
   const lastBlogSummaryFetchTimeRef = useRef<number>(0);
   const lastActiveSubMenuRef = useRef<string>('');
   const studentsListFetchingRef = useRef(false);
+  const satsStudentsListFetchedRef = useRef(false);
+  const satsStudentsListFetchingRef = useRef(false);
   const blogSummaryFetchingRef = useRef(false);
   const blogSummaryInitialLoadRef = useRef(true); // Use ref instead of state to prevent re-renders
   const fetchBlogSummaryRef = useRef<((forceRefresh?: boolean) => Promise<void>) | null>(null);
@@ -991,6 +995,29 @@ export default function AdminDashboardPage() {
       studentsListFetchingRef.current = false;
     }
   }, [admin, fetchWithAuth]);
+
+  const fetchSatsStudentsList = useCallback(async () => {
+    if (!admin || activeSubMenu !== 'student-sats-rewards') return;
+    if (satsStudentsListFetchingRef.current) return;
+    if (satsStudentsListFetchedRef.current) return;
+    satsStudentsListFetchingRef.current = true;
+    setLoadingSatsStudentsList(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/sats/students-list');
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.students)) {
+        setSatsStudentsList(data.students);
+        satsStudentsListFetchedRef.current = true;
+      } else {
+        setSatsStudentsList([]);
+      }
+    } catch {
+      setSatsStudentsList([]);
+    } finally {
+      setLoadingSatsStudentsList(false);
+      satsStudentsListFetchingRef.current = false;
+    }
+  }, [admin, activeSubMenu, fetchWithAuth]);
 
   // Fetch blog summary (blog posts with authors and sats) - separated from UI to prevent flickering
   const fetchBlogSummary = useCallback(async (forceRefresh: boolean = false) => {
@@ -1346,6 +1373,8 @@ export default function AdminDashboardPage() {
         // Reset fetch flags when submenu changes
         studentsListFetchedRef.current = false;
         studentsListFetchingRef.current = false;
+        satsStudentsListFetchedRef.current = false;
+        satsStudentsListFetchingRef.current = false;
         blogSummaryFetchedRef.current = false;
         blogSummaryFetchingRef.current = false;
         // Reset initial load flag to show loading on first fetch
@@ -1358,6 +1387,7 @@ export default function AdminDashboardPage() {
         
         // Fetch students list first
         fetchStudentsList();
+        fetchSatsStudentsList();
         
         // Fetch blog summary after a short delay (only once)
         const blogSummaryTimeout = setTimeout(() => {
@@ -1402,6 +1432,8 @@ export default function AdminDashboardPage() {
         console.log('[Sats Rewards] Submenu deactivated, resetting flags');
         studentsListFetchedRef.current = false;
         studentsListFetchingRef.current = false;
+        satsStudentsListFetchedRef.current = false;
+        satsStudentsListFetchingRef.current = false;
         blogSummaryFetchedRef.current = false;
         blogSummaryFetchingRef.current = false;
         lastActiveSubMenuRef.current = activeSubMenu || '';
@@ -6813,6 +6845,73 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 ) : null}
+
+                {/* All students list – sats pending / received (from students database) */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-6 mb-4 sm:mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold text-zinc-50 mb-1 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-cyan-400" />
+                        All students – sats summary
+                      </h3>
+                      <p className="text-xs text-zinc-400">
+                        Every student from the students database with sats pending and received.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        satsStudentsListFetchedRef.current = false;
+                        fetchSatsStudentsList();
+                      }}
+                      disabled={loadingSatsStudentsList}
+                      className="rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-700 transition disabled:opacity-50 inline-flex items-center gap-2 shrink-0"
+                    >
+                      {loadingSatsStudentsList ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      Refresh
+                    </button>
+                  </div>
+                  {loadingSatsStudentsList ? (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-8 text-center text-zinc-400">
+                      Loading students list...
+                    </div>
+                  ) : satsStudentsList.length === 0 ? (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-6 text-center text-zinc-500 text-sm">
+                      No students in the database yet.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-lg border border-zinc-800">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-zinc-900 text-left text-zinc-300">
+                          <tr>
+                            <th className="px-3 py-2 font-medium">#</th>
+                            <th className="px-3 py-2 font-medium">Name</th>
+                            <th className="px-3 py-2 font-medium">Email</th>
+                            <th className="px-3 py-2 font-medium">Cohort</th>
+                            <th className="px-3 py-2 font-medium">Status</th>
+                            <th className="px-3 py-2 font-medium text-right">Sats pending</th>
+                            <th className="px-3 py-2 font-medium text-right">Sats received</th>
+                            <th className="px-3 py-2 font-medium text-right">Total sats</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800">
+                          {satsStudentsList.map((row: any) => (
+                            <tr key={row.id} className="hover:bg-zinc-800/50">
+                              <td className="px-3 py-2 text-zinc-400">{row.index}</td>
+                              <td className="px-3 py-2 text-zinc-200">{row.name || '—'}</td>
+                              <td className="px-3 py-2 text-zinc-300">{row.email || '—'}</td>
+                              <td className="px-3 py-2 text-zinc-400">{row.cohort_name || '—'}</td>
+                              <td className="px-3 py-2 text-zinc-400">{row.status || '—'}</td>
+                              <td className="px-3 py-2 text-right text-yellow-400 font-medium">{(row.sats_pending ?? 0).toLocaleString()}</td>
+                              <td className="px-3 py-2 text-right text-green-400 font-medium">{(row.sats_received ?? 0).toLocaleString()}</td>
+                              <td className="px-3 py-2 text-right text-cyan-300 font-medium">{(row.sats_total ?? 0).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
 
                 {/* Student Sats Rewards Section */}
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
