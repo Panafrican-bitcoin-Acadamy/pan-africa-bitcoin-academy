@@ -218,6 +218,53 @@ export default function ScamPage() {
                       </div>
                     ))}
                   </div>
+                  <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col">
+                      <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Fake / scam example 1</p>
+                      <button
+                        type="button"
+                        onClick={() => setFullViewImage("/images/scams/fakebi.jpeg")}
+                        className="w-full rounded-xl border border-zinc-700/80 overflow-hidden cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition text-left"
+                        aria-label="View full size"
+                      >
+                        <img
+                          src="/images/scams/fakebi.jpeg"
+                          alt="Scam example — fake"
+                          className="w-full h-auto max-h-[320px] sm:max-h-[400px] object-contain rounded-xl border border-zinc-700/80 bg-zinc-800/30"
+                        />
+                      </button>
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Fake / scam example 2</p>
+                      <button
+                        type="button"
+                        onClick={() => setFullViewImage("/images/scams/fakebi2.jpeg")}
+                        className="w-full rounded-xl border border-zinc-700/80 overflow-hidden cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition text-left"
+                        aria-label="View full size"
+                      >
+                        <img
+                          src="/images/scams/fakebi2.jpeg"
+                          alt="Scam example — fake 2"
+                          className="w-full h-auto max-h-[320px] sm:max-h-[400px] object-contain rounded-xl border border-zinc-700/80 bg-zinc-800/30"
+                        />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex flex-col max-w-xl">
+                    <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Real / legitimate example</p>
+                    <button
+                      type="button"
+                      onClick={() => setFullViewImage("/images/scams/realbi.jpeg")}
+                      className="w-full rounded-xl border border-zinc-700/80 overflow-hidden cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition text-left"
+                      aria-label="View full size"
+                    >
+                      <img
+                        src="/images/scams/realbi.jpeg"
+                        alt="Legitimate example — real"
+                        className="w-full h-auto max-h-[320px] sm:max-h-[400px] object-contain rounded-xl border border-zinc-700/80 bg-zinc-800/30"
+                      />
+                    </button>
+                  </div>
                   <div className="mt-8 grid gap-6 sm:grid-cols-3">
                     <div className="flex flex-col">
                       <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Scam Diagram</p>
