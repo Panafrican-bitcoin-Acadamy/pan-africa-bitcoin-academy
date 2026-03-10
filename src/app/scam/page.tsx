@@ -472,7 +472,7 @@ export default function ScamPage() {
             <section id="section-3" className="scroll-mt-24">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 overflow-hidden">
                 <div className="grid lg:grid-cols-12 gap-0">
-                  <div className="lg:col-span-7 p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
+                  <div className="lg:col-span-6 p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-3">
                       <Code2 className="h-6 w-6 text-cyan-400" />
                       <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Section 3</span>
@@ -504,17 +504,17 @@ export default function ScamPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="lg:col-span-5 p-6 sm:p-8 flex items-center justify-center bg-zinc-800/30 border-t lg:border-t-0 lg:border-l border-zinc-700/80">
+                  <div className="lg:col-span-6 p-6 sm:p-8 flex items-center justify-center bg-zinc-800/30 border-t lg:border-t-0 lg:border-l border-zinc-700/80">
                     <button
                       type="button"
                       onClick={() => setFullViewImage("/images/scams/scam15.jpeg")}
-                      className="w-full max-w-sm rounded-xl border border-zinc-700/80 overflow-hidden shadow-lg cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+                      className="w-full max-w-xl rounded-xl border border-zinc-700/80 overflow-hidden shadow-lg cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
                       aria-label="View full size"
                     >
                       <img
                         src="/images/scams/scam15.jpeg"
                         alt="Phishing / wallet attack diagram"
-                        className="w-full h-auto max-h-[min(400px,50vh)] object-contain bg-zinc-800/30"
+                        className="w-full h-auto max-h-[min(560px,65vh)] object-contain bg-zinc-800/30"
                       />
                     </button>
                   </div>
