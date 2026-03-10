@@ -369,7 +369,7 @@ export default function ScamPage() {
                       Case Study: Celebrity Romance Scam
                     </h3>
                     <div className="mt-6 grid gap-6 lg:grid-cols-12">
-                      <div className="lg:col-span-4 flex flex-col items-center">
+                      <div className="lg:col-span-4 flex flex-col items-center gap-4">
                         <button
                           type="button"
                           onClick={() => setFullViewImage("/images/scams/brad.jpeg")}
@@ -379,6 +379,18 @@ export default function ScamPage() {
                           <img
                             src="/images/scams/brad.jpeg"
                             alt="Case study: celebrity romance scam — impersonation and emotional manipulation"
+                            className="w-full h-auto max-h-[min(400px,50vh)] object-contain bg-zinc-800/30"
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFullViewImage("/images/scams/bradpi.jpeg")}
+                          className="w-full max-w-xs rounded-xl border border-zinc-700/80 overflow-hidden shadow-lg cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+                          aria-label="View full size"
+                        >
+                          <img
+                            src="/images/scams/bradpi.jpeg"
+                            alt="Case study: celebrity romance scam — example image"
                             className="w-full h-auto max-h-[min(400px,50vh)] object-contain bg-zinc-800/30"
                           />
                         </button>
@@ -409,11 +421,18 @@ export default function ScamPage() {
                   <div className="mt-8 grid gap-6 sm:grid-cols-3">
                     <div className="flex flex-col">
                       <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Social Media Scam Screenshot</p>
+                      <button
+                        type="button"
+                        onClick={() => setFullViewImage("/images/scams/scam7.jpeg")}
+                        className="w-full rounded-xl border border-zinc-700/80 overflow-hidden cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition text-left"
+                        aria-label="View full size"
+                      >
                         <img
-                        src="/images/scams/scam7.jpeg"
-                        alt="Social media scam screenshot example"
-                        className="w-full h-auto max-w-full max-h-[320px] sm:max-h-[400px] object-contain rounded-xl border border-zinc-700/80 bg-zinc-800/30"
-                      />
+                          src="/images/scams/scam7.jpeg"
+                          alt="Social media scam screenshot example"
+                          className="w-full h-auto max-w-full max-h-[320px] sm:max-h-[400px] object-contain rounded-xl border border-zinc-700/80 bg-zinc-800/30"
+                        />
+                      </button>
                     </div>
                     <div className="flex flex-col">
                       <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Deepfake Example Video</p>
