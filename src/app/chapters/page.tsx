@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { BitcoinIcon, WalletIcon, LightningIcon, BookIcon, ToolIcon, BlockchainIcon, KeysIcon, UTXOIcon, TransactionIcon, MiningIcon } from "@/components/BitcoinIcons";
 import { useAuth } from "@/hooks/useAuth";
 import { useSession } from "@/hooks/useSession";
-import { Download, FileText, BookOpen, ExternalLink } from 'lucide-react';
+import { Download, FileText, BookOpen, ExternalLink, AlertTriangle } from 'lucide-react';
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { AnimatedList } from "@/components/AnimatedList";
 import { SyllabusModal } from "@/components/SyllabusModal";
@@ -896,6 +896,38 @@ export default function ChaptersPage() {
                   </div>
                 </div>
               </a>
+              </AnimatedSection>
+
+              {/* Understanding Bitcoin Scams */}
+              <AnimatedSection animation="slideUp" delay={640}>
+              <Link
+                href="/scam"
+                className="group flex flex-col rounded-xl border border-amber-400/30 bg-black/60 p-6 transition hover:border-amber-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-lg bg-amber-500/20 p-3">
+                    <AlertTriangle className="h-6 w-6 text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-amber-300 transition group-hover:text-amber-200">
+                      Understanding Bitcoin Scams
+                    </h3>
+                    <p className="text-sm text-zinc-400">Pan-Africa Bitcoin Academy</p>
+                  </div>
+                </div>
+                <p className="mb-4 flex-1 text-sm text-zinc-300">
+                  Learn to recognize and avoid investment scams, impersonation, phishing, and malware. Essential reading to protect yourself.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-300">
+                    Guide
+                  </span>
+                  <div className="flex items-center gap-2 text-sm text-amber-400">
+                    <span>Read</span>
+                    <ExternalLink className="h-4 w-4" />
+                  </div>
+                </div>
+              </Link>
               </AnimatedSection>
             </div>
           </div>
