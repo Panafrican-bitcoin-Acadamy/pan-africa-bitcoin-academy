@@ -120,7 +120,15 @@ export default function ScamPage() {
                     </p>
                   </div>
                   <div className="lg:col-span-5 flex flex-col justify-center">
-                    <Placeholder label="Intro Video Placeholder" className="aspect-video min-h-[200px]" />
+                    <video
+                        src="/images/scams/ether.mp4"
+                        controls
+                        className="w-full aspect-video min-h-[200px] rounded-xl border border-zinc-700/80 bg-black"
+                        preload="metadata"
+                        playsInline
+                      >
+                        Your browser does not support the video tag.
+                      </video>
                   </div>
                 </div>
                 <div role="alert" className="mt-8 flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-4">
@@ -166,8 +174,10 @@ export default function ScamPage() {
                         Students should understand that legitimate investments never guarantee profits, especially in volatile markets like cryptocurrency. Any system promising fixed or guaranteed returns is a strong indicator of fraud.
                       </p>
                     </div>
-                    <div className="mt-6 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2">Further reading</p>
+                    <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-amber-300 mb-2">
+                        Scam website example (for analysis only)
+                      </p>
                       <a
                         href="https://phemex.com/blogs/bitcoin-scam-websites"
                         target="_blank"
@@ -177,7 +187,9 @@ export default function ScamPage() {
                         Bitcoin Scam Websites: What To Look Out For
                       </a>
                       <p className="mt-1 text-xs text-zinc-400">
-                        Phemex — how to identify scam sites, known examples (My Big Coin, BitClub, clipboard hijackers), and how to avoid them.
+                        Breakdown of how scam websites operate, with examples like My Big Coin, BitClub, clipboard hijackers, and how to avoid
+                        falling for these patterns. Do <span className="font-semibold text-amber-200">not</span> treat sites like this as trusted
+                        services.
                       </p>
                     </div>
                   </div>
@@ -246,14 +258,19 @@ export default function ScamPage() {
             <section id="section-2" className="scroll-mt-24">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 overflow-hidden">
                 <div className="grid lg:grid-cols-12 gap-0">
-                  <div className="lg:col-span-5 order-2 lg:order-1 p-6 sm:p-8 flex items-center justify-center bg-gradient-to-br from-amber-500/10 via-cyan-500/10 to-purple-500/10 border-t lg:border-t-0 lg:border-r border-zinc-700/80">
-                    <blockquote className="text-center px-4">
-                      <p className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold leading-snug tracking-tight">
-                        <span className="bg-gradient-to-r from-amber-300 via-cyan-300 to-purple-300 bg-clip-text text-transparent">
-                          “If something sounds too good to be true, it probably is.”
-                        </span>
-                      </p>
-                    </blockquote>
+                  <div className="lg:col-span-5 order-2 lg:order-1 p-6 sm:p-8 flex items-center justify-center border-t lg:border-t-0 lg:border-r border-zinc-700/80">
+                    <button
+                      type="button"
+                      onClick={() => setFullViewImage("/images/scams/elon.jpeg")}
+                      className="w-full max-w-xl rounded-xl border border-zinc-700/80 overflow-hidden shadow-lg cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+                      aria-label="View full size"
+                    >
+                      <img
+                        src="/images/scams/elon.jpeg"
+                        alt="Impersonation and social engineering scams — example"
+                        className="w-full h-auto max-h-[min(400px,50vh)] object-contain bg-zinc-800/30"
+                      />
+                    </button>
                   </div>
                   <div className="lg:col-span-7 order-1 lg:order-2 p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-3">
@@ -504,7 +521,18 @@ export default function ScamPage() {
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 overflow-hidden">
                 <div className="grid lg:grid-cols-12 gap-0">
                   <div className="lg:col-span-5 order-2 lg:order-1 p-6 sm:p-8 flex items-center justify-center bg-zinc-800/30 border-t lg:border-t-0 lg:border-r border-zinc-700/80">
-                    <Placeholder label="Section 4 — Malware / Ransomware" className="aspect-[4/5] w-full max-w-sm" />
+                    <button
+                      type="button"
+                      onClick={() => setFullViewImage("/images/scams/ransomware.jpeg")}
+                      className="w-full max-w-sm rounded-xl border border-zinc-700/80 overflow-hidden shadow-lg cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+                      aria-label="View full size"
+                    >
+                      <img
+                        src="/images/scams/ransomware.jpeg"
+                        alt="Section 4 — Malware / Ransomware"
+                        className="w-full h-auto aspect-[4/5] object-contain bg-zinc-800/30"
+                      />
+                    </button>
                   </div>
                   <div className="lg:col-span-7 order-1 lg:order-2 p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-3">
@@ -562,8 +590,35 @@ export default function ScamPage() {
                         />
                       </button>
                     </div>
-                    <Placeholder label="Ransomware Screenshot" className="aspect-video" />
-                    <Placeholder label="Cybercrime Documentary Video" className="aspect-video" />
+                    <div className="flex flex-col">
+                      <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Ransomware Screenshot</p>
+                      <button
+                        type="button"
+                        onClick={() => setFullViewImage("/images/scams/rans.jpeg")}
+                        className="w-full rounded-xl border border-zinc-700/80 overflow-hidden cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition text-left"
+                        aria-label="View full size"
+                      >
+                        <img
+                          src="/images/scams/rans.jpeg"
+                          alt="Ransomware screenshot example"
+                          className="w-full h-auto aspect-video object-contain bg-zinc-800/30"
+                        />
+                      </button>
+                    </div>
+                    <div className="rounded-xl border border-zinc-700/80 bg-zinc-800/50 p-4 sm:p-5 flex flex-col gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Cybercrime documentary (external)</p>
+                    <p className="text-sm text-zinc-300 leading-relaxed">
+                      A documentary on how cybercrime and online scams work, including real-world cases and what to watch out for.
+                    </p>
+                    <a
+                      href="https://www.youtube.com/watch?v=r-lGWG7vHNE"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-2.5 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20 transition w-fit"
+                    >
+                      Watch on YouTube
+                    </a>
+                  </div>
                   </div>
                 </div>
               </div>
