@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@scure/bip32": "^2.0.1",
+    "@scure/bip39": "^2.0.1",
     "@supabase/supabase-js": "^2.87.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/react-datepicker": "^6.2.0",

@@ -1989,9 +1989,39 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/multi-sig-design.png",
-            alt: "Diagram showing 2-of-3 and 3-of-5 multi-sig setups",
-            caption: "Different multi-sig designs balance security and redundancy",
+            src: "/images/wallet/starting.jpeg",
+            alt: "Create wallet page — beginning of multi-sig setup",
+            caption: "1. Starting the flow: coordinator-based or coordinator-less multi-sig (create wallet page)",
+          },
+          {
+            src: "/images/wallet/createseed.jpeg",
+            alt: "Create a new seed for your key",
+            caption: "2. Seed creation: the foundation for each key in a 2-of-3 or 3-of-5 setup",
+          },
+          {
+            src: "/images/wallet/choos.jpeg",
+            alt: "Choose how many signers (M-of-N)",
+            caption: "3. Choosing your setup: balance security (more keys) and complexity (2-of-3 vs 3-of-5)",
+          },
+          {
+            src: "/images/wallet/keyto.jpeg",
+            alt: "Setting up and sharing keys between signers",
+            caption: "4. Keys and wallet setup: each signer has their own key in multi-sig designs",
+          },
+          {
+            src: "/images/wallet/password.jpeg",
+            alt: "Create a password for the wallet",
+            caption: "5. Security and redundancy: strong passwords protect each key in the setup",
+          },
+          {
+            src: "/images/wallet/final.jpeg",
+            alt: "Wallet created successfully",
+            caption: "6. Different multi-sig designs balance security and redundancy (wallet created)",
+          },
+          {
+            src: "/images/wallet/settingend.jpeg",
+            alt: "Wallet details and configuration summary",
+            caption: "7. Completing configuration: document key distribution for 2-of-3 or 3-of-5",
           },
         ],
       },

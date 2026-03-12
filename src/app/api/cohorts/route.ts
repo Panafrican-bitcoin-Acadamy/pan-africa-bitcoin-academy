@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 import { generateCohortSessions, validateCohortDates } from '@/lib/sessionGenerator';
 
 export async function GET() {
   try {
-    // Fetch cohorts with enrollment counts
-    const { data: cohorts, error: cohortsError } = await supabase
+    // Fetch cohorts with enrollment counts (use admin client so RLS cannot block)
+    const { data: cohorts, error: cohortsError } = await supabaseAdmin
       .from('cohorts')
       .select('*')
       .order('start_date', { ascending: true });
@@ -14,66 +14,96 @@ export async function GET() {
     if (cohortsError) {
       console.error('Error fetching cohorts:', cohortsError);
       return NextResponse.json(
-        { error: 'Failed to fetch cohorts', details: cohortsError.message },
+        {
+          error: 'Failed to fetch cohorts',
+          ...(process.env.NODE_ENV === 'development' ? { details: cohortsError.message } : {}),
+        },
         { status: 500 }
       );
     }
 
     // Base seat counts on applications per cohort: approved + pending for that cohort.
-    // Use admin client so RLS cannot hide rows.
     const cohortsWithSeats = await Promise.all(
       (cohorts || []).map(async (cohort: any) => {
-        // Count applications for this cohort: Approved and Pending (source of truth for "taken" seats)
-        const [
-          { count: approvedCount, error: approvedError },
-          { count: pendingCount, error: pendingError },
-          { count: enrolledCount, error: enrolledError },
-        ] = await Promise.all([
-          supabaseAdmin
-            .from('applications')
-            .select('*', { count: 'exact', head: true })
-            .eq('preferred_cohort_id', cohort.id)
-            .eq('status', 'Approved'),
-          supabaseAdmin
-            .from('applications')
-            .select('*', { count: 'exact', head: true })
-            .eq('preferred_cohort_id', cohort.id)
-            .eq('status', 'Pending'),
-          supabaseAdmin
-            .from('cohort_enrollment')
-            .select('*', { count: 'exact', head: true })
-            .eq('cohort_id', cohort.id),
-        ]);
+        try {
+          const cohortId = cohort?.id;
+          if (!cohortId) {
+            return {
+              id: cohort?.id ?? '',
+              name: cohort?.name || 'Unnamed Cohort',
+              startDate: cohort?.start_date || null,
+              endDate: cohort?.end_date || null,
+              status: cohort?.status || 'Upcoming',
+              sessions: cohort?.sessions || 0,
+              level: cohort?.level || 'Beginner',
+              seats: cohort?.seats_total || 0,
+              available: cohort?.seats_total || 0,
+              enrolled: 0,
+            };
+          }
 
-        if (approvedError) console.error(`Error counting approved for cohort ${cohort.id}:`, approvedError);
-        if (pendingError) console.error(`Error counting pending for cohort ${cohort.id}:`, pendingError);
-        if (enrolledError) console.error(`Error counting enrollment for cohort ${cohort.id}:`, enrolledError);
+          let approvedCount = 0;
+          let pendingCount = 0;
+          let enrolledCount = 0;
 
-        // Approved: use max of applications (Approved) and cohort_enrollment so we count all approved in the whole DB
-        const approvedFromApplications = approvedCount ?? 0;
-        const enrolled = enrolledCount ?? 0;
-        const approvedForCohort = Math.max(approvedFromApplications, enrolled);
-        const pendingApplications = pendingCount ?? 0;
+          try {
+            const [approvedRes, pendingRes, enrolledRes] = await Promise.all([
+              supabaseAdmin
+                .from('applications')
+                .select('*', { count: 'exact', head: true })
+                .eq('preferred_cohort_id', cohortId)
+                .eq('status', 'Approved'),
+              supabaseAdmin
+                .from('applications')
+                .select('*', { count: 'exact', head: true })
+                .eq('preferred_cohort_id', cohortId)
+                .eq('status', 'Pending'),
+              supabaseAdmin
+                .from('cohort_enrollment')
+                .select('*', { count: 'exact', head: true })
+                .eq('cohort_id', cohortId),
+            ]);
+            approvedCount = approvedRes.count ?? 0;
+            pendingCount = pendingRes.count ?? 0;
+            enrolledCount = enrolledRes.count ?? 0;
+            if (approvedRes.error) console.error(`Error counting approved for cohort ${cohortId}:`, approvedRes.error);
+            if (pendingRes.error) console.error(`Error counting pending for cohort ${cohortId}:`, pendingRes.error);
+            if (enrolledRes.error) console.error(`Error counting enrollment for cohort ${cohortId}:`, enrolledRes.error);
+          } catch (countErr) {
+            console.error(`Error counting seats for cohort ${cohortId}:`, countErr);
+          }
 
-        // Available = total seats minus (approved + pending) for this cohort
-        const takenByApplications = approvedForCohort + pendingApplications;
-        const available = Math.max(0, (cohort.seats_total || 0) - takenByApplications);
+          const approvedForCohort = Math.max(approvedCount, enrolledCount);
+          const takenByApplications = approvedForCohort + pendingCount;
+          const available = Math.max(0, (cohort.seats_total || 0) - takenByApplications);
 
-        // Get sessions count from cohorts.sessions column
-        const sessions = cohort.sessions || 0;
-
-        return {
-          id: cohort.id,
-          name: cohort.name || 'Unnamed Cohort',
-          startDate: cohort.start_date || null,
-          endDate: cohort.end_date || null,
-          status: cohort.status || 'Upcoming',
-          sessions: sessions, // From cohorts.sessions column
-          level: cohort.level || 'Beginner',
-          seats: cohort.seats_total || 0,
-          available: available,
-          enrolled: enrolled,
-        };
+          return {
+            id: cohort.id,
+            name: cohort.name || 'Unnamed Cohort',
+            startDate: cohort.start_date || null,
+            endDate: cohort.end_date || null,
+            status: cohort.status || 'Upcoming',
+            sessions: cohort.sessions || 0,
+            level: cohort.level || 'Beginner',
+            seats: cohort.seats_total || 0,
+            available,
+            enrolled: enrolledCount,
+          };
+        } catch (rowErr) {
+          console.error(`Error processing cohort ${cohort?.id}:`, rowErr);
+          return {
+            id: cohort?.id ?? '',
+            name: cohort?.name || 'Unnamed Cohort',
+            startDate: cohort?.start_date || null,
+            endDate: cohort?.end_date || null,
+            status: cohort?.status || 'Upcoming',
+            sessions: cohort?.sessions || 0,
+            level: cohort?.level || 'Beginner',
+            seats: cohort?.seats_total || 0,
+            available: cohort?.seats_total || 0,
+            enrolled: 0,
+          };
+        }
       })
     );
 

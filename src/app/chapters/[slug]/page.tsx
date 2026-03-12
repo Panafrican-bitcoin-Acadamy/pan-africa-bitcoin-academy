@@ -15,10 +15,12 @@ import { Chapter18Assignment } from "@/components/Chapter18Assignment";
 import { ChapterUTXOAssignment } from "@/components/ChapterUTXOAssignment";
 import { Chapter14HalvingPuzzle } from "@/components/Chapter14HalvingPuzzle";
 import { ChapterExplorerAssignment } from "@/components/ChapterExplorerAssignment";
+import { Chapter17MultisigAssignment } from "@/components/Chapter17MultisigAssignment";
 import { SeedPhraseGrid } from "@/components/SeedPhraseGrid";
 import { BtcSatsConverter } from "@/components/BtcSatsConverter";
 import { ChapterSectionAnimated } from "@/components/chapters/ChapterSectionAnimated";
 import { ChapterTechVectors } from "@/components/chapters/ChapterTechVectors";
+import { ZoomableImage } from "@/components/ZoomableImage";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -963,6 +965,23 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           </p>
                         </div>
                       </div>
+                    ) : section.heading === "17.1 Multi-Sig Designs and Flows (M-of-N; Coordinator vs Coordinator-Less)" && section.images.length >= 1 ? (
+                      <div className="mt-6 space-y-6">
+                        <p className="text-center text-lg font-semibold text-cyan-200">
+                          Different multi-sig designs balance security and redundancy
+                        </p>
+                        <p className="text-center text-sm text-zinc-400">Click any image to zoom</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {section.images.map((image, idx) => (
+                            <ZoomableImage
+                              key={idx}
+                              src={image.src}
+                              alt={image.alt}
+                              caption={image.caption}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     ) : section.images.length === 2 ? (
                       // Side by side layout for sections with exactly 2 images
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1131,6 +1150,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           ) : chapter.slug === 'proof-of-work-and-block-rewards' ? (
             <Chapter14HalvingPuzzle
               assignmentId="dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+            />
+          ) : chapter.slug === 'multi-sig-collaborative-custody' ? (
+            <Chapter17MultisigAssignment
+              assignmentId="17171717-1717-4171-8171-717171717171"
             />
           ) : null}
         </section>

@@ -22,7 +22,7 @@ export function ChapterAccessCheck({ chapterNumber, chapterSlug, children }: Cha
     const checkAccess = async () => {
       if (loading || adminLoading) return; // Wait for auth to load
 
-      // If admin is logged in, grant immediate access
+      // If admin is logged in, grant access (admins always get in; API is optional for progress)
       if (isAdminAuth && adminEmail) {
         try {
           const response = await fetch('/api/chapters/check-access', {
@@ -45,11 +45,12 @@ export function ChapterAccessCheck({ chapterNumber, chapterSlug, children }: Cha
           }
         } catch (error) {
           console.error('Error checking admin access:', error);
-          // Even on error, if admin session exists, allow access
-          setHasAccess(true);
-          setChecking(false);
-          return;
         }
+        // Admin is logged in: grant access even if API failed or returned non-ok
+        // (avoids redirecting admins to apply when API has issues or delay)
+        setHasAccess(true);
+        setChecking(false);
+        return;
       }
 
       // Regular user check
