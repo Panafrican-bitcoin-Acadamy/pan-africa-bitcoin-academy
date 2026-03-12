@@ -9,9 +9,12 @@ interface ZoomableImageProps {
   alt: string;
   caption?: string;
   className?: string;
+  /** Optional: override thumbnail max height e.g. "max-h-96" for larger chapter images */
+  thumbnailClassName?: string;
 }
 
-export function ZoomableImage({ src, alt, caption, className = '' }: ZoomableImageProps) {
+export function ZoomableImage({ src, alt, caption, className = '', thumbnailClassName }: ZoomableImageProps) {
+  const thumbClass = thumbnailClassName ?? 'max-h-64';
   const [open, setOpen] = useState(false);
   const [zoom, setZoom] = useState(100);
 
@@ -119,13 +122,13 @@ export function ZoomableImage({ src, alt, caption, className = '' }: ZoomableIma
       <button
         type="button"
         onClick={openModal}
-        className="block w-full rounded-lg border border-cyan-400/20 shadow-lg object-contain max-h-64 overflow-hidden focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-zinc-950 transition hover:border-cyan-400/40"
+        className={`block w-full rounded-lg border border-cyan-400/20 shadow-lg object-contain overflow-hidden focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-zinc-950 transition hover:border-cyan-400/40 ${thumbClass}`}
         aria-label={`View full size: ${alt}`}
       >
         <img
           src={src}
           alt={alt}
-          className={`w-full h-full object-contain max-h-64 cursor-zoom-in ${className}`}
+          className={`w-full h-full object-contain cursor-zoom-in ${thumbClass} ${className}`}
           draggable={false}
         />
       </button>

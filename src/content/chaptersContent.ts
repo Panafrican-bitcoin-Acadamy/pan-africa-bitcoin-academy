@@ -12,12 +12,18 @@ export type ChapterImage = {
   caption?: string;
 };
 
+export type ChapterSectionVideo = {
+  src: string;
+  caption?: string;
+};
+
 export type ChapterSection = {
   heading: string;
   paragraphs?: string[];
   bullets?: string[];
   callouts?: ChapterCallout[];
   images?: ChapterImage[];
+  video?: ChapterSectionVideo;
   seedPhrase?: string[];
 };
 
@@ -401,6 +407,10 @@ export const chaptersContent: ChapterContent[] = [
             caption: "",
           },
         ],
+        video: {
+          src: "/images/videos/somalia.mp4",
+          caption: "Inflation and its impact",
+        },
       },
       {
         heading: "3.2 Centralized Control — Governments and Banks",
@@ -791,7 +801,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/P2P.jpg",
+            src: "/images/book_images/P2p.jpeg",
             alt: "Diagram showing the flow: Alice creates transaction → broadcasts → nodes verify → miners confirm",
             caption: "Peer-to-peer transaction flow",
           },

@@ -250,7 +250,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       </div>
                       <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg bg-zinc-900/30">
                         {section.images?.[0]?.src ? (
-                          <img src={section.images[0].src} alt={section.images[0].alt} className="max-h-96 w-full max-w-2xl object-contain rounded-lg shadow-lg shadow-cyan-900/20" />
+                          <ZoomableImage src={section.images[0].src} alt={section.images[0].alt} caption={section.images[0].caption} className="rounded-lg shadow-cyan-900/20" thumbnailClassName="max-h-96" />
                         ) : (
                           <span className="rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 px-8 py-6 text-sm font-medium text-zinc-500">1st image here</span>
                         )}
@@ -269,7 +269,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       })()}
                       <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg bg-zinc-900/30">
                         {section.images?.[1]?.src ? (
-                          <img src={section.images[1].src} alt={section.images[1].alt} className="max-h-96 w-full max-w-2xl object-contain rounded-lg shadow-lg shadow-cyan-900/20" />
+                          <ZoomableImage src={section.images[1].src} alt={section.images[1].alt} caption={section.images[1].caption} className="rounded-lg shadow-cyan-900/20" thumbnailClassName="max-h-96" />
                         ) : (
                           <span className="rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 px-8 py-6 text-sm font-medium text-zinc-500">2nd image here</span>
                         )}
@@ -288,7 +288,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       })()}
                       <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-lg bg-zinc-900/30">
                         {section.images?.[2]?.src ? (
-                          <img src={section.images[2].src} alt={section.images[2].alt} className="max-h-96 w-full max-w-2xl object-contain rounded-lg shadow-lg shadow-cyan-900/20" />
+                          <ZoomableImage src={section.images[2].src} alt={section.images[2].alt} caption={section.images[2].caption} className="rounded-lg shadow-cyan-900/20" thumbnailClassName="max-h-96" />
                         ) : (
                           <span className="rounded-lg border border-dashed border-zinc-600 bg-zinc-900/50 px-8 py-6 text-sm font-medium text-zinc-500">Unit of Account image</span>
                         )}
@@ -321,10 +321,11 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       <div key={`${p}-${pIdx}-dec`}>
                         <p className="mt-3 text-zinc-200 leading-relaxed">{p}</p>
                         <div className="mt-4 flex flex-col items-center">
-                          <img
+                          <ZoomableImage
                             src={decImg.src}
                             alt={decImg.alt}
-                            className="w-full max-w-xl rounded-lg border border-cyan-400/20 object-contain"
+                            caption={decImg.caption}
+                            className="w-full max-w-xl rounded-lg"
                           />
                           {decImg.caption && (
                             <p className="mt-2 text-center text-sm text-cyan-200/90 italic">{decImg.caption}</p>
@@ -714,68 +715,53 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         
                         {/* Center image (barter_system) */}
                         <div className="absolute top-[40%] left-1/2 transform -translate-x-1/2 -translate-y-1/3 z-10 w-[21rem] sm:w-[27rem] lg:w-36">
-                          <img
+                          <ZoomableImage
                             src={section.images[3].src}
                             alt={section.images[3].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
+                            caption={section.images[3].caption}
+                            className="w-full rounded-lg"
+                            thumbnailClassName="max-h-full"
                           />
-                          {section.images[3].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[3].caption}
-                            </p>
-                          )}
                         </div>
                         {/* Top image */}
                         <div className="absolute -top-16 sm:-top-20 lg:top-[5%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/5 w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
-                          <img
+                          <ZoomableImage
                             src={section.images[0].src}
                             alt={section.images[0].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
+                            caption={section.images[0].caption}
+                            className="w-full rounded-lg"
+                            thumbnailClassName="max-h-full"
                           />
-                          {section.images[0].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[0].caption}
-                            </p>
-                          )}
                         </div>
                         {/* Right image */}
                         <div className="absolute top-1/2 -right-16 sm:-right-20 lg:right-[2%] transform -translate-y-1/2 translate-x-full w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
-                          <img
+                          <ZoomableImage
                             src={section.images[1].src}
                             alt={section.images[1].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
+                            caption={section.images[1].caption}
+                            className="w-full rounded-lg"
+                            thumbnailClassName="max-h-full"
                           />
-                          {section.images[1].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[1].caption}
-                            </p>
-                          )}
                         </div>
                         {/* Bottom image */}
                         <div className="absolute -bottom-24 sm:-bottom-32 lg:bottom-[5%] left-1/2 transform -translate-x-1/2 lg:translate-y-1/2 w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
-                          <img
+                          <ZoomableImage
                             src={section.images[4].src}
                             alt={section.images[4].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
+                            caption={section.images[4].caption}
+                            className="w-full rounded-lg"
+                            thumbnailClassName="max-h-full"
                           />
-                          {section.images[4].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[4].caption}
-                            </p>
-                          )}
                         </div>
                         {/* Left image */}
                         <div className="absolute top-1/2 -left-16 sm:-left-20 lg:left-[2%] transform -translate-y-1/2 -translate-x-full w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
-                          <img
+                          <ZoomableImage
                             src={section.images[2].src}
                             alt={section.images[2].alt}
-                            className="w-full rounded-lg border border-orange-400/20"
+                            caption={section.images[2].caption}
+                            className="w-full rounded-lg"
+                            thumbnailClassName="max-h-full"
                           />
-                          {section.images[2].caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {section.images[2].caption}
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -785,18 +771,13 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       <div className="mt-6 space-y-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {section.images.map((image, idx) => (
-                          <div key={idx} className="flex flex-col items-center space-y-3">
-                            <img
-                              src={image.src}
-                              alt={image.alt}
-                              className="w-full rounded-lg border border-orange-400/20 shadow-lg"
-                            />
-                            {image.caption && (
-                              <p className="text-center text-sm text-zinc-200 leading-relaxed px-2">
-                                {image.caption}
-                              </p>
-                            )}
-                          </div>
+                          <ZoomableImage
+                            key={idx}
+                            src={image.src}
+                            alt={image.alt}
+                            caption={image.caption}
+                            className="w-full rounded-lg shadow-lg"
+                          />
                         ))}
                         </div>
                         <div>
@@ -862,16 +843,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                               {idx === 2 && (
                                 <p className="mb-2 text-base font-semibold text-orange-200">Now</p>
                               )}
-                              <img
+                              <ZoomableImage
                                 src={image.src}
                                 alt={image.alt}
-                                className={`rounded-lg border border-orange-400/20 shadow-lg ${image.src.includes('arrow') ? 'w-32 h-16 sm:w-40 sm:h-20 object-contain' : 'w-48 sm:w-64'}`}
+                                caption={image.caption}
+                                className={`rounded-lg shadow-lg ${image.src.includes('arrow') ? 'w-32 h-16 sm:w-40 sm:h-20 object-contain' : 'w-48 sm:w-64'}`}
                               />
-                              {image.caption && (
-                                <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                                  {image.caption}
-                                </p>
-                              )}
                   </div>
                 ))}
                         </div>
@@ -889,19 +866,31 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         {section.images.length >= 5 && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {section.images.slice(3, 5).map((image, idx) => (
-                              <div key={idx} className="flex flex-col items-center">
-                    <img
-                      src={image.src}
-                      alt={image.alt}
-                                  className="w-full rounded-lg border border-orange-400/20 shadow-lg"
-                    />
-                    {image.caption && (
-                      <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                        {image.caption}
-                      </p>
-                    )}
-                  </div>
+                              <ZoomableImage
+                                key={idx}
+                                src={image.src}
+                                alt={image.alt}
+                                caption={image.caption}
+                                className="w-full rounded-lg shadow-lg"
+                              />
                 ))}
+                          </div>
+                        )}
+                        {section.video && (
+                          <div className="flex flex-col items-center w-full max-w-2xl mx-auto">
+                            <video
+                              src={section.video.src}
+                              controls
+                              className="w-full rounded-lg border border-orange-400/20 shadow-lg bg-black"
+                              playsInline
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                            {section.video.caption && (
+                              <p className="mt-2 text-center text-sm text-zinc-400 italic">
+                                {section.video.caption}
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -910,18 +899,13 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       <div className="mt-6 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           {section.images.map((image, idx) => (
-                            <div key={idx} className="flex flex-col items-center">
-                              <img
-                                src={image.src}
-                                alt={image.alt}
-                                className="w-full rounded-lg border border-orange-400/20 shadow-lg"
-                              />
-                              {image.caption && (
-                                <p className="mt-3 text-center text-sm text-zinc-200 leading-relaxed px-2">
-                                  {image.caption}
-                                </p>
-                              )}
-                            </div>
+                            <ZoomableImage
+                              key={idx}
+                              src={image.src}
+                              alt={image.alt}
+                              caption={image.caption}
+                              className="w-full rounded-lg border border-orange-400/20 shadow-lg"
+                            />
                           ))}
                         </div>
                         <div className="text-center">
@@ -933,16 +917,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       <div className="mt-6 flex flex-col items-center space-y-4">
                         {section.images.map((image, idx) => (
                           <div key={idx} className="flex flex-col items-center w-full max-w-[50%] min-w-0">
-                            <img
+                            <ZoomableImage
                               src={image.src}
                               alt={image.alt}
+                              caption={image.caption}
                               className="w-full rounded-lg border border-orange-400/20 shadow-lg object-contain"
                             />
-                            {image.caption && (
-                              <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                                {image.caption}
-                              </p>
-                            )}
                           </div>
                         ))}
                       </div>
@@ -950,16 +930,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       // P2P transaction flow diagram: one image with flow steps and caption
                       <div className="mt-6 flex flex-col items-center space-y-4">
                         <div className="w-full max-w-2xl rounded-lg border border-cyan-400/20 bg-zinc-900/50 p-4 shadow-lg">
-                          <img
+                          <ZoomableImage
                             src={section.images[0].src}
                             alt={section.images[0].alt}
+                            caption={section.images[0].caption}
                             className="w-full rounded-lg object-contain"
                           />
-                          {section.images[0].caption && (
-                            <p className="mt-3 text-center text-sm font-medium text-cyan-200">
-                              {section.images[0].caption}
-                            </p>
-                          )}
                           <p className="mt-2 text-center text-xs text-zinc-400">
                             Diagram showing the flow: Alice creates transaction → broadcasts → nodes verify → miners confirm
                           </p>
@@ -986,18 +962,13 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                       // Side by side layout for sections with exactly 2 images
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         {section.images.map((image, idx) => (
-                          <div key={idx} className="flex flex-col items-center space-y-3">
-                            <img
-                              src={image.src}
-                              alt={image.alt}
-                              className="w-full rounded-lg border border-orange-400/20 shadow-lg"
-                            />
-                            {image.caption && (
-                              <p className="text-center text-sm text-zinc-200 leading-relaxed px-2">
-                                {image.caption}
-                              </p>
-                            )}
-                          </div>
+                          <ZoomableImage
+                            key={idx}
+                            src={image.src}
+                            alt={image.alt}
+                            caption={image.caption}
+                            className="w-full rounded-lg border border-orange-400/20 shadow-lg"
+                          />
                         ))}
                       </div>
                     ) : (
@@ -1007,16 +978,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         : section.images
                       ).map((image, idx) => (
                         <div key={idx} className={`mt-4 ${image.src.includes('money_usage') || image.src.includes('chinese_first_fiat_money') || image.src.includes('jade.png') ? 'flex flex-col items-center' : ''}`}>
-                          <img
+                          <ZoomableImage
                             src={image.src}
                             alt={image.alt}
+                            caption={image.caption}
                             className={`rounded-lg border border-orange-400/20 ${image.src.includes('money_usage') || image.src.includes('chinese_first_fiat_money') ? 'w-64 sm:w-80 max-w-full' : image.src.includes('jade.png') ? 'w-48 sm:w-64 max-w-full' : 'w-full'}`}
                           />
-                          {image.caption && (
-                            <p className="mt-2 text-center text-xs text-zinc-400 italic">
-                              {image.caption}
-                            </p>
-                          )}
                           {image.src.includes('money_usage') && section.bullets && (
                             <div className="mt-4 w-full max-w-2xl space-y-3">
                               <h4 className="text-base font-semibold text-orange-200 text-center">The three essential functions of money:</h4>
