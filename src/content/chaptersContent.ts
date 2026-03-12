@@ -1086,7 +1086,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/transaction.jpeg",
+            src: "/images/book_images/transaction.jpg",
             alt: "Bitcoin transaction and UTXO flow",
             caption: "Understanding transactions and the UTXO model",
           },
@@ -1212,6 +1212,13 @@ export const chaptersContent: ChapterContent[] = [
           {
             type: "tip",
             content: "Label transactions immediately when you receive them. Future you will thank present you for the clarity.",
+          },
+        ],
+        images: [
+          {
+            src: "/images/book_images/utxosize.jpg",
+            alt: "Labeling transactions and UTXO size",
+            caption: "Labeling transactions and UTXOs for future spending",
           },
         ],
       },
@@ -1499,7 +1506,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/proof-of-work.png",
+            src: "/images/book_images/proof-of-work.png",
             alt: "Diagram showing miners solving cryptographic puzzles to create blocks",
             caption: "Proof of Work requires expensive computation but easy verification",
           },
@@ -1519,7 +1526,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/block-reward.png",
+            src: "/images/book_images/block-reward.png",
             alt: "Diagram showing block reward and fees going to miners",
             caption: "Miners receive block rewards and transaction fees",
           },
@@ -1537,7 +1544,13 @@ export const chaptersContent: ChapterContent[] = [
             content: "Bitcoin's supply is fixed at 21 million coins. The halving schedule ensures predictable, declining inflation until 2140.",
           },
         ],
-        images: [],
+        images: [
+          {
+            src: "/images/book_images/halving.png",
+            alt: "Bitcoin halving schedule and declining block reward",
+            caption: "Halving schedule and fixed supply — declining inflation every ~210,000 blocks",
+          },
+        ],
       },
       {
         heading: "13.3 End of Subsidy (2140 Timeline; Fee Market)",
@@ -1549,6 +1562,13 @@ export const chaptersContent: ChapterContent[] = [
           {
             type: "note",
             content: "After 2140, miners will rely entirely on transaction fees. A healthy fee market is essential for long-term network security.",
+          },
+        ],
+        images: [
+          {
+            src: "/images/book_images/subsidy.jpeg",
+            alt: "Timeline showing the end of the block subsidy around 2140",
+            caption: "End of subsidy: by ~2140 miners rely entirely on transaction fees, supported by a healthy fee market.",
           },
         ],
       },
