@@ -1084,6 +1084,13 @@ export const chaptersContent: ChapterContent[] = [
           "When you open your Bitcoin wallet, you usually just see a single number: your balance. But under the hood, Bitcoin doesn't actually work like a simple bank account. Instead, it uses something called the UTXO model — short for Unspent Transaction Outputs. You can think of these UTXOs like individual coins in your pocket. Some are big, some are small, and together they add up to your total balance.",
           "Whenever you spend Bitcoin, you don't just 'subtract' money from your balance like a bank would. Instead, you pick specific UTXOs to spend, and if the one you use is larger than what you owe, you get change back — just like paying for a coffee with a $20 bill. This difference between 'account balances' and 'coin outputs' is one of the most important (and often misunderstood) parts of how Bitcoin works.",
         ],
+        images: [
+          {
+            src: "/images/book_images/transaction.jpeg",
+            alt: "Bitcoin transaction and UTXO flow",
+            caption: "Understanding transactions and the UTXO model",
+          },
+        ],
       },
       {
         heading: "9.0 What You Really Own — The UTXO Model",
@@ -2120,19 +2127,9 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/script.png",
-            alt: "P2PKH (Pay-to-Public-Key-Hash) script diagram",
-            caption: "P2PKH (Pay-to-Public-Key-Hash): The original script type",
-          },
-          {
             src: "/images/book_images/p2sh.png",
             alt: "P2SH (Pay-to-Script-Hash) script diagram",
             caption: "P2SH (Pay-to-Script-Hash): Allows complex scripts to be hidden behind a hash",
-          },
-          {
-            src: "/images/script-types.png",
-            alt: "Diagram comparing P2PKH, P2WPKH, P2SH, and P2TR script types",
-            caption: "Different script types offer different features and efficiency",
           },
         ],
       },
