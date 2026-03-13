@@ -872,7 +872,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/block-structure.png",
+            src: "/images/book_images/block-structure.png",
             alt: "Diagram showing block structure: transactions, hash, previous block hash",
             caption: "Structure of a Bitcoin block",
           },
@@ -1335,7 +1335,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/psbt-flow.png",
+            src: "/images/book_images/psbt-flow.png",
             alt: "Diagram showing PSBT flow: create on computer → sign on hardware → broadcast",
             caption: "PSBT flow keeps keys secure on hardware device",
           },
@@ -1401,7 +1401,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/block-explorer.png",
+            src: "/images/book_images/block-explorer.png",
             alt: "Screenshot of block explorer showing transaction details",
             caption: "Block explorers let you verify transactions independently",
           },
@@ -1421,7 +1421,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/merkle-tree.png",
+            src: "/images/book_images/merkle-tree.png",
             alt: "Diagram showing Merkle tree structure with transaction hashes",
             caption: "Merkle trees enable efficient transaction verification",
           },
@@ -1649,7 +1649,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/difficulty-adjustment.png",
+            src: "/images/book_images/difficulty-adjustment.png",
             alt: "Chart showing Bitcoin difficulty adjustment over time",
             caption: "Difficulty automatically adjusts to maintain 10-minute block times",
           },
@@ -1670,7 +1670,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/mining-pools.png",
+            src: "/images/book_images/mining-pools.png",
             alt: "Diagram showing how mining pools combine hashing power",
             caption: "Mining pools combine hashing power and share rewards",
           },
@@ -1805,7 +1805,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/sidechain-peg.png",
+            src: "/images/book_images/sidechain-peg.png",
             alt: "Diagram showing Bitcoin pegged to sidechain and back",
             caption: "Sidechains are pegged to Bitcoin but use different consensus",
           },
@@ -1888,7 +1888,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/node-stack.png",
+            src: "/images/book_images/node-stack.png",
             alt: "Diagram showing Bitcoin Core + Lightning node setup",
             caption: "Bitcoin Core + Lightning enables full sovereignty",
           },
@@ -1908,7 +1908,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/lightning-channel-open.png",
+            src: "/images/book_images/lightning-channel-open.png",
             alt: "Diagram showing Lightning channel opening process",
             caption: "Opening a Lightning channel locks funds in multi-sig",
           },
@@ -2291,7 +2291,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/mempool-fees.png",
+            src: "/images/book_images/mempool-fees.png",
             alt: "Chart showing mempool fee levels over time",
             caption: "Watch mempool conditions to time consolidation",
           },
@@ -2391,7 +2391,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/money-frameworks.png",
+            src: "/images/book_images/money-frameworks.png",
             alt: "Diagram comparing Chartalism, Metallism, and Platform Money",
             caption: "Bitcoin represents a new category of money",
           },
