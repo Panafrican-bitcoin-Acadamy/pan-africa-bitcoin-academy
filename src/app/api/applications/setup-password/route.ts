@@ -29,13 +29,20 @@ export async function GET(req: NextRequest) {
 
     if (token != null && token !== '') {
       const now = new Date();
-      const validToken =
-        profile?.reset_token != null &&
-        profile.reset_token !== '' &&
-        profile.reset_token === token &&
-        profile.reset_token_expiry != null &&
-        new Date(profile.reset_token_expiry) > now;
-      if (!validToken) {
+      const tokenExists = profile?.reset_token != null && profile.reset_token !== '';
+      const tokenMatches = tokenExists && profile!.reset_token === token;
+      const expiryExists = profile?.reset_token_expiry != null;
+      const notExpired = expiryExists && new Date(profile!.reset_token_expiry) > now;
+      if (!tokenExists || !tokenMatches || !notExpired) {
+        console.error('❌ Setup password GET: token invalid for', emailLower, {
+          profileFound: !!profile,
+          tokenInDB: tokenExists,
+          tokenMatches,
+          expiryExists,
+          notExpired,
+          dbTokenLen: profile?.reset_token?.length,
+          urlTokenLen: token?.length,
+        });
         return NextResponse.json({
           needsSetup: false,
           linkExpired: true,
@@ -114,23 +121,29 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
-    const validToken =
-      profile.reset_token != null &&
-      profile.reset_token !== '' &&
-      profile.reset_token === token &&
-      profile.reset_token_expiry != null &&
-      new Date(profile.reset_token_expiry) > now;
-    if (!validToken) {
+    const tokenExists = profile.reset_token != null && profile.reset_token !== '';
+    const tokenMatches = tokenExists && profile.reset_token === token;
+    const expiryExists = profile.reset_token_expiry != null;
+    const notExpired = expiryExists && new Date(profile.reset_token_expiry) > now;
+
+    if (!tokenExists) {
+      console.error('❌ Setup password: no reset_token in DB for', emailLower);
       return NextResponse.json(
-        { error: 'This link has expired. Please ask your admin to send a new password setup link.' },
+        { error: 'No setup link found. Please ask your admin to send a new password setup link.' },
         { status: 400 }
       );
     }
-
-    // Check if password is already set
-    if (profile.password_hash) {
+    if (!tokenMatches) {
+      console.error('❌ Setup password: token mismatch for', emailLower, '| DB token length:', profile.reset_token?.length, '| URL token length:', token?.length);
       return NextResponse.json(
-        { error: 'Password is already set. Please sign in or use "Forgot Password" if needed.' },
+        { error: 'This link is no longer valid. A newer link may have been sent. Please use the most recent email or ask your admin to resend.' },
+        { status: 400 }
+      );
+    }
+    if (!notExpired) {
+      console.error('❌ Setup password: token expired for', emailLower, '| expired at:', profile.reset_token_expiry, '| now:', now.toISOString());
+      return NextResponse.json(
+        { error: 'This link has expired. Please ask your admin to send a new password setup link.' },
         { status: 400 }
       );
     }
