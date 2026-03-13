@@ -42,17 +42,11 @@ export async function GET() {
             };
           }
 
-          let approvedCount = 0;
           let pendingCount = 0;
-          let enrolledCount = 0;
+          let enrollmentCount = 0;
 
           try {
-            const [approvedRes, pendingRes, enrolledRes] = await Promise.all([
-              supabaseAdmin
-                .from('applications')
-                .select('*', { count: 'exact', head: true })
-                .eq('preferred_cohort_id', cohortId)
-                .eq('status', 'Approved'),
+            const [pendingRes, enrolledRes, profileRes] = await Promise.all([
               supabaseAdmin
                 .from('applications')
                 .select('*', { count: 'exact', head: true })
@@ -60,21 +54,28 @@ export async function GET() {
                 .eq('status', 'Pending'),
               supabaseAdmin
                 .from('cohort_enrollment')
-                .select('*', { count: 'exact', head: true })
+                .select('student_id', { count: 'exact', head: false })
+                .eq('cohort_id', cohortId),
+              supabaseAdmin
+                .from('profiles')
+                .select('id', { count: 'exact', head: false })
                 .eq('cohort_id', cohortId),
             ]);
-            approvedCount = approvedRes.count ?? 0;
             pendingCount = pendingRes.count ?? 0;
-            enrolledCount = enrolledRes.count ?? 0;
-            if (approvedRes.error) console.error(`Error counting approved for cohort ${cohortId}:`, approvedRes.error);
+
+            const enrollmentIds = new Set((enrolledRes.data || []).map((r: any) => r.student_id));
+            const profileIds = new Set((profileRes.data || []).map((r: any) => r.id));
+            const mergedIds = new Set([...enrollmentIds, ...profileIds]);
+            enrollmentCount = mergedIds.size;
+
             if (pendingRes.error) console.error(`Error counting pending for cohort ${cohortId}:`, pendingRes.error);
             if (enrolledRes.error) console.error(`Error counting enrollment for cohort ${cohortId}:`, enrolledRes.error);
+            if (profileRes.error) console.error(`Error counting profiles for cohort ${cohortId}:`, profileRes.error);
           } catch (countErr) {
             console.error(`Error counting seats for cohort ${cohortId}:`, countErr);
           }
 
-          const approvedForCohort = Math.max(approvedCount, enrolledCount);
-          const takenByApplications = approvedForCohort + pendingCount;
+          const takenByApplications = enrollmentCount + pendingCount;
           const available = Math.max(0, (cohort.seats_total || 0) - takenByApplications);
 
           return {
@@ -87,7 +88,7 @@ export async function GET() {
             level: cohort.level || 'Beginner',
             seats: cohort.seats_total || 0,
             available,
-            enrolled: enrolledCount,
+            enrolled: enrollmentCount,
           };
         } catch (rowErr) {
           console.error(`Error processing cohort ${cohort?.id}:`, rowErr);

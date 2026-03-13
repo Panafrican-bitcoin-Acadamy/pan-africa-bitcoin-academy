@@ -430,8 +430,23 @@ export default function AdminDashboardPage() {
   const [attendanceSort, setAttendanceSort] = useState<'asc' | 'desc' | null>(null); // Sort by attendance
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingCohort, setCreatingCohort] = useState(false);
-  const [cohortListFilter, setCohortListFilter] = useState<'all' | 'upcoming' | 'in-progress' | 'past'>('all');
+  const [cohortListFilter, setCohortListFilter] = useState<'all' | 'upcoming' | 'in-progress' | 'completed'>('all');
   const [cohortSearch, setCohortSearch] = useState('');
+
+  const getCohortPhase = (c: Cohort) => {
+    const s = (c.status || '').toLowerCase();
+    if (s === 'completed') return 'completed' as const;
+    if (s === 'active') return 'in-progress' as const;
+    if (s === 'upcoming') return 'upcoming' as const;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = c.startDate ? new Date(c.startDate) : null;
+    const end = c.endDate ? new Date(c.endDate) : null;
+    if (start && start > today) return 'upcoming' as const;
+    if (end && end < today) return 'completed' as const;
+    if (start && end && start <= today && end >= today) return 'in-progress' as const;
+    return 'completed' as const;
+  };
   const [cohortAnalytics, setCohortAnalytics] = useState<Array<{
     id: string; name: string; enrolled: number; seats: number; avgProgress: number; avgAttendance: number;
     sessionsTotal: number; sessionsCompleted: number; level?: string; status?: string;
@@ -2450,7 +2465,10 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to grade submission');
-      alert(data.message || (isCorrect ? 'Assignment approved!' : 'Assignment rejected.'));
+      setAckPopup({
+        title: isCorrect ? 'Assignment Approved' : 'Assignment Rejected',
+        message: data.message || (isCorrect ? 'Assignment approved! Student will receive reward.' : 'Assignment rejected.'),
+      });
       await fetchSubmissions();
       setGradingFeedback((prev) => {
         const next = { ...prev };
@@ -2458,7 +2476,7 @@ export default function AdminDashboardPage() {
         return next;
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to grade submission');
+      setAckPopup({ title: 'Error', message: err.message || 'Failed to grade submission' });
     } finally {
       setGradingSubmission(null);
     }
@@ -4586,7 +4604,7 @@ export default function AdminDashboardPage() {
                           className="flex-1 min-w-[180px] rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                         />
                         <div className="flex gap-2 flex-wrap">
-                          {(['all', 'upcoming', 'in-progress', 'past'] as const).map((f) => (
+                          {(['all', 'upcoming', 'in-progress', 'completed'] as const).map((f) => (
                             <button
                               key={f}
                               type="button"
@@ -4597,7 +4615,7 @@ export default function AdminDashboardPage() {
                                   : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                               }`}
                             >
-                              {f === 'all' ? 'All' : f === 'upcoming' ? 'Upcoming' : f === 'in-progress' ? 'In Progress' : 'Past'}
+                              {f === 'all' ? 'All' : f === 'upcoming' ? 'Upcoming' : f === 'in-progress' ? 'Active' : 'Completed'}
                             </button>
                           ))}
                         </div>
@@ -4611,33 +4629,19 @@ export default function AdminDashboardPage() {
                         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
                           <div className="text-xs text-zinc-400">Upcoming</div>
                           <div className="text-lg font-semibold text-yellow-400">
-                            {cohorts.filter((c) => {
-                              const today = new Date();
-                              today.setHours(0, 0, 0, 0);
-                              return c.startDate && new Date(c.startDate) > today;
-                            }).length}
+                            {cohorts.filter((c) => getCohortPhase(c) === 'upcoming').length}
                           </div>
                         </div>
                         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
-                          <div className="text-xs text-zinc-400">In Progress</div>
+                          <div className="text-xs text-zinc-400">Active</div>
                           <div className="text-lg font-semibold text-green-400">
-                            {cohorts.filter((c) => {
-                              const today = new Date();
-                              today.setHours(0, 0, 0, 0);
-                              const start = c.startDate ? new Date(c.startDate) : null;
-                              const end = c.endDate ? new Date(c.endDate) : null;
-                              return start && end && start <= today && end >= today;
-                            }).length}
+                            {cohorts.filter((c) => getCohortPhase(c) === 'in-progress').length}
                           </div>
                         </div>
                         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
-                          <div className="text-xs text-zinc-400">Past</div>
-                          <div className="text-lg font-semibold text-zinc-400">
-                            {cohorts.filter((c) => {
-                              const today = new Date();
-                              today.setHours(0, 0, 0, 0);
-                              return c.endDate && new Date(c.endDate) < today;
-                            }).length}
+                          <div className="text-xs text-zinc-400">Completed</div>
+                          <div className="text-lg font-semibold text-cyan-400">
+                            {cohorts.filter((c) => getCohortPhase(c) === 'completed').length}
                           </div>
                         </div>
                       </div>
@@ -4647,22 +4651,12 @@ export default function AdminDashboardPage() {
                   {cohorts.length === 0 ? (
                     <p className="text-sm text-zinc-400">No cohorts found.</p>
                   ) : (() => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const getPhase = (c: Cohort) => {
-                      const start = c.startDate ? new Date(c.startDate) : null;
-                      const end = c.endDate ? new Date(c.endDate) : null;
-                      if (start && start > today) return 'upcoming';
-                      if (end && end < today) return 'past';
-                      if (start && end && start <= today && end >= today) return 'in-progress';
-                      return 'past'; // no dates = treat as past
-                    };
                     const filtered = cohorts.filter((cohort) => {
                       if (cohortSearch.trim()) {
                         if (!cohort.name?.toLowerCase().includes(cohortSearch.toLowerCase().trim())) return false;
                       }
                       if (cohortListFilter !== 'all') {
-                        if (getPhase(cohort) !== cohortListFilter) return false;
+                        if (getCohortPhase(cohort) !== cohortListFilter) return false;
                       }
                       return true;
                     });
@@ -4674,7 +4668,7 @@ export default function AdminDashboardPage() {
                     return (
                     <div className="space-y-3">
                         {filtered.map((cohort) => {
-                          const phase = getPhase(cohort);
+                          const phase = getCohortPhase(cohort);
                           return (
                         <div
                           key={cohort.id}
@@ -4687,9 +4681,10 @@ export default function AdminDashboardPage() {
                                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                       phase === 'upcoming' ? 'bg-yellow-500/20 text-yellow-400' :
                                       phase === 'in-progress' ? 'bg-green-500/20 text-green-400' :
+                                      phase === 'completed' ? 'bg-cyan-500/20 text-cyan-400' :
                                       'bg-zinc-500/20 text-zinc-400'
                                     }`}>
-                                      {phase === 'upcoming' ? 'Upcoming' : phase === 'in-progress' ? 'In Progress' : 'Past'}
+                                      {phase === 'upcoming' ? 'Upcoming' : phase === 'in-progress' ? 'Active' : phase === 'completed' ? 'Completed' : 'Past'}
                                     </span>
                                   </div>
                                   <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
@@ -8206,15 +8201,15 @@ export default function AdminDashboardPage() {
 
       {/* Edit cohort popup (full cohort data) */}
       {editCohortPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-zinc-50 mb-2">Edit cohort</h3>
-            <p className="text-sm text-zinc-400 mb-4">Update the full data for this cohort.</p>
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-5 w-full max-w-md shadow-xl max-h-[85vh] overflow-y-auto">
+            <h3 className="text-base font-semibold text-zinc-50 mb-1">Edit cohort</h3>
+            <p className="text-xs text-zinc-400 mb-3">Update the full data for this cohort.</p>
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Cohort Name *</label>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Cohort Name *</label>
                 <input
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   placeholder="e.g. Cohort 1 - 2025"
                   value={editCohortForm.name}
                   onChange={(e) => setEditCohortForm({ ...editCohortForm, name: e.target.value })}
@@ -8236,20 +8231,20 @@ export default function AdminDashboardPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Seats</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Seats</label>
                   <input
                     type="number"
                     min="1"
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     placeholder="Capacity"
                     value={editCohortForm.seats_total}
                     onChange={(e) => setEditCohortForm({ ...editCohortForm, seats_total: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Level</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Level</label>
                   <select
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     value={editCohortForm.level}
                     onChange={(e) => setEditCohortForm({ ...editCohortForm, level: e.target.value })}
                   >
@@ -8260,9 +8255,9 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Status</label>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Status</label>
                 <select
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   value={editCohortForm.status}
                   onChange={(e) => setEditCohortForm({ ...editCohortForm, status: e.target.value })}
                 >
@@ -8271,28 +8266,29 @@ export default function AdminDashboardPage() {
                   <option>Completed</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Sessions (count)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="Number of sessions"
-                  value={editCohortForm.sessions}
-                  onChange={(e) => setEditCohortForm({ ...editCohortForm, sessions: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Session duration (minutes)</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="e.g. 90"
-                  value={editCohortForm.session_duration_minutes}
-                  onChange={(e) => setEditCohortForm({ ...editCohortForm, session_duration_minutes: e.target.value })}
-                />
-                <p className="text-xs text-zinc-500 mt-1">Change duration for all sessions of this cohort when you save.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Sessions (count)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="Count"
+                    value={editCohortForm.sessions}
+                    onChange={(e) => setEditCohortForm({ ...editCohortForm, sessions: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Duration (min)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="e.g. 90"
+                    value={editCohortForm.session_duration_minutes}
+                    onChange={(e) => setEditCohortForm({ ...editCohortForm, session_duration_minutes: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="pt-2 border-t border-zinc-800">
                 <p className="text-xs text-zinc-400 mb-2">Link sessions to chapters (Session 1→Ch.1, Session 2→Ch.2, … Session {chaptersContent.length}→Ch.{chaptersContent.length})</p>
@@ -8300,13 +8296,13 @@ export default function AdminDashboardPage() {
                   type="button"
                   onClick={() => editCohortPopup && applySessionChapterMappingForCohort(editCohortPopup.id)}
                   disabled={applyingMappingCohortId === editCohortPopup?.id}
-                  className="w-full rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-cyan-500/20 transition disabled:opacity-50"
+                  className="w-full rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/20 transition disabled:opacity-50"
                 >
                   {applyingMappingCohortId === editCohortPopup?.id ? 'Applying…' : `Apply 1:1 for this cohort`}
                 </button>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-4">
               <button
                 type="button"
                 disabled={editCohortSubmitting}
