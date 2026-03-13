@@ -240,9 +240,6 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
                   'Submit Answer'
                 )}
               </button>
-              <span className="text-xs text-zinc-400">
-                {assignment.points} points • {assignment.submission ? 'Resubmit' : 'Submit'}
-              </span>
             </div>
           </form>
         )}

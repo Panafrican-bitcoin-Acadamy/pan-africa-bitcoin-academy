@@ -958,6 +958,20 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           ))}
                         </div>
                       </div>
+                    ) : section.images.some((img) => img.src.includes('jade.png') || img.src.includes('ledger.jpeg') || img.src.includes('trazeor.jpeg')) && section.images.length >= 3 ? (
+                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-8">
+                        {section.images.map((image, idx) => (
+                          <div key={idx} className="flex flex-col items-center">
+                            <ZoomableImage
+                              src={image.src}
+                              alt={image.alt}
+                              caption={image.caption}
+                              className="w-full rounded-lg shadow-lg"
+                              thumbnailClassName="max-h-[28rem]"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     ) : section.images.length === 2 ? (
                       // Side by side layout for sections with exactly 2 images
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -982,7 +996,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                             src={image.src}
                             alt={image.alt}
                             caption={image.caption}
-                            className={`rounded-lg border border-orange-400/20 ${image.src.includes('money_usage') || image.src.includes('chinese_first_fiat_money') ? 'w-64 sm:w-80 max-w-full' : image.src.includes('jade.png') ? 'w-48 sm:w-64 max-w-full' : 'w-full'}`}
+                            className={`rounded-lg ${image.src.includes('mempool') || image.src.includes('markel') || image.src.includes('pow') ? '' : 'border border-orange-400/20'} ${image.src.includes('money_usage') || image.src.includes('chinese_first_fiat_money') ? 'w-64 sm:w-80 max-w-full' : image.src.includes('jade.png') ? 'w-48 sm:w-64 max-w-full' : 'w-full'}`}
+                            thumbnailClassName={image.src.includes('utxosize') || image.src.includes('mempool') || image.src.includes('markel') || image.src.includes('pow') ? 'max-h-[32rem]' : undefined}
                           />
                           {image.src.includes('money_usage') && section.bullets && (
                             <div className="mt-4 w-full max-w-2xl space-y-3">

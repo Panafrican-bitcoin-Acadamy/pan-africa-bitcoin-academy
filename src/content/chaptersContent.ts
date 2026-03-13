@@ -987,14 +987,9 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/exchange.png",
-            alt: "Diagram showing exchange flow: local currency → exchange → Bitcoin → withdraw to wallet",
+            src: "/images/book_images/excha.jpeg",
+            alt: "Bitcoin exchange and wallet process",
             caption: "Exchange flow: buy Bitcoin, then withdraw to your own wallet",
-          },
-          {
-            src: "/images/book_images/exchange2.jpg",
-            alt: "Exchange interface and wallet withdrawal process",
-            caption: "Exchange interface and withdrawal process",
           },
         ],
       },
@@ -1301,6 +1296,16 @@ export const chaptersContent: ChapterContent[] = [
             alt: "Jade hardware wallet device",
             caption: "Hardware wallets keep your keys offline and secure",
           },
+          {
+            src: "/images/book_images/ledger.jpeg",
+            alt: "Ledger hardware wallet device",
+            caption: "Ledger hardware wallet",
+          },
+          {
+            src: "/images/book_images/trazeor.jpeg",
+            alt: "Trezor hardware wallet device",
+            caption: "Trezor hardware wallet",
+          },
         ],
       },
       {
@@ -1401,8 +1406,8 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/block-explorer.png",
-            alt: "Screenshot of block explorer showing transaction details",
+            src: "/images/book_images/mempool.jpeg",
+            alt: "Mempool block explorer interface",
             caption: "Block explorers let you verify transactions independently",
           },
         ],
@@ -1421,7 +1426,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/merkle-tree.png",
+            src: "/images/book_images/markel.jpg",
             alt: "Diagram showing Merkle tree structure with transaction hashes",
             caption: "Merkle trees enable efficient transaction verification",
           },
@@ -1516,7 +1521,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/proof-of-work.png",
+            src: "/images/book_images/pow.jpeg",
             alt: "Diagram showing miners solving cryptographic puzzles to create blocks",
             caption: "Proof of Work requires expensive computation but easy verification",
           },
@@ -1536,7 +1541,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
         images: [
           {
-            src: "/images/book_images/block-reward.png",
+            src: "/images/book_images/miners.jpeg",
             alt: "Diagram showing block reward and fees going to miners",
             caption: "Miners receive block rewards and transaction fees",
           },
