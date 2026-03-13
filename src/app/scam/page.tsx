@@ -91,6 +91,9 @@ export default function ScamPage() {
           <a href="#section-pattern" className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-cyan-200 transition">
             Pattern
           </a>
+          <a href="#section-testimony" className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-cyan-200 transition">
+            Testimony
+          </a>
           <a href="#section-5" className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-cyan-200 transition">
             Protect
           </a>
@@ -728,6 +731,50 @@ export default function ScamPage() {
                 <p className="mt-6 text-zinc-400 leading-relaxed max-w-4xl italic">
                   The technology changes—today it might be deepfakes or wallet drainers—but the underlying structure of deception remains remarkably constant. Once students learn to recognize the structure, spotting new scams becomes much easier than memorizing hundreds of specific examples.
                 </p>
+              </div>
+            </section>
+          </AnimatedSection>
+
+          {/* ——— Real-World Testimony ——— */}
+          <AnimatedSection animation="fadeIn" delay={40}>
+            <section id="section-testimony" className="scroll-mt-24">
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-8 sm:p-10 lg:p-12">
+                <h2 className="text-lg font-bold text-amber-200 sm:text-xl">Real-World Testimony: "The Day I Got Scammed"</h2>
+                <div className="mt-6 space-y-4 text-zinc-300 leading-relaxed">
+                  <p>
+                    Learning from the experiences of real people is one of the most powerful ways to understand how scams work. The following article is a first-hand account from someone who lost money to a cryptocurrency scam. It walks through the emotions, the red flags they missed, and the lessons they learned the hard way.
+                  </p>
+                  <p>
+                    Reading stories like this helps you recognize the patterns scammers use — urgency, trust-building, too-good-to-be-true promises — before you encounter them yourself.
+                  </p>
+                </div>
+                <div className="mt-6 rounded-xl border border-zinc-700/80 bg-zinc-800/50 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-300 mb-3">Testimony — Medium Article</p>
+                  <a
+                    href="https://medium.com/@samiromer22/my-journal-with-cryptocurrencies-4th-entry-the-day-i-got-scammed-960689f2eb1c"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-base font-medium text-cyan-200 hover:text-cyan-100 underline underline-offset-2 transition"
+                  >
+                    My Journal with Cryptocurrencies — 4th Entry: The Day I Got Scammed
+                  </a>
+                  <p className="mt-2 text-sm text-zinc-400">
+                    A personal account documenting the experience of being scammed in cryptocurrency — the warning signs, the emotional manipulation, and the aftermath. Recommended reading for all students.
+                  </p>
+                  <a
+                    href="https://medium.com/@samiromer22/my-journal-with-cryptocurrencies-4th-entry-the-day-i-got-scammed-960689f2eb1c"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-5 py-2.5 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20 transition"
+                  >
+                    Read the full story on Medium →
+                  </a>
+                </div>
+                <div className="mt-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-5 py-4">
+                  <p className="text-sm text-amber-200">
+                    <strong>Takeaway:</strong> Scams don't just happen to careless people — they happen to anyone who lets their guard down. The best protection is education, skepticism, and verification.
+                  </p>
+                </div>
               </div>
             </section>
           </AnimatedSection>
