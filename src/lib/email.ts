@@ -823,7 +823,7 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
     // Create email content
     const emailSubject = isReminder
       ? 'Important: Set Up Your Password - Pan-Africa Bitcoin Academy'
-      : 'Reset Your Password - Pan-Africa Bitcoin Academy';
+      : 'ፓስዎርድካ ዳግማይ ቀይሮ - Pan-Africa Bitcoin Academy';
 
     const introText = isReminder
       ? 'This is the second time we are sending you a password setup link for your Pan-Africa Bitcoin Academy account. Please follow the steps carefully now to create your password and secure your access.'
@@ -835,7 +835,7 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>ፓስዎርድካ ዳግማይ ቀይሩ</title>
+          <title>ፓስዎርድካ ዳግማይ ቀይሮ</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
