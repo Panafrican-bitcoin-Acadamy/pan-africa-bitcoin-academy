@@ -35,8 +35,8 @@ const MAX_VIOLATIONS_BEFORE_BLOCK = 5; // Block after 5 violations
 const BLOCK_DURATION_MS = 60 * 60 * 1000; // 1 hour block
 const PROGRESSIVE_PENALTY_MULTIPLIER = 0.5; // Reduce limit by 50% per violation
 const MAX_REQUEST_SIZE = 10 * 1024 * 1024; // 10MB max request size
-const MAX_CONCURRENT_CONNECTIONS = 20; // Max concurrent connections per IP
-const CONNECTION_TIMEOUT_MS = 30 * 1000; // 30 seconds timeout
+const MAX_CONCURRENT_CONNECTIONS = 60; // Max concurrent connections per IP
+const CONNECTION_TIMEOUT_MS = 10 * 1000; // 10 seconds timeout
 
 // Track active connections per IP
 const activeConnections = new Map<string, number>();
