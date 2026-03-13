@@ -121,11 +121,13 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
                 needsVerification: true, 
                 userEmail: formData.email 
               }));
+              setLoading(false);
               return;
             }
             // Handle specific error messages from API
             const errorMsg = data.error || `Sign in failed (${res.status})`;
             setServerError(errorMsg);
+            setLoading(false);
             return;
           }
           
@@ -538,7 +540,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
             disabled={loading}
             className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-white transition hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-400/50 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {loading ? 'Working...' : isSignIn ? 'Sign In' : 'Create Account'}
+            {loading ? (isSignIn ? 'Signing in...' : 'Creating account...') : isSignIn ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 
