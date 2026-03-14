@@ -22,6 +22,7 @@ function SetupPasswordContent() {
   const [studentName, setStudentName] = useState<string | null>(null);
   const [cohortName, setCohortName] = useState<string | null>(null);
   const [linkExpired, setLinkExpired] = useState(false);
+  const [alreadyHasPassword, setAlreadyHasPassword] = useState(false);
 
   // Check if link is valid and if user still needs to set password (token required for 72h link)
   useEffect(() => {
@@ -45,7 +46,7 @@ function SetupPasswordContent() {
           return;
         }
         if (!data.needsSetup) {
-          router.replace('/?message=already-have-password');
+          setAlreadyHasPassword(true);
           return;
         }
         if (data.studentName) setStudentName(data.studentName);
@@ -139,6 +140,38 @@ function SetupPasswordContent() {
                 Back to sign in
               </a>
             </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (alreadyHasPassword) {
+    return (
+      <div className="px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5 text-center">
+            <h1 className="text-xl font-bold text-white">Password Already Set</h1>
+            <p className="text-sm text-green-100 mt-1">ፓስዎርድኻ ተቀይሩ ኢዩ</p>
+          </div>
+          <div className="bg-gray-50 px-6 py-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4 rounded-full bg-green-100 p-3">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900">You have already set your password</h2>
+              <p className="text-sm text-gray-700 mt-1">ፓስዎርድኻ ቀይርካዮ ኢኻ</p>
+              <p className="mt-3 text-gray-600">Your account is ready. Please sign in to access your dashboard.</p>
+              <p className="text-sm text-gray-500 mt-1">ኣካውንትኻ ድልው ኢዩ ፣ ዳሽቦርድኻ ንምኽፋት ኢመይልካን ፓስዎርድኻን የእቱ።</p>
+              <a
+                href="/"
+                className="mt-6 inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 px-8 py-3 font-semibold text-white shadow-sm transition hover:opacity-95"
+              >
+                OK
+              </a>
+            </div>
           </div>
         </div>
       </div>
