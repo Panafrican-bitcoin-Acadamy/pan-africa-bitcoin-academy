@@ -3,8 +3,29 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="border-t border-cyan-400/15 bg-black/90 backdrop-blur-xl w-full">
-      <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+    <footer className="relative border-t border-cyan-400/15 bg-black/90 backdrop-blur-xl w-full overflow-hidden">
+      {/* Large Bitcoin ₿ background watermark */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-end overflow-hidden" aria-hidden="true">
+        <svg
+          className="h-[600px] w-[600px] -mr-20 sm:-mr-10 lg:mr-10 opacity-[0.15]"
+          viewBox="0 0 64 64"
+          fill="none"
+        >
+          <circle cx="32" cy="32" r="31" stroke="url(#footer-btc-grad)" strokeWidth="2" />
+          <path
+            d="M25 15h3v4h4v-4h3v4c3.9.4 7 2.2 7 6.2 0 2.8-1.5 4.6-3.8 5.5 3 .8 5.3 3 5.3 6.3 0 4.5-3.6 6.8-8 7.2V44h-3v-4.8h-4V44h-3V15Zm7 13.5h2.5c2.5 0 4-1.2 4-3.2s-1.5-3.2-4-3.2H32v6.4Zm0 13h3c2.8 0 4.5-1.2 4.5-3.5s-1.7-3.5-4.5-3.5h-3v7Z"
+            fill="url(#footer-btc-grad)"
+          />
+          <defs>
+            <linearGradient id="footer-btc-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#f97316" />
+              <stop offset="1" stopColor="#06b6d4" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         {/* Top grid */}
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
 

@@ -491,6 +491,17 @@ export default function AdminDashboardPage() {
   const [loadingSponsorships, setLoadingSponsorships] = useState(false);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(false);
+
+  // Newsletter state
+  const [newsletterSubscribers, setNewsletterSubscribers] = useState<any[]>([]);
+  const [newsletterStats, setNewsletterStats] = useState<{ total: number; active: number; inactive: number }>({ total: 0, active: 0, inactive: 0 });
+  const [loadingNewsletterSubs, setLoadingNewsletterSubs] = useState(false);
+  const [newsletterSentEmails, setNewsletterSentEmails] = useState<any[]>([]);
+  const [loadingNewsletterSent, setLoadingNewsletterSent] = useState(false);
+  const [newsletterSubject, setNewsletterSubject] = useState('');
+  const [newsletterContent, setNewsletterContent] = useState('');
+  const [sendingNewsletter, setSendingNewsletter] = useState(false);
+  const [newsletterMessage, setNewsletterMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [loadingMentors, setLoadingMentors] = useState(false);
   
@@ -674,6 +685,9 @@ export default function AdminDashboardPage() {
       icon: Mail,
       subMenus: [
         { id: 'email-composition', label: 'Email Composition' },
+        { id: 'newsletter-subscribers', label: 'Newsletter Subscribers' },
+        { id: 'newsletter-compose', label: 'Compose Newsletter' },
+        { id: 'newsletter-sent', label: 'Sent Newsletters' },
         { id: 'calendar', label: 'Calendar' },
         { id: 'events', label: 'Events' },
       ],
@@ -748,6 +762,9 @@ export default function AdminDashboardPage() {
       'sessions': 'overview',
       'cohort-analytics': 'overview',
       'email-composition': 'overview',
+      'newsletter-subscribers': 'overview',
+      'newsletter-compose': 'overview',
+      'newsletter-sent': 'overview',
       'calendar': 'overview',
       'events': 'overview',
       'final-exam-submissions': 'exam',
@@ -884,6 +901,12 @@ export default function AdminDashboardPage() {
   const sponsorshipsFetchingRef = useRef(false);
   const testimonialsFetchedRef = useRef(false);
   const testimonialsFetchingRef = useRef(false);
+  const newsletterSubsFetchedRef = useRef(false);
+  const newsletterSubsFetchingRef = useRef(false);
+  const newsletterSentFetchedRef = useRef(false);
+  const newsletterSentFetchingRef = useRef(false);
+  const fetchNewsletterSubsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchNewsletterSentRef = useRef<(() => Promise<void>) | null>(null);
   const mentorsFetchedRef = useRef(false);
   const mentorsFetchingRef = useRef(false);
   const assignmentsFetchedRef = useRef(false);
@@ -1456,6 +1479,12 @@ export default function AdminDashboardPage() {
     } else if (currentSubMenu === 'testimonials' && !testimonialsFetchedRef.current && fetchTestimonialsRef.current) {
       testimonialsFetchedRef.current = true;
       fetchTestimonialsRef.current();
+    } else if (currentSubMenu === 'newsletter-subscribers' && !newsletterSubsFetchedRef.current && fetchNewsletterSubsRef.current) {
+      newsletterSubsFetchedRef.current = true;
+      fetchNewsletterSubsRef.current();
+    } else if ((currentSubMenu === 'newsletter-sent' || currentSubMenu === 'newsletter-compose') && !newsletterSentFetchedRef.current && fetchNewsletterSentRef.current) {
+      newsletterSentFetchedRef.current = true;
+      fetchNewsletterSentRef.current();
     } else if (currentSubMenu === 'mentors' && !mentorsFetchedRef.current && fetchMentorsRef.current) {
       mentorsFetchedRef.current = true;
       fetchMentorsRef.current();
@@ -2751,6 +2780,47 @@ export default function AdminDashboardPage() {
     }
   }, [admin, fetchWithAuth]);
 
+  const fetchNewsletterSubs = useCallback(async () => {
+    if (!admin) return;
+    if (newsletterSubsFetchingRef.current) return;
+    try {
+      newsletterSubsFetchingRef.current = true;
+      setLoadingNewsletterSubs(true);
+      const res = await fetchWithAuth('/api/admin/newsletter?type=subscribers');
+      if (!res.ok) throw new Error('Failed to fetch subscribers');
+      const data = await res.json();
+      setNewsletterSubscribers(data.subscribers || []);
+      setNewsletterStats(data.stats || { total: 0, active: 0, inactive: 0 });
+      newsletterSubsFetchedRef.current = true;
+    } catch (err: any) {
+      console.error('[Newsletter Subs] Error:', err.message);
+      newsletterSubsFetchedRef.current = false;
+    } finally {
+      setLoadingNewsletterSubs(false);
+      newsletterSubsFetchingRef.current = false;
+    }
+  }, [admin, fetchWithAuth]);
+
+  const fetchNewsletterSent = useCallback(async () => {
+    if (!admin) return;
+    if (newsletterSentFetchingRef.current) return;
+    try {
+      newsletterSentFetchingRef.current = true;
+      setLoadingNewsletterSent(true);
+      const res = await fetchWithAuth('/api/admin/newsletter?type=sent');
+      if (!res.ok) throw new Error('Failed to fetch sent newsletters');
+      const data = await res.json();
+      setNewsletterSentEmails(data.emails || []);
+      newsletterSentFetchedRef.current = true;
+    } catch (err: any) {
+      console.error('[Newsletter Sent] Error:', err.message);
+      newsletterSentFetchedRef.current = false;
+    } finally {
+      setLoadingNewsletterSent(false);
+      newsletterSentFetchingRef.current = false;
+    }
+  }, [admin, fetchWithAuth]);
+
   const fetchMentors = useCallback(async () => {
     if (!admin) return;
     
@@ -3243,6 +3313,8 @@ export default function AdminDashboardPage() {
     fetchDeveloperEventsRef.current = fetchDeveloperEvents;
     fetchSponsorshipsRef.current = fetchSponsorships;
     fetchTestimonialsRef.current = fetchTestimonials;
+    fetchNewsletterSubsRef.current = fetchNewsletterSubs;
+    fetchNewsletterSentRef.current = fetchNewsletterSent;
     fetchMentorsRef.current = fetchMentors;
     fetchAssignmentsRef.current = fetchAssignments;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -5689,7 +5761,7 @@ export default function AdminDashboardPage() {
             )}
 
             {/* Communications Section */}
-            {(activeSubMenu === 'email-composition' || activeSubMenu === 'calendar' || activeSubMenu === 'events') && (
+            {(activeSubMenu === 'email-composition' || activeSubMenu === 'newsletter-subscribers' || activeSubMenu === 'newsletter-compose' || activeSubMenu === 'newsletter-sent' || activeSubMenu === 'calendar' || activeSubMenu === 'events') && (
               <>
                 {/* Email Composition + Inbox stacked when on email-composition */}
                   {activeSubMenu === 'email-composition' && (
@@ -5705,6 +5777,236 @@ export default function AdminDashboardPage() {
                     </div>
                     <EmailInbox />
           </div>
+                  )}
+
+                  {/* Newsletter Subscribers */}
+                  {activeSubMenu === 'newsletter-subscribers' && (
+                    <div className="space-y-6">
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                          <div>
+                            <h2 className="text-lg font-semibold text-zinc-50">Newsletter Subscribers</h2>
+                            <p className="text-xs text-zinc-400 mt-1">People who subscribed via the website footer.</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-1.5 text-center">
+                              <p className="text-lg font-bold text-green-400">{newsletterStats.active}</p>
+                              <p className="text-[10px] text-green-400/70">Active</p>
+                            </div>
+                            <div className="rounded-lg bg-zinc-700/30 border border-zinc-600/20 px-3 py-1.5 text-center">
+                              <p className="text-lg font-bold text-zinc-400">{newsletterStats.inactive}</p>
+                              <p className="text-[10px] text-zinc-500">Inactive</p>
+                            </div>
+                            <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-3 py-1.5 text-center">
+                              <p className="text-lg font-bold text-cyan-400">{newsletterStats.total}</p>
+                              <p className="text-[10px] text-cyan-400/70">Total</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {loadingNewsletterSubs ? (
+                          <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
+                        ) : newsletterSubscribers.length === 0 ? (
+                          <div className="text-center py-12 text-zinc-500">
+                            <Mail className="mx-auto h-10 w-10 mb-3 opacity-30" />
+                            <p>No subscribers yet.</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-zinc-700/50 text-left text-xs text-zinc-400">
+                                  <th className="pb-3 pr-4 font-medium">Email</th>
+                                  <th className="pb-3 pr-4 font-medium">Status</th>
+                                  <th className="pb-3 pr-4 font-medium">Subscribed</th>
+                                  <th className="pb-3 font-medium text-right">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-zinc-800/50">
+                                {newsletterSubscribers.map((sub: any) => (
+                                  <tr key={sub.id} className="group hover:bg-zinc-800/30 transition">
+                                    <td className="py-3 pr-4 text-zinc-200 font-mono text-xs">{sub.email}</td>
+                                    <td className="py-3 pr-4">
+                                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${sub.is_active ? 'bg-green-500/15 text-green-400' : 'bg-zinc-600/20 text-zinc-500'}`}>
+                                        {sub.is_active ? 'Active' : 'Inactive'}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 pr-4 text-xs text-zinc-500">
+                                      {sub.subscribed_at ? new Date(sub.subscribed_at).toLocaleDateString() : '—'}
+                                    </td>
+                                    <td className="py-3 text-right">
+                                      <button
+                                        onClick={async () => {
+                                          if (!confirm(`Remove ${sub.email} from subscribers?`)) return;
+                                          try {
+                                            const res = await fetchWithAuth(`/api/admin/newsletter?id=${sub.id}`, { method: 'DELETE' });
+                                            if (res.ok) {
+                                              setNewsletterSubscribers(prev => prev.filter(s => s.id !== sub.id));
+                                              setNewsletterStats(prev => ({
+                                                ...prev,
+                                                total: prev.total - 1,
+                                                active: sub.is_active ? prev.active - 1 : prev.active,
+                                                inactive: !sub.is_active ? prev.inactive - 1 : prev.inactive,
+                                              }));
+                                            }
+                                          } catch (err) { console.error(err); }
+                                        }}
+                                        className="px-2 py-1 text-[10px] rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition opacity-0 group-hover:opacity-100"
+                                      >
+                                        Remove
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Compose Newsletter */}
+                  {activeSubMenu === 'newsletter-compose' && (
+                    <div className="space-y-6">
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                        <h2 className="text-lg font-semibold text-zinc-50 mb-1">Compose Newsletter</h2>
+                        <p className="text-xs text-zinc-400 mb-6">
+                          Write and send a newsletter to all active subscribers ({newsletterStats.active} recipients).
+                        </p>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-1.5">Subject</label>
+                            <input
+                              type="text"
+                              value={newsletterSubject}
+                              onChange={(e) => setNewsletterSubject(e.target.value)}
+                              placeholder="e.g. New Cohort Starting Soon!"
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-1.5">Content</label>
+                            <textarea
+                              value={newsletterContent}
+                              onChange={(e) => setNewsletterContent(e.target.value)}
+                              placeholder="Write your newsletter content here..."
+                              rows={10}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 resize-none"
+                            />
+                            <p className="text-xs text-zinc-500 mt-1">{newsletterContent.length} characters</p>
+                          </div>
+
+                          {newsletterMessage && (
+                            <div className={`rounded-lg px-4 py-2.5 text-sm ${newsletterMessage.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                              {newsletterMessage.text}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-3 pt-2">
+                            <button
+                              onClick={async () => {
+                                if (!newsletterSubject.trim() || !newsletterContent.trim()) {
+                                  setNewsletterMessage({ type: 'error', text: 'Subject and content are required' });
+                                  return;
+                                }
+                                if (!confirm(`Send this newsletter to ${newsletterStats.active} active subscribers?`)) return;
+                                setSendingNewsletter(true);
+                                setNewsletterMessage(null);
+                                try {
+                                  const res = await fetchWithAuth('/api/admin/newsletter', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ subject: newsletterSubject.trim(), content: newsletterContent.trim() }),
+                                  });
+                                  const data = await res.json();
+                                  if (res.ok) {
+                                    setNewsletterMessage({ type: 'success', text: data.message || 'Newsletter sent!' });
+                                    setNewsletterSubject('');
+                                    setNewsletterContent('');
+                                    newsletterSentFetchedRef.current = false;
+                                    if (fetchNewsletterSentRef.current) fetchNewsletterSentRef.current();
+                                  } else {
+                                    setNewsletterMessage({ type: 'error', text: data.error || 'Failed to send' });
+                                  }
+                                } catch { setNewsletterMessage({ type: 'error', text: 'Something went wrong' }); }
+                                setSendingNewsletter(false);
+                              }}
+                              disabled={sendingNewsletter || !newsletterSubject.trim() || !newsletterContent.trim()}
+                              className="rounded-lg bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_0_15px_rgba(249,115,22,0.2)] transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {sendingNewsletter ? 'Sending...' : `Send to ${newsletterStats.active} Subscribers`}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Preview */}
+                      {newsletterSubject.trim() && newsletterContent.trim() && (
+                        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                          <h3 className="text-sm font-medium text-zinc-400 mb-4">Preview</h3>
+                          <div className="rounded-lg overflow-hidden border border-zinc-700/50">
+                            <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-4 text-center">
+                              <p className="text-white font-semibold">{newsletterSubject}</p>
+                            </div>
+                            <div className="bg-zinc-900 px-6 py-5">
+                              <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{newsletterContent}</p>
+                              <div className="mt-6 pt-4 border-t border-zinc-800 text-xs text-zinc-500">
+                                <p>Best regards,</p>
+                                <p className="font-medium text-zinc-400">Pan-African ₿itcoin Academy</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sent Newsletters */}
+                  {activeSubMenu === 'newsletter-sent' && (
+                    <div className="space-y-6">
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                        <h2 className="text-lg font-semibold text-zinc-50 mb-1">Sent Newsletters</h2>
+                        <p className="text-xs text-zinc-400 mb-6">History of newsletters sent to subscribers.</p>
+
+                        {loadingNewsletterSent ? (
+                          <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
+                        ) : newsletterSentEmails.length === 0 ? (
+                          <div className="text-center py-12 text-zinc-500">
+                            <Mail className="mx-auto h-10 w-10 mb-3 opacity-30" />
+                            <p>No newsletters sent yet.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {newsletterSentEmails.map((email: any) => (
+                              <div key={email.id} className="rounded-lg border border-zinc-700/50 bg-zinc-800/30 p-4">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-semibold text-zinc-100 truncate">{email.subject}</h4>
+                                    <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{email.content}</p>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <span className="text-green-400">{email.recipients_count} sent</span>
+                                      {email.failed_count > 0 && (
+                                        <span className="text-red-400">{email.failed_count} failed</span>
+                                      )}
+                                    </div>
+                                    <p className="text-[10px] text-zinc-500 mt-1">
+                                      {email.sent_at ? new Date(email.sent_at).toLocaleString() : '—'}
+                                    </p>
+                                    {email.sent_by && (
+                                      <p className="text-[10px] text-zinc-600">by {email.sent_by}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
 
           {/* Calendar - Events, Cohorts & Activities */}
