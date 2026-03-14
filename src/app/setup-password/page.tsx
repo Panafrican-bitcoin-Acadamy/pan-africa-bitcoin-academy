@@ -148,13 +148,13 @@ function SetupPasswordContent() {
 
   if (alreadyHasPassword) {
     return (
-      <div className="px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
           <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5 text-center">
             <h1 className="text-xl font-bold text-white">Password Already Set</h1>
             <p className="text-sm text-green-100 mt-1">ፓስዎርድኻ ተቀይሩ ኢዩ</p>
           </div>
-          <div className="bg-gray-50 px-6 py-8">
+          <div className="px-6 py-8">
             <div className="flex flex-col items-center text-center">
               <div className="mb-4 rounded-full bg-green-100 p-3">
                 <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
