@@ -113,7 +113,7 @@ function TestimonialSection() {
 
   return (
     <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
-      <h2 className="text-lg font-semibold text-zinc-50 mb-1">Rate Your Experience</h2>
+      <h2 className="text-lg font-semibold text-zinc-50 mb-1">Rate Your Experience / <span className="text-zinc-300">ትምህርቲ ከመይ ኔሩ ሓሳብኩም ሃቡና።</span></h2>
       <p className="text-sm text-zinc-400 mb-4">Share your feedback about the academy. Your testimonial may be featured on our website.</p>
 
       {existing?.is_approved && (

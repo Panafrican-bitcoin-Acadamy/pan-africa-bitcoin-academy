@@ -16,6 +16,10 @@ const Footer = dynamic(() => import("@/components/Footer").then(mod => ({ defaul
   ssr: true,
 });
 
+const NewsletterSignup = dynamic(() => import("@/components/NewsletterSignup").then(mod => ({ default: mod.NewsletterSignup })), {
+  ssr: true,
+});
+
 // AdminModeBadgeWrapper is a client component - use dynamic import
 const AdminModeBadgeWrapper = dynamic(() => import("@/components/AdminModeBadgeWrapper").then(mod => ({ default: mod.AdminModeBadgeWrapper })));
 
@@ -204,6 +208,7 @@ export default function RootLayout({
             <Navbar />
             {/* Mobile-first: Full width on mobile, max-width only on larger screens */}
             <main className="flex-1 relative z-10 w-full">{children}</main>
+            <NewsletterSignup />
             <Footer />
           </div>
         </ClickSparkWrapper>

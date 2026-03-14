@@ -950,36 +950,41 @@ export default async function Home() {
 
           {/* 10. Partners & Funders Section */}
           <AnimatedSection animation="slideUp">
-            <section className="mb-32">
-              <AnimatedList animation="fadeIn" className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-                {[
-                  {
-                    name: "Partner 1",
-                    logo: "🏢",
-                  },
-                  {
-                    name: "Partner 2",
-                    logo: "🏢",
-                  },
-                  {
-                    name: "Partner 3",
-                    logo: "🏢",
-                  },
-                  {
-                    name: "Partner 4",
-                    logo: "🏢",
-                  },
-                ].map((partner, index) => (
-                  <div
-                    key={index}
-                    className="group flex h-32 w-full items-center justify-center rounded-lg border border-cyan-400/25 bg-black/60 p-6 transition hover:border-cyan-400/50 hover:bg-black/80 hover:shadow-[0_0_30px_rgba(34,211,238,0.3)]"
-                  >
-                    <div className="w-full h-full flex items-center justify-center text-6xl opacity-70 transition group-hover:opacity-100">
-                      {partner.logo}
+            <section className="mb-32 space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Our Partners &amp; Supporters</h2>
+                <p className="mx-auto mt-4 max-w-xl text-base text-zinc-400 sm:text-lg">
+                  Backed by organizations advancing Bitcoin education across Africa.
+                </p>
+              </div>
+              <div className="relative overflow-hidden py-4">
+                <div className="absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-black to-transparent pointer-events-none" />
+                <div className="absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-black to-transparent pointer-events-none" />
+                <div className="flex animate-scroll-left gap-8 w-max">
+                  {[
+                    { name: "Bitcoin", icon: "₿", color: "from-orange-500/20 to-orange-600/10", border: "border-orange-500/20", text: "text-orange-400" },
+                    { name: "Lightning Network", icon: "⚡", color: "from-yellow-500/20 to-yellow-600/10", border: "border-yellow-500/20", text: "text-yellow-400" },
+                    { name: "Open Source", icon: "🌍", color: "from-cyan-500/20 to-cyan-600/10", border: "border-cyan-500/20", text: "text-cyan-400" },
+                    { name: "Africa Dev", icon: "🌐", color: "from-green-500/20 to-green-600/10", border: "border-green-500/20", text: "text-green-400" },
+                    { name: "Education Fund", icon: "🎓", color: "from-purple-500/20 to-purple-600/10", border: "border-purple-500/20", text: "text-purple-400" },
+                    { name: "Community", icon: "🤝", color: "from-pink-500/20 to-pink-600/10", border: "border-pink-500/20", text: "text-pink-400" },
+                    { name: "Bitcoin", icon: "₿", color: "from-orange-500/20 to-orange-600/10", border: "border-orange-500/20", text: "text-orange-400" },
+                    { name: "Lightning Network", icon: "⚡", color: "from-yellow-500/20 to-yellow-600/10", border: "border-yellow-500/20", text: "text-yellow-400" },
+                    { name: "Open Source", icon: "🌍", color: "from-cyan-500/20 to-cyan-600/10", border: "border-cyan-500/20", text: "text-cyan-400" },
+                    { name: "Africa Dev", icon: "🌐", color: "from-green-500/20 to-green-600/10", border: "border-green-500/20", text: "text-green-400" },
+                    { name: "Education Fund", icon: "🎓", color: "from-purple-500/20 to-purple-600/10", border: "border-purple-500/20", text: "text-purple-400" },
+                    { name: "Community", icon: "🤝", color: "from-pink-500/20 to-pink-600/10", border: "border-pink-500/20", text: "text-pink-400" },
+                  ].map((p, i) => (
+                    <div
+                      key={i}
+                      className={`flex shrink-0 items-center gap-4 rounded-2xl border ${p.border} bg-gradient-to-br ${p.color} px-8 py-5 transition hover:scale-105`}
+                    >
+                      <span className="text-4xl">{p.icon}</span>
+                      <span className={`text-sm font-semibold ${p.text} whitespace-nowrap`}>{p.name}</span>
                     </div>
-                  </div>
-                ))}
-              </AnimatedList>
+                  ))}
+                </div>
+              </div>
             </section>
           </AnimatedSection>
 

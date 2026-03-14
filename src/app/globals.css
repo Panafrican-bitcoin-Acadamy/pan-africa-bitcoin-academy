@@ -521,3 +521,17 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
   }
 }
 
+/* Infinite horizontal scroll for partners marquee */
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+
+.animate-scroll-left:hover {
+  animation-play-state: paused;
+}
+
