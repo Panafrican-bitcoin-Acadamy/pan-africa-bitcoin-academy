@@ -426,7 +426,7 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
     const normalizedEmail = emailValidation.normalized;
     const setupPasswordLink = providedSetupUrl ?? `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
 
-    const emailSubject = 'ፓስዎርድካ ኣቐምጥ – Pan-African ₿itcoin Academy';
+    const emailSubject = 'Action required: Set your password – Pan-African ₿itcoin Academy';
 
     const startLabel = formatCohortDate(cohortStartDate);
     const endLabel = formatCohortDate(cohortEndDate);
@@ -444,38 +444,38 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>ፓስዎርድካ ኣቐምጥ</title>
+          <title>Set Up Your Password</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #0a0a0a;">
           <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
             <div style="background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">ፓስዎርድካ ኣቐምጥ – Pan-African ₿itcoin Academy</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">Set your password – Pan-African ₿itcoin Academy</h1>
             </div>
             <div style="background: #171717; padding: 32px 28px; border-radius: 0 0 12px 12px; border: 1px solid #262626; border-top: none;">
-              <p style="font-size: 16px; margin: 0 0 16px; color: #fff;">ሰላም ${studentName},</p>
-              <p style="font-size: 16px; margin: 0 0 16px; color: #d4d4d4;"><strong>ነዚ ኢመይል ጥራይ ተጠቐም</strong>፡ ቅድሚ ሕጂ ዝተላእከ ሊንክ እንተሃልዩ ኣይትጠቐመሉ። ናይ <strong>Pan-African ₿itcoin Academy</strong> ምልክታኻ <strong>ተቐባልነት ረኺቡ</strong>፡ ኣብ ፕሮግራምና ቦታ ኣለካ።</p>
+              <p style="font-size: 16px; margin: 0 0 16px; color: #fff;">Dear ${studentName},</p>
+              <p style="font-size: 16px; margin: 0 0 16px; color: #d4d4d4;">Please use <strong>this email only</strong> and disregard any earlier link. Your application to <strong>Pan-African ₿itcoin Academy</strong> is <strong>accepted</strong>, and you have a place in our programme.</p>
               ${cohortTimelineHtml}
-              <h2 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 12px;">ምዝገባኻ ኣጠናቕቕ – ፓስዎርድካ ኣቐምጥ</h2>
-              <p style="font-size: 15px; margin: 0 0 20px; color: #d4d4d4;">ናይ ኣካውንትካ ፓስዎርድ ንምቕማጥ ኣብ ታሕቲ ዘሎ ባትን ጠውቕ። ዳሽቦርድካ ንምጥቃምን ናይ ኮሆርት ማሕበረሰብ ንምጽንባርን ዝተረፈ እዚ ስጉምቲ ጥራይ እዩ።</p>
+              <h2 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 12px;">Complete your registration – set your password</h2>
+              <p style="font-size: 15px; margin: 0 0 20px; color: #d4d4d4;">Click the button below to set up your account password. This is the only step left before you can access your dashboard and join your cohort community.</p>
               <div style="text-align: center; margin: 24px 0;">
-                <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">ፓስዎርድካ ኣቐምጥ</a>
+                <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">Set up your password</a>
               </div>
-              <p style="font-size: 13px; margin: 0 0 8px; color: #a3a3a3;">ወይ ድማ ነዚ ሊንክ ኮፒ ኢልካ ኣብ ብራውዘርካ ፔስት በሎ: <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a></p>
-              <p style="font-size: 12px; margin: 0 0 24px; color: #a3a3a3;">እዚ ሊንክ ድሕሪ 72 ሰዓት ክውዳእ እዩ።</p>
+              <p style="font-size: 13px; margin: 0 0 8px; color: #a3a3a3;">Or copy and paste into your browser: <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a></p>
+              <p style="font-size: 12px; margin: 0 0 24px; color: #a3a3a3;">This link expires in 72 hours.</p>
               <div style="background: #262626; padding: 20px 22px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #06b6d4;">
-                <h3 style="margin: 0 0 10px; color: #fff; font-size: 16px;">ቅጺሉ እንታይ አሎ?</h3>
+                <h3 style="margin: 0 0 10px; color: #fff; font-size: 16px;">What's next?</h3>
                 <ul style="margin: 0; padding-left: 20px; color: #d4d4d4; font-size: 14px;">
-                  <li style="margin-bottom: 6px;">ናይ ኮሆርት ማሕበረሰብን ቀጥታ ትምህርትታትን ተጸንበር</li>
-                  <li style="margin-bottom: 6px;">ዕማማትን ምዕራፋትን ኣጠናቕቕ</li>
-                  <li style="margin-bottom: 6px;">ክትምሃር ከለኻ ሳትስ ምእካብ ጀምር</li>
-                  <li style="margin-bottom: 0;">ናይ ቢትኮይን ፍልጠትካ ስጉምቲ ብስጉምቲ ሃንጽ</li>
+                  <li style="margin-bottom: 6px;">Join your cohort community and live sessions</li>
+                  <li style="margin-bottom: 6px;">Complete assignments and chapters</li>
+                  <li style="margin-bottom: 6px;">Start earning sats as you progress</li>
+                  <li style="margin-bottom: 0;">Build your Bitcoin knowledge step by step</li>
                 </ul>
               </div>
-              <p style="font-size: 14px; margin: 0 0 16px; color: #d4d4d4;"><strong style="color: #fff;">ናይ ድሕነት ኣስተውዕሎ:</strong> ፓስዎርድካ፡ ናይ ምሕዳስ ቃላትካ፡ ወይ ናይ ብሕቲ መፍትሕካ ንዝኾነ ሰብ ኣይትሃቦ። ኣካዳሚ ብኢመይል ወይ መልእኽቲ ከምኡ ኣይሓትትን።</p>
-              <p style="font-size: 14px; margin: 0 0 20px; color: #d4d4d4;">Pan-African ₿itcoin Academy ኣብ ኣፍሪቃ ዘለዉ ተማሃሮ ብዝተወደበ ናይ ኮሆርት ማሕበረሰብ ጥዑይ ናይ ቢትኮይን ትምህርቲ ንምሃብ ዝተመስረተ እዩ።</p>
-              <p style="font-size: 14px; margin: 0 0 4px; color: #fff;">ምስ ሰናይ ትምኒት፡</p>
+              <p style="font-size: 14px; margin: 0 0 16px; color: #d4d4d4;"><strong style="color: #fff;">Security reminder:</strong> Never share your password, recovery phrases, or private keys with anyone. The Academy will never ask for them by email or message.</p>
+              <p style="font-size: 14px; margin: 0 0 20px; color: #d4d4d4;">Pan-African ₿itcoin Academy exists to empower learners across the continent with sound Bitcoin education, in a supportive cohort-based community.</p>
+              <p style="font-size: 14px; margin: 0 0 4px; color: #fff;">Best regards,</p>
               <p style="font-size: 14px; margin: 0 0 2px; color: #d4d4d4;"><strong>Pan-African ₿itcoin Academy</strong></p>
-              <p style="font-size: 13px; margin: 0; color: #a3a3a3;">ሓገዝ: <a href="mailto:${SUPPORT_EMAIL}" style="color: #38bdf8;">${SUPPORT_EMAIL}</a></p>
+              <p style="font-size: 13px; margin: 0; color: #a3a3a3;">Support: <a href="mailto:${SUPPORT_EMAIL}" style="color: #38bdf8;">${SUPPORT_EMAIL}</a></p>
             </div>
           </div>
         </body>
