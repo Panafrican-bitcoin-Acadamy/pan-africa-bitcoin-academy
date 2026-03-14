@@ -116,9 +116,10 @@ function SetupPasswordContent() {
 
   if (checking) {
     return (
-      <div className="px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-lg rounded-xl bg-white p-8 text-center text-gray-600 shadow-sm">
-          Checking...
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-700/50 bg-zinc-900 p-10 text-center shadow-[0_0_60px_rgba(34,211,238,0.15)]">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-700 border-t-cyan-400" />
+          <p className="text-zinc-400">Checking...</p>
         </div>
       </div>
     );
@@ -126,20 +127,27 @@ function SetupPasswordContent() {
 
   if (linkExpired) {
     return (
-      <div className="px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
-          <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-5 text-center">
-            <h1 className="text-xl font-bold text-white">Link expired</h1>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-700/50 shadow-[0_0_60px_rgba(249,115,22,0.15)]">
+          <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-6 text-center">
+            <h1 className="text-xl font-bold text-white">Link Expired</h1>
           </div>
-          <div className="bg-gray-50 px-6 py-8">
-            <p className="text-center text-gray-700">
-              This link has expired. Please ask your admin to send a new password setup link.
-            </p>
-            <p className="mt-4 text-center">
-              <a href="/" className="text-cyan-600 hover:text-cyan-700 font-medium">
-                Back to sign in
+          <div className="bg-zinc-900 px-6 py-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30">
+                <svg className="h-8 w-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-zinc-100">This link has expired</h2>
+              <p className="mt-3 text-zinc-400">Please ask your admin to send a new password setup link.</p>
+              <a
+                href="/"
+                className="mt-7 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-cyan-500 px-10 py-3 font-semibold text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] transition hover:brightness-110 hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]"
+              >
+                Back to Sign In
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
@@ -148,26 +156,26 @@ function SetupPasswordContent() {
 
   if (alreadyHasPassword) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-        <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5 text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-700/50 shadow-[0_0_60px_rgba(34,211,238,0.15),0_0_30px_rgba(249,115,22,0.1)]">
+          <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-6 text-center">
             <h1 className="text-xl font-bold text-white">Password Already Set</h1>
-            <p className="text-sm text-green-100 mt-1">ፓስዎርድኻ ተቀይሩ ኢዩ</p>
+            <p className="text-sm text-white/80 mt-1">ፓስዎርድኻ ተቀይሩ ኢዩ</p>
           </div>
-          <div className="px-6 py-8">
+          <div className="bg-zinc-900 px-6 py-8">
             <div className="flex flex-col items-center text-center">
-              <div className="mb-4 rounded-full bg-green-100 p-3">
-                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-cyan-500/20 border border-green-500/30">
+                <svg className="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">You have already set your password</h2>
-              <p className="text-sm text-gray-700 mt-1">ፓስዎርድኻ ቀይርካዮ ኢኻ</p>
-              <p className="mt-3 text-gray-600">Your account is ready. Please sign in to access your dashboard.</p>
-              <p className="text-sm text-gray-500 mt-1">ኣካውንትኻ ድልው ኢዩ ፣ ዳሽቦርድኻ ንምኽፋት ኢመይልካን ፓስዎርድኻን የእቱ።</p>
+              <h2 className="text-lg font-semibold text-zinc-100">You have already set your password</h2>
+              <p className="text-sm text-cyan-300/80 mt-1">ፓስዎርድኻ ቀይርካዮ ኢኻ</p>
+              <p className="mt-4 text-zinc-400">Your account is ready. Please sign in to access your dashboard.</p>
+              <p className="text-sm text-zinc-500 mt-1">ኣካውንትኻ ድልው ኢዩ ፣ ዳሽቦርድኻ ንምኽፋት ኢመይልካን ፓስዎርድኻን የእቱ።</p>
               <a
                 href="/"
-                className="mt-6 inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 px-8 py-3 font-semibold text-white shadow-sm transition hover:opacity-95"
+                className="mt-7 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-cyan-500 px-10 py-3 font-semibold text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] transition hover:brightness-110 hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]"
               >
                 OK
               </a>
@@ -180,21 +188,24 @@ function SetupPasswordContent() {
 
   if (success) {
     return (
-      <div className="px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
-          <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-5 text-center">
-            <h1 className="text-xl font-bold text-white">Welcome to Pan-Africa Bitcoin Academy</h1>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-700/50 shadow-[0_0_60px_rgba(34,211,238,0.15),0_0_30px_rgba(249,115,22,0.1)]">
+          <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-6 text-center">
+            <h1 className="text-xl font-bold text-white">Welcome to Pan-African ₿itcoin Academy</h1>
           </div>
-          <div className="bg-gray-50 px-6 py-8">
+          <div className="bg-zinc-900 px-6 py-8">
             <div className="flex flex-col items-center text-center">
-              <div className="mb-4 rounded-full bg-green-100 p-3">
-                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-cyan-500/20 border border-green-500/30">
+                <svg className="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">Password set successfully!</h2>
-              <p className="mt-1 text-gray-600">You can now sign in to your account.</p>
-              <p className="mt-4 text-sm text-gray-500">Redirecting to dashboard...</p>
+              <h2 className="text-lg font-semibold text-zinc-100">Password set successfully!</h2>
+              <p className="mt-3 text-zinc-400">You can now sign in to your account.</p>
+              <div className="mt-5 flex items-center gap-2 text-sm text-cyan-300/80">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-700 border-t-cyan-400" />
+                Redirecting to dashboard...
+              </div>
             </div>
           </div>
         </div>
@@ -203,25 +214,23 @@ function SetupPasswordContent() {
   }
 
   return (
-    <div className="px-4 py-8 sm:px-6">
-      <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-white shadow-md">
-        {/* Gradient header - matches approval email */}
-        <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-6 text-center">
-          <h1 className="text-xl font-bold text-white">Welcome to Pan-Africa Bitcoin Academy</h1>
+    <div className="min-h-screen bg-black/90 flex items-center justify-center px-4 py-8 sm:px-6">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-700/50 shadow-[0_0_60px_rgba(34,211,238,0.1),0_0_30px_rgba(249,115,22,0.08)]">
+        <div className="bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-7 text-center">
+          <h1 className="text-xl font-bold text-white">Welcome to Pan-African ₿itcoin Academy</h1>
         </div>
 
-        <div className="bg-gray-50 px-6 py-6 sm:px-8 sm:py-8">
-          <p className="text-gray-900 font-medium">
+        <div className="bg-zinc-900 px-6 py-6 sm:px-8 sm:py-8">
+          <p className="text-zinc-100 font-medium">
             Hi {studentName ? `${studentName},` : 'there,'}
           </p>
-          <p className="mt-2 text-gray-700">
-            Great news! Your application to the Pan-Africa Bitcoin Academy has been approved! 🎉
+          <p className="mt-2 text-zinc-400">
+            Great news! Your application has been approved! 🎉
           </p>
 
-          {/* What's Next - teal left border */}
-          <div className="mt-6 rounded-lg bg-gray-100 py-4 pl-5 pr-4 border-l-4 border-cyan-500">
-            <h2 className="font-semibold text-gray-900">What&apos;s Next?</h2>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 text-sm">
+          <div className="mt-6 rounded-xl bg-zinc-800/60 py-4 pl-5 pr-4 border-l-4 border-cyan-500">
+            <h2 className="font-semibold text-zinc-100">What&apos;s Next?</h2>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-zinc-400 text-sm">
               <li>Start earning sats as you progress</li>
               <li>Complete assignments and chapters</li>
               <li>Join live sessions and community discussions</li>
@@ -229,25 +238,23 @@ function SetupPasswordContent() {
             </ul>
           </div>
 
-          {/* Cohort - orange left border */}
           {cohortName && (
-            <div className="mt-4 rounded-lg bg-gray-100 py-3 pl-5 pr-4 border-l-4 border-orange-500">
-              <p className="text-gray-900 text-sm"><strong>Cohort:</strong> {cohortName}</p>
+            <div className="mt-4 rounded-xl bg-zinc-800/60 py-3 pl-5 pr-4 border-l-4 border-orange-500">
+              <p className="text-zinc-200 text-sm"><strong className="text-orange-400">Cohort:</strong> {cohortName}</p>
             </div>
           )}
 
-          {/* Set up your password - form */}
           <div className="mt-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Set up your password</h2>
+            <h2 className="text-base font-semibold text-zinc-100 mb-3">Set up your password</h2>
             {error && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
                 {error}
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Password <span className="text-red-500">*</span>
+                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                  Password <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -258,22 +265,22 @@ function SetupPasswordContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 text-gray-900 placeholder:text-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 pr-10 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">At least 8 characters with uppercase, lowercase, number, and special character</p>
+                <p className="mt-1 text-xs text-zinc-500">At least 8 characters with uppercase, lowercase, number, and special character</p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Confirm Password <span className="text-red-500">*</span>
+                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                  Confirm Password <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -284,13 +291,13 @@ function SetupPasswordContent() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 text-gray-900 placeholder:text-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 pr-10 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     placeholder="Confirm your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -299,19 +306,19 @@ function SetupPasswordContent() {
               <button
                 type="submit"
                 disabled={submitting || !email}
-                className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-cyan-500 px-4 py-3 font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-cyan-500 px-4 py-3 font-semibold text-white shadow-[0_0_20px_rgba(249,115,22,0.2)] transition hover:brightness-110 hover:shadow-[0_0_30px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Setting password…' : 'Set up your password'}
               </button>
             </form>
           </div>
 
-          <p className="mt-6 border-t border-gray-200 pt-5 text-sm text-gray-500">
+          <p className="mt-6 border-t border-zinc-800 pt-5 text-sm text-zinc-500">
             We&apos;re excited to have you join us on this Bitcoin journey!
           </p>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-zinc-500">
             Already have a password?{' '}
-            <a href="/" className="text-cyan-600 hover:text-cyan-700 font-medium">
+            <a href="/" className="text-cyan-400 hover:text-cyan-300 font-medium transition">
               Sign in
             </a>
           </p>
@@ -325,9 +332,10 @@ export default function SetupPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="px-4 py-8 sm:px-6">
-          <div className="mx-auto max-w-lg rounded-xl bg-white p-8 text-center text-gray-600 shadow-sm">
-            Loading password setup...
+        <div className="min-h-screen bg-black/90 flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-700/50 bg-zinc-900 p-10 text-center shadow-[0_0_60px_rgba(34,211,238,0.15)]">
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-700 border-t-cyan-400" />
+            <p className="text-zinc-400">Loading password setup...</p>
           </div>
         </div>
       }
