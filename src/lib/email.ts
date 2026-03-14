@@ -426,7 +426,7 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
     const normalizedEmail = emailValidation.normalized;
     const setupPasswordLink = providedSetupUrl ?? `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
 
-    const emailSubject = 'ፓስዎርድካ ኣቐምጥ – Pan-African ₿itcoin Academy';
+    const emailSubject = 'ዘድሊ ስጉምቲ፡ ፓስዎርድኻ ቀይር – Pan-African ₿itcoin Academy';
 
     const startLabel = formatCohortDate(cohortStartDate);
     const endLabel = formatCohortDate(cohortEndDate);
@@ -444,19 +444,19 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>ፓስዎርድካ ኣቐምጥ</title>
+          <title>ፓስዎርድኻ ቀይር</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #0a0a0a;">
           <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
             <div style="background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">ፓስዎርድካ ኣቐምጥ – Pan-African ₿itcoin Academy</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">ፓስዎርድኻ ቀይር – Pan-African ₿itcoin Academy</h1>
             </div>
             <div style="background: #171717; padding: 32px 28px; border-radius: 0 0 12px 12px; border: 1px solid #262626; border-top: none;">
-              <p style="font-size: 16px; margin: 0 0 16px; color: #fff;">ሰላም ${studentName},</p>
-              <p style="font-size: 16px; margin: 0 0 16px; color: #d4d4d4;"><strong>ነዚ ኢመይል ጥራይ ተጠቐም</strong>፡ ቅድሚ ሕጂ ዝተላእከ ሊንክ እንተሃልዩ ኣይትጠቐመሉ። ናይ <strong>Pan-African ₿itcoin Academy</strong> ምልክታኻ <strong>ተቐባልነት ረኺቡ</strong>፡ ኣብ ፕሮግራምና ቦታ ኣለካ።</p>
+              <p style="font-size: 16px; margin: 0 0 16px; color: #fff;">ዝኸበርካ ${studentName} ፡</p>
+              <p style="font-size: 16px; margin: 0 0 16px; color: #d4d4d4;">ነዚ ኢመይል ጥራይ ተጠቐሙ፡ ዝኾነ ኣቐዲሙ ዝነበረ ሊንክ ድማ ግደፍዎ ። ናብ <strong>ፓን-ኣፍሪካን ₿itcoin ኣካዳሚ</strong> ዝገበርካዮ መመልከታ <strong>ተቐባልነት ረኺቡ ኣሎ</strong> ፣ ኣብ መደብ ትምህርትና ድማ ቦታ ሒዝካ/ኪ ኣለካ።</p>
               ${cohortTimelineHtml}
               <h2 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 12px;">ምዝገባኻ ኣጠናቕቕ – ፓስዎርድካ ኣቐምጥ</h2>
-              <p style="font-size: 15px; margin: 0 0 20px; color: #d4d4d4;">ናይ ኣካውንትካ ፓስዎርድ ንምቕማጥ ኣብ ታሕቲ ዘሎ ባትን ጠውቕ። ዳሽቦርድካ ንምጥቃምን ናይ ኮሆርት ማሕበረሰብ ንምጽንባርን ዝተረፈ እዚ ስጉምቲ ጥራይ እዩ።</p>
+              <p style="font-size: 15px; margin: 0 0 20px; color: #d4d4d4;">ናይ ኣካውንትካ ፓስዎርድ ንምቕማጥ ኣብ ታሕቲ ዘሎ ባትን ጠውቕ። ዳሽቦርድካ ንምጥቃምን ናይ ኮሆርት ማሕበረሰብ ንምጽንባርን ዝተረፈ እዚ ስጉምቲ እዚ እዩ።</p>
               <div style="text-align: center; margin: 24px 0;">
                 <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">ፓስዎርድካ ኣቐምጥ</a>
               </div>
