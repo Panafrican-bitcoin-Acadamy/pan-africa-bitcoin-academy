@@ -3,7 +3,7 @@ import { isValidEmail, validateAndNormalizeEmail } from './validation';
 
 // Email configuration
 // Default sender email (Resend's test domain)
-const DEFAULT_FROM_EMAIL = 'PanAfrican Bitcoin Academy <noreply@panafricanbitcoin.com>';
+const DEFAULT_FROM_EMAIL = 'Pan-African ₿itcoin Academy <noreply@panafricanbitcoin.com>';
 
 // Get FROM_EMAIL from env, but validate it
 const getFromEmail = () => {
@@ -190,7 +190,7 @@ export async function sendWithdrawalRequestEmail(data: WithdrawalRequestData): P
             </div>
             
             <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              This is an automated notification from the Pan-Africa Bitcoin Academy platform.
+              This is an automated notification from the Pan-African ₿itcoin Academy platform.
             </p>
           </div>
         </body>
@@ -278,8 +278,8 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
 
     // Create email content — strong subject line
     const emailSubject = needsPasswordSetup
-      ? `You’re In! Set Up Your Password – Pan-Africa Bitcoin Academy`
-      : `You’re In! Your Place at Pan-Africa Bitcoin Academy is Confirmed`;
+      ? `You’re In! Set Up Your Password – Pan-African ₿itcoin Academy`
+      : `You’re In! Your Place at Pan-African ₿itcoin Academy is Confirmed`;
 
     const setupPasswordUrl = providedSetupUrl ?? `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
 
@@ -305,11 +305,11 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
           <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
             <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
               <div style="background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); padding: 32px 24px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">You’re In – Welcome to Pan-Africa Bitcoin Academy</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">You’re In – Welcome to Pan-African ₿itcoin Academy</h1>
               </div>
               <div style="background: #fafafa; padding: 32px 28px; border-radius: 0 0 12px 12px;">
                 <p style="font-size: 16px; margin: 0 0 16px; color: #111827;">Dear ${studentName},</p>
-                <p style="font-size: 16px; margin: 0 0 24px; color: #374151;">We are pleased to confirm that your application to <strong>Pan-Africa Bitcoin Academy</strong> has been <strong>accepted</strong>. You now have a place in our programme.</p>
+                <p style="font-size: 16px; margin: 0 0 24px; color: #374151;">We are pleased to confirm that your application to <strong>Pan-African ₿itcoin Academy</strong> has been <strong>accepted</strong>. You now have a place in our programme.</p>
                 ${cohortTimelineHtml}
                 <h2 style="font-size: 17px; font-weight: 700; color: #18181b; margin: 0 0 12px;">Complete your registration – set your password</h2>
                 <p style="font-size: 15px; margin: 0 0 20px; color: #374151;">To access your dashboard and join your cohort, set up your account password using the link below. This is the only step left before you can start learning.</p>
@@ -319,7 +319,7 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
                 <p style="font-size: 13px; margin: 0 0 8px; color: #71717a;">Or copy and paste into your browser: <a href="${setupPasswordUrl}" style="color: #0891b2; word-break: break-all;">${setupPasswordUrl}</a></p>
                 <p style="font-size: 12px; margin: 0 0 24px; color: #71717a;">This link expires in 72 hours.</p>
                 <div style="background: #f4f4f5; padding: 20px 22px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #0891b2;">
-                  <h3 style="margin: 0 0 10px; color: #18181b; font-size: 16px;">What’s next?</h3>
+                  <h3 style="margin: 0 0 10px; color: #18181b; font-size: 16px;">What's next?</h3>
                   <ul style="margin: 0; padding-left: 20px; color: #3f3f46; font-size: 14px;">
                     <li style="margin-bottom: 6px;">Start earning sats as you progress</li>
                     <li style="margin-bottom: 6px;">Complete assignments and chapters</li>
@@ -328,9 +328,9 @@ export async function sendApprovalEmail(data: ApprovalEmailData): Promise<{ succ
                   </ul>
                 </div>
                 <p style="font-size: 14px; margin: 0 0 16px; color: #374151;"><strong>Security reminder:</strong> Never share your password, recovery phrases, or private keys with anyone. The Academy will never ask for them by email or message.</p>
-                <p style="font-size: 14px; margin: 0 0 20px; color: #374151;">Pan-Africa Bitcoin Academy exists to empower learners across the continent with sound Bitcoin education, in a supportive cohort-based community.</p>
+                <p style="font-size: 14px; margin: 0 0 20px; color: #374151;">Pan-African ₿itcoin Academy exists to empower learners across the continent with sound Bitcoin education, in a supportive cohort-based community.</p>
                 <p style="font-size: 14px; margin: 0 0 4px; color: #111827;">Best regards,</p>
-                <p style="font-size: 14px; margin: 0 0 2px; color: #374151;"><strong>Pan-Africa Bitcoin Academy</strong></p>
+                <p style="font-size: 14px; margin: 0 0 2px; color: #374151;"><strong>Pan-African ₿itcoin Academy</strong></p>
                 <p style="font-size: 13px; margin: 0; color: #71717a;">Support: <a href="mailto:${SUPPORT_EMAIL}" style="color: #0891b2;">${SUPPORT_EMAIL}</a></p>
               </div>
             </div>
@@ -426,7 +426,7 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
     const normalizedEmail = emailValidation.normalized;
     const setupPasswordLink = providedSetupUrl ?? `${SITE_URL}/setup-password?email=${encodeURIComponent(normalizedEmail)}`;
 
-    const emailSubject = 'Action required: Set your password – Pan-Africa Bitcoin Academy';
+    const emailSubject = 'ፓስዎርድካ ኣቐምጥ – Pan-African ₿itcoin Academy';
 
     const startLabel = formatCohortDate(cohortStartDate);
     const endLabel = formatCohortDate(cohortEndDate);
@@ -444,38 +444,38 @@ export async function sendPasswordSetupFollowUpEmail(data: PasswordSetupFollowUp
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Set Up Your Password</title>
+          <title>ፓስዎርድካ ኣቐምጥ</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #0a0a0a;">
           <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
             <div style="background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">Set your password – Pan-Africa Bitcoin Academy</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">ፓስዎርድካ ኣቐምጥ – Pan-African ₿itcoin Academy</h1>
             </div>
             <div style="background: #171717; padding: 32px 28px; border-radius: 0 0 12px 12px; border: 1px solid #262626; border-top: none;">
-              <p style="font-size: 16px; margin: 0 0 16px; color: #fff;">Dear ${studentName},</p>
-              <p style="font-size: 16px; margin: 0 0 16px; color: #d4d4d4;">Please use <strong>this email only</strong> and disregard any earlier link. Your application to <strong>Pan-Africa Bitcoin Academy</strong> is <strong>accepted</strong>, and you have a place in our programme.</p>
+              <p style="font-size: 16px; margin: 0 0 16px; color: #fff;">ሰላም ${studentName},</p>
+              <p style="font-size: 16px; margin: 0 0 16px; color: #d4d4d4;"><strong>ነዚ ኢመይል ጥራይ ተጠቐም</strong>፡ ቅድሚ ሕጂ ዝተላእከ ሊንክ እንተሃልዩ ኣይትጠቐመሉ። ናይ <strong>Pan-African ₿itcoin Academy</strong> ምልክታኻ <strong>ተቐባልነት ረኺቡ</strong>፡ ኣብ ፕሮግራምና ቦታ ኣለካ።</p>
               ${cohortTimelineHtml}
-              <h2 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 12px;">Complete your registration – set your password</h2>
-              <p style="font-size: 15px; margin: 0 0 20px; color: #d4d4d4;">Click the button below to set up your account password. This is the only step left before you can access your dashboard and join your cohort community.</p>
+              <h2 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 12px;">ምዝገባኻ ኣጠናቕቕ – ፓስዎርድካ ኣቐምጥ</h2>
+              <p style="font-size: 15px; margin: 0 0 20px; color: #d4d4d4;">ናይ ኣካውንትካ ፓስዎርድ ንምቕማጥ ኣብ ታሕቲ ዘሎ ባትን ጠውቕ። ዳሽቦርድካ ንምጥቃምን ናይ ኮሆርት ማሕበረሰብ ንምጽንባርን ዝተረፈ እዚ ስጉምቲ ጥራይ እዩ።</p>
               <div style="text-align: center; margin: 24px 0;">
-                <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">Set up your password</a>
+                <a href="${setupPasswordLink}" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #0891b2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">ፓስዎርድካ ኣቐምጥ</a>
               </div>
-              <p style="font-size: 13px; margin: 0 0 8px; color: #a3a3a3;">Or copy and paste into your browser: <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a></p>
-              <p style="font-size: 12px; margin: 0 0 24px; color: #a3a3a3;">This link expires in 72 hours.</p>
+              <p style="font-size: 13px; margin: 0 0 8px; color: #a3a3a3;">ወይ ድማ ነዚ ሊንክ ኮፒ ኢልካ ኣብ ብራውዘርካ ፔስት በሎ: <a href="${setupPasswordLink}" style="color: #38bdf8; word-break: break-all;">${setupPasswordLink}</a></p>
+              <p style="font-size: 12px; margin: 0 0 24px; color: #a3a3a3;">እዚ ሊንክ ድሕሪ 72 ሰዓት ክውዳእ እዩ።</p>
               <div style="background: #262626; padding: 20px 22px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #06b6d4;">
-                <h3 style="margin: 0 0 10px; color: #fff; font-size: 16px;">What’s next?</h3>
+                <h3 style="margin: 0 0 10px; color: #fff; font-size: 16px;">ቅጺሉ እንታይ አሎ?</h3>
                 <ul style="margin: 0; padding-left: 20px; color: #d4d4d4; font-size: 14px;">
-                  <li style="margin-bottom: 6px;">Join your cohort community and live sessions</li>
-                  <li style="margin-bottom: 6px;">Complete assignments and chapters</li>
-                  <li style="margin-bottom: 6px;">Start earning sats as you progress</li>
-                  <li style="margin-bottom: 0;">Build your Bitcoin knowledge step by step</li>
+                  <li style="margin-bottom: 6px;">ናይ ኮሆርት ማሕበረሰብን ቀጥታ ትምህርትታትን ተጸንበር</li>
+                  <li style="margin-bottom: 6px;">ዕማማትን ምዕራፋትን ኣጠናቕቕ</li>
+                  <li style="margin-bottom: 6px;">ክትምሃር ከለኻ ሳትስ ምእካብ ጀምር</li>
+                  <li style="margin-bottom: 0;">ናይ ቢትኮይን ፍልጠትካ ስጉምቲ ብስጉምቲ ሃንጽ</li>
                 </ul>
               </div>
-              <p style="font-size: 14px; margin: 0 0 16px; color: #d4d4d4;"><strong style="color: #fff;">Security reminder:</strong> Never share your password, recovery phrases, or private keys with anyone. The Academy will never ask for them by email or message.</p>
-              <p style="font-size: 14px; margin: 0 0 20px; color: #d4d4d4;">Pan-Africa Bitcoin Academy exists to empower learners across the continent with sound Bitcoin education, in a supportive cohort-based community.</p>
-              <p style="font-size: 14px; margin: 0 0 4px; color: #fff;">Best regards,</p>
-              <p style="font-size: 14px; margin: 0 0 2px; color: #d4d4d4;"><strong>Pan-Africa Bitcoin Academy</strong></p>
-              <p style="font-size: 13px; margin: 0; color: #a3a3a3;">Support: <a href="mailto:${SUPPORT_EMAIL}" style="color: #38bdf8;">${SUPPORT_EMAIL}</a></p>
+              <p style="font-size: 14px; margin: 0 0 16px; color: #d4d4d4;"><strong style="color: #fff;">ናይ ድሕነት ኣስተውዕሎ:</strong> ፓስዎርድካ፡ ናይ ምሕዳስ ቃላትካ፡ ወይ ናይ ብሕቲ መፍትሕካ ንዝኾነ ሰብ ኣይትሃቦ። ኣካዳሚ ብኢመይል ወይ መልእኽቲ ከምኡ ኣይሓትትን።</p>
+              <p style="font-size: 14px; margin: 0 0 20px; color: #d4d4d4;">Pan-African ₿itcoin Academy ኣብ ኣፍሪቃ ዘለዉ ተማሃሮ ብዝተወደበ ናይ ኮሆርት ማሕበረሰብ ጥዑይ ናይ ቢትኮይን ትምህርቲ ንምሃብ ዝተመስረተ እዩ።</p>
+              <p style="font-size: 14px; margin: 0 0 4px; color: #fff;">ምስ ሰናይ ትምኒት፡</p>
+              <p style="font-size: 14px; margin: 0 0 2px; color: #d4d4d4;"><strong>Pan-African ₿itcoin Academy</strong></p>
+              <p style="font-size: 13px; margin: 0; color: #a3a3a3;">ሓገዝ: <a href="mailto:${SUPPORT_EMAIL}" style="color: #38bdf8;">${SUPPORT_EMAIL}</a></p>
             </div>
           </div>
         </body>
@@ -547,7 +547,7 @@ export async function sendRejectionEmail(data: RejectionEmailData): Promise<{ su
     const normalizedEmail = emailValidation.normalized;
 
     // Create email content
-    const emailSubject = 'Application Status - Pan-Africa Bitcoin Academy';
+    const emailSubject = 'Application Status - Pan-African ₿itcoin Academy';
     
     const rejectionReasonSection = rejectionReason
       ? `
@@ -578,7 +578,7 @@ export async function sendRejectionEmail(data: RejectionEmailData): Promise<{ su
             </p>
             
             <p style="font-size: 16px; margin-bottom: 20px;">
-              Thank you for your interest in the Pan-Africa Bitcoin Academy. After careful review, we regret to inform you that we are unable to approve your application at this time.
+              Thank you for your interest in the Pan-African ₿itcoin Academy. After careful review, we regret to inform you that we are unable to approve your application at this time.
             </p>
             
             ${rejectionReasonSection}
@@ -691,7 +691,7 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
     const verificationLink = `${SITE_URL}/verify-email?token=${encodeURIComponent(verificationToken)}&email=${encodeURIComponent(normalizedEmail)}`;
 
     // Create email content
-    const emailSubject = 'Verify Your Email - Pan-Africa Bitcoin Academy';
+    const emailSubject = 'Verify Your Email - Pan-African ₿itcoin Academy';
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -712,7 +712,7 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
             </p>
             
             <p style="font-size: 16px; margin-bottom: 20px;">
-              Thank you for registering with Pan-Africa Bitcoin Academy! To complete your registration and verify your identity, please confirm your email address by clicking the button below.
+              Thank you for registering with Pan-African ₿itcoin Academy! To complete your registration and verify your identity, please confirm your email address by clicking the button below.
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -822,11 +822,11 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
 
     // Create email content
     const emailSubject = isReminder
-      ? 'Important: Set Up Your Password - Pan-Africa Bitcoin Academy'
-      : 'ፓስዎርድካ ዳግማይ ቀይሮ - Pan-Africa Bitcoin Academy';
+      ? 'Important: Set Up Your Password - Pan-African ₿itcoin Academy'
+      : 'ፓስዎርድካ ዳግማይ ቀይሮ - Pan-African ₿itcoin Academy';
 
     const introText = isReminder
-      ? 'This is the second time we are sending you a password setup link for your Pan-Africa Bitcoin Academy account. Please follow the steps carefully now to create your password and secure your access.'
+      ? 'This is the second time we are sending you a password setup link for your Pan-African ₿itcoin Academy account. Please follow the steps carefully now to create your password and secure your access.'
       : 'ናይ ፓን-ኣፍሪቃ ቢትኮይን ኣካዳሚ ኣካውንት ፓስዎርድካ ዳግማይ ክትቅይሮ ሕቶ መጺኡና። ሓድሽ ፓስዎርድ ንምፍጣር ኣብ ታሕቲ ዘሎ ልንክ ጠውቑ።';
 
     const emailHtml = `
@@ -866,7 +866,7 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
             
             <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 15px; margin-top: 20px;">
               <p style="margin: 0; color: #92400e; font-size: 14px;">
-                <strong>⚠️ Important:</strong> እዚ ሪሰት ሊንክ ድሕሪ 1 ሰዓት ብጸጥታ ምኽንያት ክውዳእ እዩ። ፓስዎርድ ዳግመ ምትዕርራይ እንተዘይሓቲትኩም፡ ነዚ ኢመይል ኣይትገደስሉ፡ ፓስዎርድኩም ድማ ከይተቐየረ ክተርፍ እዩ።.
+                <strong>⚠️ Important:</strong> እዚ ሪሰት ሊንክ ድሕሪ 24 ሰዓት ብጸጥታ ምኽንያት ክውዳእ እዩ። ፓስዎርድ ዳግመ ምትዕርራይ እንተዘይሓቲትኩም፡ ነዚ ኢመይል ኣይትገደስሉ፡ ፓስዎርድኩም ድማ ከይተቐየረ ክተርፍ እዩ።
               </p>
             </div>
             

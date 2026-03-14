@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     // Generate secure reset token (one-time use)
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date();
-    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 hour expiry
+    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 24); // 24 hours expiry
 
     // Store token on the profile
     const { error: updateError } = await supabaseAdmin
