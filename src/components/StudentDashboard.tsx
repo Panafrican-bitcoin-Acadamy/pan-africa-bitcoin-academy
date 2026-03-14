@@ -60,6 +60,121 @@ interface UserData {
   cohortEnrollments: any[];
 }
 
+function TestimonialSection() {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [existing, setExisting] = useState<any>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/testimonials/submit', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.testimonial) {
+          setExisting(data.testimonial);
+          setComment(data.testimonial.testimonial || '');
+          setRating(data.testimonial.rating || 0);
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  const handleSubmit = async () => {
+    if (rating === 0) { setMessage({ type: 'error', text: 'Please select a star rating' }); return; }
+    if (comment.trim().length < 10) { setMessage({ type: 'error', text: 'Please write at least 10 characters' }); return; }
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/testimonials/submit', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testimonial: comment.trim(), rating }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage({ type: 'success', text: data.message || 'Testimonial submitted!' });
+        setExisting({ testimonial: comment.trim(), rating, is_approved: false });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to submit' });
+      }
+    } catch { setMessage({ type: 'error', text: 'Something went wrong' }); }
+    setSubmitting(false);
+  };
+
+  if (!loaded) return null;
+
+  return (
+    <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+      <h2 className="text-lg font-semibold text-zinc-50 mb-1">Rate Your Experience</h2>
+      <p className="text-sm text-zinc-400 mb-4">Share your feedback about the academy. Your testimonial may be featured on our website.</p>
+
+      {existing?.is_approved && (
+        <div className="mb-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-2 text-sm text-green-400">
+          Your testimonial is approved and visible on the website.
+        </div>
+      )}
+      {existing && !existing.is_approved && (
+        <div className="mb-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 text-sm text-yellow-400">
+          Your testimonial is pending admin review.
+        </div>
+      )}
+
+      <div className="mb-4">
+        <label className="text-sm text-zinc-300 mb-2 block">Your Rating</label>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => setRating(star)}
+              onMouseEnter={() => setHoverRating(star)}
+              onMouseLeave={() => setHoverRating(0)}
+              className="transition-transform hover:scale-110"
+            >
+              <svg className={`h-8 w-8 transition-colors ${star <= (hoverRating || rating) ? 'text-yellow-400' : 'text-zinc-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            </button>
+          ))}
+          {rating > 0 && <span className="ml-2 text-sm text-zinc-400 self-center">{rating}/5</span>}
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="text-sm text-zinc-300 mb-2 block">Your Comment</label>
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Tell us about your experience at the academy..."
+          rows={3}
+          maxLength={2000}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 resize-none"
+        />
+        <p className="text-xs text-zinc-500 mt-1">{comment.length}/2000</p>
+      </div>
+
+      {message && (
+        <div className={`mb-4 rounded-lg px-4 py-2 text-sm ${message.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+          {message.text}
+        </div>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="rounded-lg bg-gradient-to-r from-orange-500 to-cyan-500 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_0_15px_rgba(249,115,22,0.2)] transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {submitting ? 'Submitting...' : existing ? 'Update Testimonial' : 'Submit Testimonial'}
+      </button>
+    </div>
+  );
+}
+
 interface StudentDashboardProps {
   userData?: UserData | null;
 }
@@ -1473,6 +1588,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               )}
             </div>
 
+            {/* Rate Your Experience / Testimonial */}
+            <TestimonialSection />
 
           </div>
         )}

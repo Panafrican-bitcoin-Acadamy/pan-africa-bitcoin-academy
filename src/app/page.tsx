@@ -382,6 +382,60 @@ async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
   }
 }
 
+interface Testimonial {
+  id: string;
+  name: string;
+  city: string;
+  quote: string;
+  rating: number;
+  photo: string | null;
+}
+
+async function getTestimonials(): Promise<Testimonial[]> {
+  try {
+    const { data: testimonials, error: testimonialsError } = await supabaseAdmin
+      .from('student_testimonials')
+      .select('id, testimonial, rating, display_order, is_featured, created_at, student_id')
+      .eq('is_approved', true)
+      .order('is_featured', { ascending: false })
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (testimonialsError || !testimonials || testimonials.length === 0) {
+      return [];
+    }
+
+    const studentIds = testimonials.map((t: any) => t.student_id);
+    const { data: profiles } = await supabaseAdmin
+      .from('profiles')
+      .select('id, name, city, country, photo_url')
+      .in('id', studentIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+    return testimonials.map((t: any) => {
+      const profile: any = profileMap.get(t.student_id) || {};
+      let location = '';
+      if (profile.city && profile.country) location = `${profile.city}, ${profile.country}`;
+      else if (profile.country) location = profile.country;
+      else if (profile.city) location = profile.city;
+
+      return {
+        id: t.id,
+        name: profile.name || 'Student',
+        city: location,
+        quote: t.testimonial,
+        rating: t.rating || 5,
+        photo: profile.photo_url || null,
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching testimonials:', error instanceof Error ? error.message : String(error));
+    return [];
+  }
+}
+
 const homeStructuredData = {
   '@context': 'https://schema.org',
   '@type': 'EducationalOrganization',
@@ -414,6 +468,7 @@ export default async function Home() {
   const mentors = await getMentors();
   const impactStats = await getImpactStats();
   const upcomingEvents = await getUpcomingEvents();
+  const testimonials = await getTestimonials();
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Full-page Hero Section - Edge-to-edge on mobile, fade in on load */}
@@ -819,69 +874,49 @@ export default async function Home() {
             </section>
           </AnimatedSection>
 
-          {/* 9. Blog Preview */}
+          {/* 9. Student Testimonials */}
+          {testimonials.length > 0 && (
           <AnimatedSection animation="slideUp">
             <section className="mb-32 space-y-8">
               <div className="text-center">
-                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">Student Stories</h2>
+                <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl lg:text-5xl">What Our Students Say</h2>
                 <p className="mt-4 text-base text-zinc-400 sm:text-lg">
-                  Read how our graduates are using Bitcoin, building the future, and contributing to the community.
+                  Hear from our students about their experience at the academy.
                 </p>
               </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {[
-                  {
-                    title: "How I'm Using Bitcoin to Build Financial Sovereignty",
-                    author: "Amina K.",
-                    category: "Use Cases",
-                    excerpt: "After completing the academy, I've started using Lightning Network for daily transactions...",
-                  },
-                  {
-                    title: "The Future of Bitcoin Development: What Africa Needs",
-                    author: "David M.",
-                    category: "Development",
-                    excerpt: "As a developer, I see huge potential for Bitcoin in Africa. Here's what we need to build...",
-                  },
-                  {
-                    title: "Building a Bitcoin Community in My City",
-                    author: "Fatima A.",
-                    category: "Community",
-                    excerpt: "Starting a local Bitcoin meetup has changed how I see community building...",
-                  },
-                ].map((post, index) => (
-                  <AnimatedSection key={index} animation="slideUp" delay={index * 100}>
-                    <Link
-                      href="/blog"
-                      className="group block rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]"
-                    >
-                      <div className="mb-3 flex items-center justify-between">
-                        <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300">
-                          {post.category}
-                        </span>
+              <AnimatedList animation="slideUp" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {testimonials.map((t, index) => (
+                  <div
+                    key={t.id}
+                    className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)] flex flex-col"
+                  >
+                    <div className="flex items-center gap-0.5 mb-4">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg key={star} className={`h-4 w-4 ${star <= t.rating ? 'text-yellow-400' : 'text-zinc-700'}`} fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <p className="text-sm text-zinc-300 leading-relaxed flex-grow mb-4">&ldquo;{t.quote}&rdquo;</p>
+                    <div className="flex items-center gap-3 pt-4 border-t border-zinc-800">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20 overflow-hidden shrink-0">
+                        {t.photo ? (
+                          <Image src={t.photo} alt={t.name} width={40} height={40} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-lg">👤</span>
+                        )}
                       </div>
-                      <h3 className="mb-2 text-lg font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
-                        {post.title}
-                      </h3>
-                      <p className="mb-4 text-sm text-zinc-400">{post.excerpt}</p>
-                      <div className="flex items-center gap-2 text-xs text-zinc-500">
-                        <span>By {post.author}</span>
-                        <span>•</span>
-                        <span className="text-cyan-300">Read more →</span>
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-100">{t.name}</p>
+                        {t.city && <p className="text-xs text-zinc-500">{t.city}</p>}
                       </div>
-                    </Link>
-                  </AnimatedSection>
+                    </div>
+                  </div>
                 ))}
-              </div>
-              <div className="text-center">
-                <Link
-                  href="/blog"
-                  className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-base font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
-                >
-                  👉 View All Blog Posts
-                </Link>
-              </div>
+              </AnimatedList>
             </section>
           </AnimatedSection>
+          )}
 
           {/* 10. Partners & Funders Section */}
           <AnimatedSection animation="slideUp">

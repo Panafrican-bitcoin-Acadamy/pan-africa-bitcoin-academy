@@ -214,11 +214,22 @@ interface Sponsorship {
 interface Testimonial {
   id: string;
   student_id: string | null;
-  content: string;
-  author_name: string | null;
-  author_role: string | null;
-  approved: boolean;
+  testimonial: string;
+  rating: number;
+  is_approved: boolean;
+  is_featured: boolean;
+  display_order: number;
   created_at: string;
+  updated_at: string;
+  profiles?: {
+    id: string;
+    name: string;
+    email: string;
+    student_id: string;
+    photo_url: string | null;
+    country: string | null;
+    city: string | null;
+  };
 }
 
 interface Mentor {
@@ -7751,38 +7762,152 @@ export default function AdminDashboardPage() {
 
             {activeSubMenu === 'testimonials' && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-6">
-                <div className="mb-4">
+                <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <HelpCircle className="h-5 w-5 text-zinc-50" />
                     <h3 className="text-lg font-semibold text-zinc-50">Testimonials</h3>
+                    <span className="text-xs text-zinc-500">({testimonials.length})</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-zinc-400">
+                    <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-400" /> Approved: {testimonials.filter((t: any) => t.is_approved).length}</span>
+                    <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Pending: {testimonials.filter((t: any) => !t.is_approved).length}</span>
                   </div>
                 </div>
                 {loadingTestimonials ? (
                   <div className="text-center py-8 text-zinc-400">Loading testimonials...</div>
                 ) : testimonials.length === 0 ? (
-                  <div className="text-center py-8 text-zinc-400">No testimonials found.</div>
+                  <div className="text-center py-12 text-zinc-400">
+                    <p>No testimonials yet.</p>
+                    <p className="text-xs text-zinc-500 mt-2">Students can submit testimonials from their dashboard.</p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
-                    {testimonials.map((testimonial: any) => (
-                      <div key={testimonial.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-sm font-semibold text-zinc-50">{testimonial.profiles?.name || 'Unknown'}</h4>
-                              <span className={`text-xs px-2 py-0.5 rounded ${testimonial.is_approved ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                {testimonial.is_approved ? 'Approved' : 'Pending'}
-                              </span>
-                              {testimonial.is_featured && <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">Featured</span>}
+                    {testimonials.map((t: any) => {
+                      const [isEditing, setIsEditing] = React.useState(false);
+                      const [editText, setEditText] = React.useState(t.testimonial || '');
+                      const [saving, setSaving] = React.useState(false);
+
+                      const handleToggleApprove = async () => {
+                        try {
+                          const res = await fetchWithAuth('/api/admin/testimonials', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: t.id, is_approved: !t.is_approved }),
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            setTestimonials((prev: any[]) => prev.map((x: any) => x.id === t.id ? data.testimonial : x));
+                          }
+                        } catch (err) { console.error(err); }
+                      };
+
+                      const handleToggleFeatured = async () => {
+                        try {
+                          const res = await fetchWithAuth('/api/admin/testimonials', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: t.id, is_featured: !t.is_featured }),
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            setTestimonials((prev: any[]) => prev.map((x: any) => x.id === t.id ? data.testimonial : x));
+                          }
+                        } catch (err) { console.error(err); }
+                      };
+
+                      const handleSaveEdit = async () => {
+                        if (!editText.trim()) return;
+                        setSaving(true);
+                        try {
+                          const res = await fetchWithAuth('/api/admin/testimonials', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: t.id, testimonial: editText.trim() }),
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            setTestimonials((prev: any[]) => prev.map((x: any) => x.id === t.id ? data.testimonial : x));
+                            setIsEditing(false);
+                          }
+                        } catch (err) { console.error(err); }
+                        setSaving(false);
+                      };
+
+                      const handleDelete = async () => {
+                        if (!confirm('Delete this testimonial?')) return;
+                        try {
+                          const res = await fetchWithAuth(`/api/admin/testimonials?id=${t.id}`, { method: 'DELETE' });
+                          if (res.ok) {
+                            setTestimonials((prev: any[]) => prev.filter((x: any) => x.id !== t.id));
+                          }
+                        } catch (err) { console.error(err); }
+                      };
+
+                      return (
+                        <div key={t.id} className={`rounded-lg border p-4 ${t.is_approved ? 'border-green-500/20 bg-zinc-900/50' : 'border-yellow-500/20 bg-zinc-900/50'}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h4 className="text-sm font-semibold text-zinc-50">{t.profiles?.name || 'Unknown'}</h4>
+                                <div className="flex items-center gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg key={star} className={`h-3.5 w-3.5 ${star <= (t.rating || 0) ? 'text-yellow-400' : 'text-zinc-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  ))}
+                                </div>
+                                <span className={`text-xs px-2 py-0.5 rounded ${t.is_approved ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                  {t.is_approved ? 'Approved' : 'Pending'}
+                                </span>
+                                {t.is_featured && <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">Featured</span>}
+                              </div>
+
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 resize-none"
+                                    rows={3}
+                                  />
+                                  <div className="flex gap-2">
+                                    <button onClick={handleSaveEdit} disabled={saving} className="px-3 py-1 text-xs rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 disabled:opacity-50">
+                                      {saving ? 'Saving...' : 'Save'}
+                                    </button>
+                                    <button onClick={() => { setIsEditing(false); setEditText(t.testimonial); }} className="px-3 py-1 text-xs rounded bg-zinc-700/50 text-zinc-400 hover:bg-zinc-700">
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-zinc-300 leading-relaxed">&ldquo;{t.testimonial}&rdquo;</p>
+                              )}
+
+                              <div className="text-xs text-zinc-500 mt-2 flex flex-wrap items-center gap-2">
+                                {t.profiles?.email && <span>{t.profiles.email}</span>}
+                                {t.profiles?.country && <span>• {t.profiles.city ? `${t.profiles.city}, ` : ''}{t.profiles.country}</span>}
+                                {t.created_at && <span>• {new Date(t.created_at).toLocaleDateString()}</span>}
+                              </div>
                             </div>
-                            <p className="text-sm text-zinc-300">{testimonial.testimonial}</p>
-                            <div className="text-xs text-zinc-400 mt-2">
-                              {testimonial.profiles?.email && <span>{testimonial.profiles.email}</span>}
-                              {testimonial.created_at && <span> • {new Date(testimonial.created_at).toLocaleDateString()}</span>}
+
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                              <button onClick={handleToggleApprove} className={`px-2.5 py-1 text-xs rounded font-medium transition ${t.is_approved ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}>
+                                {t.is_approved ? 'Revoke' : 'Approve'}
+                              </button>
+                              <button onClick={handleToggleFeatured} className={`px-2.5 py-1 text-xs rounded font-medium transition ${t.is_featured ? 'bg-purple-500/30 text-purple-300' : 'bg-zinc-700/50 text-zinc-400 hover:bg-zinc-700'}`}>
+                                {t.is_featured ? 'Unfeature' : 'Feature'}
+                              </button>
+                              <button onClick={() => { setIsEditing(true); setEditText(t.testimonial); }} className="px-2.5 py-1 text-xs rounded font-medium bg-zinc-700/50 text-zinc-400 hover:bg-zinc-700 transition">
+                                Edit
+                              </button>
+                              <button onClick={handleDelete} className="px-2.5 py-1 text-xs rounded font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
+                                Delete
+                              </button>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

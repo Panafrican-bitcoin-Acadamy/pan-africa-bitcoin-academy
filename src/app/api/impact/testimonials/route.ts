@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     // Fetch approved testimonials
     const { data: testimonials, error: testimonialsError } = await supabaseAdmin
       .from('student_testimonials')
-      .select('id, testimonial, display_order, is_featured, created_at, student_id')
+      .select('id, testimonial, rating, display_order, is_featured, created_at, student_id')
       .eq('is_approved', true)
       .order('is_featured', { ascending: false })
       .order('display_order', { ascending: true })
@@ -68,7 +68,8 @@ export async function GET(req: NextRequest) {
         name: profile.name || 'Anonymous',
         city: location,
         quote: testimonial.testimonial,
-        photo: profile.photo_url || null, // Will use photo_url or fallback to emoji
+        rating: testimonial.rating || 5,
+        photo: profile.photo_url || null,
       };
     });
 
