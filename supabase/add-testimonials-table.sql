@@ -21,6 +21,12 @@ CREATE INDEX IF NOT EXISTS idx_testimonials_display_order ON student_testimonial
 -- Enable Row Level Security
 ALTER TABLE student_testimonials ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first to avoid "already exists" errors, then recreate
+DROP POLICY IF EXISTS "Allow public to view approved testimonials" ON student_testimonials;
+DROP POLICY IF EXISTS "Block client inserts" ON student_testimonials;
+DROP POLICY IF EXISTS "Block client updates" ON student_testimonials;
+DROP POLICY IF EXISTS "Block client deletes" ON student_testimonials;
+
 -- Policy: Allow public to SELECT approved testimonials (for display on website)
 CREATE POLICY "Allow public to view approved testimonials" ON student_testimonials
   FOR SELECT

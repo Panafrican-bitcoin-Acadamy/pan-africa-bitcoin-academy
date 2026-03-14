@@ -579,6 +579,21 @@ export default function ScamPage() {
                       </button>
                     </div>
                     <div className="flex flex-col">
+                      <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Wallet Poisoning</p>
+                      <button
+                        type="button"
+                        onClick={() => setFullViewImage("/images/scams/walletpoisining.jpeg")}
+                        className="w-full rounded-xl border border-zinc-700/80 overflow-hidden cursor-pointer hover:ring-2 hover:ring-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition text-left"
+                        aria-label="View full size"
+                      >
+                        <img
+                          src="/images/scams/walletpoisining.jpeg"
+                          alt="Wallet poisoning attack — how attackers send small transactions to trick users"
+                          className="w-full h-auto max-w-full max-h-[320px] sm:max-h-[400px] object-contain rounded-xl border border-zinc-700/80 bg-zinc-800/30"
+                        />
+                      </button>
+                    </div>
+                    <div className="flex flex-col">
                       <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Security Demo Video</p>
                       <button
                         type="button"

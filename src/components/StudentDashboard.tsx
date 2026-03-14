@@ -71,9 +71,12 @@ function TestimonialSection() {
 
   useEffect(() => {
     fetch('/api/testimonials/submit', { credentials: 'include' })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) { setLoaded(true); return null; }
+        return r.json();
+      })
       .then(data => {
-        if (data.testimonial) {
+        if (data?.testimonial) {
           setExisting(data.testimonial);
           setComment(data.testimonial.testimonial || '');
           setRating(data.testimonial.rating || 0);
