@@ -8,6 +8,7 @@ import { AnimatedSection } from '@/components/AnimatedSection';
 import SplitText from '@/components/SplitText';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { sortedCountries, getPhoneRule, type Country } from '@/lib/countries';
+import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
 import { inputStyles, labelStyles, formStyles, buttonStyles, cardStyles, alertStyles, cn } from '@/lib/styles';
 import { FormGrid } from '@/components/ui';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -52,6 +53,17 @@ export default function ApplyPage() {
       document.body.style.overflow = '';
     };
   }, [submitting]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (codeDropdownRef.current && !codeDropdownRef.current.contains(e.target as Node)) {
+        setCodeDropdownOpen(false);
+        setCodeSearch("");
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Calculate carousel transform value accounting for gaps
   // Container has padding (px-2 sm:px-4), so cards fit within padded area
@@ -178,7 +190,11 @@ export default function ApplyPage() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedCountryCode, setSelectedCountryCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneValid, setPhoneValid] = useState(false);
   const [birthDate, setBirthDate] = useState("");
+  const [codeDropdownOpen, setCodeDropdownOpen] = useState(false);
+  const [codeSearch, setCodeSearch] = useState("");
+  const codeDropdownRef = useRef<HTMLDivElement>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -275,30 +291,61 @@ export default function ApplyPage() {
     const code = e.target.value;
     setSelectedCountryCode(code);
     setPhoneError(null);
-    // Update phone number in form data
     const fullPhone = code && phoneNumber ? `${code} ${phoneNumber}`.trim() : phoneNumber;
     setFormData({ ...formData, phone: fullPhone });
+    if (phoneNumber.replace(/\D/g, '').length > 0) {
+      validateWhatsAppNumber(code, phoneNumber, false);
+    }
+  };
+
+  const validateWhatsAppNumber = (code: string, number: string, strict = false) => {
+    const digits = number.replace(/\D/g, '');
+    if (!code || digits.length === 0) {
+      setPhoneError(null);
+      setPhoneValid(false);
+      return;
+    }
+    const cleanCode = code.replace(/[^+\d]/g, '');
+    const fullNumber = `${cleanCode}${digits}`;
+    try {
+      if (isValidPhoneNumber(fullNumber)) {
+        const parsed = parsePhoneNumber(fullNumber);
+        if (parsed) {
+          setPhoneError(null);
+          setPhoneValid(true);
+          setFormData(prev => ({ ...prev, phone: parsed.formatInternational() }));
+          return;
+        }
+      }
+      setPhoneValid(false);
+      const { max } = getPhoneRule(selectedCountry);
+      if (digits.length > max) {
+        setPhoneError(`Number too long — max ${max} digits for ${selectedCountry || 'this country'}.`);
+      } else if (strict) {
+        setPhoneError(`Invalid WhatsApp number for ${selectedCountry || 'this country'}. Please check and try again.`);
+      } else {
+        setPhoneError(null);
+      }
+    } catch {
+      setPhoneError(null);
+      setPhoneValid(false);
+    }
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow digits and spaces
     const cleanedValue = value.replace(/[^\d\s]/g, "");
     setPhoneNumber(cleanedValue);
-    
-    // Combine with selected country code for form data
+
     const fullPhone = selectedCountryCode && cleanedValue ? `${selectedCountryCode} ${cleanedValue}`.trim() : cleanedValue;
     setFormData({ ...formData, phone: fullPhone });
 
-    // Live validate digits against country rule
-    if (selectedCountry) {
-      const digits = cleanedValue.replace(/\D/g, '');
-      const { min, max } = getPhoneRule(selectedCountry);
-      if (digits.length > 0 && (digits.length < min || digits.length > max)) {
-        setPhoneError(`Needs ${min}${min !== max ? `-${max}` : ''} digits for ${selectedCountry} (excluding country code).`);
-      } else {
-        setPhoneError(null);
-      }
+    validateWhatsAppNumber(selectedCountryCode, cleanedValue, false);
+  };
+
+  const handlePhoneBlur = () => {
+    if (phoneNumber.replace(/\D/g, '').length > 0 && selectedCountryCode) {
+      validateWhatsAppNumber(selectedCountryCode, phoneNumber, true);
     }
   };
 
@@ -414,10 +461,6 @@ export default function ApplyPage() {
     setSubmitting(true);
     setPhoneError(null);
 
-    // Validate phone length based on country rules
-    const phoneDigits = phoneNumber.replace(/\D/g, '');
-    const { min, max } = getPhoneRule(selectedCountry);
-    
     if (!selectedCountry) {
       setSubmitError('Please select your country.');
       setPhoneError('Please select your country.');
@@ -430,8 +473,19 @@ export default function ApplyPage() {
       setSubmitting(false);
       return;
     }
-    if (phoneDigits.length < min || phoneDigits.length > max) {
-      const msg = `Phone number should have ${min}${min !== max ? `-${max}` : ''} digits for ${selectedCountry}.`;
+
+    const phoneDigits = phoneNumber.replace(/\D/g, '');
+    if (phoneDigits.length === 0) {
+      setSubmitError('Please enter your WhatsApp number.');
+      setPhoneError('Please enter your WhatsApp number.');
+      setSubmitting(false);
+      return;
+    }
+
+    const cleanCode = selectedCountryCode.replace(/[^+\d]/g, '');
+    const fullNumber = `${cleanCode}${phoneDigits}`;
+    if (!isValidPhoneNumber(fullNumber)) {
+      const msg = `Invalid WhatsApp number for ${selectedCountry}. Please check the number and try again.`;
       setSubmitError(msg);
       setPhoneError(msg);
       setSubmitting(false);
@@ -455,7 +509,12 @@ export default function ApplyPage() {
       name: `${formData.firstName} ${formData.lastName}`.trim(), // Combine first and last name
       country: selectedCountry,
       birthDate: birthDate || null,
-      phone: `${selectedCountryCode} ${phoneNumber}`.trim(),
+      phone: (() => {
+        try {
+          const parsed = parsePhoneNumber(`${cleanCode}${phoneDigits}`);
+          return parsed ? parsed.formatInternational() : `${selectedCountryCode} ${phoneNumber}`.trim();
+        } catch { return `${selectedCountryCode} ${phoneNumber}`.trim(); }
+      })(),
       preferredCohort: cohortNumber, // Add preferredCohort (cohort ID) to the request
       preferredLanguage: formData.preferredLanguage || null, // Include preferred language
     };
@@ -792,45 +851,108 @@ export default function ApplyPage() {
               </div>
               <div>
                 <label htmlFor="phone" className={labelStyles.required}>
-                  Phone <span className={labelStyles.requiredStar}>*</span>
+                  WhatsApp Number <span className={labelStyles.requiredStar}>*</span>
                 </label>
                 <div className="flex gap-2 w-full">
-                  <label htmlFor="countryCode" className="sr-only">
-                    Country Code
-                  </label>
-                  <select
-                    id="countryCode"
-                    name="countryCode"
-                    autoComplete="tel-country-code"
-                    value={selectedCountryCode}
-                    onChange={handleCountryCodeChange}
-                    aria-label="Country code"
-                    className="flex-1 min-w-0 max-w-full sm:max-w-[220px] rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-pointer"
-                    title={selectedCountryCode ? sortedCountries.find(c => c.code === selectedCountryCode)?.name : "Select country code"}
-                  >
-                    <option value="" className="bg-zinc-950 text-zinc-400">Select country</option>
-                    {sortedCountries.map((country) => (
-                      <option key={country.name} value={country.code} className="bg-zinc-950 text-zinc-50">
-                        {country.name} {country.code}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    autoComplete="tel-national"
-                    required
-                    value={phoneNumber}
-                    onChange={handlePhoneChange}
-                    maxLength={selectedCountry ? getPhoneRule(selectedCountry).max : 13}
-                    className={inputStyles.phone}
-                    placeholder="7000501"
-                    aria-describedby={phoneError ? "phone-error" : selectedCountry ? "phone-help" : undefined}
-                  />
+                  {/* Searchable country code dropdown */}
+                  <div ref={codeDropdownRef} className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setCodeDropdownOpen(!codeDropdownOpen); setCodeSearch(""); }}
+                      className="flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-zinc-950 px-2.5 py-2.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-pointer hover:border-cyan-400/50 transition min-w-[90px]"
+                      aria-label="Country code"
+                    >
+                      {selectedCountryCode ? (
+                        <>
+                          <span>{sortedCountries.find(c => c.code === selectedCountryCode)?.flag}</span>
+                          <span className="font-mono text-xs">{selectedCountryCode}</span>
+                          <svg className="h-3 w-3 text-zinc-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-zinc-500 text-xs">Code</span>
+                          <svg className="h-3 w-3 text-zinc-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                        </>
+                      )}
+                    </button>
+
+                    {codeDropdownOpen && (
+                      <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border border-cyan-400/30 bg-zinc-950 shadow-xl shadow-black/50 overflow-hidden">
+                        <div className="p-2 border-b border-zinc-800">
+                          <input
+                            type="text"
+                            value={codeSearch}
+                            onChange={(e) => setCodeSearch(e.target.value)}
+                            placeholder="Search country..."
+                            autoFocus
+                            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none"
+                          />
+                        </div>
+                        <div className="max-h-52 overflow-y-auto">
+                          {sortedCountries
+                            .filter(c => {
+                              if (!codeSearch) return true;
+                              const q = codeSearch.toLowerCase();
+                              return c.name.toLowerCase().includes(q) || c.code.includes(q);
+                            })
+                            .map((country) => (
+                              <button
+                                key={country.name}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCountryCode(country.code);
+                                  setSelectedCountry(country.name);
+                                  setFormData(prev => ({ ...prev, country: country.name }));
+                                  setPhoneError(null);
+                                  setCodeDropdownOpen(false);
+                                  setCodeSearch("");
+                                  if (phoneNumber.replace(/\D/g, '').length > 0) {
+                                    validateWhatsAppNumber(country.code, phoneNumber, false);
+                                  }
+                                }}
+                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-cyan-500/10 ${selectedCountryCode === country.code ? 'bg-cyan-500/10 text-cyan-300' : 'text-zinc-300'}`}
+                              >
+                                <span className="text-base">{country.flag}</span>
+                                <span className="flex-1 truncate">{country.name}</span>
+                                <span className="font-mono text-xs text-zinc-500">{country.code}</span>
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative flex-1">
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      autoComplete="tel-national"
+                      required
+                      value={phoneNumber}
+                      onChange={handlePhoneChange}
+                      onBlur={handlePhoneBlur}
+                      maxLength={15}
+                      className={`${inputStyles.phone} ${phoneValid ? 'border-green-500/50 focus:border-green-500/60 focus:ring-green-500/20' : ''} ${phoneError ? 'border-red-500/50 focus:border-red-500/60 focus:ring-red-500/20' : ''} pr-9`}
+                      placeholder="7 1234 5678"
+                      aria-describedby={phoneError ? "phone-error" : undefined}
+                    />
+                    {phoneValid && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                      </span>
+                    )}
+                    {phoneError && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {phoneError && (
                   <p id="phone-error" className="mt-1 text-xs text-red-300" role="alert">{phoneError}</p>
+                )}
+                {phoneValid && (
+                  <p className="mt-1 text-xs text-green-400/80">Valid WhatsApp number</p>
                 )}
               </div>
               <DatePicker
