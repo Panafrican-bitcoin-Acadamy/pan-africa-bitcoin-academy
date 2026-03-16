@@ -218,14 +218,14 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
               }`}
             >
               {event.image_url && (
-                <div className="w-full h-48 bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center overflow-hidden relative">
+                <div className="w-full min-h-[140px] max-h-44 bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center overflow-hidden relative px-4 py-4">
                   <img
                     src={event.image_url}
                     alt={event.image_alt_text || event.title}
-                    className="w-full h-full object-contain p-3"
+                    className="max-h-full w-full object-contain object-center"
                     loading="lazy"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-zinc-950/50 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-zinc-950/80 to-transparent pointer-events-none" />
                 </div>
               )}
               <div className="p-5">
@@ -330,68 +330,30 @@ export function UpcomingEventsWithModal({ events }: { events: UpcomingEventForMo
           aria-labelledby="event-modal-title"
         >
           <div
-            style={{
-              position: 'relative',
-              zIndex: 100000,
-              width: '100%',
-              maxWidth: '24rem',
-              maxHeight: '85vh',
-              overflowY: 'auto',
-              borderRadius: '12px',
-              border: '2px solid #52525b',
-              backgroundColor: '#18181b',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-            }}
+            className="relative z-[100000] w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl border-2 border-zinc-600 bg-zinc-900 shadow-2xl flex flex-col sm:flex-row"
+            style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setSelectedEvent(null)}
-              style={{
-                position: 'absolute',
-                right: '8px',
-                top: '8px',
-                zIndex: 10,
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: '#3f3f46',
-                color: '#d4d4d8',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition"
               aria-label="Close"
             >
-              <X className="h-4 w-4" style={{ flexShrink: 0 }} />
+              <X className="h-4 w-4 flex-shrink-0" />
             </button>
 
-            {selectedEvent.image_url && (
-              <div
-                style={{
-                  width: '100%',
-                  height: '176px',
-                  background: '#09090b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  borderTopLeftRadius: '10px',
-                  borderTopRightRadius: '10px',
-                  borderBottom: '1px solid #3f3f46',
-                }}
-              >
+            {selectedEvent.image_url ? (
+              <div className="flex w-full sm:w-[44%] sm:min-w-0 sm:shrink-0 items-center justify-center bg-zinc-950 p-4 sm:rounded-l-xl sm:border-r border-b sm:border-b-0 border-zinc-700/50">
                 <img
                   src={selectedEvent.image_url}
                   alt={selectedEvent.image_alt_text || selectedEvent.title}
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', padding: '12px' }}
+                  className="max-h-[200px] w-full object-contain object-center sm:max-h-80"
                 />
               </div>
-            )}
+            ) : null}
 
-            <div style={{ padding: '1rem' }}>
+            <div className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-5 pt-12 sm:pt-5">
               <div style={{ marginBottom: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center', fontSize: '14px', color: '#d4d4d8' }}>
                 <span style={{ fontWeight: 600, color: '#e4e4e7' }}>{selectedEvent.dateString}</span>
                 {selectedEvent.time && (

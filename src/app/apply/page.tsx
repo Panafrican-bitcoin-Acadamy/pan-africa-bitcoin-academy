@@ -711,13 +711,13 @@ export default function ApplyPage() {
                 <label htmlFor="phone" className={labelStyles.required}>
                   WhatsApp Number <span className={labelStyles.requiredStar}>*</span>
                 </label>
-                <div className="flex gap-2 w-full">
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2 w-full">
                   {/* Searchable country code dropdown */}
-                  <div ref={codeDropdownRef} className="relative shrink-0">
+                  <div ref={codeDropdownRef} className="relative w-full sm:w-auto sm:shrink-0">
                     <button
                       type="button"
                       onClick={() => { setCodeDropdownOpen(!codeDropdownOpen); setCodeSearch(""); }}
-                      className="flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-zinc-950 px-2.5 py-2.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-pointer hover:border-cyan-400/50 transition min-w-[90px]"
+                      className="flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-zinc-950 px-2.5 py-2.5 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-pointer hover:border-cyan-400/50 transition w-full sm:min-w-[90px] sm:w-auto"
                       aria-label="Country code"
                     >
                       {selectedCountryCode ? (
@@ -735,7 +735,7 @@ export default function ApplyPage() {
                     </button>
 
                     {codeDropdownOpen && (
-                      <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border border-cyan-400/30 bg-zinc-950 shadow-xl shadow-black/50 overflow-hidden">
+                      <div className="absolute left-0 top-full z-50 mt-1 w-full sm:w-64 rounded-lg border border-cyan-400/30 bg-zinc-950 shadow-xl shadow-black/50 overflow-hidden">
                         <div className="p-2 border-b border-zinc-800">
                           <input
                             type="text"
@@ -779,7 +779,7 @@ export default function ApplyPage() {
                       </div>
                     )}
                   </div>
-                  <div className="relative flex-1">
+                  <div className="relative w-full sm:flex-1 sm:min-w-0">
                     <input
                       id="phone"
                       name="phone"
@@ -790,8 +790,8 @@ export default function ApplyPage() {
                       onChange={handlePhoneChange}
                       onBlur={handlePhoneBlur}
                       maxLength={15}
-                      className={`${inputStyles.phone} ${phoneValid ? 'border-green-500/50 focus:border-green-500/60 focus:ring-green-500/20' : ''} ${phoneError ? 'border-red-500/50 focus:border-red-500/60 focus:ring-red-500/20' : ''} pr-9`}
-                      placeholder="7 1234 5678"
+                      className={`w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2.5 sm:py-2 text-base sm:text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 cursor-text min-w-0 ${phoneValid ? 'border-green-500/50 focus:border-green-500/60 focus:ring-green-500/20' : ''} ${phoneError ? 'border-red-500/50 focus:border-red-500/60 focus:ring-red-500/20' : ''} pr-9`}
+                      placeholder="e.g. 712 345 678"
                       aria-describedby={phoneError ? "phone-error" : undefined}
                     />
                     {phoneValid && (
