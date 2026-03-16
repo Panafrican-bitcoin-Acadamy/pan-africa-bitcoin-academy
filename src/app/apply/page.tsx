@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
 import SplitText from '@/components/SplitText';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -34,12 +33,6 @@ export default function ApplyPage() {
   const [cohortsLoading, setCohortsLoading] = useState(true);
   const [cohortsError, setCohortsError] = useState<string | null>(null);
   const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(1);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
   // Show loading spinner overlay when submitting
@@ -65,127 +58,12 @@ export default function ApplyPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Calculate carousel transform value accounting for gaps
-  // Container has padding (px-2 sm:px-4), so cards fit within padded area
-  const getCarouselTransform = () => {
-    if (itemsPerView === 1) {
-      // For single item: card is 100% width, move by card width
-      return `translateX(calc(-${carouselIndex} * 100%))`;
-    }
-    // For multiple items:
-    // Card widths: 100% for mobile, calc(50% - 0.5rem) for sm, calc(33.333% - 0.67rem) for lg
-    // Move distance per step = cardWidth + gap
-    // For 2 items: (50% - 0.5rem) + 1rem = 50% + 0.5rem, but we need to account for the percentage
-    // Since gap is 1rem and we're working in percentages, we use: (100% + gap) / itemsPerView
-    // But gap is fixed (1rem), so we approximate: cardWidth + gap ≈ (100% + gap) / itemsPerView
-    return `translateX(calc(-${carouselIndex} * ((100% + 1rem) / ${itemsPerView})))`;
-  };
-
-  // Calculate items per view based on screen size
-  useEffect(() => {
-    const updateItemsPerView = () => {
-      if (window.innerWidth >= 1024) {
-        setItemsPerView(3);
-      } else if (window.innerWidth >= 640) {
-        setItemsPerView(2);
-      } else {
-        setItemsPerView(1);
-      }
-    };
-
-    updateItemsPerView();
-    window.addEventListener('resize', updateItemsPerView);
-    return () => window.removeEventListener('resize', updateItemsPerView);
-  }, []);
-
-  // Reset carousel index when items per view or cohorts change
-  useEffect(() => {
-    const maxIndex = Math.max(0, cohorts.length - itemsPerView);
-    if (carouselIndex > maxIndex) {
-      setCarouselIndex(Math.max(0, maxIndex));
-    }
-  }, [itemsPerView, cohorts.length, carouselIndex]);
-
-  // Swipe handlers
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      const maxIndex = Math.max(0, cohorts.length - itemsPerView);
-      setCarouselIndex((prev) => Math.min(maxIndex, prev + 1));
-    }
-    
-    if (isRightSwipe) {
-      setCarouselIndex((prev) => Math.max(0, prev - 1));
-    }
-
-    setTouchStart(null);
-    setTouchEnd(null);
-  };
-
   // Redirect enrolled students away from the apply flow
   useEffect(() => {
     if (!authLoading && isAuthenticated && isRegistered) {
       router.replace('/dashboard');
     }
   }, [authLoading, isAuthenticated, isRegistered, router]);
-
-  // Mouse drag handlers for desktop
-  const onMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setTouchStart(e.clientX);
-    setTouchEnd(null);
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setTouchEnd(e.clientX);
-  };
-
-  const onMouseUp = () => {
-    if (!isDragging || !touchStart || !touchEnd) {
-      setIsDragging(false);
-      return;
-    }
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      const maxIndex = Math.max(0, cohorts.length - itemsPerView);
-      setCarouselIndex((prev) => Math.min(maxIndex, prev + 1));
-    }
-    
-    if (isRightSwipe) {
-      setCarouselIndex((prev) => Math.max(0, prev - 1));
-    }
-
-    setIsDragging(false);
-    setTouchStart(null);
-    setTouchEnd(null);
-  };
-
-  const onMouseLeave = () => {
-    setIsDragging(false);
-    setTouchStart(null);
-    setTouchEnd(null);
-  };
 
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedCountryCode, setSelectedCountryCode] = useState("");
@@ -612,172 +490,151 @@ export default function ApplyPage() {
           </AnimatedSection>
 
       <div className="space-y-12">
-        {/* Cohort Details */}
+        {/* Cohort Details — redesigned */}
         <AnimatedSection animation="slideLeft">
           <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-zinc-50">Upcoming Cohorts</h2>
-          {cohortsLoading ? (
-            <div className="text-center py-8 text-cyan-400">Loading cohorts...</div>
-          ) : cohortsError ? (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center text-red-300">
-              {cohortsError}
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-50">Upcoming Cohorts</h2>
+              <p className="mt-1 text-sm text-zinc-500">Choose your start date and apply below.</p>
             </div>
-          ) : cohorts.length === 0 ? (
-            <div className="text-center py-8 text-zinc-400">No upcoming cohorts available at this time.</div>
-          ) : (
-          <div className="relative">
-            {/* Carousel Container */}
-            <div 
-              className="relative overflow-hidden cursor-grab active:cursor-grabbing select-none px-2 sm:px-4"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
-              onMouseDown={onMouseDown}
-              onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp}
-              onMouseLeave={onMouseLeave}
-            >
-              <div 
-                ref={carouselRef}
-                className="flex transition-transform duration-500 ease-out gap-4 py-2"
-                style={{
-                  transform: getCarouselTransform(),
-                  pointerEvents: isDragging ? 'none' : 'auto',
-                }}
-              >
-                {cohorts.map((cohort) => (
-                  <div
-                    key={cohort.id}
-                    className={cn(
-                      "min-w-0 flex-shrink-0 flex-[0_0_100%] sm:flex-[0_0_calc(50%-0.5rem)] lg:flex-[0_0_calc(33.333%-0.67rem)] p-6 transition",
-                      selectedCohort === cohort.id ? cardStyles.selected : cardStyles.base
-                    )}
-                  >
-                    <div className="mb-4 flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-zinc-50">{cohort.name}</h3>
-                      <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        cohort.level?.toLowerCase() === 'beginner' 
-                          ? 'bg-blue-500/20 text-blue-300'
-                          : cohort.level?.toLowerCase() === 'intermediate'
-                          ? 'bg-orange-500/20 text-orange-300'
-                          : cohort.level?.toLowerCase() === 'advanced'
-                          ? 'bg-purple-500/20 text-purple-300'
-                          : 'bg-cyan-500/20 text-cyan-300'
-                      }`}>
-                        {cohort.level}
-                      </span>
-                    </div>
-                    <div className="space-y-2 text-sm text-zinc-300">
-                      <p><span className="font-medium text-zinc-400">Start:</span> {cohort.startDate}</p>
-                      <p><span className="font-medium text-zinc-400">End:</span> {cohort.endDate}</p>
-                      {cohort.status && (
-                        <p><span className="font-medium text-zinc-400">Status:</span> {cohort.status}</p>
-                      )}
-                      <div className="mt-4 space-y-2">
-                        <div className="flex items-center justify-between rounded-lg border border-cyan-400/20 bg-zinc-900/50 p-2">
-                          <span className="text-xs text-zinc-400">Sessions</span>
-                          <span className="font-semibold text-cyan-400">
-                            {cohort.sessions}
-                          </span>
+            {cohortsLoading ? (
+              <div className="flex items-center justify-center py-12 text-cyan-400">Loading cohorts…</div>
+            ) : cohortsError ? (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center text-red-300">
+                {cohortsError}
+              </div>
+            ) : cohorts.length === 0 ? (
+              <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/30 py-12 text-center text-zinc-400">
+                No upcoming cohorts at this time. Check back later.
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-16 bg-gradient-to-l from-black/80 to-transparent z-10" aria-hidden />
+                <div
+                  className="overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide py-2 -mx-2 px-2 sm:-mx-4 sm:px-4"
+                  style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+                >
+                  <div className="flex gap-5 w-max min-w-full pb-1">
+                    {cohorts.map((cohort) => {
+                      const statusLower = (cohort.status || '').toLowerCase();
+                      const isCompleted = statusLower === 'completed' || statusLower === 'ended';
+                      const isActive = statusLower === 'active' || statusLower === 'live';
+                      const isUpcoming = statusLower === 'upcoming' || (!isCompleted && !isActive);
+                      const seatsPct = cohort.seats ? Math.round((cohort.available / cohort.seats) * 100) : 0;
+                      const levelLabel = cohort.level ? cohort.level.charAt(0).toUpperCase() + cohort.level.slice(1).toLowerCase() : 'Beginner';
+
+                      return (
+                        <div
+                          key={cohort.id}
+                          className={cn(
+                            "flex-shrink-0 w-[88vw] sm:w-[44vw] lg:w-[340px] transition scroll-ml-4 sm:scroll-ml-6 rounded-2xl overflow-hidden",
+                            selectedCohort === cohort.id ? "ring-2 ring-cyan-400 ring-offset-2 ring-offset-black" : ""
+                          )}
+                          style={{ scrollSnapAlign: 'start' }}
+                        >
+                          <div
+                            className={cn(
+                              "h-full rounded-2xl border bg-zinc-900/90 p-5 flex flex-col",
+                              isCompleted && "border-zinc-700/60 opacity-80",
+                              isActive && "border-emerald-500/40 shadow-[0_0_24px_rgba(16,185,129,0.12)]",
+                              isUpcoming && !isCompleted && "border-cyan-400/30"
+                            )}
+                          >
+                            {/* Status + level row */}
+                            <div className="flex items-center justify-between gap-2 mb-4">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
+                                  isCompleted && "bg-zinc-600/40 text-zinc-400",
+                                  isActive && "bg-emerald-500/25 text-emerald-300",
+                                  isUpcoming && "bg-cyan-500/25 text-cyan-300"
+                                )}
+                              >
+                                {isActive && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                                {isCompleted ? 'Completed' : isActive ? 'Active' : 'Upcoming'}
+                              </span>
+                              <span
+                                className={cn(
+                                  "rounded-full px-2.5 py-1 text-xs font-medium",
+                                  cohort.level?.toLowerCase() === 'intermediate' && "bg-amber-500/20 text-amber-300",
+                                  cohort.level?.toLowerCase() === 'advanced' && "bg-purple-500/20 text-purple-300",
+                                  (cohort.level?.toLowerCase() === 'beginner' || !cohort.level) && "bg-blue-500/20 text-blue-300",
+                                  cohort.level?.toLowerCase() && !['beginner', 'intermediate', 'advanced'].includes(cohort.level?.toLowerCase()) && "bg-cyan-500/20 text-cyan-300"
+                                )}
+                              >
+                                {levelLabel}
+                              </span>
+                            </div>
+
+                            <h3 className="text-lg font-bold text-zinc-50 mb-1">{cohort.name}</h3>
+                            <p className="text-sm text-zinc-500 mb-4">
+                              {cohort.startDate} → {cohort.endDate}
+                            </p>
+
+                            {/* Stats row */}
+                            <div className="flex items-center gap-4 text-sm mb-4">
+                              <span className="text-zinc-400">
+                                <span className="font-semibold text-zinc-200">{cohort.sessions}</span> sessions
+                              </span>
+                              <span className="text-zinc-500">·</span>
+                              <span className={cohort.available > 0 ? "text-cyan-400" : "text-zinc-500"}>
+                                <span className="font-semibold">{cohort.available}</span> / {cohort.seats} seats
+                              </span>
+                            </div>
+
+                            {/* Seats progress bar */}
+                            <div className="mb-4 h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  cohort.available === 0 && "bg-zinc-600",
+                                  cohort.available > 0 && seatsPct <= 20 && "bg-amber-500/80",
+                                  cohort.available > 0 && seatsPct > 20 && "bg-cyan-500/80"
+                                )}
+                                style={{ width: `${100 - seatsPct}%` }}
+                                aria-hidden
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (cohort.available === 0) return;
+                                setSelectedCohort(cohort.id);
+                                const normalizedLevel = normalizeLevel(cohort.level);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  preferredCohort: cohort.id,
+                                  experienceLevel: normalizedLevel,
+                                }));
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              disabled={cohort.available === 0}
+                              className={cn(
+                                "mt-auto w-full rounded-xl py-3 text-sm font-semibold transition",
+                                cohort.available === 0
+                                  ? "cursor-not-allowed bg-zinc-800 text-zinc-500"
+                                  : selectedCohort === cohort.id
+                                    ? "bg-cyan-500 text-black"
+                                    : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+                              )}
+                            >
+                              {cohort.available === 0
+                                ? "Full"
+                                : selectedCohort === cohort.id
+                                  ? "Selected"
+                                  : "Select cohort"}
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between rounded-lg border border-orange-400/20 bg-zinc-900/50 p-2">
-                          <span className="text-xs text-zinc-400">Seats Available</span>
-                          <span className={`font-semibold ${cohort.available > 0 ? "text-orange-400" : "text-red-400"}`}>
-                            {cohort.available} / {cohort.seats}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (cohort.available === 0) return; // Prevent selection if full
-                        console.log('Cohort selected:', cohort.id, cohort.name);
-                        setSelectedCohort(cohort.id);
-                        const normalizedLevel = normalizeLevel(cohort.level);
-                        setFormData((prev) => ({
-                          ...prev,
-                          preferredCohort: cohort.id,
-                          experienceLevel: normalizedLevel,
-                        }));
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                      }}
-                      disabled={cohort.available === 0}
-                      className={cn(
-                        "mt-4 w-full rounded-lg px-4 py-2 text-sm font-semibold transition",
-                        cohort.available === 0
-                          ? "cursor-not-allowed opacity-50 bg-zinc-800/50 border border-zinc-700 text-zinc-500"
-                          : selectedCohort === cohort.id 
-                            ? buttonStyles.selected 
-                            : buttonStyles.outline
-                      )}
-                    >
-                      {cohort.available === 0 
-                        ? "Full - Not Available" 
-                        : selectedCohort === cohort.id 
-                          ? "Selected" 
-                          : "Select Cohort"}
-                    </button>
+                      );
+                    })}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-
-            {/* Navigation Buttons */}
-            <div className="mt-4 flex items-center justify-center gap-4">
-              <button
-                onClick={() => {
-                  setCarouselIndex((prev) => Math.max(0, prev - 1));
-                }}
-                disabled={carouselIndex === 0}
-                className={`rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 transition ${
-                  carouselIndex === 0
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-zinc-800 text-zinc-300'
-                }`}
-                aria-label="Previous cohort"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              
-              {/* Dots Indicator */}
-              <div className="flex gap-2">
-                {Array.from({ length: Math.ceil(cohorts.length / itemsPerView) }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCarouselIndex(index)}
-                    className={`h-2 rounded-full transition ${
-                      carouselIndex === index
-                        ? 'w-8 bg-cyan-400'
-                        : 'w-2 bg-zinc-600 hover:bg-zinc-500'
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  const maxIndex = Math.max(0, cohorts.length - itemsPerView);
-                  setCarouselIndex((prev) => Math.min(maxIndex, prev + 1));
-                }}
-                disabled={carouselIndex >= Math.max(0, cohorts.length - itemsPerView)}
-                className={`rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 transition ${
-                  carouselIndex >= Math.max(0, cohorts.length - itemsPerView)
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-zinc-800 text-zinc-300'
-                }`}
-                aria-label="Next cohort"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-          )}
+            )}
           </section>
         </AnimatedSection>
 
