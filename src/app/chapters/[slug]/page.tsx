@@ -667,8 +667,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 ) : section.heading !== "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account" && section.images && section.images.length > 0 && (
                   section.heading === "Introduction" && section.images.length === 5 ? (
                     // Circular layout for Introduction section with 5 images
-                    <div className="mt-16 sm:mt-24 lg:mt-12 mb-24 sm:mb-32 lg:mb-6 flex items-center justify-center w-full overflow-hidden lg:overflow-visible">
-                      <div className="relative w-full sm:max-w-3xl lg:max-w-lg aspect-square overflow-visible">
+                    <div className="mt-16 sm:mt-24 lg:mt-12 mb-40 sm:mb-56 lg:mb-24 flex items-center justify-center w-full overflow-hidden lg:overflow-visible">
+                      <div className="relative w-full sm:max-w-3xl lg:max-w-lg aspect-square overflow-visible rounded-3xl border border-zinc-700/40 bg-zinc-950/60 shadow-[0_0_25px_rgba(0,0,0,0.6)]">
                         {/* Futuristic arrows showing the flow: Left (banana) → Right (banana→shoes) → Bottom (shoes→bread) */}
                         <svg className="absolute inset-0 w-full h-full pointer-events-none z-5" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
                           <defs>
@@ -713,18 +713,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           />
                         </svg>
                         
-                        {/* Center image (barter_system) */}
-                        <div className="absolute top-[40%] left-1/2 transform -translate-x-1/2 -translate-y-1/3 z-10 w-[21rem] sm:w-[27rem] lg:w-36">
-                          <ZoomableImage
-                            src={section.images[3].src}
-                            alt={section.images[3].alt}
-                            caption={section.images[3].caption}
-                            className="w-full rounded-lg"
-                            thumbnailClassName="max-h-full"
-                          />
-                        </div>
-                        {/* Top image */}
-                        <div className="absolute -top-16 sm:-top-20 lg:top-[5%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/5 w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
+                        {/* Top image - moved slightly higher and smaller to avoid overlapping center */}
+                        <div className="absolute -top-20 sm:-top-24 lg:top-[0%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-[7.5rem] sm:w-[10rem] lg:w-[8rem] z-20">
                           <ZoomableImage
                             src={section.images[0].src}
                             alt={section.images[0].alt}
@@ -744,7 +734,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           />
                         </div>
                         {/* Bottom image */}
-                        <div className="absolute -bottom-24 sm:-bottom-32 lg:bottom-[5%] left-1/2 transform -translate-x-1/2 lg:translate-y-1/2 w-[9rem] sm:w-[12rem] lg:w-[9rem] z-20">
+                        <div className="absolute -bottom-24 sm:-bottom-32 lg:bottom-[3%] left-1/2 transform -translate-x-1/2 lg:translate-y-1/3 w-[8rem] sm:w-[11rem] lg:w-[8rem] z-20">
                           <ZoomableImage
                             src={section.images[4].src}
                             alt={section.images[4].alt}

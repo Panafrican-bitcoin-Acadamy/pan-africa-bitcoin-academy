@@ -95,21 +95,6 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "1.1 Why Humans Created Money",
-        paragraphs: [
-          "In the earliest communities, people survived through barter trade. They exchanged cattle for salt, beads for grain, or iron tools for cloth. But barter was clumsy. Imagine trying to pay your rent with cassava or buying a motorbike with goats!",
-          "As villages grew and trade stretched across regions, people needed something that everyone would accept. Societies turned to special items: shells, salt, beads, and eventually precious metals like gold and silver. These worked because they were widely trusted, didn't rot easily, and could be carried in your pocket.",
-          "In Africa, cowrie shells became a common currency. In other places, silver and gold coins took center stage. Later, banks issued paper notes backed by those metals. Over centuries, money kept evolving — but its purpose stayed the same: to make trade easier, faster, and more reliable.",
-          "Without money, economies would remain tiny and local. With money, people could build markets, cities, and eventually global trade. Money was the invisible thread that tied human progress together.",
-        ],
-        callouts: [
-          {
-            type: "example",
-            content: "In Africa, cowrie shells became a common currency. In other places, silver and gold coins took center stage.",
-          },
-        ],
-      },
-      {
         heading: "1.2 Functions of Money — Medium of Exchange, Store of Value, Unit of Account",
         paragraphs: [
           "Money isn't just paper or numbers on a screen. It has three powerful functions that make it unique:",
@@ -222,6 +207,21 @@ export const chaptersContent: ChapterContent[] = [
         paragraphs: [
           "Money hasn't always been in the form of coins in your pocket, paper in your wallet, or numbers glowing on a phone screen. The story of money is a long, winding journey — shaped by human needs, survival, and the drive for creativity. It began with simple village trades, grew through precious metals and paper notes, and eventually arrived at the modern fiat currencies we know today.",
           "Each stage of this journey was not random. People kept asking the same question: How can we trade more easily, save value safely, and connect with others across distance and time? The answers they found slowly transformed money into the global force it is today.",
+        ],
+      },
+      {
+        heading: "1.1 Why Humans Created Money",
+        paragraphs: [
+          "In the earliest communities, people survived through barter trade. They exchanged cattle for salt, beads for grain, or iron tools for cloth. But barter was clumsy. Imagine trying to pay your rent with cassava or buying a motorbike with goats!",
+          "As villages grew and trade stretched across regions, people needed something that everyone would accept. Societies turned to special items: shells, salt, beads, and eventually precious metals like gold and silver. These worked because they were widely trusted, didn't rot easily, and could be carried in your pocket.",
+          "In Africa, cowrie shells became a common currency. In other places, silver and gold coins took center stage. Later, banks issued paper notes backed by those metals. Over centuries, money kept evolving — but its purpose stayed the same: to make trade easier, faster, and more reliable.",
+          "Without money, economies would remain tiny and local. With money, people could build markets, cities, and eventually global trade. Money was the invisible thread that tied human progress together.",
+        ],
+        callouts: [
+          {
+            type: "example",
+            content: "In Africa, cowrie shells became a common currency. In other places, silver and gold coins took center stage.",
+          },
         ],
       },
       {
