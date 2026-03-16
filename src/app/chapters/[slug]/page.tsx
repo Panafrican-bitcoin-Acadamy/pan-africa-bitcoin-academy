@@ -713,8 +713,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           />
                         </svg>
                         
-                        {/* Top image - moved slightly higher and smaller to avoid overlapping center */}
-                        <div className="absolute -top-20 sm:-top-24 lg:top-[0%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-[7.5rem] sm:w-[10rem] lg:w-[8rem] z-20">
+                        {/* Top image - made larger but still clear of other elements */}
+                        <div className="absolute -top-20 sm:-top-24 lg:top-[0%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-[10rem] sm:w-[14rem] lg:w-[11rem] z-20">
                           <ZoomableImage
                             src={section.images[0].src}
                             alt={section.images[0].alt}
@@ -783,6 +783,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                                 </tr>
                               </thead>
                               <tbody className="text-zinc-300">
+                                <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
+                                  <td className="px-4 py-3 font-semibold text-cyan-200">Verifiability</td>
+                                  <td className="px-4 py-3">Transactions publicly verifiable on blockchain</td>
+                                  <td className="px-4 py-3">Requires physical testing</td>
+                                  <td className="px-4 py-3">Depends on banks and financial institutions</td>
+                                </tr>
                                 <tr className="border-b border-cyan-400/10 hover:bg-cyan-500/5">
                                   <td className="px-4 py-3 font-semibold text-cyan-200">Scarcity</td>
                                   <td className="px-4 py-3">21 Million coins (fixed Supply)</td>
