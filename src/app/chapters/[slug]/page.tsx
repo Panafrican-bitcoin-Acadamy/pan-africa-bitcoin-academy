@@ -712,7 +712,17 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                             className="drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]"
                           />
                         </svg>
-                        
+
+                        {/* Center image (barter system) */}
+                        <div className="absolute top-[42%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-[14rem] sm:w-[18rem] lg:w-[10rem]">
+                          <ZoomableImage
+                            src={section.images[3].src}
+                            alt={section.images[3].alt}
+                            caption={section.images[3].caption}
+                            className="w-full rounded-lg"
+                            thumbnailClassName="max-h-full"
+                          />
+                        </div>
                         {/* Top image - made larger but still clear of other elements */}
                         <div className="absolute -top-20 sm:-top-24 lg:top-[0%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-[10rem] sm:w-[14rem] lg:w-[11rem] z-20">
                           <ZoomableImage
