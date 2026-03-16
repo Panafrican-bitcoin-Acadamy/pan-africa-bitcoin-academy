@@ -723,8 +723,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                             thumbnailClassName="max-h-full"
                           />
                         </div>
-                        {/* Top image - made larger but still clear of other elements */}
-                        <div className="absolute -top-20 sm:-top-24 lg:top-[0%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/4 w-[10rem] sm:w-[14rem] lg:w-[11rem] z-20">
+                        {/* Top image - lifted higher to clear center image */}
+                        <div className="absolute -top-28 sm:-top-32 lg:top-[-6%] left-1/2 transform -translate-x-1/2 lg:-translate-y-1/3 w-[10rem] sm:w-[14rem] lg:w-[11rem] z-20">
                           <ZoomableImage
                             src={section.images[0].src}
                             alt={section.images[0].alt}
