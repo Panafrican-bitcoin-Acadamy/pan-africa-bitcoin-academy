@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Mail, Github, MessageCircle, Users, Twitter, Music2, Globe } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import { AnimatedHeading } from '@/components/AnimatedHeading';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -152,9 +153,9 @@ export default function ContactPage() {
       <div className="w-full px-4 py-12 sm:px-6 sm:py-16 sm:max-w-7xl sm:mx-auto lg:px-8 lg:py-20">
         <AnimatedSection animation="slideUp">
           <div className="mb-16 text-center w-full">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+            <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
               Get in Touch
-            </h1>
+            </AnimatedHeading>
             <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
               We'd love to hear from you! Connect with us through any of these channels.
             </p>
@@ -173,7 +174,7 @@ export default function ContactPage() {
                     <div className={`rounded-lg ${method.bgColor} p-3`}>
                       <Icon className={`h-6 w-6 ${method.color}`} />
                     </div>
-                    <h3 className="text-xl font-semibold text-zinc-50">{method.name}</h3>
+                    <AnimatedHeading as="h3" className="text-xl font-semibold text-zinc-50">{method.name}</AnimatedHeading>
                   </div>
                   <p className="mb-4 text-sm text-zinc-400">{method.description}</p>
                   <div className="space-y-2">
@@ -203,9 +204,9 @@ export default function ContactPage() {
 
         <AnimatedSection animation="slideUp" delay={700}>
           <div className="mt-16 rounded-xl border border-cyan-400/25 bg-cyan-500/5 p-8 text-center">
-            <h2 className="mb-4 text-2xl font-semibold text-cyan-200">
+            <AnimatedHeading as="h2" className="mb-4 text-2xl font-semibold text-cyan-200">
               Join Our Community
-            </h2>
+            </AnimatedHeading>
             <p className="mb-6 text-zinc-300">
               The best way to stay connected is through our Discord and WhatsApp communities.
               Join us to ask questions, share ideas, and learn together!

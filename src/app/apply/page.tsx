@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/hooks/useAuth';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import { AnimatedHeading } from '@/components/AnimatedHeading';
 import SplitText from '@/components/SplitText';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { sortedCountries, getPhoneRule, type Country } from '@/lib/countries';
@@ -467,7 +468,7 @@ export default function ApplyPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center w-full">
-              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
                   text="Join our Program"
                   tag="span"
@@ -482,7 +483,7 @@ export default function ApplyPage() {
                   rootMargin="-100px"
                   textAlign="center"
                 />
-              </h1>
+              </AnimatedHeading>
               <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
                 Apply to join the Pan-Africa Bitcoin Academy and <b>start</b> your journey toward financial sovereignty.
               </p>
@@ -494,7 +495,7 @@ export default function ApplyPage() {
         <AnimatedSection animation="slideLeft">
           <section className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-zinc-50">Upcoming Cohorts</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-bold tracking-tight text-zinc-50">Upcoming Cohorts</AnimatedHeading>
               <p className="mt-1 text-sm text-zinc-500">Choose your start date and apply below.</p>
             </div>
             {cohortsLoading ? (
@@ -515,7 +516,7 @@ export default function ApplyPage() {
                   style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
                 >
                   <div className="flex gap-5 w-max min-w-full pb-1">
-                    {cohorts.map((cohort) => {
+                    {cohorts.map((cohort, index) => {
                       const statusLower = (cohort.status || '').toLowerCase();
                       const isCompleted = statusLower === 'completed' || statusLower === 'ended';
                       const isActive = statusLower === 'active' || statusLower === 'live';
@@ -527,10 +528,10 @@ export default function ApplyPage() {
                         <div
                           key={cohort.id}
                           className={cn(
-                            "flex-shrink-0 w-[88vw] sm:w-[44vw] lg:w-[340px] transition scroll-ml-4 sm:scroll-ml-6 rounded-2xl overflow-hidden",
+                            "cohort-card-entrance flex-shrink-0 w-[88vw] sm:w-[44vw] lg:w-[340px] transition scroll-ml-4 sm:scroll-ml-6 rounded-2xl overflow-hidden",
                             selectedCohort === cohort.id ? "ring-2 ring-cyan-400 ring-offset-2 ring-offset-black" : ""
                           )}
-                          style={{ scrollSnapAlign: 'start' }}
+                          style={{ scrollSnapAlign: 'start', animationDelay: `${index * 80}ms` }}
                         >
                           <div
                             className={cn(
@@ -641,7 +642,7 @@ export default function ApplyPage() {
         {/* Registration Form */}
         <AnimatedSection animation="slideRight">
           <section className="rounded-2xl border border-cyan-400/30 bg-gradient-to-b from-zinc-900/90 to-black/90 p-6 sm:p-8 shadow-[0_0_40px_rgba(34,211,238,0.15)] ring-1 ring-cyan-400/10">
-          <h2 className="mb-2 text-xl font-semibold text-cyan-200">Application Form</h2>
+          <AnimatedHeading as="h2" className="mb-2 text-xl font-semibold text-cyan-200">Application Form</AnimatedHeading>
           <p className="mb-6 text-sm text-zinc-400">Fill in your details to join the next cohort.</p>
           {submitSuccess && (
             <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200">

@@ -445,6 +445,36 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
   animation: homeSlideRight 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
 }
 
+/* Animated headings (h1, h2, h3) – reveal when in view */
+@keyframes headingReveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-heading-initial {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.animate-heading-reveal {
+  animation: headingReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-heading-initial,
+  .animate-heading-reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Chapter section animations – technological scroll-reveal, section to section */
 @keyframes chapter-section-glow {
   0%, 100% {
@@ -533,5 +563,106 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
 
 .animate-scroll-left:hover {
   animation-play-state: paused;
+}
+
+/* Upcoming Cohorts: staggered card entrance when list loads */
+@keyframes cohortCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cohort-card-entrance {
+  opacity: 0;
+  animation: cohortCardEntrance 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cohort-card-entrance {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Footer: reveal when in view + heading style */
+@keyframes footerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes footerHeadingLine {
+  from {
+    transform: scaleX(0);
+    opacity: 0.6;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.footer-animate-wrapper:not(.footer-inview) .footer-block {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.footer-animate-wrapper.footer-inview .footer-block {
+  animation: footerReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.footer-animate-wrapper.footer-inview .footer-block:nth-child(2) { animation-delay: 0.06s; }
+.footer-animate-wrapper.footer-inview .footer-block:nth-child(3) { animation-delay: 0.12s; }
+.footer-animate-wrapper.footer-inview .footer-block:nth-child(4) { animation-delay: 0.18s; }
+.footer-animate-wrapper.footer-inview .footer-block:nth-child(5) { animation-delay: 0.24s; }
+.footer-animate-wrapper.footer-inview .footer-block:nth-child(6) { animation-delay: 0.3s; }
+
+.footer-animate-wrapper.footer-inview .footer-heading .footer-heading-line {
+  animation: footerHeadingLine 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
+  transform-origin: left;
+}
+
+.footer-heading .footer-heading-line {
+  transform: scaleX(0);
+  opacity: 0.6;
+}
+
+/* Footer heading hover: line grows, subtle glow */
+.footer-heading:hover .footer-heading-line {
+  width: 3rem;
+  opacity: 1;
+}
+
+.footer-heading:hover .footer-heading-text {
+  transform: scale(1.05);
+  letter-spacing: 0.28em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-heading:hover .footer-heading-text {
+    transform: none;
+  }
+  .footer-animate-wrapper:not(.footer-inview) .footer-block,
+  .footer-animate-wrapper.footer-inview .footer-block {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .footer-animate-wrapper.footer-inview .footer-heading .footer-heading-line,
+  .footer-heading .footer-heading-line {
+    animation: none;
+    transform: scaleX(1);
+    opacity: 1;
+  }
 }
 

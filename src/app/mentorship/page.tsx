@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { AnimatedHeading } from "@/components/AnimatedHeading";
 import SplitText from "@/components/SplitText";
 import { AnimatedList } from "@/components/AnimatedList";
 
@@ -102,7 +103,7 @@ export default function MentorshipPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center w-full">
-              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
                   text="Mentorship & Volunteer"
                   tag="span"
@@ -117,7 +118,7 @@ export default function MentorshipPage() {
                   rootMargin="-100px"
                   textAlign="center"
                 />
-              </h1>
+              </AnimatedHeading>
               <p className="w-full mt-6 text-lg text-zinc-400 sm:text-xl sm:max-w-3xl sm:mx-auto">
                 Join us in building Bitcoin education and sovereignty in Africa.
               </p>
@@ -128,7 +129,7 @@ export default function MentorshipPage() {
         {/* Why Mentors Matter */}
         <AnimatedSection animation="slideRight">
           <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <h2 className="text-xl font-semibold text-orange-200">Why Mentors & Volunteers Matter</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Why Mentors & Volunteers Matter</AnimatedHeading>
           <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
             Bitcoin education grows through community, not classrooms.
           </p>
@@ -155,7 +156,7 @@ export default function MentorshipPage() {
         {/* Roles */}
         <AnimatedSection animation="slideLeft">
           <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-zinc-50">Roles You Can Apply For</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Roles You Can Apply For</AnimatedHeading>
           <div className="grid gap-4 sm:grid-cols-2">
             {roles.map((role) => (
               <div
@@ -169,7 +170,7 @@ export default function MentorshipPage() {
                 <div className="mb-4 flex items-center gap-3">
                   <span className="text-3xl">{role.icon}</span>
                   <div>
-                    <h3 className="text-lg font-semibold text-zinc-50">{role.title}</h3>
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-zinc-50">{role.title}</AnimatedHeading>
                     <p className="text-xs text-zinc-400">Time: {role.time}</p>
                   </div>
                 </div>
@@ -197,7 +198,7 @@ export default function MentorshipPage() {
         <AnimatedSection animation="slideUp">
           <section id="application" className="space-y-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-cyan-200 mb-2">Application Form</h2>
+              <AnimatedHeading as="h2" className="text-3xl font-bold text-cyan-200 mb-2">Application Form</AnimatedHeading>
               <p className="text-sm text-zinc-400">Fill out the form below to apply for a mentorship or volunteer role</p>
             </div>
 
@@ -208,7 +209,7 @@ export default function MentorshipPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/20">
                     <span className="text-xl">👤</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-cyan-200">Personal Information</h3>
+                  <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-200">Personal Information</AnimatedHeading>
                 </div>
                 <div className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -281,7 +282,7 @@ export default function MentorshipPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
                     <span className="text-xl">🎯</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-orange-200">Role Selection</h3>
+                  <AnimatedHeading as="h3" className="text-lg font-semibold text-orange-200">Role Selection</AnimatedHeading>
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -332,7 +333,7 @@ export default function MentorshipPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
                     <span className="text-xl">💼</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-purple-200">Experience & Background</h3>
+                  <AnimatedHeading as="h3" className="text-lg font-semibold text-purple-200">Experience & Background</AnimatedHeading>
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -369,7 +370,7 @@ export default function MentorshipPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
                     <span className="text-xl">💚</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-green-200">Motivation & Vision</h3>
+                  <AnimatedHeading as="h3" className="text-lg font-semibold text-green-200">Motivation & Vision</AnimatedHeading>
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -443,7 +444,7 @@ export default function MentorshipPage() {
         {/* Vetting Steps */}
         <AnimatedSection animation="slideRight">
           <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
-          <h2 className="text-xl font-semibold text-purple-200">Our Vetting Process</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-purple-200">Our Vetting Process</AnimatedHeading>
           <div className="space-y-3 text-sm text-zinc-300 sm:text-base">
             <div className="flex items-start gap-2">
               <span className="text-purple-400">1.</span>
@@ -473,7 +474,7 @@ export default function MentorshipPage() {
         <AnimatedSection animation="slideLeft">
           <section className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold text-zinc-50">Our Mentors & Contributors</h2>
+            <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Our Mentors & Contributors</AnimatedHeading>
             <p className="mt-2 text-sm text-zinc-400">
               This academy exists because of the people who choose to stand with us.
             </p>
@@ -504,7 +505,7 @@ export default function MentorshipPage() {
                       <span className="text-3xl">👤</span>
                     )}
                   </div>
-                  <h3 className="mb-2 text-xl font-semibold text-zinc-50">{mentor.name}</h3>
+                  <AnimatedHeading as="h3" className="mb-2 text-xl font-semibold text-zinc-50">{mentor.name}</AnimatedHeading>
                   <p className="mb-2 text-base font-medium text-cyan-300">{mentor.role}</p>
                   {mentor.type && (
                     <p className="mb-3 text-xs font-medium text-orange-300">{mentor.type}</p>
@@ -557,7 +558,7 @@ export default function MentorshipPage() {
         {/* CTA */}
         <AnimatedSection animation="slideUp">
           <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-            <h2 className="text-xl font-semibold text-orange-200">Want to join our mentorship team?</h2>
+            <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Want to join our mentorship team?</AnimatedHeading>
             <p className="mt-4 text-sm text-zinc-300 sm:text-base">
               Help empower the next generation of African Bitcoin talent.
             </p>

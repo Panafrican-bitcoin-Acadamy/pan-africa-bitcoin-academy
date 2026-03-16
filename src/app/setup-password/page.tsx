@@ -2,7 +2,8 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Check, Circle } from 'lucide-react';
+import { getPasswordRequirementStatuses, validatePassword, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA } from '@/lib/passwordValidation';
 
 function SetupPasswordContent() {
   const searchParams = useSearchParams();
@@ -75,8 +76,9 @@ function SetupPasswordContent() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors[0] || 'Password does not meet requirements');
       return;
     }
 
@@ -276,7 +278,31 @@ function SetupPasswordContent() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500">At least 8 characters with uppercase, lowercase, number, and special character</p>
+                <div className="mt-2">
+                  <p className="mb-1.5 text-xs font-medium text-zinc-400">
+                    {PASSWORD_REQUIREMENTS_HEADING} / {PASSWORD_REQUIREMENTS_HEADING_TIGRINYA}
+                  </p>
+                  <div className="space-y-1.5">
+                    {getPasswordRequirementStatuses(password).map((req) => (
+                      <div
+                        key={req.id}
+                        className={req.met ? 'text-green-400' : 'text-zinc-500'}
+                        style={{ transition: 'color 0.2s ease' }}
+                      >
+                        <span className="inline-flex items-start gap-2 text-xs">
+                          {req.met ? (
+                            <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-green-400" aria-hidden />
+                          ) : (
+                            <Circle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-zinc-500" aria-hidden />
+                          )}
+                          <span className={req.met ? 'text-green-400/90' : 'text-zinc-500'}>
+                            {req.label} / {req.labelTigrinya}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-300">

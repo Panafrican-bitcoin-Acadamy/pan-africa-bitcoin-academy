@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { AlertTriangle, Shield, Lock, UserX, Code2, Bug, CheckCircle2, X } from "lucide-react";
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { AnimatedHeading } from "@/components/AnimatedHeading";
 import {
   investmentScams,
   socialScams,
@@ -107,9 +108,9 @@ export default function ScamPage() {
           <AnimatedSection animation="slideUp" delay={0}>
             <section id="hero" className="scroll-mt-24">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-8 sm:p-10 lg:p-12">
-                <h1 className="text-2xl font-bold tracking-tight text-zinc-50 sm:text-3xl lg:text-4xl xl:text-5xl max-w-4xl">
+                <AnimatedHeading as="h1" className="text-2xl font-bold tracking-tight text-zinc-50 sm:text-3xl lg:text-4xl xl:text-5xl max-w-4xl">
                   Understanding Bitcoin Scams – From General to High-Risk Scams
-                </h1>
+                </AnimatedHeading>
                 <p className="mt-5 max-w-3xl text-zinc-300 leading-relaxed text-base sm:text-lg">
                   Scams in Bitcoin and crypto often exploit <strong className="text-zinc-100">human psychology</strong>,{" "}
                   <strong className="text-zinc-100">technical confusion</strong>, and{" "}
@@ -154,9 +155,9 @@ export default function ScamPage() {
                       <Shield className="h-6 w-6 text-cyan-400" />
                       <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Section 1</span>
                     </div>
-                    <h2 className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
+                    <AnimatedHeading as="h2" className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
                       Investment & Trading Scams
-                    </h2>
+                    </AnimatedHeading>
                     <p className="mt-2 text-cyan-200/90 font-medium text-lg">
                       The Illusion of Easy Profit
                     </p>
@@ -212,7 +213,7 @@ export default function ScamPage() {
                   </div>
                 </div>
                 <div className="p-8 sm:p-10 lg:p-12 border-t border-zinc-700/80">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</h3>
+                  <AnimatedHeading as="h3" className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</AnimatedHeading>
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {investmentScams.map((card, i) => (
                       <div key={i} className="rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3 hover:border-cyan-500/30 transition-colors">
@@ -327,9 +328,9 @@ export default function ScamPage() {
                       <UserX className="h-6 w-6 text-cyan-400" />
                       <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Section 2</span>
                     </div>
-                    <h2 className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
+                    <AnimatedHeading as="h2" className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
                       Impersonation, Social Engineering & Psychological Scams
-                    </h2>
+                    </AnimatedHeading>
                     <p className="mt-2 text-cyan-200/90 font-medium text-lg">
                       Manipulating Trust Instead of Technology
                     </p>
@@ -356,7 +357,7 @@ export default function ScamPage() {
                   </div>
                 </div>
                 <div className="p-8 sm:p-10 lg:p-12 border-t border-zinc-700/80">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</h3>
+                  <AnimatedHeading as="h3" className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</AnimatedHeading>
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {socialScams.map((card, i) => (
                       <div key={i} className="rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3 hover:border-cyan-500/30 transition-colors">
@@ -368,9 +369,9 @@ export default function ScamPage() {
 
                   {/* Case Study: Celebrity Romance Scam */}
                   <div className="mt-12 rounded-xl border border-amber-500/30 bg-amber-500/5 p-6 sm:p-8">
-                    <h3 className="text-lg font-bold text-amber-200 sm:text-xl">
+                    <AnimatedHeading as="h3" className="text-lg font-bold text-amber-200 sm:text-xl">
                       Case Study: Celebrity Romance Scam
-                    </h3>
+                    </AnimatedHeading>
                     <div className="mt-6 grid gap-6 lg:grid-cols-12">
                       <div className="lg:col-span-4 flex flex-col items-center gap-4">
                         <button
@@ -480,9 +481,9 @@ export default function ScamPage() {
                       <Code2 className="h-6 w-6 text-cyan-400" />
                       <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Section 3</span>
                     </div>
-                    <h2 className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
+                    <AnimatedHeading as="h2" className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
                       Phishing, Wallet & Technical Exploitation
-                    </h2>
+                    </AnimatedHeading>
                     <p className="mt-2 text-cyan-200/90 font-medium text-lg">
                       Stealing Access Instead of Asking for Money
                     </p>
@@ -523,7 +524,7 @@ export default function ScamPage() {
                   </div>
                 </div>
                 <div className="p-8 sm:p-10 lg:p-12 border-t border-zinc-700/80">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</h3>
+                  <AnimatedHeading as="h3" className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</AnimatedHeading>
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {technicalScams.map((card, i) => (
                       <div key={i} className="rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3 hover:border-cyan-500/30 transition-colors">
@@ -638,9 +639,9 @@ export default function ScamPage() {
                       <Bug className="h-6 w-6 text-cyan-400" />
                       <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Section 4</span>
                     </div>
-                    <h2 className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
+                    <AnimatedHeading as="h2" className="text-xl font-bold text-zinc-50 sm:text-2xl lg:text-3xl">
                       Malware, Extortion & Criminal Coercion
-                    </h2>
+                    </AnimatedHeading>
                     <p className="mt-2 text-cyan-200/90 font-medium text-lg">
                       Forcing Payment Through Fear or System Compromise
                     </p>
@@ -664,7 +665,7 @@ export default function ScamPage() {
                   </div>
                 </div>
                 <div className="p-8 sm:p-10 lg:p-12 border-t border-zinc-700/80">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</h3>
+                  <AnimatedHeading as="h3" className="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Scams in this category</AnimatedHeading>
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {malwareScams.map((card, i) => (
                       <div key={i} className="rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3 hover:border-cyan-500/30 transition-colors">
@@ -728,7 +729,7 @@ export default function ScamPage() {
           <AnimatedSection animation="fadeIn" delay={0}>
             <section id="section-pattern" className="scroll-mt-24">
               <div className="rounded-2xl border border-cyan-800/50 bg-cyan-500/5 p-8 sm:p-10 lg:p-12">
-                <h2 className="text-lg font-bold text-cyan-200 sm:text-xl">A pattern across all four categories</h2>
+                <AnimatedHeading as="h2" className="text-lg font-bold text-cyan-200 sm:text-xl">A pattern across all four categories</AnimatedHeading>
                 <p className="mt-4 text-zinc-300 leading-relaxed max-w-4xl">
                   Every scam ultimately exploits one of three weaknesses:
                 </p>
@@ -754,7 +755,7 @@ export default function ScamPage() {
           <AnimatedSection animation="fadeIn" delay={40}>
             <section id="section-testimony" className="scroll-mt-24">
               <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-8 sm:p-10 lg:p-12">
-                <h2 className="text-lg font-bold text-amber-200 sm:text-xl">Real-World Testimony: "The Day I Got Scammed"</h2>
+                <AnimatedHeading as="h2" className="text-lg font-bold text-amber-200 sm:text-xl">Real-World Testimony: "The Day I Got Scammed"</AnimatedHeading>
                 <div className="mt-6 space-y-4 text-zinc-300 leading-relaxed">
                   <p>
                     Learning from the experiences of real people is one of the most powerful ways to understand how scams work. The following article is a first-hand account from someone who lost money to a cryptocurrency scam. It walks through the emotions, the red flags they missed, and the lessons they learned the hard way.
@@ -802,9 +803,9 @@ export default function ScamPage() {
                   <CheckCircle2 className="h-6 w-6 text-green-400" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-green-400">How to stay safe</span>
                 </div>
-                <h2 className="text-xl font-bold text-zinc-50 sm:text-2xl">
+                <AnimatedHeading as="h2" className="text-xl font-bold text-zinc-50 sm:text-2xl">
                   How Students Can Protect Themselves
-                </h2>
+                </AnimatedHeading>
                 <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <li className="flex items-start gap-3 rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3">
                     <Lock className="h-5 w-5 flex-shrink-0 text-green-400 mt-0.5" />

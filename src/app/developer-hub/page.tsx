@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ExternalLink, Code, GitBranch, Users, Calendar, Award, BookOpen, Rocket, HelpCircle, Github, Mail, Zap, Database, TrendingUp, FlaskConical } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import { AnimatedHeading } from '@/components/AnimatedHeading';
 import SplitText from '@/components/SplitText';
 import { AnimatedList } from '@/components/AnimatedList';
 
@@ -80,7 +81,7 @@ export default function DeveloperHubPage() {
                   <Code className="h-16 w-16 text-orange-400" />
                 </div>
               </div>
-              <h1 className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
+              <AnimatedHeading as="h1" className="text-5xl font-bold tracking-tight text-zinc-50 sm:text-6xl lg:text-7xl">
                 <SplitText
                   text="Developer Hub"
                   tag="span"
@@ -95,7 +96,7 @@ export default function DeveloperHubPage() {
                   rootMargin="-100px"
                   textAlign="center"
                 />
-              </h1>
+              </AnimatedHeading>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Your roadmap to becoming a Bitcoin developer. Connect, learn, and contribute to the global Bitcoin ecosystem.
               </p>
@@ -109,7 +110,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-cyan-500/20 p-2">
                 <Rocket className="h-6 w-6 text-cyan-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Developer Path Overview</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Developer Path Overview</AnimatedHeading>
             </div>
             <div className="space-y-4 text-zinc-300">
               <p className="text-lg text-zinc-100">
@@ -118,7 +119,7 @@ export default function DeveloperHubPage() {
               
               <div className="mt-6 grid gap-6 md:grid-cols-3">
                 <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-                  <h3 className="mb-2 font-semibold text-cyan-300">What Bitcoin Developers Do</h3>
+                  <AnimatedHeading as="h3" className="mb-2 font-semibold text-cyan-300">What Bitcoin Developers Do</AnimatedHeading>
                   <ul className="space-y-1 text-sm text-zinc-400">
                     <li>• Build wallets & LN apps</li>
                     <li>• Contribute to Bitcoin Core</li>
@@ -129,7 +130,7 @@ export default function DeveloperHubPage() {
                 </div>
                 
                 <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-                  <h3 className="mb-2 font-semibold text-orange-300">Skills Required</h3>
+                  <AnimatedHeading as="h3" className="mb-2 font-semibold text-orange-300">Skills Required</AnimatedHeading>
                   <ul className="space-y-1 text-sm text-zinc-400">
                     <li>• Basic programming</li>
                     <li>• Git version control</li>
@@ -140,7 +141,7 @@ export default function DeveloperHubPage() {
                 </div>
                 
                 <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-                  <h3 className="mb-2 font-semibold text-purple-300">What You Can Contribute</h3>
+                  <AnimatedHeading as="h3" className="mb-2 font-semibold text-purple-300">What You Can Contribute</AnimatedHeading>
                   <ul className="space-y-1 text-sm text-zinc-400">
                     <li>• Wallet development</li>
                     <li>• Lightning Network apps</li>
@@ -161,13 +162,13 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-orange-500/20 p-2">
                 <BookOpen className="h-6 w-6 text-orange-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Beginner Developer Starter Guide</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Beginner Developer Starter Guide</AnimatedHeading>
             </div>
 
             <div className="space-y-8">
               {/* 1. Bitcoin Intro */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-orange-300">1. Bitcoin Intro (For Developers)</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-orange-300">1. Bitcoin Intro (For Developers)</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://bitcoin.org/en/developer-documentation"
@@ -219,7 +220,7 @@ export default function DeveloperHubPage() {
 
               {/* 2. Learn the Tools */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-cyan-300">2. Learn the Tools</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-cyan-300">2. Learn the Tools</AnimatedHeading>
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Bitcoin Core */}
                   <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-5 flex flex-col h-full">
@@ -453,7 +454,7 @@ export default function DeveloperHubPage() {
 
               {/* 3. Developer Roadmap */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-purple-300">3. Developer Roadmap</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-purple-300">3. Developer Roadmap</AnimatedHeading>
                 <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-6">
                   <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                     <div className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 font-semibold text-black">
@@ -501,13 +502,13 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-purple-500/20 p-2">
                 <Users className="h-6 w-6 text-purple-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Global Bitcoin Developer Communities</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Global Bitcoin Developer Communities</AnimatedHeading>
             </div>
 
             <div className="space-y-6">
               {/* Bitcoin Core Community */}
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
-                <h3 className="mb-4 text-xl font-semibold text-orange-300">Bitcoin Core Community</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-orange-300">Bitcoin Core Community</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://github.com/bitcoin/bitcoin"
@@ -550,7 +551,7 @@ export default function DeveloperHubPage() {
 
               {/* Other Communities */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-purple-300">Other Communities</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-purple-300">Other Communities</AnimatedHeading>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                     <h4 className="mb-3 font-semibold text-cyan-300">Chaincode Labs</h4>
@@ -661,7 +662,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-orange-500/20 p-2">
                 <Zap className="h-6 w-6 text-orange-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Bitcoin Mining Resources</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Bitcoin Mining Resources</AnimatedHeading>
             </div>
             <p className="mb-6 text-zinc-400">
               Comprehensive resources, tools, and communities for students to study and research Bitcoin mining. Learn about mining technology, energy trends, practical experiments, and industry developments.
@@ -670,7 +671,7 @@ export default function DeveloperHubPage() {
             <div className="space-y-8">
               {/* 1. Educational Resources & About Sites */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-orange-300">Educational Resources & About Sites</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-orange-300">Educational Resources & About Sites</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://bitcoin.org/en/how-it-works"
@@ -722,7 +723,7 @@ export default function DeveloperHubPage() {
 
               {/* 2. Environmental & Energy Trends */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-green-300">Environmental & Energy Trends</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-green-300">Environmental & Energy Trends</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://bitcoinminingcouncil.com"
@@ -765,7 +766,7 @@ export default function DeveloperHubPage() {
 
               {/* 3. Practical Hands-On Mining Experiments */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-purple-300">Practical Hands-On Mining Experiments</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-purple-300">Practical Hands-On Mining Experiments</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://github.com/bitcoin/bitcoin/tree/master/src/miner"
@@ -828,7 +829,7 @@ export default function DeveloperHubPage() {
 
               {/* 4. Tools, APIs, and Data Sources for Developers */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-cyan-300">🛠️ Tools, APIs, and Data Sources for Developers</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-cyan-300">🛠️ Tools, APIs, and Data Sources for Developers</AnimatedHeading>
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Mining Pool APIs */}
                   <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-5">
@@ -982,7 +983,7 @@ export default function DeveloperHubPage() {
 
               {/* 5. Current Industry & Market Developments */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-blue-300">Current Industry & Market Developments</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-blue-300">Current Industry & Market Developments</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
                     href="https://www.miningpoolstats.stream/bitcoin"
@@ -998,7 +999,7 @@ export default function DeveloperHubPage() {
 
               {/* 6. Bitcoin Mining Communities */}
               <div>
-                <h3 className="mb-4 text-xl font-semibold text-purple-300">👥 Bitcoin Mining Communities</h3>
+                <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-purple-300">👥 Bitcoin Mining Communities</AnimatedHeading>
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Official Forums & Discussion Boards */}
                   <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-5">
@@ -1086,7 +1087,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-cyan-500/20 p-2">
                 <Users className="h-6 w-6 text-cyan-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Mentors & Guest Developers</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Mentors & Guest Developers</AnimatedHeading>
             </div>
             <p className="mb-6 text-zinc-400">
               Meet the experienced Bitcoin developers who have been willing to work with us as mentors and guest developers, sharing their knowledge and guiding your journey.
@@ -1118,7 +1119,7 @@ export default function DeveloperHubPage() {
                         )}
                   </div>
                   <div className="flex-1">
-                        <h3 className="font-semibold text-zinc-100">{mentor.name}</h3>
+                        <AnimatedHeading as="h3" className="font-semibold text-zinc-100">{mentor.name}</AnimatedHeading>
                         <p className="text-sm text-cyan-300">{mentor.role}</p>
                         {mentor.type && (
                           <p className="text-xs text-orange-300">{mentor.type}</p>
@@ -1196,20 +1197,20 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-orange-500/20 p-2">
                 <Calendar className="h-6 w-6 text-orange-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Developer Meetings, Workshops & Meetups</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Developer Meetings, Workshops & Meetups</AnimatedHeading>
             </div>
             <div className="space-y-4">
               {/* TODO: Events will be populated from Supabase Events table */}
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold text-zinc-100">Lightning Builder Hangout</h3>
+                  <AnimatedHeading as="h3" className="font-semibold text-zinc-100">Lightning Builder Hangout</AnimatedHeading>
                   <span className="text-sm text-zinc-400">Feb 16, 2025</span>
                 </div>
                 <p className="text-sm text-zinc-400">Monthly online Q&A session for Lightning developers</p>
               </div>
               <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold text-zinc-100">Bitcoin Dev Kampala Meetup</h3>
+                  <AnimatedHeading as="h3" className="font-semibold text-zinc-100">Bitcoin Dev Kampala Meetup</AnimatedHeading>
                   <span className="text-sm text-zinc-400">Last Friday of every month</span>
                 </div>
                 <p className="text-sm text-zinc-400">Local meetup for Bitcoin developers in Uganda</p>
@@ -1225,7 +1226,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-green-500/20 p-2">
                 <Award className="h-6 w-6 text-green-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Developer Opportunities for Africans</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Developer Opportunities for Africans</AnimatedHeading>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[
@@ -1243,7 +1244,7 @@ export default function DeveloperHubPage() {
                   rel="noopener noreferrer"
                   className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4 transition hover:border-green-500/50 hover:bg-zinc-900"
                 >
-                  <h3 className="mb-2 font-semibold text-green-300">{opp.name}</h3>
+                  <AnimatedHeading as="h3" className="mb-2 font-semibold text-green-300">{opp.name}</AnimatedHeading>
                   <p className="text-sm text-zinc-400">{opp.desc}</p>
                 </a>
               ))}
@@ -1258,7 +1259,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-purple-500/20 p-2">
                 <Rocket className="h-6 w-6 text-purple-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Build Your First Portfolio Project</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Build Your First Portfolio Project</AnimatedHeading>
             </div>
             <p className="mb-6 text-zinc-400">
               Get started with these project ideas. We provide guidance and resources, not step-by-step tutorials.
@@ -1278,7 +1279,7 @@ export default function DeveloperHubPage() {
                   key={idx}
                   className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4 transition hover:border-purple-500/50"
                 >
-                  <h3 className="font-semibold text-purple-300">{project}</h3>
+                  <AnimatedHeading as="h3" className="font-semibold text-purple-300">{project}</AnimatedHeading>
                 </div>
               ))}
             </div>
@@ -1292,7 +1293,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-yellow-500/20 p-2">
                 <Award className="h-6 w-6 text-yellow-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Certification Path (Optional)</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Certification Path (Optional)</AnimatedHeading>
             </div>
             <p className="mb-6 text-zinc-400">
               Earn a certificate by demonstrating your involvement in the Bitcoin developer community.
@@ -1322,7 +1323,7 @@ export default function DeveloperHubPage() {
               <div className="rounded-lg bg-cyan-500/20 p-2">
                 <HelpCircle className="h-6 w-6 text-cyan-400" />
               </div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Developer FAQs</h2>
+              <AnimatedHeading as="h2" className="text-2xl font-semibold text-zinc-50">Developer FAQs</AnimatedHeading>
             </div>
             <div className="space-y-4">
               {[
@@ -1374,7 +1375,7 @@ export default function DeveloperHubPage() {
           {/* CTA Section */}
           <AnimatedSection animation="slideUp">
             <section className="rounded-xl border border-orange-400/25 bg-gradient-to-r from-orange-500/10 to-cyan-500/10 p-8 text-center">
-            <h2 className="mb-4 text-2xl font-semibold text-zinc-50">Ready to Start Your Developer Journey?</h2>
+            <AnimatedHeading as="h2" className="mb-4 text-2xl font-semibold text-zinc-50">Ready to Start Your Developer Journey?</AnimatedHeading>
             <p className="mb-6 text-zinc-400">
               Join our community and connect with other Bitcoin developers in Africa.
             </p>

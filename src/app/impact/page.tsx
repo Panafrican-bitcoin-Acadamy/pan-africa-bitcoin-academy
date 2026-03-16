@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import { AnimatedHeading } from '@/components/AnimatedHeading';
 import SplitText from '@/components/SplitText';
 
 interface ImpactMetrics {
@@ -188,7 +189,7 @@ export default function ImpactPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
-              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
                   text="Our Impact in Building Bitcoin Education & Sovereignty in Africa"
                   tag="span"
@@ -203,7 +204,7 @@ export default function ImpactPage() {
                   rootMargin="-100px"
                   textAlign="center"
                 />
-              </h1>
+              </AnimatedHeading>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Tracking our progress openly. Updated after every cohort.
               </p>
@@ -214,7 +215,7 @@ export default function ImpactPage() {
         {/* Key Metrics */}
         <AnimatedSection animation="slideLeft">
           <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-zinc-50">Key Metrics</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Key Metrics</AnimatedHeading>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {displayMetrics.length > 0 ? (
               displayMetrics.map((metric, index) => (
@@ -253,11 +254,11 @@ export default function ImpactPage() {
         {/* Student Progress Charts */}
         <AnimatedSection animation="slideRight">
           <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-zinc-50">Student Progress</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Student Progress</AnimatedHeading>
           {progressMetrics ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
-                <h3 className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</h3>
+                <AnimatedHeading as="h3" className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</AnimatedHeading>
                 <div className="text-3xl font-bold text-orange-400">{animatedCompletionRate}%</div>
                 <div className="mt-2 h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
                   <div 
@@ -267,7 +268,7 @@ export default function ImpactPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
-                <h3 className="mb-2 text-sm font-medium text-zinc-400">Attendance Rate</h3>
+                <AnimatedHeading as="h3" className="mb-2 text-sm font-medium text-zinc-400">Attendance Rate</AnimatedHeading>
                 <div className="text-3xl font-bold text-cyan-400">{animatedAttendanceRate}%</div>
                 <div className="mt-2 h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
                   <div 
@@ -277,7 +278,7 @@ export default function ImpactPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                <h3 className="mb-2 text-sm font-medium text-zinc-400">Avg Assignment Score</h3>
+                <AnimatedHeading as="h3" className="mb-2 text-sm font-medium text-zinc-400">Avg Assignment Score</AnimatedHeading>
                 <div className="text-3xl font-bold text-purple-400">{animatedAssignmentScore}%</div>
                 <div className="mt-2 h-2 w-full rounded-full bg-zinc-900 overflow-hidden">
                   <div 
@@ -291,21 +292,21 @@ export default function ImpactPage() {
             // Show placeholder with 0 values while loading
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
-                <h3 className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</h3>
+                <AnimatedHeading as="h3" className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</AnimatedHeading>
                 <div className="text-3xl font-bold text-orange-400">0%</div>
                 <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
                   <div className="h-2 rounded-full bg-orange-400" style={{ width: '0%' }}></div>
                 </div>
               </div>
               <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
-                <h3 className="mb-2 text-sm font-medium text-zinc-400">Attendance Rate</h3>
+                <AnimatedHeading as="h3" className="mb-2 text-sm font-medium text-zinc-400">Attendance Rate</AnimatedHeading>
                 <div className="text-3xl font-bold text-cyan-400">0%</div>
                 <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
                   <div className="h-2 rounded-full bg-cyan-400" style={{ width: '0%' }}></div>
                 </div>
               </div>
               <div className="rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                <h3 className="mb-2 text-sm font-medium text-zinc-400">Avg Assignment Score</h3>
+                <AnimatedHeading as="h3" className="mb-2 text-sm font-medium text-zinc-400">Avg Assignment Score</AnimatedHeading>
                 <div className="text-3xl font-bold text-purple-400">0%</div>
                 <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
                   <div className="h-2 rounded-full bg-purple-400" style={{ width: '0%' }}></div>
@@ -317,7 +318,7 @@ export default function ImpactPage() {
 
         {/* Cohort History */}
         <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-zinc-50">Cohort History</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Cohort History</AnimatedHeading>
           {cohorts.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {cohorts.map((cohort) => (
@@ -325,7 +326,7 @@ export default function ImpactPage() {
                   key={cohort.id}
                   className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
                 >
-                  <h3 className="mb-4 text-lg font-semibold text-cyan-200">{cohort.name}</h3>
+                  <AnimatedHeading as="h3" className="mb-4 text-lg font-semibold text-cyan-200">{cohort.name}</AnimatedHeading>
                   <div className="space-y-2 text-sm text-zinc-300">
                     <p><span className="font-medium text-zinc-400">Students:</span> {cohort.students}</p>
                     <p><span className="font-medium text-zinc-400">Completion Rate:</span> {cohort.completionRate}%</p>
@@ -351,7 +352,7 @@ export default function ImpactPage() {
         {/* Graduate Outcomes */}
         <AnimatedSection animation="slideRight">
           <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <h2 className="text-xl font-semibold text-orange-200">Graduate Outcomes</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Graduate Outcomes</AnimatedHeading>
           <p className="text-sm text-zinc-300 sm:text-base">What our students are expected to achieve:</p>
           <ul className="mt-4 space-y-2">
             {outcomes.map((outcome, index) => (
@@ -367,7 +368,7 @@ export default function ImpactPage() {
         {/* Sats Reward Economy */}
         <AnimatedSection animation="slideLeft">
           <section className="space-y-4 rounded-xl border border-purple-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
-          <h2 className="text-xl font-semibold text-purple-200">Sats Reward Economy</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-purple-200">Sats Reward Economy</AnimatedHeading>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-400">
@@ -406,7 +407,7 @@ export default function ImpactPage() {
         {/* Testimonials */}
         <AnimatedSection animation="slideRight">
           <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-zinc-50">Student Testimonials</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Student Testimonials</AnimatedHeading>
           {testimonials.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-3">
               {testimonials.map((testimonial) => (
@@ -452,7 +453,7 @@ export default function ImpactPage() {
         {/* Download Report */}
         <AnimatedSection animation="slideUp">
           <section className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-          <h2 className="text-xl font-semibold text-cyan-200">Download Impact Report</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-cyan-200">Download Impact Report</AnimatedHeading>
           <p className="mt-2 text-sm text-zinc-300 sm:text-base">
             Get our comprehensive 1–2 page PDF report with mission, results, charts, stats, photos, and quotes.
           </p>
@@ -468,7 +469,7 @@ export default function ImpactPage() {
         {/* Support Section */}
         <AnimatedSection animation="slideLeft">
           <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <h2 className="text-xl font-semibold text-orange-200">Want to help us expand our impact?</h2>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Want to help us expand our impact?</AnimatedHeading>
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
               href="/donate"

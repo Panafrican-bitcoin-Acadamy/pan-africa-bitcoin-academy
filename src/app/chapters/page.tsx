@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSession } from "@/hooks/useSession";
 import { Download, FileText, BookOpen, ExternalLink, AlertTriangle } from 'lucide-react';
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { AnimatedHeading } from "@/components/AnimatedHeading";
 import { AnimatedList } from "@/components/AnimatedList";
 import { SyllabusModal } from "@/components/SyllabusModal";
 import SplitText from "@/components/SplitText";
@@ -163,7 +164,7 @@ export default function ChaptersPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
-              <h1 className="text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <AnimatedHeading as="h1" className="text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
                   text="Learning Path"
                   tag="span"
@@ -178,7 +179,7 @@ export default function ChaptersPage() {
                   rootMargin="-100px"
                   textAlign="center"
                 />
-              </h1>
+              </AnimatedHeading>
               <div className="mx-auto mt-8 max-w-4xl">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-xl sm:text-2xl lg:text-3xl font-semibold">
                   <div className="flex items-center gap-3 text-cyan-300">
@@ -206,7 +207,7 @@ export default function ChaptersPage() {
           {/* Learning Path Progress Bar */}
           <AnimatedSection animation="slideRight">
             <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-            <h2 className="mb-6 text-center text-xl font-semibold text-cyan-200">Your Progress Through the Levels</h2>
+            <AnimatedHeading as="h2" className="mb-6 text-center text-xl font-semibold text-cyan-200">Your Progress Through the Levels</AnimatedHeading>
             <div className="relative flex items-center justify-between">
               <div className="relative flex flex-1 items-center">
                 {/* Level I */}
@@ -620,7 +621,7 @@ export default function ChaptersPage() {
           {/* Study Materials */}
           <div className="mb-16">
             <AnimatedSection animation="slideUp">
-              <h2 className="mb-3 text-2xl font-semibold text-orange-300 sm:text-3xl">Study Materials</h2>
+              <AnimatedHeading as="h2" className="mb-3 text-2xl font-semibold text-orange-300 sm:text-3xl">Study Materials</AnimatedHeading>
               <p className="mb-8 text-base text-zinc-300 sm:text-lg">
                 Download essential Bitcoin resources and books to deepen your understanding:
               </p>
@@ -639,9 +640,9 @@ export default function ChaptersPage() {
                     <FileText className="h-6 w-6 text-orange-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-orange-300 transition group-hover:text-orange-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-orange-300 transition group-hover:text-orange-200">
                       Bitcoin: A Peer-to-Peer Electronic Cash System
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Satoshi Nakamoto (2008)</p>
                   </div>
                 </div>
@@ -673,9 +674,9 @@ export default function ChaptersPage() {
                     <BookOpen className="h-6 w-6 text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-cyan-300 transition group-hover:text-cyan-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-300 transition group-hover:text-cyan-200">
                       The Little Bitcoin Book
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Bitcoin Collective (2019)</p>
                   </div>
                 </div>
@@ -707,9 +708,9 @@ export default function ChaptersPage() {
                     <BookOpen className="h-6 w-6 text-purple-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-purple-300 transition group-hover:text-purple-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-purple-300 transition group-hover:text-purple-200">
                       Mastering Bitcoin
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Andreas M. Antonopoulos</p>
                   </div>
                 </div>
@@ -741,9 +742,9 @@ export default function ChaptersPage() {
                     <BookOpen className="h-6 w-6 text-yellow-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-yellow-300 transition group-hover:text-yellow-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-yellow-300 transition group-hover:text-yellow-200">
                       The Bitcoin Standard
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Saifedean Ammous (2018)</p>
                   </div>
                 </div>
@@ -775,9 +776,9 @@ export default function ChaptersPage() {
                     <BookOpen className="h-6 w-6 text-green-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-green-300 transition group-hover:text-green-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-green-300 transition group-hover:text-green-200">
                       Programming Bitcoin
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Jimmy Song (2019)</p>
                   </div>
                 </div>
@@ -809,9 +810,9 @@ export default function ChaptersPage() {
                     <BookOpen className="h-6 w-6 text-blue-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-blue-300 transition group-hover:text-blue-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-blue-300 transition group-hover:text-blue-200">
                       Layered Money
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Nik Bhatia (2021)</p>
                   </div>
                 </div>
@@ -843,9 +844,9 @@ export default function ChaptersPage() {
                     <BookOpen className="h-6 w-6 text-teal-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-teal-300 transition group-hover:text-teal-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-teal-300 transition group-hover:text-teal-200">
                       The Little Book of Bitcoin in Tigrigna
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">ትግርኛ ትርጉም</p>
                   </div>
                 </div>
@@ -877,9 +878,9 @@ export default function ChaptersPage() {
                     <BookOpen className="h-6 w-6 text-rose-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-rose-300 transition group-hover:text-rose-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-rose-300 transition group-hover:text-rose-200">
                       Bitcoin Development Philosophy
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Kalle Rosenbaum & Linnéa Rosenbaum</p>
                   </div>
                 </div>
@@ -909,9 +910,9 @@ export default function ChaptersPage() {
                     <AlertTriangle className="h-6 w-6 text-amber-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-amber-300 transition group-hover:text-amber-200">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-amber-300 transition group-hover:text-amber-200">
                       Understanding Bitcoin Scams
-                    </h3>
+                    </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Pan-Africa Bitcoin Academy</p>
                   </div>
                 </div>
@@ -941,7 +942,7 @@ export default function ChaptersPage() {
               <AnimatedSection key={level.id} animation={animationType}>
                 <div className="mb-16">
                 <div className="mb-8">
-                  <h2 className="text-3xl font-semibold text-zinc-50 sm:text-4xl">{level.name}</h2>
+                  <AnimatedHeading as="h2" className="text-3xl font-semibold text-zinc-50 sm:text-4xl">{level.name}</AnimatedHeading>
                   <p className="mt-2 text-base text-zinc-400">{level.description}</p>
                 </div>
 
@@ -970,9 +971,9 @@ export default function ChaptersPage() {
                                 {chapter.difficulty}
                               </span>
                             </div>
-                            <h3 className="mt-1 text-lg font-semibold text-zinc-50 group-hover:text-cyan-100">
+                            <AnimatedHeading as="h3" className="mt-1 text-lg font-semibold text-zinc-50 group-hover:text-cyan-100">
                               {chapter.title}
-                            </h3>
+                            </AnimatedHeading>
                           </div>
                         </div>
                       </div>
@@ -1105,7 +1106,7 @@ export default function ChaptersPage() {
           {/* Coming Soon Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 rounded-xl border border-purple-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
-            <h2 className="mb-6 text-2xl font-semibold text-purple-200">Coming Soon</h2>
+            <AnimatedHeading as="h2" className="mb-6 text-2xl font-semibold text-purple-200">Coming Soon</AnimatedHeading>
             <p className="mb-4 text-sm text-zinc-300">
               We're constantly expanding our curriculum. Here's what's coming next:
             </p>
@@ -1125,7 +1126,7 @@ export default function ChaptersPage() {
           {/* Footer CTA */}
           <AnimatedSection animation="slideRight">
             <div className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-            <h2 className="mb-4 text-2xl font-semibold text-orange-200">Ready to start learning?</h2>
+            <AnimatedHeading as="h2" className="mb-4 text-2xl font-semibold text-orange-200">Ready to start learning?</AnimatedHeading>
             <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
                 href="/apply"

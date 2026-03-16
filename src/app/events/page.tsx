@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PageContainer } from '@/components/PageContainer';
+import { AnimatedHeading } from '@/components/AnimatedHeading';
 import { supabaseAdmin } from '@/lib/supabase';
 import { Calendar as CalendarIcon, MapPin, Users } from 'lucide-react';
 
@@ -87,9 +88,9 @@ export default async function EventsPage() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-bold text-zinc-50 mb-3 line-clamp-2">
+                  <AnimatedHeading as="h3" className="text-xl font-bold text-zinc-50 mb-3 line-clamp-2">
                     {event.name}
-                  </h3>
+                  </AnimatedHeading>
 
                   {/* Description */}
                   {event.description && (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AnimatedSection } from '@/components/AnimatedSection';
+import { AnimatedHeading } from '@/components/AnimatedHeading';
 import Image from 'next/image';
 import { inputStyles, labelStyles, formStyles, buttonStyles, cardStyles, alertStyles, cn } from '@/lib/styles';
 import { FormGrid } from '@/components/ui';
@@ -70,9 +71,9 @@ export default function SponsorPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
-              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 Sponsor a Student
-              </h1>
+              </AnimatedHeading>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 Help a student access Bitcoin education. Your sponsorship covers their learning journey and sats rewards.
               </p>
@@ -83,7 +84,7 @@ export default function SponsorPage() {
             {/* Sponsorship Type Selection */}
             <AnimatedSection animation="slideRight">
               <section className="space-y-6 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-                <h2 className="text-xl font-semibold text-cyan-200">Choose Sponsorship Type</h2>
+                <AnimatedHeading as="h2" className="text-xl font-semibold text-cyan-200">Choose Sponsorship Type</AnimatedHeading>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <button
                     onClick={() => {
@@ -96,7 +97,7 @@ export default function SponsorPage() {
                         : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
                     }`}
                   >
-                    <h3 className="mb-2 text-lg font-semibold text-orange-200">General Sponsorship</h3>
+                    <AnimatedHeading as="h3" className="mb-2 text-lg font-semibold text-orange-200">General Sponsorship</AnimatedHeading>
                     <p className="text-sm text-zinc-300">
                       Support the academy generally. Your contribution helps all students through sats rewards, infrastructure, and growth.
                     </p>
@@ -109,7 +110,7 @@ export default function SponsorPage() {
                         : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
                     }`}
                   >
-                    <h3 className="mb-2 text-lg font-semibold text-cyan-200">Sponsor Specific Student</h3>
+                    <AnimatedHeading as="h3" className="mb-2 text-lg font-semibold text-cyan-200">Sponsor Specific Student</AnimatedHeading>
                     <p className="text-sm text-zinc-300">
                       Choose a specific student to sponsor. Your support goes directly to their education and sats rewards.
                     </p>
@@ -122,7 +123,7 @@ export default function SponsorPage() {
             {sponsorType === 'student' && (
               <AnimatedSection animation="slideLeft">
                 <section className="space-y-6 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-                  <h2 className="text-xl font-semibold text-cyan-200">Select a Student</h2>
+                  <AnimatedHeading as="h2" className="text-xl font-semibold text-cyan-200">Select a Student</AnimatedHeading>
                   {loading ? (
                     <div className="text-center py-8 text-zinc-400">Loading students...</div>
                   ) : students.length > 0 ? (
@@ -178,7 +179,7 @@ export default function SponsorPage() {
             {/* Sponsorship Form */}
             <AnimatedSection animation="slideUp">
               <section className="space-y-6 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-                <h2 className="text-xl font-semibold text-orange-200">Sponsorship Details</h2>
+                <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Sponsorship Details</AnimatedHeading>
                 <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -270,7 +271,7 @@ export default function SponsorPage() {
                             : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
                         )}
                       >
-                        <h3 className="mb-1 text-sm font-semibold text-cyan-200">Lightning Network</h3>
+                        <AnimatedHeading as="h3" className="mb-1 text-sm font-semibold text-cyan-200">Lightning Network</AnimatedHeading>
                         <p className="text-xs text-zinc-400">Fast, low-fee payments</p>
                       </button>
                       <button
@@ -283,7 +284,7 @@ export default function SponsorPage() {
                             : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
                         )}
                       >
-                        <h3 className="mb-1 text-sm font-semibold text-orange-200">On-Chain</h3>
+                        <AnimatedHeading as="h3" className="mb-1 text-sm font-semibold text-orange-200">On-Chain</AnimatedHeading>
                         <p className="text-xs text-zinc-400">Traditional Bitcoin transaction</p>
                       </button>
                     </div>
@@ -291,9 +292,9 @@ export default function SponsorPage() {
 
                   {/* Payment QR Code and Address */}
                   <div className="rounded-xl border border-purple-500/25 bg-black/80 p-6">
-                    <h3 className="mb-4 text-lg font-semibold text-purple-200">
+                    <AnimatedHeading as="h3" className="mb-4 text-lg font-semibold text-purple-200">
                       {formData.paymentMethod === 'lightning' ? 'Lightning Network Payment' : 'On-Chain Payment'}
-                    </h3>
+                    </AnimatedHeading>
                     <div className="flex flex-col items-center gap-4">
                       <div className="rounded-xl border border-purple-400/30 bg-zinc-900/60 p-3">
                         <img
@@ -344,7 +345,7 @@ export default function SponsorPage() {
             {/* What Sponsorship Covers */}
             <AnimatedSection animation="slideRight">
               <section className="space-y-4 rounded-xl border border-green-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
-                <h2 className="text-xl font-semibold text-green-200">What Your Sponsorship Covers</h2>
+                <AnimatedHeading as="h2" className="text-xl font-semibold text-green-200">What Your Sponsorship Covers</AnimatedHeading>
                 <ul className="mt-4 space-y-2 text-sm text-zinc-300 sm:text-base">
                   <li className="flex items-start gap-2">
                     <span className="text-green-400">✓</span>

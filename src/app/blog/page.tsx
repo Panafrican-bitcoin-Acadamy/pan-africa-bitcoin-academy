@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { AnimatedHeading } from "@/components/AnimatedHeading";
 import SplitText from "@/components/SplitText";
 
 const categories = [
@@ -280,7 +281,7 @@ export default function BlogPage() {
           {/* Header Title + Mission */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
-              <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
                   text="Bitcoin Stories, Ideas & Experiences"
                   tag="span"
@@ -295,7 +296,7 @@ export default function BlogPage() {
                   rootMargin="-100px"
                   textAlign="center"
                 />
-              </h1>
+              </AnimatedHeading>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
                 A community-driven publication featuring essays, insights, and experiences from graduates of the Pan-Africa Bitcoin Academy — exploring the future of Bitcoin in Africa and beyond.
               </p>
@@ -303,7 +304,7 @@ export default function BlogPage() {
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">💡</span>
                   <div className="text-left">
-                    <h3 className="mb-2 text-lg font-semibold text-purple-200">Pre-Education Ideas</h3>
+                    <AnimatedHeading as="h3" className="mb-2 text-lg font-semibold text-purple-200">Pre-Education Ideas</AnimatedHeading>
                     <p className="text-sm text-zinc-300">
                       Are you curious about Bitcoin but haven't started learning yet?
                       <br />
@@ -333,9 +334,9 @@ export default function BlogPage() {
                   BLOG OF THE MONTH
                 </span>
               </div>
-              <h2 className="mb-3 text-2xl font-semibold text-orange-200 sm:text-3xl">
+              <AnimatedHeading as="h2" className="mb-3 text-2xl font-semibold text-orange-200 sm:text-3xl">
                 {blogOfTheMonth.title}
-              </h2>
+              </AnimatedHeading>
               <p className="mb-4 text-base text-zinc-300">{blogOfTheMonth.excerpt}</p>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -376,7 +377,7 @@ export default function BlogPage() {
           {featuredPosts.length > 0 && (
             <AnimatedSection animation="slideLeft">
               <div className="mb-16">
-              <h2 className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">Featured Articles</h2>
+              <AnimatedHeading as="h2" className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">Featured Articles</AnimatedHeading>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {featuredPosts.map((post) => (
                   <Link
@@ -400,9 +401,9 @@ export default function BlogPage() {
                       {categories.find(c => c.id === post.category)?.name}
                     </span>
                   </div>
-                  <h3 className="mb-3 text-xl font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
+                  <AnimatedHeading as="h3" className="mb-3 text-xl font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
                     {post.title}
-                  </h3>
+                  </AnimatedHeading>
                   <p className="mb-4 text-sm leading-relaxed text-zinc-400">{post.excerpt}</p>
                   <div className="mt-auto space-y-2 border-t border-cyan-400/10 pt-4">
                     <div className="flex items-center justify-between text-xs text-zinc-400">
@@ -430,7 +431,7 @@ export default function BlogPage() {
           {/* Categories Filter */}
           <AnimatedSection animation="slideRight">
             <div className="mb-12">
-            <h2 className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">Browse by Category</h2>
+            <AnimatedHeading as="h2" className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">Browse by Category</AnimatedHeading>
             <div className="flex flex-wrap gap-3">
               {categories.map((category) => (
                 <button
@@ -459,9 +460,9 @@ export default function BlogPage() {
           {!loading && (
             <AnimatedSection animation="slideLeft">
               <div className="mb-16">
-              <h2 className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">
+              <AnimatedHeading as="h2" className="mb-6 text-2xl font-semibold text-zinc-50 sm:text-3xl">
                 {selectedCategory === "all" ? "All Articles" : categories.find(c => c.id === selectedCategory)?.name}
-              </h2>
+              </AnimatedHeading>
               {selectedCategory !== "all" && (
                 <div className="mb-6 rounded-xl border border-cyan-400/25 bg-cyan-400/10 p-4">
                   <p className="text-sm text-zinc-300 leading-relaxed">
@@ -510,9 +511,9 @@ export default function BlogPage() {
                       {categories.find(c => c.id === post.category)?.name}
                     </span>
                   </div>
-                  <h3 className="mb-3 text-lg font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
+                  <AnimatedHeading as="h3" className="mb-3 text-lg font-semibold text-zinc-50 group-hover:text-cyan-200 transition">
                     {post.title}
-                  </h3>
+                  </AnimatedHeading>
                   <p className="mb-4 flex-1 text-sm leading-relaxed text-zinc-400">{post.excerpt}</p>
                   <div className="mt-auto space-y-2 border-t border-cyan-400/10 pt-4">
                     <div className="flex items-center gap-2">
@@ -546,7 +547,7 @@ export default function BlogPage() {
           <AnimatedSection animation="slideUp">
             <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <div className="text-center">
-              <h2 className="mb-4 text-2xl font-semibold text-cyan-200">Write for Us</h2>
+              <AnimatedHeading as="h2" className="mb-4 text-2xl font-semibold text-cyan-200">Write for Us</AnimatedHeading>
               <p className="mb-2 text-base text-zinc-300">
                 Want to publish your Bitcoin story?
               </p>
@@ -564,10 +565,10 @@ export default function BlogPage() {
 
           {/* Submission Guidelines */}
           <div className="rounded-xl border border-purple-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
-            <h2 className="mb-6 text-2xl font-semibold text-purple-200">What We Publish</h2>
+            <AnimatedHeading as="h2" className="mb-6 text-2xl font-semibold text-purple-200">What We Publish</AnimatedHeading>
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <h3 className="mb-3 text-lg font-semibold text-purple-200">Student Essays</h3>
+                <AnimatedHeading as="h3" className="mb-3 text-lg font-semibold text-purple-200">Student Essays</AnimatedHeading>
                 <ul className="space-y-2 text-sm text-zinc-300">
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400">•</span>
@@ -588,7 +589,7 @@ export default function BlogPage() {
                 </ul>
               </div>
               <div>
-                <h3 className="mb-3 text-lg font-semibold text-purple-200">Use Cases & Stories</h3>
+                <AnimatedHeading as="h3" className="mb-3 text-lg font-semibold text-purple-200">Use Cases & Stories</AnimatedHeading>
                 <ul className="space-y-2 text-sm text-zinc-300">
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400">•</span>
@@ -609,7 +610,7 @@ export default function BlogPage() {
                 </ul>
               </div>
               <div>
-                <h3 className="mb-3 text-lg font-semibold text-purple-200">Technical & Development</h3>
+                <AnimatedHeading as="h3" className="mb-3 text-lg font-semibold text-purple-200">Technical & Development</AnimatedHeading>
                 <ul className="space-y-2 text-sm text-zinc-300">
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400">•</span>
@@ -630,7 +631,7 @@ export default function BlogPage() {
                 </ul>
               </div>
               <div>
-                <h3 className="mb-3 text-lg font-semibold text-purple-200">Vision & Ideas</h3>
+                <AnimatedHeading as="h3" className="mb-3 text-lg font-semibold text-purple-200">Vision & Ideas</AnimatedHeading>
                 <ul className="space-y-2 text-sm text-zinc-300">
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400">•</span>

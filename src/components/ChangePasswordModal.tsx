@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Key, Eye, EyeOff } from 'lucide-react';
-import { validatePassword, getPasswordRequirements } from '@/lib/passwordValidation';
+import { X, Key, Eye, EyeOff, Check, Circle } from 'lucide-react';
+import { validatePassword, getPasswordRequirementStatuses, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA } from '@/lib/passwordValidation';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -203,9 +203,31 @@ export function ChangePasswordModal({ isOpen, onClose, userEmail }: ChangePasswo
                   )}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-zinc-500">
-                {getPasswordRequirements()}
-              </p>
+              <div className="mt-2">
+                <p className="mb-1.5 text-xs font-medium text-zinc-400">
+                  {PASSWORD_REQUIREMENTS_HEADING} / {PASSWORD_REQUIREMENTS_HEADING_TIGRINYA}
+                </p>
+                <div className="space-y-1.5">
+                  {getPasswordRequirementStatuses(formData.newPassword).map((req) => (
+                    <div
+                      key={req.id}
+                      className={req.met ? 'text-green-400' : 'text-zinc-500'}
+                      style={{ transition: 'color 0.2s ease' }}
+                    >
+                      <span className="inline-flex items-start gap-2 text-xs">
+                        {req.met ? (
+                          <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-green-400" aria-hidden />
+                        ) : (
+                          <Circle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-zinc-500" aria-hidden />
+                        )}
+                        <span className={req.met ? 'text-green-400/90' : 'text-zinc-500'}>
+                          {req.label} / {req.labelTigrinya}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
               {errors.newPassword && (
                 <p className="mt-1 text-sm text-red-400">{errors.newPassword}</p>
               )}

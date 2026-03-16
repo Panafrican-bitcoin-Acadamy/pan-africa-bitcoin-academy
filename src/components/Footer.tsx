@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { FooterAnimated } from "@/components/FooterAnimated";
 
 export function Footer() {
   return (
@@ -25,12 +26,13 @@ export function Footer() {
         </svg>
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
-        {/* Top grid */}
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-8 sm:px-8 sm:py-14">
+        <FooterAnimated>
+        {/* Top grid: mobile 2-col for link groups, desktop 12-col */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-10 lg:grid-cols-12 lg:gap-10">
 
-          {/* Brand column */}
-          <div className="lg:col-span-4 flex flex-col gap-4">
+          {/* Brand column — full width on mobile */}
+          <div className="footer-block col-span-2 flex flex-col gap-4 lg:col-span-4">
             <Link href="/" className="flex items-center gap-3 group w-fit">
               <div className="relative flex h-12 w-12 items-center justify-center">
                 <Image
@@ -82,9 +84,9 @@ export function Footer() {
           </div>
 
           {/* Learn column */}
-          <div className="lg:col-span-2">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-300">Learn</h4>
-            <ul className="space-y-2 text-xs">
+          <div className="footer-block lg:col-span-2">
+            <FooterHeading>Learn</FooterHeading>
+            <ul className="space-y-1.5 text-xs sm:space-y-2">
               <FooterLink href="/chapters">Chapters</FooterLink>
               <FooterLink href="/scam">Scam Awareness</FooterLink>
               <FooterLink href="/developer-hub">Developer Hub</FooterLink>
@@ -94,9 +96,9 @@ export function Footer() {
           </div>
 
           {/* Academy column */}
-          <div className="lg:col-span-2">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-300">Academy</h4>
-            <ul className="space-y-2 text-xs">
+          <div className="footer-block lg:col-span-2">
+            <FooterHeading>Academy</FooterHeading>
+            <ul className="space-y-1.5 text-xs sm:space-y-2">
               <FooterLink href="/about">About Us</FooterLink>
               <FooterLink href="/impact">Impact</FooterLink>
               <FooterLink href="/mentorship">Mentorship</FooterLink>
@@ -106,9 +108,9 @@ export function Footer() {
           </div>
 
           {/* Get Involved column */}
-          <div className="lg:col-span-2">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-300">Get Involved</h4>
-            <ul className="space-y-2 text-xs">
+          <div className="footer-block lg:col-span-2">
+            <FooterHeading>Get Involved</FooterHeading>
+            <ul className="space-y-1.5 text-xs sm:space-y-2">
               <FooterLink href="/apply">Apply Now</FooterLink>
               <FooterLink href="/donate">Donate</FooterLink>
               <FooterLink href="/sponsor">Sponsor</FooterLink>
@@ -117,19 +119,20 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Student column */}
-          <div className="lg:col-span-2">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-300">Students</h4>
-            <ul className="space-y-2 text-xs">
+          {/* Students column */}
+          <div className="footer-block lg:col-span-2">
+            <FooterHeading>Students</FooterHeading>
+            <ul className="space-y-1.5 text-xs sm:space-y-2">
               <FooterLink href="/dashboard">Dashboard</FooterLink>
               <FooterLink href="/blog/submit">Write a Post</FooterLink>
               <FooterLink href="/chapters">Start Learning</FooterLink>
             </ul>
           </div>
         </div>
+        </FooterAnimated>
 
         {/* Divider */}
-        <div className="my-8 h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
+        <div className="mt-6 mb-6 h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent sm:my-8" />
 
         {/* Bottom bar */}
         <div className="flex flex-col gap-3 text-[11px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
@@ -162,10 +165,21 @@ export function Footer() {
   );
 }
 
+function FooterHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h4 className="footer-heading group mb-2 sm:mb-3 cursor-default">
+      <span className="footer-heading-text inline-block text-[11px] font-bold uppercase tracking-[0.2em] sm:text-xs bg-gradient-to-r from-orange-400 via-cyan-400 to-cyan-300 bg-clip-text text-transparent transition-transform duration-300 ease-out group-hover:scale-105 group-hover:tracking-[0.28em]">
+        {children}
+      </span>
+      <span className="footer-heading-line mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-orange-400/80 to-cyan-400/80 transition-all duration-300 ease-out group-hover:w-12 group-hover:opacity-100" aria-hidden />
+    </h4>
+  );
+}
+
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <li>
-      <Link href={href} className="text-zinc-500 transition-colors hover:text-cyan-300">
+      <Link href={href} className="block py-1 text-zinc-500 transition-colors hover:text-cyan-300 sm:py-0 sm:inline-block">
         {children}
       </Link>
     </li>

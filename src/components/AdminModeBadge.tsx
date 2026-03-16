@@ -20,8 +20,8 @@ export function AdminModeBadge() {
   if (!showBadge) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] bg-orange-500/20 border border-orange-500/50 rounded-lg px-4 py-2 shadow-lg backdrop-blur-sm">
-      <p className="text-orange-400 text-sm font-semibold">Admin Mode</p>
+    <div className="fixed top-[3.6rem] left-4 z-[9998] bg-orange-500/20 border border-orange-500/50 rounded-lg px-3 py-1.5 shadow-lg backdrop-blur-sm pointer-events-none select-none">
+      <p className="text-orange-400 text-xs sm:text-sm font-semibold">Admin Mode</p>
     </div>
   );
 }
