@@ -21,12 +21,20 @@ export async function POST(req: NextRequest) {
       return addSecurityHeaders(response);
     }
 
-    const { firstName, lastName, email, password } = body;
+    const { firstName, lastName, email, password, phone } = body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password) {
       const response = NextResponse.json(
         { error: 'firstName, lastName, email, and password are required' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
+    }
+
+    if (typeof phone !== 'string' || !phone.trim()) {
+      const response = NextResponse.json(
+        { error: 'WhatsApp number (phone) is required' },
         { status: 400 }
       );
       return addSecurityHeaders(response);
@@ -115,7 +123,18 @@ export async function POST(req: NextRequest) {
     const tokenExpiry = new Date();
     tokenExpiry.setHours(tokenExpiry.getHours() + 72); // Expires in 72 hours
 
-    // Create profile - minimal data, phone is empty/null
+    // Normalize phone: required; store digits and leading + only (E.164-friendly)
+    const phoneRaw = phone.trim().replace(/\s/g, '').replace(/[^\d+]/g, '');
+    if (phoneRaw.length < 8) {
+      const response = NextResponse.json(
+        { error: 'Please enter a valid WhatsApp number with country code' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(response);
+    }
+    const phoneToStore = phoneRaw.startsWith('+') ? phoneRaw : `+${phoneRaw}`;
+
+    // Create profile - minimal data; phone from sign-up if provided
     // This is just account creation, not academy enrollment
     // Email is NOT verified yet - user must verify via email
     const { data: newProfile, error: profileError } = await supabaseAdmin
@@ -124,7 +143,7 @@ export async function POST(req: NextRequest) {
         name: `${sanitizedFirstName} ${sanitizedLastName}`,
         email: emailValidation.normalized,
         password_hash: passwordHash,
-        phone: null, // Keep phone empty - will be filled during application
+        phone: phoneToStore,
         status: 'New', // Just signed up, not enrolled yet
         email_verification_token: verificationToken,
         email_verification_token_expiry: tokenExpiry.toISOString(),

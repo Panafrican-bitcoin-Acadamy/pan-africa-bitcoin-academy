@@ -107,5 +107,12 @@ export function getPasswordRequirementStatuses(password: string): PasswordRequir
 export const PASSWORD_REQUIREMENTS_HEADING = 'Requirements';
 export const PASSWORD_REQUIREMENTS_HEADING_TIGRINYA = 'ከተማልኦም ዘለካ';
 
+/** Confirm Password label: English / Tigrinya */
+export const CONFIRM_PASSWORD_LABEL = 'Confirm Password';
+export const CONFIRM_PASSWORD_LABEL_TIGRINYA = 'ፓስዎርድ ኣረጋግጽ';
+
+/** Confirm New Password label (e.g. change-password): English / Tigrinya */
+export const CONFIRM_NEW_PASSWORD_LABEL = 'Confirm New Password';
+
 
 

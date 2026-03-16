@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Key, Eye, EyeOff, Check, Circle } from 'lucide-react';
-import { validatePassword, getPasswordRequirementStatuses, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA } from '@/lib/passwordValidation';
+import { validatePassword, getPasswordRequirementStatuses, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA, CONFIRM_NEW_PASSWORD_LABEL, CONFIRM_PASSWORD_LABEL_TIGRINYA } from '@/lib/passwordValidation';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -121,7 +121,7 @@ export function ChangePasswordModal({ isOpen, onClose, userEmail }: ChangePasswo
       style={{ zIndex: 99999 }}
     >
       <div 
-        className="w-full max-w-md rounded-2xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-2xl"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-2xl scrollbar-modal"
         style={{ position: 'relative', zIndex: 100000 }}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -235,7 +235,7 @@ export function ChangePasswordModal({ isOpen, onClose, userEmail }: ChangePasswo
 
             <div>
               <label className="mb-2 block text-sm font-medium text-zinc-300">
-                Confirm New Password
+                {CONFIRM_NEW_PASSWORD_LABEL} / {CONFIRM_PASSWORD_LABEL_TIGRINYA}
               </label>
               <div className="relative">
                 <input
@@ -244,9 +244,24 @@ export function ChangePasswordModal({ isOpen, onClose, userEmail }: ChangePasswo
                   autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 pr-10 text-zinc-100 placeholder-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                  className={`w-full rounded-lg border bg-zinc-900/50 px-4 py-3 pr-24 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 ${
+                    formData.confirmPassword.length > 0
+                      ? formData.newPassword === formData.confirmPassword
+                        ? 'border-emerald-500/70 focus:border-emerald-500 focus:ring-emerald-500/20'
+                        : 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-zinc-700 focus:border-cyan-400/50 focus:ring-cyan-400/20'
+                  }`}
                   placeholder="Confirm your new password"
                 />
+                {formData.confirmPassword.length > 0 && (
+                  <span className="absolute right-14 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {formData.newPassword === formData.confirmPassword ? (
+                      <Check className="h-5 w-5 text-emerald-400" aria-hidden />
+                    ) : (
+                      <X className="h-5 w-5 text-red-400" aria-hidden />
+                    )}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}

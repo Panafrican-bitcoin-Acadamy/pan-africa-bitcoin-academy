@@ -2,8 +2,8 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Eye, EyeOff, Check, Circle } from 'lucide-react';
-import { getPasswordRequirementStatuses, validatePassword, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA } from '@/lib/passwordValidation';
+import { Eye, EyeOff, Check, Circle, X } from 'lucide-react';
+import { getPasswordRequirementStatuses, validatePassword, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA, CONFIRM_PASSWORD_LABEL, CONFIRM_PASSWORD_LABEL_TIGRINYA } from '@/lib/passwordValidation';
 
 function SetupPasswordContent() {
   const searchParams = useSearchParams();
@@ -306,7 +306,7 @@ function SetupPasswordContent() {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-300">
-                  Confirm Password <span className="text-red-400">*</span>
+                  {CONFIRM_PASSWORD_LABEL} / {CONFIRM_PASSWORD_LABEL_TIGRINYA} <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -317,9 +317,24 @@ function SetupPasswordContent() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 pr-10 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className={`w-full rounded-lg border bg-zinc-800 px-3 py-2.5 pr-24 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 ${
+                      confirmPassword.length > 0
+                        ? password === confirmPassword
+                          ? 'border-emerald-500/70 focus:border-emerald-500 focus:ring-emerald-500'
+                          : 'border-red-500/70 focus:border-red-500 focus:ring-red-500'
+                        : 'border-zinc-700 focus:border-cyan-500 focus:ring-cyan-500'
+                    }`}
                     placeholder="Confirm your password"
                   />
+                  {confirmPassword.length > 0 && (
+                    <span className="absolute right-14 top-1/2 -translate-y-1/2 pointer-events-none">
+                      {password === confirmPassword ? (
+                        <Check className="h-4 w-4 text-emerald-400" aria-hidden />
+                      ) : (
+                        <X className="h-4 w-4 text-red-400" aria-hidden />
+                      )}
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}

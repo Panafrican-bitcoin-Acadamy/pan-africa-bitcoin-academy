@@ -327,6 +327,48 @@ select:focus {
   display: none;  /* Chrome, Safari and Opera */
 }
 
+/* Global aesthetic scrollbar – orange-to-cyan, same look site-wide */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(249, 115, 22) rgba(39, 39, 42, 0.9);
+}
+
+/* WebKit: all visible scrollbars (main page, modals, overflow areas) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.95) 0%, rgba(39, 39, 42, 0.9) 50%, rgba(24, 24, 27, 0.95) 100%);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.9) 0%, rgba(34, 211, 238, 0.9) 100%);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(251, 146, 60, 0.95) 0%, rgba(56, 189, 248, 0.95) 100%);
+}
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, rgb(249, 115, 22) 0%, rgb(34, 211, 238) 100%);
+}
+/* Horizontal scrollbar track (same dark style) */
+::-webkit-scrollbar-track:horizontal {
+  background: linear-gradient(90deg, rgba(24, 24, 27, 0.95) 0%, rgba(39, 39, 42, 0.9) 50%, rgba(24, 24, 27, 0.95) 100%);
+}
+::-webkit-scrollbar-thumb:horizontal {
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.9) 0%, rgba(34, 211, 238, 0.9) 100%);
+}
+::-webkit-scrollbar-thumb:horizontal:hover {
+  background: linear-gradient(90deg, rgba(251, 146, 60, 0.95) 0%, rgba(56, 189, 248, 0.95) 100%);
+}
+
+/* Modals/popups use same look (Firefox needs this on the element) */
+.scrollbar-modal {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(249, 115, 22) rgba(39, 39, 42, 0.9);
+}
+
 /* Mobile-First: Touch-friendly targets */
 /* Minimum touch target size: 44x44px (Apple HIG) / 48x48px (Material Design) */
 button,

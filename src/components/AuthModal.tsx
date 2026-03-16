@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Eye, EyeOff } from 'lucide-react';
-import { validatePassword, getPasswordRequirements } from '@/lib/passwordValidation';
+import { Eye, EyeOff, Check, Circle, X } from 'lucide-react';
+import { validatePassword, getPasswordRequirementStatuses, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA, CONFIRM_PASSWORD_LABEL, CONFIRM_PASSWORD_LABEL_TIGRINYA } from '@/lib/passwordValidation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface AuthModalProps {
@@ -20,6 +20,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     needsVerification: false,
@@ -180,6 +181,10 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
         newErrors.confirmPassword = 'Passwords do not match';
       }
 
+      if (!formData.phone?.trim()) {
+        newErrors.phone = 'WhatsApp number is required';
+      }
+
       if (Object.keys(newErrors).length === 0) {
         try {
           setLoading(true);
@@ -190,6 +195,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
               firstName: formData.firstName,
               lastName: formData.lastName,
               email: formData.email,
+              phone: formData.phone.trim(),
               password: formData.password,
             }),
           });
@@ -253,6 +259,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
       firstName: '',
       lastName: '',
       email: '',
+      phone: '',
       password: '',
       confirmPassword: '',
       needsVerification: false,
@@ -281,7 +288,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md mx-4 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-8 shadow-2xl"
+        className="relative w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-8 shadow-2xl scrollbar-modal"
         onClick={(e) => e.stopPropagation()}
         style={{ 
           margin: 'auto',
@@ -365,13 +372,14 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
                   htmlFor="firstName"
                   className="mb-2 block text-sm font-medium text-zinc-300"
                 >
-                  First Name
+                  First Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   id="firstName"
                   name="firstName"
                   autoComplete="given-name"
+                  required
                   value={formData.firstName}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
@@ -386,13 +394,14 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
                   htmlFor="lastName"
                   className="mb-2 block text-sm font-medium text-zinc-300"
                 >
-                  Last Name
+                  Last Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   id="lastName"
                   name="lastName"
                   autoComplete="family-name"
+                  required
                   value={formData.lastName}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
@@ -410,12 +419,13 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
               htmlFor="email"
               className="mb-2 block text-sm font-medium text-zinc-300"
             >
-              Email Address
+              Email Address <span className="text-red-400">*</span>
             </label>
             <input
               type="email"
               id="email"
               name="email"
+              required
               value={formData.email}
               onChange={handleChange}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
@@ -426,12 +436,38 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
             )}
           </div>
 
+          {!isSignIn && (
+            <div>
+              <label
+                htmlFor="phone"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
+                WhatsApp Number <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                autoComplete="tel"
+                required
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+                placeholder="e.g. +291 7 123 4567"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Include country code.</p>
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-400">{errors.phone}</p>
+              )}
+            </div>
+          )}
+
           <div>
             <label
               htmlFor="password"
               className="mb-2 block text-sm font-medium text-zinc-300"
             >
-              Password
+              Password <span className="text-red-400">*</span>
             </label>
             <div className="relative">
               <input
@@ -439,6 +475,7 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
                 id="password"
                 name="password"
                 autoComplete={isSignIn ? "current-password" : "new-password"}
+                required
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 pr-10 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
@@ -458,9 +495,31 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
               </button>
             </div>
             {!isSignIn && (
-              <p className="mt-1 text-xs text-zinc-500">
-                {getPasswordRequirements()}
-              </p>
+              <div className="mt-2">
+                <p className="mb-1.5 text-xs font-medium text-zinc-400">
+                  {PASSWORD_REQUIREMENTS_HEADING} / {PASSWORD_REQUIREMENTS_HEADING_TIGRINYA}
+                </p>
+                <div className="space-y-1.5">
+                  {getPasswordRequirementStatuses(formData.password).map((req) => (
+                    <div
+                      key={req.id}
+                      className={req.met ? 'text-green-400' : 'text-zinc-500'}
+                      style={{ transition: 'color 0.2s ease' }}
+                    >
+                      <span className="inline-flex items-start gap-2 text-xs">
+                        {req.met ? (
+                          <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-green-400" aria-hidden />
+                        ) : (
+                          <Circle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-zinc-500" aria-hidden />
+                        )}
+                        <span className={req.met ? 'text-green-400/90' : 'text-zinc-500'}>
+                          {req.label} / {req.labelTigrinya}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
             {errors.password && (
               <p className="mt-1 text-sm text-red-400">{errors.password}</p>
@@ -473,18 +532,34 @@ export function AuthModal({ isOpen, onClose, mode, onForgotPassword, redirectAft
                 htmlFor="confirmPassword"
                 className="mb-2 block text-sm font-medium text-zinc-300"
               >
-                Confirm Password
+                {CONFIRM_PASSWORD_LABEL} / {CONFIRM_PASSWORD_LABEL_TIGRINYA} <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   name="confirmPassword"
+                  required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 pr-10 text-zinc-100 placeholder-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+                  className={`w-full rounded-lg border bg-zinc-900/50 px-4 py-3 pr-24 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 ${
+                    formData.confirmPassword.length > 0
+                      ? formData.password === formData.confirmPassword
+                        ? 'border-emerald-500/70 focus:border-emerald-500 focus:ring-emerald-500/20'
+                        : 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-zinc-700 focus:border-orange-400/50 focus:ring-orange-400/20'
+                  }`}
                   placeholder="••••••••"
                 />
+                {formData.confirmPassword.length > 0 && (
+                  <span className="absolute right-14 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {formData.password === formData.confirmPassword ? (
+                      <Check className="h-5 w-5 text-emerald-400" aria-hidden />
+                    ) : (
+                      <X className="h-5 w-5 text-red-400" aria-hidden />
+                    )}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
