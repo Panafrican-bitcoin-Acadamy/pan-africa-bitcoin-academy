@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 import { validateUUID } from '@/lib/security-utils';
+import bcrypt from 'bcryptjs';
+import { validatePassword } from '@/lib/passwordValidation';
 
 /**
  * PATCH /api/admin/students/[id]
@@ -31,6 +33,7 @@ export async function PATCH(
       city,
       cohort_id,
       status,
+      password,
     } = body;
 
     // At least one field to update
@@ -41,7 +44,8 @@ export async function PATCH(
       country !== undefined ||
       city !== undefined ||
       cohort_id !== undefined ||
-      status !== undefined;
+      status !== undefined ||
+      password !== undefined;
 
     if (!hasUpdates) {
       return NextResponse.json(
@@ -61,6 +65,27 @@ export async function PATCH(
     if (city !== undefined) profileUpdate.city = typeof city === 'string' ? city.trim() || null : null;
     if (cohort_id !== undefined) profileUpdate.cohort_id = cohort_id || null;
     if (status !== undefined) profileUpdate.status = typeof status === 'string' ? status.trim() : null;
+
+    // Password update (profile only)
+    if (password !== undefined) {
+      if (typeof password !== 'string' || password.length === 0) {
+        return NextResponse.json({ error: 'Password is required' }, { status: 400 });
+      }
+      if (password.length > 128) {
+        return NextResponse.json({ error: 'Password too long' }, { status: 400 });
+      }
+      const pv = validatePassword(password);
+      if (!pv.isValid) {
+        return NextResponse.json({ error: pv.errors[0] || 'Password does not meet requirements' }, { status: 400 });
+      }
+      const saltRounds = 10;
+      profileUpdate.password_hash = await bcrypt.hash(password, saltRounds);
+      // If admin sets a password, this link/token should no longer be usable
+      profileUpdate.reset_token = null;
+      profileUpdate.reset_token_expiry = null;
+      // Setting password proves access; keep consistent with setup/reset flows
+      profileUpdate.email_verified_at = new Date().toISOString();
+    }
 
     if (profileUpdate.email === '') {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });

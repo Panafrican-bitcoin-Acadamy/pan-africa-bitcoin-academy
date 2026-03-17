@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { getPasswordRequirementStatuses, PASSWORD_REQUIREMENTS_HEADING, PASSWORD_REQUIREMENTS_HEADING_TIGRINYA } from '@/lib/passwordValidation';
 import {
   BarChart,
   Bar,
@@ -518,6 +519,12 @@ export default function AdminDashboardPage() {
   const [cohortFilter, setCohortFilter] = useState<string | null>(null); // Filter by cohort
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [updatingStudent, setUpdatingStudent] = useState(false);
+  const [passwordStudent, setPasswordStudent] = useState<Student | null>(null);
+  const [updatingStudentPassword, setUpdatingStudentPassword] = useState(false);
+  const [studentPasswordForm, setStudentPasswordForm] = useState({ password: '', confirmPassword: '' });
+  const [showStudentPassword, setShowStudentPassword] = useState(false);
+  const [showStudentConfirmPassword, setShowStudentConfirmPassword] = useState(false);
+  const [studentPasswordError, setStudentPasswordError] = useState<string | null>(null);
   const [approvedStudentsCohortFilter, setApprovedStudentsCohortFilter] = useState<string>('');
   const [approvedStudentsSearch, setApprovedStudentsSearch] = useState('');
   const [editStudentForm, setEditStudentForm] = useState<{
@@ -6303,6 +6310,19 @@ export default function AdminDashboardPage() {
                                   </button>
                                   <button
                                     type="button"
+                                    className="rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-200 hover:bg-purple-500/20 transition cursor-pointer"
+                                    onClick={() => {
+                                      setStudentPasswordError(null);
+                                      setStudentPasswordForm({ password: '', confirmPassword: '' });
+                                      setShowStudentPassword(false);
+                                      setShowStudentConfirmPassword(false);
+                                      setPasswordStudent(student);
+                                    }}
+                                  >
+                                    Password
+                                  </button>
+                                  <button
+                                    type="button"
                                     className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20 transition cursor-pointer"
                                     onClick={() => setStudentToDelete(student)}
                                   >
@@ -8509,6 +8529,314 @@ export default function AdminDashboardPage() {
                   className="flex-1 rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/30 transition disabled:opacity-50"
                 >
                   {updatingStudent ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Set Student Password Modal (Admin) */}
+      {passwordStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-purple-500/30 bg-zinc-900 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-50">Set student password</h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {passwordStudent.name || 'Student'}{passwordStudent.email ? ` • ${passwordStudent.email}` : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPasswordStudent(null)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!passwordStudent?.id) return;
+                setStudentPasswordError(null);
+
+                if (!studentPasswordForm.password) {
+                  setStudentPasswordError('Password is required.');
+                  return;
+                }
+                if (studentPasswordForm.password !== studentPasswordForm.confirmPassword) {
+                  setStudentPasswordError('Passwords do not match.');
+                  return;
+                }
+
+                setUpdatingStudentPassword(true);
+                try {
+                  const res = await fetchWithAuth(`/api/admin/students/${passwordStudent.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: studentPasswordForm.password }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (res.ok && data.success) {
+                    setAckPopup({ title: 'Success', message: 'Password updated successfully.' });
+                    setPasswordStudent(null);
+                    setStudentPasswordForm({ password: '', confirmPassword: '' });
+                    // Refresh list so status/updated_at changes reflect quickly
+                    lastApprovedStudentsFetchRef.current = 0;
+                    approvedStudentsFetchedRef.current = false;
+                    if (fetchApprovedStudentsRef.current) fetchApprovedStudentsRef.current();
+                  } else {
+                    setStudentPasswordError(data.error || 'Failed to update password.');
+                  }
+                } catch (err) {
+                  setStudentPasswordError((err as Error).message || 'Failed to update password.');
+                } finally {
+                  setUpdatingStudentPassword(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">New password</label>
+                <div className="relative">
+                  <input
+                    type={showStudentPassword ? 'text' : 'password'}
+                    value={studentPasswordForm.password}
+                    onChange={(e) => setStudentPasswordForm((f) => ({ ...f, password: e.target.value }))}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-100 focus:border-purple-500/50 focus:outline-none focus:ring-1 focus:ring-purple-500/30"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/50 transition"
+                    aria-label={showStudentPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showStudentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Confirm password</label>
+                <div className="relative">
+                  <input
+                    type={showStudentConfirmPassword ? 'text' : 'password'}
+                    value={studentPasswordForm.confirmPassword}
+                    onChange={(e) => setStudentPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                    className={`w-full rounded-lg border bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-100 focus:outline-none focus:ring-1 ${
+                      studentPasswordForm.confirmPassword.length > 0
+                        ? studentPasswordForm.password === studentPasswordForm.confirmPassword
+                          ? 'border-emerald-500/60 focus:border-emerald-500/60 focus:ring-emerald-500/20'
+                          : 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20'
+                        : 'border-zinc-700 focus:border-purple-500/50 focus:ring-purple-500/30'
+                    }`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentConfirmPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/50 transition"
+                    aria-label={showStudentConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showStudentConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900/40 p-3">
+                <p className="text-xs font-semibold text-zinc-200 mb-2">
+                  {PASSWORD_REQUIREMENTS_HEADING} / {PASSWORD_REQUIREMENTS_HEADING_TIGRINYA}
+                </p>
+                <ul className="space-y-1 text-xs">
+                  {getPasswordRequirementStatuses(studentPasswordForm.password).map((r) => (
+                    <li key={r.id} className={`flex items-center gap-2 ${r.met ? 'text-emerald-300' : 'text-zinc-400'}`}>
+                      {r.met ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4 text-zinc-600" />}
+                      <span className="text-zinc-200">{r.label}</span>
+                      <span className="text-zinc-500">/ {r.labelTigrinya}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {studentPasswordError && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  {studentPasswordError}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={updatingStudentPassword}
+                  onClick={() => setPasswordStudent(null)}
+                  className="flex-1 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingStudentPassword}
+                  className="flex-1 rounded-lg border border-purple-500/40 bg-purple-500/15 px-3 py-2 text-sm font-medium text-purple-100 hover:bg-purple-500/25 transition disabled:opacity-50"
+                >
+                  {updatingStudentPassword ? 'Saving...' : 'Save password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Set Student Password Modal (Admin) */}
+      {passwordStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-purple-500/30 bg-zinc-900 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-50">Set student password</h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {passwordStudent.name || 'Student'}{passwordStudent.email ? ` • ${passwordStudent.email}` : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPasswordStudent(null)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!passwordStudent?.id) return;
+                setStudentPasswordError(null);
+
+                if (!studentPasswordForm.password) {
+                  setStudentPasswordError('Password is required.');
+                  return;
+                }
+                if (studentPasswordForm.password !== studentPasswordForm.confirmPassword) {
+                  setStudentPasswordError('Passwords do not match.');
+                  return;
+                }
+
+                setUpdatingStudentPassword(true);
+                try {
+                  const res = await fetchWithAuth(`/api/admin/students/${passwordStudent.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: studentPasswordForm.password }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (res.ok && data.success) {
+                    setAckPopup({ title: 'Success', message: 'Password updated successfully.' });
+                    setPasswordStudent(null);
+                    setStudentPasswordForm({ password: '', confirmPassword: '' });
+                    // Refresh list so changes reflect quickly
+                    lastApprovedStudentsFetchRef.current = 0;
+                    approvedStudentsFetchedRef.current = false;
+                    if (fetchApprovedStudentsRef.current) fetchApprovedStudentsRef.current();
+                  } else {
+                    setStudentPasswordError(data.error || 'Failed to update password.');
+                  }
+                } catch (err) {
+                  setStudentPasswordError((err as Error).message || 'Failed to update password.');
+                } finally {
+                  setUpdatingStudentPassword(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">New password</label>
+                <div className="relative">
+                  <input
+                    type={showStudentPassword ? 'text' : 'password'}
+                    value={studentPasswordForm.password}
+                    onChange={(e) => setStudentPasswordForm((f) => ({ ...f, password: e.target.value }))}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-100 focus:border-purple-500/50 focus:outline-none focus:ring-1 focus:ring-purple-500/30"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/50 transition"
+                    aria-label={showStudentPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showStudentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Confirm password</label>
+                <div className="relative">
+                  <input
+                    type={showStudentConfirmPassword ? 'text' : 'password'}
+                    value={studentPasswordForm.confirmPassword}
+                    onChange={(e) => setStudentPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                    className={`w-full rounded-lg border bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-100 focus:outline-none focus:ring-1 ${
+                      studentPasswordForm.confirmPassword.length > 0
+                        ? studentPasswordForm.password === studentPasswordForm.confirmPassword
+                          ? 'border-emerald-500/60 focus:border-emerald-500/60 focus:ring-emerald-500/20'
+                          : 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20'
+                        : 'border-zinc-700 focus:border-purple-500/50 focus:ring-purple-500/30'
+                    }`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentConfirmPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/50 transition"
+                    aria-label={showStudentConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showStudentConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900/40 p-3">
+                <p className="text-xs font-semibold text-zinc-200 mb-2">
+                  {PASSWORD_REQUIREMENTS_HEADING} / {PASSWORD_REQUIREMENTS_HEADING_TIGRINYA}
+                </p>
+                <ul className="space-y-1 text-xs">
+                  {getPasswordRequirementStatuses(studentPasswordForm.password).map((r) => (
+                    <li key={r.id} className={`flex items-center gap-2 ${r.met ? 'text-emerald-300' : 'text-zinc-400'}`}>
+                      {r.met ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4 text-zinc-600" />}
+                      <span className="text-zinc-200">{r.label}</span>
+                      <span className="text-zinc-500">/ {r.labelTigrinya}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {studentPasswordError && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  {studentPasswordError}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={updatingStudentPassword}
+                  onClick={() => setPasswordStudent(null)}
+                  className="flex-1 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingStudentPassword}
+                  className="flex-1 rounded-lg border border-purple-500/40 bg-purple-500/15 px-3 py-2 text-sm font-medium text-purple-100 hover:bg-purple-500/25 transition disabled:opacity-50"
+                >
+                  {updatingStudentPassword ? 'Saving...' : 'Save password'}
                 </button>
               </div>
             </form>
