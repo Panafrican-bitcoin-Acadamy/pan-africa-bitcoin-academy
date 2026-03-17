@@ -6319,7 +6319,7 @@ export default function AdminDashboardPage() {
                                       setPasswordStudent(student);
                                     }}
                                   >
-                                    Password
+                                    Set password
                                   </button>
                                   <button
                                     type="button"
