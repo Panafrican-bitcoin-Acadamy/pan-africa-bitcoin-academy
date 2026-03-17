@@ -1,14 +1,13 @@
 /**
  * Client-side session management utilities
- * Handles cross-tab activity tracking and session expiration
+ * Handles cross-tab activity tracking and session expiration.
+ * Inactivity limits match server (sessionConfig) so client and server expire together.
  */
 
-// Inactivity limits - admin gets longer timeout
-const STUDENT_INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
-const ADMIN_INACTIVITY_LIMIT_MS = 4 * 60 * 60 * 1000; // 4 hours (more than 3 hours as requested)
+import { getInactivityLimitMs } from '@/lib/sessionConfig';
 
 export function getInactivityLimit(userType: UserType): number {
-  return userType === 'admin' ? ADMIN_INACTIVITY_LIMIT_MS : STUDENT_INACTIVITY_LIMIT_MS;
+  return getInactivityLimitMs(userType);
 }
 
 export const ACTIVITY_KEY = 'sessionLastActivityAt';

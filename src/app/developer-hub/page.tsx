@@ -105,7 +105,7 @@ export default function DeveloperHubPage() {
 
           {/* SECTION 1 — Developer Path Overview */}
           <AnimatedSection animation="slideLeft">
-            <section className="mb-20 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+            <section id="developer-path-overview" className="mb-20 rounded-xl border border-cyan-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-cyan-500/20 p-2">
                 <Rocket className="h-6 w-6 text-cyan-400" />
@@ -157,7 +157,7 @@ export default function DeveloperHubPage() {
 
           {/* SECTION 2 — Beginner Developer Starter Guide */}
           <AnimatedSection animation="slideRight">
-            <section className="mb-20 rounded-xl border border-orange-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+            <section id="dev-start" className="mb-20 rounded-xl border border-orange-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-orange-500/20 p-2">
                 <BookOpen className="h-6 w-6 text-orange-400" />
@@ -167,7 +167,7 @@ export default function DeveloperHubPage() {
 
             <div className="space-y-8">
               {/* 1. Bitcoin Intro */}
-              <div>
+              <div id="dev-basics">
                 <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-orange-300">1. Bitcoin Intro (For Developers)</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a
@@ -219,7 +219,7 @@ export default function DeveloperHubPage() {
               </div>
 
               {/* 2. Learn the Tools */}
-              <div>
+              <div id="dev-internals">
                 <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-cyan-300">2. Learn the Tools</AnimatedHeading>
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Bitcoin Core */}
@@ -247,7 +247,7 @@ export default function DeveloperHubPage() {
                   </div>
 
                   {/* Sparrow Wallet */}
-                  <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-5 flex flex-col h-full">
+                  <div id="dev-wallets" className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-5 flex flex-col h-full">
                     <div className="mb-3 flex items-center justify-between">
                       <h4 className="text-lg font-semibold text-cyan-200">Sparrow Wallet</h4>
                       <a
@@ -271,7 +271,7 @@ export default function DeveloperHubPage() {
                   </div>
 
                   {/* Bitcoin CLI / RPC Commands */}
-                  <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-5 flex flex-col h-full">
+                  <div id="dev-script" className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-5 flex flex-col h-full">
                     <div className="mb-3 flex items-center justify-between">
                       <h4 className="text-lg font-semibold text-purple-200">Bitcoin CLI / RPC Commands</h4>
                       <a
@@ -370,7 +370,7 @@ export default function DeveloperHubPage() {
                   </div>
 
                   {/* Lightning Tools */}
-                  <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-5 flex flex-col h-full">
+                  <div id="dev-lightning" className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-5 flex flex-col h-full">
                     <div className="mb-3 flex items-center justify-between">
                       <h4 className="text-lg font-semibold text-blue-200">Lightning Tools</h4>
                     </div>
@@ -455,39 +455,60 @@ export default function DeveloperHubPage() {
               {/* 3. Developer Roadmap */}
               <div>
                 <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-purple-300">3. Developer Roadmap</AnimatedHeading>
-                <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-6">
-                  <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-                    <div className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 font-semibold text-black">
-                      Start
-                    </div>
-                    <span className="text-purple-300">→</span>
-                    <div className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-cyan-300">
-                      Learn Basics
-                    </div>
-                    <span className="text-purple-300">→</span>
-                    <div className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-cyan-300">
-                      Bitcoin Internals
-                    </div>
-                    <span className="text-purple-300">→</span>
-                    <div className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-cyan-300">
-                      Explore Scripting
-                    </div>
-                    <span className="text-purple-300">→</span>
-                    <div className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-cyan-300">
-                      Learn Wallet Building
-                    </div>
-                    <span className="text-purple-300">→</span>
-                    <div className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-cyan-300">
-                      Lightning Basics
-                    </div>
-                    <span className="text-purple-300">→</span>
-                    <div className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-cyan-300">
-                      Join OSS
-                    </div>
-                    <span className="text-purple-300">→</span>
-                    <div className="rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 font-semibold text-black">
-                      First Contribution
-                    </div>
+                <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-b from-purple-500/10 to-black/20 p-6 sm:p-7 shadow-[0_0_30px_rgba(168,85,247,0.12)] ring-1 ring-purple-400/10">
+                  <p className="mx-auto mb-6 max-w-2xl text-center text-sm leading-relaxed text-zinc-400">
+                    A practical path from zero to your first open-source contribution.
+                  </p>
+
+                  <div className="relative mx-auto grid max-w-4xl gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {[
+                      { k: 'start', label: 'Start', tone: 'start' as const, href: '#developer-path-overview' },
+                      { k: 'basics', label: 'Learn Basics', tone: 'mid' as const, href: '/chapters' },
+                      { k: 'internals', label: 'Bitcoin Internals', tone: 'mid' as const, href: '#dev-basics' },
+                      { k: 'script', label: 'Explore Scripting', tone: 'mid' as const, href: '#dev-script' },
+                      { k: 'wallets', label: 'Learn Wallet Building', tone: 'mid' as const, href: '#dev-wallets' },
+                      { k: 'ln', label: 'Lightning Basics', tone: 'mid' as const, href: '#dev-lightning' },
+                      { k: 'oss', label: 'Join OSS', tone: 'mid' as const, href: '#dev-oss' },
+                      { k: 'first', label: 'First Contribution', tone: 'finish' as const, href: '#dev-contribution' },
+                    ].map((s, i) => (
+                      <Link
+                        key={s.k}
+                        className={[
+                          'group relative flex items-center justify-center gap-3 rounded-xl border px-4 py-3 text-center text-sm font-medium transition',
+                          'bg-zinc-950/40 hover:bg-zinc-950/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60',
+                          s.tone === 'start'
+                            ? 'border-orange-500/40 bg-gradient-to-r from-orange-500/20 to-orange-400/10 text-orange-200'
+                            : s.tone === 'finish'
+                              ? 'border-green-500/40 bg-gradient-to-r from-green-500/20 to-green-400/10 text-green-200'
+                              : 'border-cyan-500/30 text-cyan-200',
+                        ].join(' ')}
+                        href={s.href}
+                        scroll
+                      >
+                        <span
+                          className={[
+                            'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold tabular-nums',
+                            s.tone === 'start'
+                              ? 'bg-orange-500/25 text-orange-100 ring-1 ring-orange-400/30'
+                              : s.tone === 'finish'
+                                ? 'bg-green-500/25 text-green-100 ring-1 ring-green-400/30'
+                                : 'bg-cyan-500/15 text-cyan-100 ring-1 ring-cyan-400/20',
+                          ].join(' ')}
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="min-w-0">{s.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 flex justify-center">
+                    <Link
+                      href="#dev-start"
+                      className="inline-flex items-center justify-center rounded-xl border border-purple-400/30 bg-purple-500/10 px-5 py-3 text-sm font-semibold text-purple-200 transition hover:bg-purple-500/15 hover:border-purple-300/40"
+                    >
+                      Explore the roadmap resources
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -497,7 +518,7 @@ export default function DeveloperHubPage() {
 
           {/* SECTION 3 — Global Bitcoin Developer Communities */}
           <AnimatedSection animation="slideLeft">
-            <section className="mb-20 rounded-xl border border-purple-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+            <section id="dev-oss" className="mb-20 rounded-xl border border-purple-400/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
             <div className="mb-6 flex items-center gap-3">
               <div className="rounded-lg bg-purple-500/20 p-2">
                 <Users className="h-6 w-6 text-purple-400" />
@@ -507,7 +528,7 @@ export default function DeveloperHubPage() {
 
             <div className="space-y-6">
               {/* Bitcoin Core Community */}
-              <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
+              <div id="dev-contribution" className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-6">
                 <AnimatedHeading as="h3" className="mb-4 text-xl font-semibold text-orange-300">Bitcoin Core Community</AnimatedHeading>
                 <div className="grid gap-3 md:grid-cols-2">
                   <a

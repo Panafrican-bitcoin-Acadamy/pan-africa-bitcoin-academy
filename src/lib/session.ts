@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as crypto from 'crypto';
+import { sessionTimeouts } from '@/lib/sessionConfig';
 
-// Unified session configuration
-// Student timeouts
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout (for non-remember me)
-const ABSOLUTE_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes absolute lifetime (for non-remember me)
-const REMEMBER_ME_IDLE_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days idle timeout (for remember me)
-const REMEMBER_ME_ABSOLUTE_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days absolute lifetime (for remember me)
+// Optional env overrides (server only) — e.g. SESSION_IDLE_MINUTES=45
+function envNum(key: string): number | null {
+  const v = process.env[key];
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
-// Admin timeouts - longer than 3 hours
-const ADMIN_IDLE_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours idle timeout for admin
-const ADMIN_ABSOLUTE_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours absolute lifetime for admin
+const idleMin = envNum('SESSION_IDLE_MINUTES');
+const IDLE_TIMEOUT_MS = idleMin != null ? idleMin * 60 * 1000 : sessionTimeouts.studentIdleMs;
+const absHours = envNum('SESSION_ABSOLUTE_HOURS');
+const ABSOLUTE_TIMEOUT_MS = absHours != null ? absHours * 60 * 60 * 1000 : sessionTimeouts.studentAbsoluteMs;
+const rmIdleDays = envNum('REMEMBER_ME_IDLE_DAYS');
+const REMEMBER_ME_IDLE_TIMEOUT_MS = rmIdleDays != null ? rmIdleDays * 24 * 60 * 60 * 1000 : sessionTimeouts.rememberMeIdleMs;
+const rmAbsDays = envNum('REMEMBER_ME_ABSOLUTE_DAYS');
+const REMEMBER_ME_ABSOLUTE_TIMEOUT_MS = rmAbsDays != null ? rmAbsDays * 24 * 60 * 60 * 1000 : sessionTimeouts.rememberMeAbsoluteMs;
+const adminIdleMin = envNum('ADMIN_SESSION_IDLE_MINUTES');
+const ADMIN_IDLE_TIMEOUT_MS = adminIdleMin != null ? adminIdleMin * 60 * 1000 : sessionTimeouts.adminIdleMs;
+const adminAbsHours = envNum('ADMIN_SESSION_ABSOLUTE_HOURS');
+const ADMIN_ABSOLUTE_TIMEOUT_MS = adminAbsHours != null ? adminAbsHours * 60 * 60 * 1000 : sessionTimeouts.adminAbsoluteMs;
+
 const ADMIN_COOKIE_NAME = 'admin_session';
 const STUDENT_COOKIE_NAME = 'student_session';
 
