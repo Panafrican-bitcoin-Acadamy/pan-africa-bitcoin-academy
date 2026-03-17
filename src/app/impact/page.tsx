@@ -2,6 +2,20 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import {
+  Users,
+  Globe2,
+  FileText,
+  Clock,
+  GraduationCap,
+  Check,
+  User,
+  Bitcoin,
+  TrendingUp,
+  ArrowDownRight,
+  RefreshCw,
+} from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
 import { AnimatedHeading } from '@/components/AnimatedHeading';
 import SplitText from '@/components/SplitText';
@@ -104,6 +118,7 @@ export default function ImpactPage() {
   const [satsStats, setSatsStats] = useState<SatsStats | null>(null);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Animated values for progress metrics
   const animatedCompletionRate = useAnimatedCounter(
@@ -161,7 +176,7 @@ export default function ImpactPage() {
       } catch (error) {
         console.error('Error fetching impact data:', error);
       } finally {
-        // Start animation after data is loaded
+        setDataLoaded(true);
         setTimeout(() => setShouldAnimate(true), 100);
       }
     };
@@ -169,18 +184,14 @@ export default function ImpactPage() {
     fetchData();
   }, []);
 
-  // Format metrics for display
-  const displayMetrics = metrics
-    ? [
-        { label: "Total Students Trained", value: metrics.totalStudentsTrained.toString(), icon: "👥" },
-        { label: "Cohorts Completed", value: metrics.cohortsCompleted.toString(), icon: "" },
-        { label: "Countries Reached", value: metrics.countriesReached.toString(), icon: "🌍" },
-        // Lightning Transactions - paused
-        { label: "Assignments Submitted", value: metrics.assignmentsSubmitted.toString(), icon: "📝" },
-        // Sats Distributed - paused
-        { label: "Teaching Hours", value: metrics.teachingHours.toString(), icon: "⏰" },
-      ]
-    : [];
+  type MetricIcon = typeof Users;
+  const keyMetricDefs: { label: string; Icon: MetricIcon; getValue: (m: ImpactMetrics) => number }[] = [
+    { label: 'Total Students Trained', Icon: Users, getValue: (m) => m.totalStudentsTrained },
+    { label: 'Cohorts Completed', Icon: GraduationCap, getValue: (m) => m.cohortsCompleted },
+    { label: 'Countries Reached', Icon: Globe2, getValue: (m) => m.countriesReached },
+    { label: 'Assignments Submitted', Icon: FileText, getValue: (m) => m.assignmentsSubmitted },
+    { label: 'Teaching Hours', Icon: Clock, getValue: (m) => m.teachingHours },
+  ];
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
@@ -189,9 +200,14 @@ export default function ImpactPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
+              <div className="mx-auto mb-6 flex justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-400/30 bg-gradient-to-br from-orange-500/20 to-cyan-500/20 shadow-[0_0_30px_rgba(249,115,22,0.15)]">
+                  <Bitcoin className="h-9 w-9 text-orange-300" aria-hidden />
+                </div>
+              </div>
               <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
-                  text="Our Impact in Building Bitcoin Education & Sovereignty in Africa"
+                  text="Our Impact"
                   tag="span"
                   className="inline-block"
                   delay={50}
@@ -205,8 +221,8 @@ export default function ImpactPage() {
                   textAlign="center"
                 />
               </AnimatedHeading>
-              <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-                Tracking our progress openly. Updated after every cohort.
+              <p className="mx-auto mt-4 max-w-xl text-base text-zinc-400 sm:text-lg">
+                Bitcoin education &amp; sovereignty across Africa — tracked openly, updated every cohort.
               </p>
             </div>
           </AnimatedSection>
@@ -216,37 +232,25 @@ export default function ImpactPage() {
         <AnimatedSection animation="slideLeft">
           <section className="space-y-6">
           <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Key Metrics</AnimatedHeading>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {displayMetrics.length > 0 ? (
-              displayMetrics.map((metric, index) => (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {keyMetricDefs.map((def, index) => {
+              const Icon = def.Icon;
+              const value = metrics ? def.getValue(metrics).toString() : '0';
+              return (
                 <div
-                  key={index}
-                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                  key={def.label}
+                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)] transition hover:border-cyan-400/40"
                 >
-                  <div className="mb-3 text-4xl">{metric.icon}</div>
-                  <div className="text-3xl font-bold text-cyan-300">{metric.value}</div>
-                  <div className="mt-2 text-xs text-zinc-400 sm:text-sm">{metric.label}</div>
+                  <div className="mb-3 flex justify-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-500/25 bg-cyan-500/10">
+                      <Icon className="h-6 w-6 text-cyan-300" aria-hidden />
+                    </div>
+                  </div>
+                  <div className="text-3xl font-bold tabular-nums text-cyan-300">{value}</div>
+                  <div className="mt-2 text-xs text-zinc-400 sm:text-sm">{def.label}</div>
                 </div>
-              ))
-            ) : (
-              // Show placeholder with 0 values while loading
-              [
-                { label: "Total Students Trained", icon: "👥", value: "0" },
-                { label: "Cohorts Completed", icon: "", value: "0" },
-                { label: "Countries Reached", icon: "🌍", value: "0" },
-                { label: "Assignments Submitted", icon: "📝", value: "0" },
-                { label: "Teaching Hours", icon: "⏰", value: "0" },
-              ].map((metric, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 text-center shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-                >
-                  <div className="mb-3 text-4xl">{metric.icon}</div>
-                  <div className="text-3xl font-bold text-cyan-300">{metric.value}</div>
-                  <div className="mt-2 text-xs text-zinc-400 sm:text-sm">{metric.label}</div>
-                </div>
-              ))
-            )}
+              );
+            })}
           </div>
           </section>
         </AnimatedSection>
@@ -356,8 +360,8 @@ export default function ImpactPage() {
           <p className="text-sm text-zinc-300 sm:text-base">What our students are expected to achieve:</p>
           <ul className="mt-4 space-y-2">
             {outcomes.map((outcome, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-zinc-300 sm:text-base">
-                <span className="text-orange-400">✓</span>
+              <li key={index} className="flex items-start gap-3 text-sm text-zinc-300 sm:text-base">
+                <Check className="mt-0.5 h-5 w-5 shrink-0 text-orange-400" aria-hidden />
                 <span>{outcome}</span>
               </li>
             ))}
@@ -371,29 +375,35 @@ export default function ImpactPage() {
           <AnimatedHeading as="h2" className="text-xl font-semibold text-purple-200">Sats Reward Economy</AnimatedHeading>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">
-                {satsStats 
+              <div className="mb-2 flex justify-center">
+                <TrendingUp className="h-6 w-6 text-purple-400" aria-hidden />
+              </div>
+              <div className="text-2xl font-bold tabular-nums text-purple-400">
+                {satsStats
                   ? `${(satsStats.satsEarned / 1000).toFixed(0)}K+`
-                  : '0+'
-                }
+                  : '0+'}
               </div>
               <div className="mt-1 text-xs text-zinc-400">Sats Earned</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">
-                {satsStats 
+              <div className="mb-2 flex justify-center">
+                <ArrowDownRight className="h-6 w-6 text-purple-400" aria-hidden />
+              </div>
+              <div className="text-2xl font-bold tabular-nums text-purple-400">
+                {satsStats
                   ? `${(satsStats.satsSpent / 1000).toFixed(0)}K+`
-                  : '0+'
-                }
+                  : '0+'}
               </div>
               <div className="mt-1 text-xs text-zinc-400">Sats Spent</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">
-                {satsStats 
+              <div className="mb-2 flex justify-center">
+                <RefreshCw className="h-6 w-6 text-purple-400" aria-hidden />
+              </div>
+              <div className="text-2xl font-bold tabular-nums text-purple-400">
+                {satsStats
                   ? `${(satsStats.satsCirculated / 1000).toFixed(0)}K+`
-                  : '0+'
-                }
+                  : '0+'}
               </div>
               <div className="mt-1 text-xs text-zinc-400">Sats Circulated</div>
             </div>
@@ -428,7 +438,7 @@ export default function ImpactPage() {
                       </div>
                     ) : (
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20">
-                        <span className="text-xl"> 👤</span>
+                        <User className="h-6 w-6 text-cyan-300/90" aria-hidden />
                       </div>
                     )}
                     <div>
