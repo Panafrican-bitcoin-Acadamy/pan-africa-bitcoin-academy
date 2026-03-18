@@ -3,6 +3,81 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, attachRefresh } from '@/lib/adminSession';
 
 /**
+ * Mark an event as done (completed) with optional duration.
+ * PATCH /api/admin/events/[id]
+ * Body: { status?: 'scheduled' | 'completed', duration_minutes?: number }
+ */
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = requireAdmin(req);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id: eventId } = await context.params;
+    const body = await req.json().catch(() => ({}));
+    const status = body.status === 'completed' || body.status === 'scheduled' ? body.status : undefined;
+    const durationMinutes = typeof body.duration_minutes === 'number' ? body.duration_minutes : undefined;
+
+    if (!status && durationMinutes === undefined) {
+      return NextResponse.json(
+        { error: 'Provide at least one of: status, duration_minutes' },
+        { status: 400 }
+      );
+    }
+
+    const updatePayload: { status?: string; duration_minutes?: number; updated_at: string } = {
+      updated_at: new Date().toISOString(),
+    };
+    if (status) updatePayload.status = status;
+    if (durationMinutes !== undefined) updatePayload.duration_minutes = durationMinutes;
+
+    const { data: updatedEvent, error: updateError } = await supabaseAdmin
+      .from('events')
+      .update(updatePayload)
+      .eq('id', eventId)
+      .select('id, name, status, duration_minutes')
+      .single();
+
+    if (updateError) {
+      console.error('Error marking event done:', updateError);
+      return NextResponse.json(
+        { error: 'Failed to update event', details: updateError.message },
+        { status: 500 }
+      );
+    }
+
+    const res = NextResponse.json(
+      {
+        success: true,
+        message: status === 'completed' ? 'Event marked as done' : 'Event updated',
+        event: {
+          id: updatedEvent.id,
+          name: updatedEvent.name,
+          status: updatedEvent.status,
+          duration_minutes: updatedEvent.duration_minutes,
+        },
+      },
+      { status: 200 }
+    );
+    attachRefresh(res, session);
+    return res;
+  } catch (error: any) {
+    console.error('Error in PATCH event API:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {}),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * Update an existing event
  * PUT /api/admin/events/[id]
  */
@@ -30,6 +105,8 @@ export async function PUT(
       cohort_id,
       for_all,
       chapter_number,
+      status,
+      duration_minutes,
       // Registration fields
       is_registration_enabled,
       location,
@@ -89,6 +166,12 @@ export async function PUT(
       cohort_id: finalCohortId,
       updated_at: new Date().toISOString(),
     };
+    if (status === 'completed' || status === 'scheduled') {
+      updatePayload.status = status;
+    }
+    if (typeof duration_minutes === 'number') {
+      updatePayload.duration_minutes = duration_minutes;
+    }
 
     // Only include image_url if provided
     if (image_url !== undefined) {

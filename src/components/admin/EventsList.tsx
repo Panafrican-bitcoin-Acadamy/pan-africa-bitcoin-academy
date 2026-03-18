@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, Trash2, Edit, ExternalLink, AlertCircle, RefreshCw, ZoomIn, X, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, Link as LinkIcon, Video, FileText, Users, GraduationCap, Rocket, Trash2, Edit, ExternalLink, AlertCircle, RefreshCw, ZoomIn, X, Mail, Loader2, CheckCircle2, CheckCircle } from 'lucide-react';
 
 interface Event {
   id: string;
@@ -18,6 +18,8 @@ interface Event {
   cohort_name?: string | null;
   created_at: string;
   updated_at: string;
+  status?: string;
+  duration_minutes?: number | null;
 }
 
 const EVENT_TYPE_ICONS: Record<string, any> = {
@@ -56,6 +58,7 @@ export default function EventsList({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [sendingInvitationsId, setSendingInvitationsId] = useState<string | null>(null);
   const [invitationResult, setInvitationResult] = useState<{ eventId: string; success: boolean; message: string; details?: any } | null>(null);
+  const [markingDoneId, setMarkingDoneId] = useState<string | null>(null);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -84,9 +87,11 @@ export default function EventsList({
         image_url: event.imageUrl || null,
         image_alt_text: event.imageAltText || null,
         cohort_id: event.cohortId || null,
-        cohort_name: null, // We'll fetch this separately if needed
+        cohort_name: null,
         created_at: '',
         updated_at: '',
+        status: event.status ?? 'scheduled',
+        duration_minutes: event.durationMinutes ?? null,
       }));
 
       setEvents(transformedEvents);
@@ -162,6 +167,32 @@ export default function EventsList({
       alert(err.message || 'Failed to delete event');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleMarkDone = async (eventId: string, durationMinutes: number) => {
+    setMarkingDoneId(eventId);
+    try {
+      const response = await fetch(`/api/admin/events/${eventId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed', duration_minutes: durationMinutes }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to mark event as done');
+      setEvents(prev =>
+        prev.map(e =>
+          e.id === eventId
+            ? { ...e, status: 'completed', duration_minutes: durationMinutes }
+            : e
+        )
+      );
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      alert(err.message || 'Failed to mark event as done');
+    } finally {
+      setMarkingDoneId(null);
     }
   };
 
@@ -472,6 +503,14 @@ export default function EventsList({
                           <span className="px-2 py-0.5 rounded text-xs font-medium bg-zinc-800 text-zinc-400">
                             {EVENT_TYPE_LABELS[event.type] || event.type}
                           </span>
+                          {event.status === 'completed' && (
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-300 flex items-center gap-1">
+                              <CheckCircle className="h-3.5 w-3.5" /> Done
+                              {event.duration_minutes != null && (
+                                <span className="text-green-400/90">({event.duration_minutes}m)</span>
+                              )}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -524,6 +563,25 @@ export default function EventsList({
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      {!isEventUpcoming && event.status !== 'completed' && (
+                        <button
+                          onClick={() => {
+                            const input = window.prompt('Duration in minutes?', '60');
+                            if (input == null) return;
+                            const mins = Math.max(1, parseInt(input, 10) || 60);
+                            handleMarkDone(event.id, mins);
+                          }}
+                          disabled={markingDoneId === event.id}
+                          className="rounded-lg border border-green-500/30 bg-green-500/10 p-2 text-green-400 hover:bg-green-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Mark as done (record time spent)"
+                        >
+                          {markingDoneId === event.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
                       {onEdit && (
                         <button
                           onClick={() => onEdit(event)}

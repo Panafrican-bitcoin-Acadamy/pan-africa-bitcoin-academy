@@ -11,10 +11,10 @@ import {
   GraduationCap,
   Check,
   User,
-  Bitcoin,
   TrendingUp,
   ArrowDownRight,
   RefreshCw,
+  CalendarCheck,
 } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
 import { AnimatedHeading } from '@/components/AnimatedHeading';
@@ -26,6 +26,7 @@ interface ImpactMetrics {
   countriesReached: number;
   assignmentsSubmitted: number;
   teachingHours: number;
+  eventsCompleted: number;
 }
 
 interface SatsStats {
@@ -185,12 +186,20 @@ export default function ImpactPage() {
   }, []);
 
   type MetricIcon = typeof Users;
-  const keyMetricDefs: { label: string; Icon: MetricIcon; getValue: (m: ImpactMetrics) => number }[] = [
+  const keyMetricDefs: { label: string; Icon: MetricIcon; getValue: (m: ImpactMetrics) => number | string }[] = [
     { label: 'Total Students Trained', Icon: Users, getValue: (m) => m.totalStudentsTrained },
     { label: 'Cohorts Completed', Icon: GraduationCap, getValue: (m) => m.cohortsCompleted },
     { label: 'Countries Reached', Icon: Globe2, getValue: (m) => m.countriesReached },
     { label: 'Assignments Submitted', Icon: FileText, getValue: (m) => m.assignmentsSubmitted },
-    { label: 'Teaching Hours', Icon: Clock, getValue: (m) => m.teachingHours },
+    {
+      label: 'Teaching Hours',
+      Icon: Clock,
+      getValue: (m) => {
+        const v = m.teachingHours ?? 0;
+        return Number.isInteger(v) ? v : v.toFixed(1);
+      },
+    },
+    { label: 'Events Completed', Icon: CalendarCheck, getValue: (m) => m.eventsCompleted ?? 0 },
   ];
 
   return (
@@ -200,11 +209,6 @@ export default function ImpactPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
-              <div className="mx-auto mb-6 flex justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-400/30 bg-gradient-to-br from-orange-500/20 to-cyan-500/20 shadow-[0_0_30px_rgba(249,115,22,0.15)]">
-                  <Bitcoin className="h-9 w-9 text-orange-300" aria-hidden />
-                </div>
-              </div>
               <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
                   text="Our Impact"
@@ -221,8 +225,9 @@ export default function ImpactPage() {
                   textAlign="center"
                 />
               </AnimatedHeading>
-              <p className="mx-auto mt-4 max-w-xl text-base text-zinc-400 sm:text-lg">
-                Bitcoin education &amp; sovereignty across Africa — tracked openly, updated every cohort.
+              <div className="mx-auto mt-5 h-1 w-16 rounded-full bg-gradient-to-r from-orange-400 to-cyan-400" aria-hidden />
+              <p className="mx-auto mt-5 max-w-md text-sm text-zinc-500 sm:text-base">
+                Cohort stats and outcomes we publish here.
               </p>
             </div>
           </AnimatedSection>
@@ -232,7 +237,7 @@ export default function ImpactPage() {
         <AnimatedSection animation="slideLeft">
           <section className="space-y-6">
           <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Key Metrics</AnimatedHeading>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {keyMetricDefs.map((def, index) => {
               const Icon = def.Icon;
               const value = metrics ? def.getValue(metrics).toString() : '0';

@@ -74,10 +74,34 @@ export async function GET(_req: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'completed');
 
-    let teachingHours = 0;
+    let sessionTeachingHours = 0;
     if (!sessionsError && completedSessionsCount != null) {
-      teachingHours = completedSessionsCount; // 1 teaching hour per completed session
+      sessionTeachingHours = completedSessionsCount; // 1 hour per completed cohort session
     }
+
+    // 6. Event hours from events marked Done — add into Teaching Hours total
+    let eventsCompleted = 0;
+    let eventHoursFromEvents = 0;
+    try {
+      const { data: completedEvents, error: eventsError } = await supabaseAdmin
+        .from('events')
+        .select('id, duration_minutes')
+        .eq('status', 'completed');
+
+      if (!eventsError && completedEvents && completedEvents.length > 0) {
+        eventsCompleted = completedEvents.length;
+        eventHoursFromEvents = completedEvents.reduce(
+          (sum, e: { duration_minutes?: number | null }) =>
+            sum + (e.duration_minutes != null ? e.duration_minutes / 60 : 0),
+          0
+        );
+      }
+    } catch (_) {
+      // events table may not have status/duration_minutes yet
+    }
+
+    const teachingHours =
+      Math.round((sessionTeachingHours + eventHoursFromEvents) * 10) / 10;
 
     return NextResponse.json(
       {
@@ -85,7 +109,8 @@ export async function GET(_req: NextRequest) {
         cohortsCompleted: cohortsCompleted || 0,
         countriesReached: countriesReached || 0,
         assignmentsSubmitted: assignmentsSubmitted || 0,
-        teachingHours: teachingHours || 0,
+        teachingHours,
+        eventsCompleted: eventsCompleted || 0,
       },
       { status: 200 }
     );

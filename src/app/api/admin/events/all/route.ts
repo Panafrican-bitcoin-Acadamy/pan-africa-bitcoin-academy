@@ -80,6 +80,8 @@ export async function GET(_req: NextRequest) {
         endTime: endTime ? endTime.toISOString() : null,
         cohortId: event.cohort_id || null,
         isForEveryone: !event.cohort_id,
+        status: event.status ?? 'scheduled',
+        durationMinutes: event.duration_minutes ?? null,
       };
     });
 
