@@ -38,7 +38,6 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import * as XLSX from 'xlsx';
 import { chaptersContent } from '@/content/chaptersContent';
 
 // Cohort color palette - same as Calendar component
@@ -2542,8 +2541,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const exportCohortAnalyticsToExcel = () => {
+  const exportCohortAnalyticsToExcel = async () => {
     if (cohortAnalytics.length === 0) return;
+    const XLSX = await import('xlsx');
     const rows = cohortAnalytics.map((c) => ({
       'Cohort Name': c.name,
       'Level': c.level || '—',

@@ -13,6 +13,8 @@ interface AnimatedSectionProps {
   threshold?: number;
   /** When true, section fades out when scrolling past. Default true. */
   fadeOut?: boolean;
+  /** When true, animate in once and stop observing. Default true. */
+  once?: boolean;
 }
 
 const OBSERVER_DELAY_MS = 100;
@@ -32,6 +34,7 @@ export function AnimatedSection({
   className = '',
   threshold = 0.05,
   fadeOut = true,
+  once = true,
 }: AnimatedSectionProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -62,7 +65,17 @@ export function AnimatedSection({
     if (!el) return;
 
     observerRef.current = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        if (once) {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observerRef.current?.disconnect();
+            observerRef.current = null;
+          }
+          return;
+        }
+        setIsVisible(entry.isIntersecting);
+      },
       {
         threshold,
         rootMargin: fadeOut ? '-50px 0px -50px 0px' : '-30px 0px',
@@ -73,7 +86,7 @@ export function AnimatedSection({
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [canObserve, prefersReducedMotion, threshold, fadeOut]);
+  }, [canObserve, prefersReducedMotion, threshold, fadeOut, once]);
 
   const show = isVisible || prefersReducedMotion;
   const useAnimation = show && !prefersReducedMotion;
