@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
 
@@ -17,15 +17,27 @@ export function ZoomableImage({ src, alt, caption, className = '', thumbnailClas
   const thumbClass = thumbnailClassName ?? 'max-h-64';
   const [open, setOpen] = useState(false);
   const [zoom, setZoom] = useState(100);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panStateRef = useRef<{
+    active: boolean;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+    pointerId: number | null;
+  }>({ active: false, startX: 0, startY: 0, originX: 0, originY: 0, pointerId: null });
 
   const openModal = useCallback(() => {
     setZoom(100);
+    setPan({ x: 0, y: 0 });
     setOpen(true);
   }, []);
 
   const closeModal = useCallback(() => {
     setOpen(false);
     setZoom(100);
+    setPan({ x: 0, y: 0 });
   }, []);
 
   useEffect(() => {
@@ -43,7 +55,19 @@ export function ZoomableImage({ src, alt, caption, className = '', thumbnailClas
 
   const zoomIn = () => setZoom((z) => Math.min(z + 25, 300));
   const zoomOut = () => setZoom((z) => Math.max(z - 25, 50));
-  const resetZoom = () => setZoom(100);
+  const resetZoom = () => {
+    setZoom(100);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // If user zooms out to (or below) 100%, reset panning
+  useEffect(() => {
+    if (zoom <= 100) {
+      setPan({ x: 0, y: 0 });
+    }
+  }, [zoom]);
+
+  const canPan = open && zoom > 100;
 
   const modal = open && typeof document !== 'undefined' && createPortal(
     <div
@@ -96,17 +120,72 @@ export function ZoomableImage({ src, alt, caption, className = '', thumbnailClas
         </div>
       </div>
       <div
-        className="flex-1 flex items-center justify-center overflow-auto p-4"
-        onClick={closeModal}
+        className="flex-1 flex items-center justify-center overflow-hidden p-4"
+        onClick={() => {
+          if (isPanning) return;
+          closeModal();
+        }}
       >
-        <img
-          src={src}
-          alt={alt}
-          className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl transition-transform select-none"
-          style={{ transform: `scale(${zoom / 100})` }}
+        <div
+          className="relative max-w-full max-h-full"
           onClick={(e) => e.stopPropagation()}
-          draggable={false}
-        />
+          onPointerDown={(e) => {
+            if (!canPan) return;
+            // Only left click / primary touch
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            setIsPanning(true);
+            panStateRef.current.active = true;
+            panStateRef.current.startX = e.clientX;
+            panStateRef.current.startY = e.clientY;
+            panStateRef.current.originX = pan.x;
+            panStateRef.current.originY = pan.y;
+            panStateRef.current.pointerId = e.pointerId;
+            (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!panStateRef.current.active) return;
+            const dx = e.clientX - panStateRef.current.startX;
+            const dy = e.clientY - panStateRef.current.startY;
+            setPan({
+              x: panStateRef.current.originX + dx,
+              y: panStateRef.current.originY + dy,
+            });
+          }}
+          onPointerUp={(e) => {
+            if (!panStateRef.current.active) return;
+            panStateRef.current.active = false;
+            panStateRef.current.pointerId = null;
+            setIsPanning(false);
+            try {
+              (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+            } catch {
+              // ignore
+            }
+          }}
+          onPointerCancel={(e) => {
+            if (!panStateRef.current.active) return;
+            panStateRef.current.active = false;
+            panStateRef.current.pointerId = null;
+            setIsPanning(false);
+            try {
+              (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+            } catch {
+              // ignore
+            }
+          }}
+          style={{
+            cursor: canPan ? (isPanning ? 'grabbing' : 'grab') : 'zoom-out',
+            touchAction: canPan ? 'none' : 'auto',
+          }}
+        >
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl transition-transform select-none"
+            style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})` }}
+            draggable={false}
+          />
+        </div>
       </div>
       {caption && (
         <p className="p-3 text-center text-sm text-zinc-400 border-t border-zinc-800">
