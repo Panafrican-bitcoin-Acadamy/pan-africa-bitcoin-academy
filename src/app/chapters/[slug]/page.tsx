@@ -883,7 +883,15 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           </div>
                         )}
                         {section.video && (
-                          <div className="flex flex-col items-center w-full max-w-2xl mx-auto">
+                          <div
+                            className={[
+                              "flex flex-col items-center w-full mx-auto",
+                              chapter.slug === "problems-with-traditional-fiat-money" &&
+                              section.video.caption === "Inflation and its impact"
+                                ? "max-w-lg"
+                                : "max-w-2xl",
+                            ].join(" ")}
+                          >
                             <video
                               src={section.video.src}
                               controls
