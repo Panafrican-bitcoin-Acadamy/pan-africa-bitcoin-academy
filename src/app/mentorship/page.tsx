@@ -39,12 +39,11 @@ export default function MentorshipPage() {
     email: "",
     country: "",
     whatsapp: "",
+    initiative: "",
     role: "",
-    experience: "",
-    teachingExperience: "",
-    motivation: "",
     hours: "",
     comments: "",
+    onboardingCall: false,
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -81,7 +80,6 @@ export default function MentorshipPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          teachingExperience: formData.teachingExperience,
         }),
       });
       const data = await res.json();
@@ -126,25 +124,9 @@ export default function MentorshipPage() {
           </AnimatedSection>
 
       <div className="space-y-12">
-        {/* Why Mentors Matter */}
-        <AnimatedSection animation="slideRight">
-          <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Why Mentors & Volunteers Matter</AnimatedHeading>
-          <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
-            Bitcoin education grows through community, not classrooms.
-          </p>
-          <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
-            Our mentors, volunteers, and guest lecturers help shape the next generation of African Bitcoin talent.
-          </p>
-          <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
-            If you share our mission of sovereignty, freedom, and open knowledge — we invite you to join us.
-          </p>
-          </section>
-        </AnimatedSection>
-
         {submitted && (
           <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-green-200">
-            Thank you! Your mentorship application has been received.
+            Thank you — welcome aboard. We’ll reach out with next steps.
           </div>
         )}
         {error && (
@@ -153,63 +135,24 @@ export default function MentorshipPage() {
           </div>
         )}
 
-        {/* Roles */}
-        <AnimatedSection animation="slideLeft">
-          <section className="space-y-6">
-          <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Roles You Can Apply For</AnimatedHeading>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {roles.map((role) => (
-              <div
-                key={role.id}
-                className={`rounded-xl border p-6 transition ${
-                  selectedRole === role.id
-                    ? "border-orange-400/50 bg-orange-500/10 shadow-[0_0_30px_rgba(249,115,22,0.3)]"
-                    : "border-cyan-400/25 bg-black/80 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-                }`}
-              >
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="text-3xl">{role.icon}</span>
-                  <div>
-                    <AnimatedHeading as="h3" className="text-lg font-semibold text-zinc-50">{role.title}</AnimatedHeading>
-                    <p className="text-xs text-zinc-400">Time: {role.time}</p>
-                  </div>
-                </div>
-                <p className="mb-4 text-sm text-zinc-300">{role.description}</p>
-                <button
-                  onClick={() => {
-                    setSelectedRole(role.id);
-                    setFormData({ ...formData, role: role.id });
-                  }}
-                  className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                    selectedRole === role.id
-                      ? "bg-orange-400 text-black"
-                      : "bg-cyan-400/20 text-cyan-300 hover:bg-cyan-400/30"
-                  }`}
-                >
-                  {selectedRole === role.id ? "Selected" : "Apply for This Role"}
-                </button>
-              </div>
-            ))}
-          </div>
-          </section>
-        </AnimatedSection>
-
-        {/* Application Form */}
+        {/* Application Form (moved up + simplified) */}
         <AnimatedSection animation="slideUp">
-          <section id="application" className="space-y-8">
+          <section id="application" className="space-y-6">
             <div className="text-center">
-              <AnimatedHeading as="h2" className="text-3xl font-bold text-cyan-200 mb-2">Application Form</AnimatedHeading>
-              <p className="text-sm text-zinc-400">Fill out the form below to apply for a mentorship or volunteer role</p>
+              <AnimatedHeading as="h2" className="text-3xl font-bold text-cyan-200 mb-2">Join us as a Mentor or Volunteer</AnimatedHeading>
+              <p className="text-sm text-zinc-400">
+                Help us grow Bitcoin education across Africa — share your details and we’ll reach out with next steps.
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Personal Information Section */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Personal Information */}
               <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
                 <div className="mb-6 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/20">
                     <span className="text-xl">👤</span>
                   </div>
-                  <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-200">Personal Information</AnimatedHeading>
+                  <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-200">Join this role</AnimatedHeading>
                 </div>
                 <div className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -273,129 +216,81 @@ export default function MentorshipPage() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Initiative / Community <span className="text-zinc-500 text-xs">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.initiative}
+                      onChange={(e) => setFormData({ ...formData, initiative: e.target.value })}
+                      className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 transition"
+                      placeholder="e.g., BitDevs, local meetup, campus club"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Role Selection Section */}
+              {/* Role + availability */}
               <div className="rounded-xl border border-orange-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
                 <div className="mb-6 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
                     <span className="text-xl">🎯</span>
                   </div>
-                  <AnimatedHeading as="h3" className="text-lg font-semibold text-orange-200">Role Selection</AnimatedHeading>
+                  <AnimatedHeading as="h3" className="text-lg font-semibold text-orange-200">Role & Availability</AnimatedHeading>
                 </div>
                 <div className="space-y-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      Which role are you applying for? <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.role}
-                      onChange={(e) => {
-                        setFormData({ ...formData, role: e.target.value });
-                        setSelectedRole(e.target.value);
-                      }}
-                      className="w-full rounded-lg border border-orange-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition"
-                    >
-                      <option value="">Select a role</option>
-                      {roles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.title} - {role.time}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedRole && (
-                      <p className="mt-2 text-xs text-zinc-400">
-                        {roles.find(r => r.id === selectedRole)?.description}
-                      </p>
-                    )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        Role <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.role}
+                        onChange={(e) => {
+                          setFormData({ ...formData, role: e.target.value });
+                          setSelectedRole(e.target.value);
+                        }}
+                        className="w-full rounded-lg border border-orange-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition"
+                      >
+                        <option value="">Select a role</option>
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.title} - {role.time}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedRole && (
+                        <p className="mt-2 text-xs text-zinc-400">
+                          {roles.find(r => r.id === selectedRole)?.description}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        Hours / month <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.hours}
+                        onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                        className="w-full rounded-lg border border-orange-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition"
+                        placeholder="e.g., 8-12 hours"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      How many hours per month can you contribute? <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.hours}
-                      onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-                      className="w-full rounded-lg border border-orange-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition"
-                      placeholder="e.g., 8-12 hours"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Experience Section */}
-              <div className="rounded-xl border border-purple-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
-                <div className="mb-6 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
-                    <span className="text-xl">💼</span>
-                  </div>
-                  <AnimatedHeading as="h3" className="text-lg font-semibold text-purple-200">Experience & Background</AnimatedHeading>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      What experience do you have with Bitcoin / Lightning? <span className="text-red-400">*</span>
-                    </label>
-                    <textarea
-                      required
-                      value={formData.experience}
-                      onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                      rows={4}
-                      className="w-full rounded-lg border border-purple-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-400/20 transition resize-none"
-                      placeholder="Describe your experience with Bitcoin, Lightning, nodes, mining, development, etc."
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      Have you taught or mentored before?
-                    </label>
-                    <textarea
-                      value={formData.teachingExperience}
-                      onChange={(e) => setFormData({ ...formData, teachingExperience: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-lg border border-purple-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-400/20 transition resize-none"
-                      placeholder="Any teaching, mentoring, or community leadership experience?"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Motivation Section */}
-              <div className="rounded-xl border border-green-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
-                <div className="mb-6 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
-                    <span className="text-xl">💚</span>
-                  </div>
-                  <AnimatedHeading as="h3" className="text-lg font-semibold text-green-200">Motivation & Vision</AnimatedHeading>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      Why do you want to support this academy? <span className="text-red-400">*</span>
-                    </label>
-                    <textarea
-                      required
-                      value={formData.motivation}
-                      onChange={(e) => setFormData({ ...formData, motivation: e.target.value })}
-                      rows={4}
-                      className="w-full rounded-lg border border-green-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-green-400/50 focus:outline-none focus:ring-2 focus:ring-green-400/20 transition resize-none"
-                      placeholder="Share your motivation, vision, and what drives you to contribute..."
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                      Additional comments
+                      Notes (optional)
                     </label>
                     <textarea
                       value={formData.comments}
                       onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
                       rows={3}
-                      className="w-full rounded-lg border border-green-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-green-400/50 focus:outline-none focus:ring-2 focus:ring-green-400/20 transition resize-none"
-                      placeholder="Anything else you'd like to share?"
+                      className="w-full rounded-lg border border-orange-400/20 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition resize-none"
+                      placeholder="Links, topics you can teach, timezone, or anything we should know."
                     />
                   </div>
                 </div>
@@ -407,6 +302,8 @@ export default function MentorshipPage() {
                   <input 
                     type="checkbox" 
                     id="onboarding" 
+                    checked={formData.onboardingCall}
+                    onChange={(e) => setFormData({ ...formData, onboardingCall: e.target.checked })}
                     className="mt-1 h-4 w-4 rounded border-zinc-600 bg-zinc-900/50 text-cyan-400 focus:ring-2 focus:ring-cyan-400/20" 
                   />
                   <label htmlFor="onboarding" className="text-sm text-zinc-300">
@@ -425,12 +322,12 @@ export default function MentorshipPage() {
                   {submitting ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent"></span>
-                      Submitting...
+                      Joining...
                     </span>
                   ) : submitted ? (
-                    "✓ Application Submitted"
+                    "✓ Joined"
                   ) : (
-                    "Submit Application"
+                    "Join this role"
                   )}
                 </button>
                 <p className="text-xs text-zinc-500">
@@ -438,6 +335,66 @@ export default function MentorshipPage() {
                 </p>
               </div>
             </form>
+          </section>
+        </AnimatedSection>
+
+        {/* Roles (kept, moved below the form) */}
+        <AnimatedSection animation="slideLeft">
+          <section className="space-y-6">
+            <AnimatedHeading as="h2" className="text-xl font-semibold text-zinc-50">Roles You Can Join</AnimatedHeading>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {roles.map((role) => (
+                <div
+                  key={role.id}
+                  className={`rounded-xl border p-6 transition ${
+                    selectedRole === role.id
+                      ? "border-orange-400/50 bg-orange-500/10 shadow-[0_0_30px_rgba(249,115,22,0.3)]"
+                      : "border-cyan-400/25 bg-black/80 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                  }`}
+                >
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="text-3xl">{role.icon}</span>
+                    <div>
+                      <AnimatedHeading as="h3" className="text-lg font-semibold text-zinc-50">{role.title}</AnimatedHeading>
+                      <p className="text-xs text-zinc-400">Time: {role.time}</p>
+                    </div>
+                  </div>
+                  <p className="mb-4 text-sm text-zinc-300">{role.description}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole(role.id);
+                      setFormData({ ...formData, role: role.id });
+                      const el = document.getElementById('application');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                      selectedRole === role.id
+                        ? "bg-orange-400 text-black"
+                        : "bg-cyan-400/20 text-cyan-300 hover:bg-cyan-400/30"
+                    }`}
+                  >
+                    {selectedRole === role.id ? "Selected" : "Join this role"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        </AnimatedSection>
+
+        {/* Why Mentors Matter (moved below) */}
+        <AnimatedSection animation="slideRight">
+          <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+            <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Why Mentors & Volunteers Matter</AnimatedHeading>
+            <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
+              Bitcoin education grows through community, not classrooms.
+            </p>
+            <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
+              Our mentors, volunteers, and guest lecturers help shape the next generation of African Bitcoin talent.
+            </p>
+            <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
+              If you share our mission of sovereignty, freedom, and open knowledge — we invite you to join us.
+            </p>
           </section>
         </AnimatedSection>
 
@@ -546,9 +503,9 @@ export default function MentorshipPage() {
             </AnimatedList>
           ) : (
             <div className="text-center py-8 text-zinc-400">
-              <p>No mentors available at this time.</p>
+              <p>No mentor profiles to show yet.</p>
               <p className="mt-2 text-xs text-zinc-500">
-                Approved mentors will appear here automatically from our mentorship database.
+                As people join our mentorship & volunteer community, we’ll highlight them here.
               </p>
             </div>
           )}
@@ -566,7 +523,7 @@ export default function MentorshipPage() {
               href="#application"
               className="mt-6 inline-block rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110"
             >
-              Apply to be a Mentor or Volunteer
+              Join as a Mentor or Volunteer
             </a>
           </section>
         </AnimatedSection>

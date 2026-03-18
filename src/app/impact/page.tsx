@@ -15,6 +15,9 @@ import {
   ArrowDownRight,
   RefreshCw,
   CalendarCheck,
+  Zap,
+  HeartHandshake,
+  UserPlus,
 } from 'lucide-react';
 import { AnimatedSection } from '@/components/AnimatedSection';
 import { AnimatedHeading } from '@/components/AnimatedHeading';
@@ -335,7 +338,23 @@ export default function ImpactPage() {
                   key={cohort.id}
                   className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
                 >
-                  <AnimatedHeading as="h3" className="mb-4 text-lg font-semibold text-cyan-200">{cohort.name}</AnimatedHeading>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-200">
+                      {cohort.name}
+                    </AnimatedHeading>
+                    {(() => {
+                      const ended =
+                        !!cohort.endDate && !Number.isNaN(new Date(cohort.endDate).getTime())
+                          ? new Date(cohort.endDate).getTime() < Date.now()
+                          : false;
+                      const isCompleted = (cohort.completionRate ?? 0) >= 100 || ended;
+                      return isCompleted ? (
+                        <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-semibold text-green-300 ring-1 ring-green-500/25">
+                          Completed
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                   <div className="space-y-2 text-sm text-zinc-300">
                     <p><span className="font-medium text-zinc-400">Students:</span> {cohort.students}</p>
                     <p><span className="font-medium text-zinc-400">Completion Rate:</span> {cohort.completionRate}%</p>
@@ -483,28 +502,80 @@ export default function ImpactPage() {
 
         {/* Support Section */}
         <AnimatedSection animation="slideLeft">
-          <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Want to help us expand our impact?</AnimatedHeading>
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <a
-              href="/donate"
-              className="rounded-lg bg-gradient-to-r from-orange-400 to-cyan-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110"
-            >
-              Lightning Donate
-            </a>
-            <a
-              href="/sponsor"
-              className="rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
-            >
-              Sponsor a Student
-            </a>
-            <a
-              href="/mentorship"
-              className="rounded-lg border border-purple-400/30 bg-purple-400/10 px-6 py-3 text-sm font-semibold text-purple-300 transition hover:bg-purple-400/20"
-            >
-              Apply to Mentor
-            </a>
-          </div>
+          <section className="overflow-hidden rounded-xl border border-orange-500/25 bg-black/80 p-8 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
+            <div className="mx-auto max-w-3xl text-center">
+              <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">
+                Want to help us expand our impact?
+              </AnimatedHeading>
+              <p className="mt-2 text-sm text-zinc-300 sm:text-base">
+                Support the next cohort of builders, educators, and community leaders across Africa.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <a
+                href="/donate"
+                className="group rounded-xl border border-orange-400/25 bg-gradient-to-b from-orange-400/10 to-transparent p-5 text-left transition hover:border-orange-400/40 hover:bg-orange-400/15 focus:outline-none focus:ring-2 focus:ring-orange-400/40"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-orange-400/25 bg-orange-400/10">
+                    <Zap className="h-5 w-5 text-orange-300" aria-hidden />
+                  </div>
+                  <span className="rounded-full bg-orange-400/10 px-2.5 py-1 text-[11px] font-semibold text-orange-200 ring-1 ring-orange-400/20">
+                    Fast
+                  </span>
+                </div>
+                <div className="mt-4 text-sm font-semibold text-zinc-50">Lightning Donate</div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  Contribute instantly via Lightning to keep classes, meetups, and workshops running.
+                </div>
+                <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-orange-200">
+                  Donate now <span className="transition group-hover:translate-x-0.5">→</span>
+                </div>
+              </a>
+
+              <a
+                href="/sponsor"
+                className="group rounded-xl border border-cyan-400/25 bg-gradient-to-b from-cyan-400/10 to-transparent p-5 text-left transition hover:border-cyan-400/40 hover:bg-cyan-400/15 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-400/10">
+                    <HeartHandshake className="h-5 w-5 text-cyan-300" aria-hidden />
+                  </div>
+                  <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-200 ring-1 ring-cyan-400/20">
+                    Direct
+                  </span>
+                </div>
+                <div className="mt-4 text-sm font-semibold text-zinc-50">Sponsor a Student</div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  Help cover learning resources and mentorship for students who need it most.
+                </div>
+                <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-cyan-200">
+                  Sponsor <span className="transition group-hover:translate-x-0.5">→</span>
+                </div>
+              </a>
+
+              <a
+                href="/apply"
+                className="group rounded-xl border border-purple-400/25 bg-gradient-to-b from-purple-400/10 to-transparent p-5 text-left transition hover:border-purple-400/40 hover:bg-purple-400/15 focus:outline-none focus:ring-2 focus:ring-purple-400/40"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-purple-400/25 bg-purple-400/10">
+                    <UserPlus className="h-5 w-5 text-purple-300" aria-hidden />
+                  </div>
+                  <span className="rounded-full bg-purple-400/10 px-2.5 py-1 text-[11px] font-semibold text-purple-200 ring-1 ring-purple-400/20">
+                    Mentor
+                  </span>
+                </div>
+                <div className="mt-4 text-sm font-semibold text-zinc-50">Apply to Mentor</div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  Volunteer your time to guide students and strengthen local Bitcoin communities.
+                </div>
+                <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-purple-200">
+                  Apply <span className="transition group-hover:translate-x-0.5">→</span>
+                </div>
+              </a>
+            </div>
           </section>
         </AnimatedSection>
       </div>
