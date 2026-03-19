@@ -930,6 +930,40 @@ export default function ChaptersPage() {
                 </div>
               </Link>
               </AnimatedSection>
+
+              {/* Exonumia Africa */}
+              <AnimatedSection animation="slideUp" delay={720}>
+              <a
+                href="https://exonumia.africa/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col rounded-xl border border-indigo-400/30 bg-black/60 p-6 transition hover:border-indigo-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-lg bg-indigo-500/20 p-3">
+                    <BookOpen className="h-6 w-6 text-indigo-400" />
+                  </div>
+                  <div className="flex-1">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-indigo-300 transition group-hover:text-indigo-200">
+                      Exonumia Africa
+                    </AnimatedHeading>
+                    <p className="text-sm text-zinc-400">Localized African Bitcoin learning resources</p>
+                  </div>
+                </div>
+                <p className="mb-4 flex-1 text-sm text-zinc-300">
+                  Explore Bitcoin education resources in multiple African languages and countries.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-medium text-indigo-300">
+                    Free (Online)
+                  </span>
+                  <div className="flex items-center gap-2 text-sm text-indigo-400">
+                    <span>Visit</span>
+                    <ExternalLink className="h-4 w-4" />
+                  </div>
+                </div>
+              </a>
+              </AnimatedSection>
             </div>
           </div>
 
