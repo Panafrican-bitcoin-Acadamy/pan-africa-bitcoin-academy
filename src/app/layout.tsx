@@ -26,6 +26,9 @@ const AdminModeBadgeWrapper = dynamic(() => import("@/components/AdminModeBadgeW
 // CookieConsentWrapper is a client component - use dynamic import
 const CookieConsentWrapper = dynamic(() => import("@/components/CookieConsentWrapper").then(mod => ({ default: mod.CookieConsentWrapper })));
 
+// Inflation tracker is client-side (uses localStorage/sessionStorage)
+const InflationTrackerWrapper = dynamic(() => import("@/components/InflationTrackerWrapper").then(mod => ({ default: mod.InflationTrackerWrapper })));
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -202,6 +205,9 @@ export default function RootLayout({
         
         {/* Cookie Consent Popup - shows on first visit */}
         <CookieConsentWrapper />
+
+        {/* Global purchasing power side indicator */}
+        <InflationTrackerWrapper />
         
         <ClickSparkWrapper>
           <div className="flex min-h-screen flex-col">

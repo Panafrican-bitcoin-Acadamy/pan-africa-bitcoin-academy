@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
-import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink } from 'lucide-react';
+import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw } from 'lucide-react';
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
 const CertificateImageSection = lazy(() => import('./CertificateImageSection').then(mod => ({ default: mod.CertificateImageSection })));
@@ -210,6 +210,14 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
 
+  const INF_ENABLED_KEY = 'inflationTrackerEnabled';
+  const INF_YEAR_KEY = 'inflationYear';
+  const INF_LAST_COUNT_AT_KEY = 'inflationLastCountAt';
+  const INF_BASE_YEAR = 1971;
+
+  const [inflationTrackingEnabled, setInflationTrackingEnabled] = useState(false);
+  const [inflationYear, setInflationYear] = useState(INF_BASE_YEAR);
+
   // Check localStorage for withdrawal request status on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -218,6 +226,36 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         setWithdrawalRequested(true);
       }
     }
+  }, []);
+
+  // Inflation tracker: show Start button until the user starts tracking
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const enabled = localStorage.getItem(INF_ENABLED_KEY) === 'true';
+      setInflationTrackingEnabled(enabled);
+      const savedYearRaw = localStorage.getItem(INF_YEAR_KEY);
+      const savedYear = savedYearRaw ? Number(savedYearRaw) : INF_BASE_YEAR;
+      setInflationYear(Number.isNaN(savedYear) ? INF_BASE_YEAR : savedYear);
+    } catch {
+      setInflationTrackingEnabled(false);
+      setInflationYear(INF_BASE_YEAR);
+    }
+
+    const handler = () => {
+      try {
+        const enabled = localStorage.getItem(INF_ENABLED_KEY) === 'true';
+        setInflationTrackingEnabled(enabled);
+        const savedYearRaw = localStorage.getItem(INF_YEAR_KEY);
+        const savedYear = savedYearRaw ? Number(savedYearRaw) : INF_BASE_YEAR;
+        setInflationYear(Number.isNaN(savedYear) ? INF_BASE_YEAR : savedYear);
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener('inflationTrackerEnabledChanged', handler);
+    return () => window.removeEventListener('inflationTrackerEnabledChanged', handler);
   }, []);
 
   // Clear withdrawal request flag when pending sats become 0 (withdrawal processed)
@@ -1010,6 +1048,57 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           </p>
         </div>
 
+        {/* Inflation Tracker Start */}
+        <div className="mb-6 rounded-xl border border-orange-400/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4 text-orange-300" />
+                <h3 className="text-lg font-semibold text-zinc-50">Inflation Tracker</h3>
+              </div>
+              <p className="mt-1 text-sm text-zinc-400">
+                {inflationTrackingEnabled
+                  ? `Tracking is ON. Your current year is ${inflationYear}.`
+                  : 'Press Start to begin counting how inflation affects your money.'}
+              </p>
+            </div>
+
+            {!inflationTrackingEnabled ? (
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem(INF_ENABLED_KEY, 'true');
+                  localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
+                  localStorage.setItem(INF_LAST_COUNT_AT_KEY, String(Date.now()));
+                  setInflationTrackingEnabled(true);
+                  setInflationYear(INF_BASE_YEAR);
+                  window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
+                }}
+                className="whitespace-nowrap rounded-lg bg-gradient-to-r from-orange-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-black shadow-[0_0_15px_rgba(249,115,22,0.2)] transition hover:brightness-110"
+              >
+                Start tracking
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  // Restart from the baseline year
+                  localStorage.setItem(INF_ENABLED_KEY, 'true');
+                  localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
+                  localStorage.setItem(INF_LAST_COUNT_AT_KEY, String(Date.now()));
+                  setInflationYear(INF_BASE_YEAR);
+                  window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
+                }}
+                className="whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <RotateCcw className="h-4 w-4" />
+                  Restart
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Tabs */}
         <div className="mb-6 flex gap-2 border-b border-zinc-800">
