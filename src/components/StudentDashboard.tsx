@@ -212,7 +212,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
 
   const INF_ENABLED_KEY = 'inflationTrackerEnabled';
   const INF_YEAR_KEY = 'inflationYear';
-  const INF_LAST_COUNT_AT_KEY = 'inflationLastCountAt';
+  const INF_LOGIN_COUNTED_SESSION_KEY = 'inflationLoginCounted';
   const INF_BASE_YEAR = 1971;
 
   const [inflationTrackingEnabled, setInflationTrackingEnabled] = useState(false);
@@ -1049,8 +1049,9 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         </div>
 
         {/* Inflation Tracker Start */}
-        <div className="mb-6 rounded-xl border border-orange-400/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
-          <div className="flex items-start justify-between gap-4">
+        <div className="mb-6 flex justify-end">
+          <div className="w-full max-w-md rounded-xl border border-orange-400/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
+            <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-orange-300" />
@@ -1063,13 +1064,13 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               </p>
             </div>
 
-            {!inflationTrackingEnabled ? (
+              {!inflationTrackingEnabled ? (
               <button
                 type="button"
                 onClick={() => {
                   localStorage.setItem(INF_ENABLED_KEY, 'true');
                   localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
-                  localStorage.setItem(INF_LAST_COUNT_AT_KEY, String(Date.now()));
+                  sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
                   setInflationTrackingEnabled(true);
                   setInflationYear(INF_BASE_YEAR);
                   window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
@@ -1085,7 +1086,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   // Restart from the baseline year
                   localStorage.setItem(INF_ENABLED_KEY, 'true');
                   localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
-                  localStorage.setItem(INF_LAST_COUNT_AT_KEY, String(Date.now()));
+                  sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
                   setInflationYear(INF_BASE_YEAR);
                   window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
                 }}
@@ -1097,6 +1098,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                 </span>
               </button>
             )}
+            </div>
           </div>
         </div>
 

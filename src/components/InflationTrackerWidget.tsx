@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, TrendingDown } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
 const BASE_YEAR = 1971;
@@ -9,36 +10,55 @@ const MAX_YEAR = 2025;
 const BASE_AMOUNT = 100000;
 const LOCAL_STORAGE_KEY = 'inflationYear';
 const INFLATION_ENABLED_KEY = 'inflationTrackerEnabled';
-const LAST_COUNT_AT_KEY = 'inflationLastCountAt';
-const YEARS_PER_INTERVAL = 2;
-const ADVANCE_INTERVAL_MS = 1000 * 60 * 60 * 24 * 30; // advance +2 years every ~30 days of real time
+const YEARS_PER_LOGIN = 5;
+const LOGIN_COUNTED_SESSION_KEY = 'inflationLoginCounted';
 
+// CPI anchors (US city average) used for interpolation across years.
 const CPI_POINTS: Record<number, number> = {
   1971: 40.5,
+  1975: 53.8,
   1980: 82.4,
+  1985: 107.6,
   1990: 130.7,
+  1995: 152.4,
   2000: 172.2,
+  2005: 195.3,
   2010: 218.1,
+  2015: 237.0,
   2020: 258.8,
   2025: 310.0,
 };
 
-// (Left in for future extensions; the lifestyle model uses fixed 1971 lifestyle basket costs.)
-
 type LifestyleItemId = 'house' | 'cars' | 'food' | 'child' | 'transport' | 'misc';
 type LifestyleState = 'full' | 'gone';
+type InflationCategory = 'housing' | 'cars' | 'food' | 'childcare' | 'transport' | 'other';
 
-const BASE_LIFESTYLE_BUDGET: Array<{ id: LifestyleItemId; label: string; cost: number }> = [
-  { id: 'house', label: 'House', cost: 50000 },
-  { id: 'cars', label: '2 Cars', cost: 20000 },
-  { id: 'food', label: 'Food (5 yrs)', cost: 10000 },
-  { id: 'child', label: 'Child expenses', cost: 10000 },
-  { id: 'transport', label: 'Fuel & transport', cost: 5000 },
-  { id: 'misc', label: 'Other', cost: 5000 },
+const BASE_LIFESTYLE_BUDGET: Array<{
+  id: LifestyleItemId;
+  label: string;
+  cost: number;
+  category: InflationCategory;
+}> = [
+  { id: 'house', label: 'House', cost: 50000, category: 'housing' },
+  { id: 'cars', label: '2 Cars', cost: 20000, category: 'cars' },
+  { id: 'food', label: 'Food (5 yrs)', cost: 10000, category: 'food' },
+  { id: 'child', label: 'Child expenses', cost: 10000, category: 'childcare' },
+  { id: 'transport', label: 'Fuel & transport', cost: 5000, category: 'transport' },
+  { id: 'misc', label: 'Other', cost: 5000, category: 'other' },
 ];
 
 const DEFAULT_PRIORITY_ORDER: LifestyleItemId[] = BASE_LIFESTYLE_BUDGET.map((i) => i.id);
 const PRIORITY_ORDER_STORAGE_KEY = 'inflationPriorityOrder';
+
+// Category sensitivity relative to CPI. >1 means category usually rises faster than headline CPI.
+const CATEGORY_INFLATION_SENSITIVITY: Record<InflationCategory, number> = {
+  housing: 1.18,
+  cars: 1.03,
+  food: 1.1,
+  childcare: 1.16,
+  transport: 1.08,
+  other: 1.0,
+};
 
 // Simplified BTC average yearly price points (USD)
 const BTC_POINTS: Record<number, number> = {
@@ -75,9 +95,18 @@ function adjustedForInflation(year: number): number {
   return BASE_AMOUNT * (cpiCurrent / cpiStart);
 }
 
+function getInflatedItemCost(baseCost: number, category: InflationCategory, year: number): number {
+  const cpiStart = CPI_POINTS[BASE_YEAR];
+  const cpiCurrent = interpolateByYear(CPI_POINTS, year);
+  const cpiRatio = cpiCurrent / cpiStart;
+  const sensitivity = CATEGORY_INFLATION_SENSITIVITY[category] ?? 1;
+  return baseCost * Math.pow(cpiRatio, sensitivity);
+}
+
 function getLifestyleStates(
   currentBudget: number,
-  priorityOrder: LifestyleItemId[]
+  priorityOrder: LifestyleItemId[],
+  year: number
 ): Array<{ id: LifestyleItemId; label: string; cost: number; state: LifestyleState }> {
   let remaining = currentBudget;
   const byId = new Map(BASE_LIFESTYLE_BUDGET.map((i) => [i.id, i]));
@@ -88,16 +117,19 @@ function getLifestyleStates(
       return { id, label: String(id), cost: 0, state: 'gone' as const };
     }
 
-    if (remaining >= item.cost) {
-      remaining -= item.cost;
-      return { ...item, state: 'full' as const };
+    const currentCost = getInflatedItemCost(item.cost, item.category, year);
+
+    if (remaining >= currentCost) {
+      remaining -= currentCost;
+      return { ...item, cost: currentCost, state: 'full' as const };
     }
-    return { ...item, state: 'gone' as const };
+    return { ...item, cost: currentCost, state: 'gone' as const };
   });
 }
 
 export function InflationTrackerWidget() {
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [year, setYear] = useState(BASE_YEAR);
   const [priorityOrder, setPriorityOrder] = useState<LifestyleItemId[]>(DEFAULT_PRIORITY_ORDER);
@@ -106,13 +138,19 @@ export function InflationTrackerWidget() {
   const [displayLifestyleBudget, setDisplayLifestyleBudget] = useState(BASE_AMOUNT);
   const prevLifestyleRef = useRef(BASE_AMOUNT);
   const dragIdRef = useRef<LifestyleItemId | null>(null);
-  const [dragOver, setDragOver] = useState<{ id: LifestyleItemId; position: 'before' | 'after' } | null>(null);
+  const trackerRef = useRef<HTMLDivElement | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
       setHydrated(false);
       setTrackingEnabled(false);
+      try {
+        sessionStorage.removeItem(LOGIN_COUNTED_SESSION_KEY);
+      } catch {
+        // ignore session storage errors
+      }
       return;
     }
 
@@ -140,35 +178,37 @@ export function InflationTrackerWidget() {
 
       const savedYearRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
       const savedYear = savedYearRaw ? Number(savedYearRaw) : NaN;
-      const lastCountAtRaw = localStorage.getItem(LAST_COUNT_AT_KEY);
-      const lastCountAt = lastCountAtRaw ? Number(lastCountAtRaw) : NaN;
-      const now = Date.now();
-
       const safeYear = Number.isNaN(savedYear) ? BASE_YEAR : savedYear;
-      const safeLastCountAt = Number.isNaN(lastCountAt) ? now : lastCountAt;
 
-      const elapsed = Math.max(0, now - safeLastCountAt);
-      const intervals = Math.floor(elapsed / ADVANCE_INTERVAL_MS);
-      const advancedYear = Math.min(MAX_YEAR, safeYear + intervals * YEARS_PER_INTERVAL);
-      const newLastCountAt = intervals > 0 ? safeLastCountAt + intervals * ADVANCE_INTERVAL_MS : safeLastCountAt;
+      // Advance once per authenticated session (login-based progression).
+      let shouldAdvanceOnLogin = false;
+      try {
+        shouldAdvanceOnLogin = sessionStorage.getItem(LOGIN_COUNTED_SESSION_KEY) !== 'true';
+      } catch {
+        // If sessionStorage is unavailable, do not repeatedly advance.
+        shouldAdvanceOnLogin = false;
+      }
 
-      localStorage.setItem(LOCAL_STORAGE_KEY, String(advancedYear));
-      localStorage.setItem(LAST_COUNT_AT_KEY, String(newLastCountAt));
-      setYear(Math.min(Math.max(advancedYear, BASE_YEAR), MAX_YEAR));
+      const nextYear = shouldAdvanceOnLogin
+        ? Math.min(MAX_YEAR, safeYear + YEARS_PER_LOGIN)
+        : Math.min(Math.max(safeYear, BASE_YEAR), MAX_YEAR);
+
+      localStorage.setItem(LOCAL_STORAGE_KEY, String(nextYear));
+      try {
+        sessionStorage.setItem(LOGIN_COUNTED_SESSION_KEY, 'true');
+      } catch {
+        // ignore session storage errors
+      }
+      setYear(nextYear);
     };
 
     refreshEnabledAndYear();
 
     const onEnabledChanged = () => refreshEnabledAndYear();
     window.addEventListener('inflationTrackerEnabledChanged', onEnabledChanged);
-    const intervalId = window.setInterval(() => {
-      // Keep year in sync while the tab stays open.
-      refreshEnabledAndYear();
-    }, 60 * 1000);
 
     return () => {
       window.removeEventListener('inflationTrackerEnabledChanged', onEnabledChanged);
-      window.clearInterval(intervalId);
     };
   }, [isAuthenticated, authLoading]);
 
@@ -180,8 +220,8 @@ export function InflationTrackerWidget() {
     return BASE_AMOUNT * (cpiStart / cpiCurrent);
   }, [year]);
   const lifestyleStates = useMemo(
-    () => getLifestyleStates(lifestyleBudget, priorityOrder),
-    [lifestyleBudget, priorityOrder]
+    () => getLifestyleStates(lifestyleBudget, priorityOrder, year),
+    [lifestyleBudget, priorityOrder, year]
   );
 
   const btcPrice = useMemo(() => {
@@ -230,23 +270,43 @@ export function InflationTrackerWidget() {
     localStorage.setItem(PRIORITY_ORDER_STORAGE_KEY, JSON.stringify(priorityOrder));
   }, [priorityOrder, hydrated, trackingEnabled]);
 
+  // Close the panel whenever user navigates to another page.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Close when clicking/focusing outside the widget.
+  useEffect(() => {
+    if (!open) return;
+
+    const handleOutside = (event: MouseEvent | TouchEvent | FocusEvent) => {
+      const root = trackerRef.current;
+      const target = event.target as Node | null;
+      if (!root || !target) return;
+      if (!root.contains(target)) setOpen(false);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    document.addEventListener('focusin', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+      document.removeEventListener('focusin', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open]);
+
   if (authLoading || !isAuthenticated || !hydrated) return null;
 
-  const movePriority = (id: LifestyleItemId, delta: number) => {
-    setPriorityOrder((prev) => {
-      const fromIndex = prev.indexOf(id);
-      if (fromIndex < 0) return prev;
-      const toIndex = fromIndex + delta;
-      if (toIndex < 0 || toIndex >= prev.length) return prev;
-      const next = [...prev];
-      next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, id);
-      return next;
-    });
-  };
-
   return (
-    <div className="fixed right-0 top-1/2 z-40 -translate-y-1/2">
+    <div ref={trackerRef} className="fixed right-0 top-1/2 z-40 -translate-y-1/2">
       <div className="flex items-center">
         <button
           type="button"
@@ -283,7 +343,11 @@ export function InflationTrackerWidget() {
                   <TrendingDown className="h-4 w-4" />
                   Purchasing Power Tracker
                 </h3>
-                <span className="text-[11px] font-semibold text-zinc-400">
+                <span
+                  className={`text-[11px] font-semibold ${
+                    trackingEnabled ? 'text-green-400' : 'text-zinc-400'
+                  }`}
+                >
                   {trackingEnabled ? 'Tracking ON' : 'Start in Dashboard'}
                 </span>
               </div>
@@ -305,104 +369,96 @@ export function InflationTrackerWidget() {
                     1971 lifestyle budget:{' '}
                     <strong className="text-orange-200">${BASE_AMOUNT.toLocaleString()}</strong>
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {lifestyleStates.map((item, idx) => {
-                      const isBefore = dragOver?.id === item.id && dragOver.position === 'before';
-                      const isAfter = dragOver?.id === item.id && dragOver.position === 'after';
                       return (
-                        <div
-                          key={item.id}
-                          className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 ${
-                            item.state === 'full'
-                              ? 'border-green-500/30 bg-green-500/10 text-green-200'
-                              : 'border-zinc-700 bg-zinc-900/70 text-zinc-500 line-through'
-                          } ${isBefore ? 'border-t-2 border-orange-400/60' : ''} ${
-                            isAfter ? 'border-b-2 border-orange-400/60' : ''
-                          } cursor-grab`}
-                          draggable
-                          onDragStart={(e) => {
-                            dragIdRef.current = item.id;
-                            try {
-                              e.dataTransfer.setData('text/plain', item.id);
-                            } catch {
-                              // ignore
-                            }
-                            e.dataTransfer.effectAllowed = 'move';
-                            setDragOver(null);
-                          }}
-                          onDragOver={(e) => {
-                            const fromId = dragIdRef.current;
-                            if (!fromId || fromId === item.id) return;
-                            e.preventDefault();
+                        <div key={item.id}>
+                          <div
+                            className={`h-3 rounded transition ${
+                              dropIndex === idx ? 'bg-orange-400/40' : 'bg-transparent'
+                            }`}
+                            onDragOver={(e) => {
+                              if (!dragIdRef.current) return;
+                              e.preventDefault();
+                              setDropIndex(idx);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const fromId = dragIdRef.current;
+                              dragIdRef.current = null;
+                              setDropIndex(null);
+                              if (!fromId) return;
 
-                            const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                            const midpoint = rect.top + rect.height / 2;
-                            const position = e.clientY < midpoint ? 'before' : 'after';
-                            setDragOver({ id: item.id, position });
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            const fromId = dragIdRef.current;
-                            const toId = item.id;
-                            const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                            const midpoint = rect.top + rect.height / 2;
-                            const position = e.clientY < midpoint ? 'before' : 'after';
-
-                            dragIdRef.current = null;
-                            setDragOver(null);
-
-                            if (!fromId || fromId === toId) return;
-
-                            setPriorityOrder((prev) => {
-                              const fromIndex = prev.indexOf(fromId);
-                              if (fromIndex < 0) return prev;
-
-                              const next = [...prev];
-                              next.splice(fromIndex, 1);
-
-                              const remainingIndex = next.indexOf(toId);
-                              if (remainingIndex < 0) return prev;
-
-                              const insertIndex = position === 'before' ? remainingIndex : remainingIndex + 1;
-                              next.splice(insertIndex, 0, fromId);
-                              return next;
-                            });
-                          }}
-                          onDragEnd={() => {
-                            dragIdRef.current = null;
-                            setDragOver(null);
-                          }}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-[10px] text-zinc-400 select-none">↕</span>
-                            <span className="text-xs font-medium truncate">{item.label}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs">{item.state === 'full' ? '✔' : '✖'}</span>
-                            <div className="flex flex-col gap-0.5">
-                              <button
-                                type="button"
-                                disabled={idx === 0}
-                                onClick={() => movePriority(item.id, -1)}
-                                className="h-4 w-5 rounded border border-zinc-800 bg-zinc-950/60 px-0.5 text-[10px] text-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-900"
-                                aria-label={`Move ${item.label} up`}
-                              >
-                                ↑
-                              </button>
-                              <button
-                                type="button"
-                                disabled={idx === lifestyleStates.length - 1}
-                                onClick={() => movePriority(item.id, 1)}
-                                className="h-4 w-5 rounded border border-zinc-800 bg-zinc-950/60 px-0.5 text-[10px] text-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-900"
-                                aria-label={`Move ${item.label} down`}
-                              >
-                                ↓
-                              </button>
+                              setPriorityOrder((prev) => {
+                                const fromIndex = prev.indexOf(fromId);
+                                if (fromIndex < 0) return prev;
+                                const next = [...prev];
+                                next.splice(fromIndex, 1);
+                                const insertAt = idx > fromIndex ? idx - 1 : idx;
+                                next.splice(insertAt, 0, fromId);
+                                return next;
+                              });
+                            }}
+                          />
+                          <div
+                            className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 ${
+                              item.state === 'full'
+                                ? 'border-green-500/30 bg-green-500/10 text-green-200'
+                                : 'border-zinc-700 bg-zinc-900/70 text-zinc-500 line-through'
+                            } cursor-grab`}
+                            draggable
+                            onDragStart={(e) => {
+                              dragIdRef.current = item.id;
+                              try {
+                                e.dataTransfer.setData('text/plain', item.id);
+                              } catch {
+                                // ignore
+                              }
+                              e.dataTransfer.effectAllowed = 'move';
+                              setDropIndex(idx);
+                            }}
+                            onDragEnd={() => {
+                              dragIdRef.current = null;
+                              setDropIndex(null);
+                            }}
+                          >
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="text-[10px] text-zinc-400 select-none">↕</span>
+                              <span className="text-xs font-medium truncate">{item.label}</span>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <span className="w-3 text-center text-xs">{item.state === 'full' ? '✔' : '✖'}</span>
                             </div>
                           </div>
                         </div>
                       );
                     })}
+                    <div
+                      className={`h-3 rounded transition ${
+                        dropIndex === lifestyleStates.length ? 'bg-orange-400/40' : 'bg-transparent'
+                      }`}
+                      onDragOver={(e) => {
+                        if (!dragIdRef.current) return;
+                        e.preventDefault();
+                        setDropIndex(lifestyleStates.length);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const fromId = dragIdRef.current;
+                        dragIdRef.current = null;
+                        setDropIndex(null);
+                        if (!fromId) return;
+
+                        setPriorityOrder((prev) => {
+                          const fromIndex = prev.indexOf(fromId);
+                          if (fromIndex < 0) return prev;
+                          const next = [...prev];
+                          next.splice(fromIndex, 1);
+                          next.push(fromId);
+                          return next;
+                        });
+                      }}
+                    />
                   </div>
                   <p className="pt-2 text-[11px] text-zinc-500">
                     Drag to reorder priorities. Items shown ✔ stay longer.

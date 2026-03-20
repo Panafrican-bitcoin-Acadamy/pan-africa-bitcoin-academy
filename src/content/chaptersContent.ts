@@ -459,6 +459,28 @@ export const chaptersContent: ChapterContent[] = [
           },
         ],
       },
+      {
+        heading: "3.5 The 2008 Financial Crisis Context",
+        paragraphs: [
+          "In 2008, the world was struck by one of the biggest financial disasters in modern history. At the center of it were banks. For years, banks in the United States had been lending recklessly, giving out mortgages (home loans) to people who could not realistically repay them. These risky loans were packaged and sold around the world as if they were safe investments.",
+          "When borrowers began defaulting, the house of cards collapsed. Huge banks that were considered 'too big to fail' were suddenly on the brink of bankruptcy. Panic spread across the globe.",
+          "Governments rushed in to save the financial system, but their solution was to print trillions of new dollars and bail out the very banks that had caused the crisis. Ordinary people, however, received no lifeline. Families lost homes, jobs vanished overnight, and pensions and savings were wiped out.",
+          "Imagine working hard for years, saving for your children's education — only to see that value evaporate because of mistakes made by bankers in distant boardrooms. This wasn't just a financial crisis. It was a trust crisis. People realized that the money system itself could be manipulated, and when it failed, ordinary citizens bore the heaviest burden.",
+          "From this broken trust, a new idea was born.",
+        ],
+        images: [
+          {
+            src: "/images/book_images/US-Median-Home-Prices.jpg",
+            alt: "US median home prices showing the impact of the 2008 financial crisis",
+            caption: "US median home prices during the 2008 financial crisis",
+          },
+          {
+            src: "/images/book_images/2008.jpg",
+            alt: "2008 financial crisis - banks collapsing, people losing homes",
+            caption: "The 2008 financial crisis exposed the fragility of the banking system",
+          },
+        ],
+      },
     ],
     activities: [
       "Class Discussion: 'Do We Trust Our Money?' (Open discussion – no wrong answers):",
@@ -472,6 +494,7 @@ export const chaptersContent: ChapterContent[] = [
       "Centralized control by governments and banks means ordinary citizens have little say in monetary policy.",
       "Financial exclusion leaves millions without access to banking, while the system favors the wealthy.",
       "Fiat systems are fragile and can collapse in crises, as seen in 2008 and various currency crises.",
+      "The 2008 financial crisis exposed a deep trust crisis: private gains were protected while ordinary families absorbed losses.",
       "These problems create the need for alternatives like Bitcoin that offer decentralization and fixed supply.",
     ],
     keyTerms: [
@@ -594,7 +617,7 @@ export const chaptersContent: ChapterContent[] = [
     type: "Theory",
     hook: "In 2008’s chaos, Bitcoin introduced money no one can unilaterally control.",
     learn: [
-      "2008 financial crisis context",
+      "Why trust in legacy finance broke",
       "Satoshi’s whitepaper and anonymity",
       "Peer-to-peer electronic cash pillars",
     ],
@@ -607,29 +630,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "5.1 The 2008 Financial Crisis Context",
-        paragraphs: [
-          "In 2008, the world was struck by one of the biggest financial disasters in modern history. At the center of it were banks. For years, banks in the United States had been lending recklessly, giving out mortgages (home loans) to people who could not realistically repay them. These risky loans were packaged and sold around the world as if they were safe investments.",
-          "When borrowers began defaulting, the house of cards collapsed. Huge banks that were considered 'too big to fail' were suddenly on the brink of bankruptcy. Panic spread across the globe.",
-          "Governments rushed in to save the financial system, but their solution was to print trillions of new dollars and bail out the very banks that had caused the crisis. Ordinary people, however, received no lifeline. Families lost homes, jobs vanished overnight, and pensions and savings were wiped out.",
-          "Imagine working hard for years, saving for your children's education — only to see that value evaporate because of mistakes made by bankers in distant boardrooms. This wasn't just a financial crisis. It was a trust crisis. People realized that the money system itself could be manipulated, and when it failed, ordinary citizens bore the heaviest burden.",
-          "From this broken trust, a new idea was born.",
-        ],
-        images: [
-          {
-            src: "/images/book_images/US-Median-Home-Prices.jpg",
-            alt: "US median home prices showing the impact of the 2008 financial crisis",
-            caption: "US median home prices during the 2008 financial crisis",
-          },
-          {
-            src: "/images/book_images/2008.jpg",
-            alt: "2008 financial crisis - banks collapsing, people losing homes",
-            caption: "The 2008 financial crisis exposed the fragility of the banking system",
-          },
-        ],
-      },
-      {
-        heading: "5.2 Satoshi Nakamoto and the Whitepaper",
+        heading: "5.1 Satoshi Nakamoto and the Whitepaper",
         paragraphs: [
           "On October 31, 2008 — right in the middle of the chaos — a mysterious figure (or group) named Satoshi Nakamoto sent an email to a small community of cryptographers. Attached was a 9-page document titled:",
           "'Bitcoin: A Peer-to-Peer Electronic Cash System.'",
@@ -646,7 +647,7 @@ export const chaptersContent: ChapterContent[] = [
         ],
       },
       {
-        heading: "5.3 Bitcoin as Peer-to-Peer Electronic Cash",
+        heading: "5.2 Bitcoin as Peer-to-Peer Electronic Cash",
         paragraphs: [
           "So, how does Bitcoin work?",
           "Instead of a bank keeping the ledger (a record of who owns what), Bitcoin uses a public ledger called the blockchain. This ledger is stored and updated by thousands of computers all over the world. Anyone can see it, but no one can secretly change it.",

@@ -895,7 +895,13 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                             <video
                               src={section.video.src}
                               controls
-                              className="w-full rounded-lg border border-orange-400/20 shadow-lg bg-black"
+                              className={[
+                                "w-full rounded-lg border border-orange-400/20 shadow-lg bg-black",
+                                chapter.slug === "problems-with-traditional-fiat-money" &&
+                                section.video.caption === "Inflation and its impact"
+                                  ? "max-h-64 object-contain"
+                                  : "",
+                              ].join(" ")}
                               playsInline
                             >
                               Your browser does not support the video tag.
