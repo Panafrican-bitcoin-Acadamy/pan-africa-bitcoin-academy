@@ -60,6 +60,10 @@ const CATEGORY_INFLATION_SENSITIVITY: Record<InflationCategory, number> = {
   other: 1.0,
 };
 
+function isLifestyleItemId(value: unknown): value is LifestyleItemId {
+  return typeof value === 'string' && DEFAULT_PRIORITY_ORDER.includes(value as LifestyleItemId);
+}
+
 // Simplified BTC average yearly price points (USD)
 const BTC_POINTS: Record<number, number> = {
   2011: 5,
@@ -166,9 +170,8 @@ export function InflationTrackerWidget() {
         const savedPriorityRaw = localStorage.getItem(PRIORITY_ORDER_STORAGE_KEY);
         if (savedPriorityRaw) {
           const parsed = JSON.parse(savedPriorityRaw) as unknown;
-          const validIds = new Set(DEFAULT_PRIORITY_ORDER);
           if (Array.isArray(parsed) && parsed.length === DEFAULT_PRIORITY_ORDER.length) {
-            const casted = parsed.filter((x) => typeof x === 'string' && validIds.has(x)) as LifestyleItemId[];
+            const casted = parsed.filter(isLifestyleItemId);
             if (casted.length === DEFAULT_PRIORITY_ORDER.length) setPriorityOrder(casted);
           }
         }
