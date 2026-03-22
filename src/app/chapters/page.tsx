@@ -241,10 +241,10 @@ export default function ChaptersPage() {
               <span className="mx-1.5 text-zinc-600">→</span>
               <span className="text-purple-300/90">Advanced Sovereignty</span>
             </p>
-            {/* Full width: I / II / III with Level + theme stacked under each */}
-            <div className="w-full px-0 sm:px-1">
-              <div className="grid w-full grid-cols-3 divide-x divide-zinc-700/50">
-                {levels.map((level) => {
+            {/* Full width: circles + animated paths between I–II–III, then Level + theme per column */}
+            <div className="w-full space-y-4 px-0 sm:px-1">
+              <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(2rem,1.25fr)_minmax(0,1fr)_minmax(2rem,1.25fr)_minmax(0,1fr)] items-center gap-x-1 sm:gap-x-2">
+                {levels.flatMap((level, index) => {
                   const circleClass =
                     level.color === "cyan"
                       ? "bg-cyan-500/20 text-cyan-300"
@@ -257,17 +257,8 @@ export default function ChaptersPage() {
                       : level.color === "orange"
                         ? "bg-orange-400/0"
                         : "bg-purple-400/0";
-                  const themeClass =
-                    level.color === "cyan"
-                      ? "text-cyan-200"
-                      : level.color === "orange"
-                        ? "text-orange-200"
-                        : "text-purple-200";
-                  return (
-                    <div
-                      key={level.id}
-                      className="flex min-w-0 flex-col items-center gap-3 px-2 py-1 text-center sm:px-4"
-                    >
+                  const circle = (
+                    <div key={`circle-${level.id}`} className="flex justify-center">
                       <div
                         className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-bold transition-all duration-1000 sm:h-14 sm:w-14 sm:text-lg ${circleClass}`}
                         id={`level-${level.id}-circle`}
@@ -278,6 +269,43 @@ export default function ChaptersPage() {
                         />
                         <span className="relative z-10">{level.roman}</span>
                       </div>
+                    </div>
+                  );
+                  if (index >= 2) return [circle];
+                  const pathSegment =
+                    index === 0 ? (
+                      <div
+                        key="path-1-2"
+                        className="relative h-0.5 min-h-[2px] w-full min-w-[1.25rem] self-center overflow-hidden rounded-full bg-cyan-400/25"
+                        aria-hidden
+                      >
+                        <div className="animate-path-glow-1 absolute inset-0 rounded-full" />
+                      </div>
+                    ) : (
+                      <div
+                        key="path-2-3"
+                        className="relative h-0.5 min-h-[2px] w-full min-w-[1.25rem] self-center overflow-hidden rounded-full bg-orange-400/25"
+                        aria-hidden
+                      >
+                        <div className="animate-path-glow-2 absolute inset-0 rounded-full" />
+                      </div>
+                    );
+                  return [circle, pathSegment];
+                })}
+              </div>
+              <div className="grid w-full grid-cols-3 divide-x divide-zinc-700/50">
+                {levels.map((level) => {
+                  const themeClass =
+                    level.color === "cyan"
+                      ? "text-cyan-200"
+                      : level.color === "orange"
+                        ? "text-orange-200"
+                        : "text-purple-200";
+                  return (
+                    <div
+                      key={level.id}
+                      className="flex min-w-0 flex-col items-center gap-2 px-2 py-1 text-center sm:px-4"
+                    >
                       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:text-xs">
                         Level {level.roman}
                       </div>
