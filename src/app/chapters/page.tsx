@@ -32,7 +32,8 @@ const levels = [
     roman: "I",
     theme: "Genesis",
     name: "Level I — Genesis",
-    description: "Foundations, the fiat problem, and first steps into Bitcoin",
+    description:
+      "Why money breaks down today, what Bitcoin changes, and your first concrete steps—wallets, keys, and using the network with confidence.",
     color: "cyan",
   },
   {
@@ -40,7 +41,8 @@ const levels = [
     roman: "II",
     theme: "Difficulty Adjustment",
     name: "Level II — Difficulty Adjustment",
-    description: "Intermediate concepts, mining & security, and practical skills",
+    description:
+      "How mining and the difficulty adjustment secure the chain, plus security habits and practical skills you can apply in real situations.",
     color: "orange",
   },
   {
@@ -48,7 +50,8 @@ const levels = [
     roman: "III",
     theme: "Advanced Sovereignty",
     name: "Level III — Advanced Sovereignty",
-    description: "Full control: your rules, your verification, collaborative custody",
+    description:
+      "Deep verification, custody models, and collaborative setups—full control of your rules without having to go it alone.",
     color: "purple",
   },
 ];
@@ -1051,12 +1054,40 @@ export default function ChaptersPage() {
             const levelChapters = getLevelChapters(level.id);
             // Level I (index 0) slides from left, Level II (index 1) from right, Level III (index 2) from left
             const animationType = levelIndex === 0 ? 'slideLeft' : levelIndex === 1 ? 'slideRight' : 'slideLeft';
+            const levelHeadingAccent =
+              level.color === "cyan"
+                ? "text-cyan-300"
+                : level.color === "orange"
+                  ? "text-orange-300"
+                  : "text-purple-300";
+            const levelIntroBar =
+              level.color === "cyan"
+                ? "from-cyan-500/40"
+                : level.color === "orange"
+                  ? "from-orange-500/40"
+                  : "from-purple-500/40";
+
             return (
               <AnimatedSection key={level.id} animation={animationType}>
                 <div className="mb-16">
-                <div className="mb-8">
-                  <AnimatedHeading as="h2" className="text-3xl font-semibold text-zinc-50 sm:text-4xl">{level.name}</AnimatedHeading>
-                  <p className="mt-2 text-base text-zinc-400">{level.description}</p>
+                <div className="mb-8 max-w-3xl border-b border-zinc-800/80 pb-8">
+                  <AnimatedHeading
+                    as="h2"
+                    className="text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl"
+                  >
+                    <span className="text-zinc-400">Level {level.roman}</span>
+                    <span className="mx-2 text-zinc-600 sm:mx-3" aria-hidden>
+                      —
+                    </span>
+                    <span className={levelHeadingAccent}>{level.theme}</span>
+                  </AnimatedHeading>
+                  <div
+                    className={`mt-4 h-px w-16 rounded-full bg-gradient-to-r ${levelIntroBar} to-transparent`}
+                    aria-hidden
+                  />
+                  <p className="mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg">
+                    {level.description}
+                  </p>
                 </div>
 
                 <AnimatedList animation="slideUp" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
