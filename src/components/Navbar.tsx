@@ -199,28 +199,28 @@ export function Navbar() {
           <div className="flex shrink-0 items-center gap-1.5 border-l border-cyan-400/25 pl-2 sm:gap-2 sm:pl-3">
             <LanguageSwitcher />
             {loading ? (
-              <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
+              <div className="h-8 w-16 animate-pulse rounded-full bg-zinc-800" />
             ) : isAuthenticated && profile ? (
               <div className="relative" ref={desktopDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                  className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2.5 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+                  className="flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
                 >
                   {profile.photoUrl ? (
                     <img
                       src={profile.photoUrl}
                       alt={profile.name}
-                      className="h-7 w-7 rounded-full object-cover border-2 border-orange-400/50"
+                      className="h-6 w-6 rounded-full object-cover border border-orange-400/50"
                     />
                   ) : (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-xs font-bold text-black">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-[10px] font-bold text-black">
                       {profile.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
                   )}
                   <span className="max-w-[100px] truncate">{profile.name || "User"}</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`}
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
                 {accountDropdownOpen && (
@@ -335,28 +335,28 @@ export function Navbar() {
           <div className="flex shrink-0 items-center gap-1.5 border-l border-cyan-400/25 pl-2 sm:pl-3">
             <LanguageSwitcher />
             {loading ? (
-              <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
+              <div className="h-8 w-16 animate-pulse rounded-full bg-zinc-800" />
             ) : isAuthenticated && profile ? (
               <div className="relative" ref={tabletDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                  className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2.5 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+                  className="flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
                 >
                   {profile.photoUrl ? (
                     <img
                       src={profile.photoUrl}
                       alt={profile.name}
-                      className="h-7 w-7 rounded-full border-2 border-orange-400/50 object-cover"
+                      className="h-6 w-6 rounded-full border border-orange-400/50 object-cover"
                     />
                   ) : (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-xs font-bold text-black">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-[10px] font-bold text-black">
                       {profile.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
                   )}
                   <span className="max-w-[80px] truncate">{profile.name || "User"}</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`}
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
                 {accountDropdownOpen && (
@@ -429,7 +429,7 @@ export function Navbar() {
                   setAuthMode("signin");
                   setAuthModalOpen(true);
                 }}
-                className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2.5 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+                className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
               >
                 Sign In
               </button>

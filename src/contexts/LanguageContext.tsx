@@ -28,8 +28,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw === "en" || raw === "ti") {
-        setLanguageState(raw);
+      if (raw === "en") {
+        setLanguageState("en");
+      } else if (raw === "ti") {
+        // Tigrinya UI not live yet — default to English and clear stale preference
+        setLanguageState("en");
+        localStorage.setItem(STORAGE_KEY, "en");
       }
     } catch {
       /* ignore */
