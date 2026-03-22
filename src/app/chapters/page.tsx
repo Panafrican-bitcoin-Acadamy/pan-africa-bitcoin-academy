@@ -234,10 +234,10 @@ export default function ChaptersPage() {
             <AnimatedHeading as="h2" className="mb-6 text-center text-xl font-semibold text-cyan-200">
               Your Progress Through the Levels
             </AnimatedHeading>
-            {/* Full width: circles + animated paths between I–II–III, then Level + theme per column */}
+            {/* Aligned grid-cols-3: circles + paths share the same columns as Level + theme below */}
             <div className="w-full space-y-4 px-0 sm:px-1">
-              <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(2rem,1.25fr)_minmax(0,1fr)_minmax(2rem,1.25fr)_minmax(0,1fr)] items-center gap-x-1 sm:gap-x-2">
-                {levels.flatMap((level, index) => {
+              <div className="grid w-full grid-cols-3">
+                {levels.map((level, index) => {
                   const circleClass =
                     level.color === "cyan"
                       ? "bg-cyan-500/20 text-cyan-300"
@@ -250,40 +250,65 @@ export default function ChaptersPage() {
                       : level.color === "orange"
                         ? "bg-orange-400/0"
                         : "bg-purple-400/0";
-                  const circle = (
-                    <div key={`circle-${level.id}`} className="flex justify-center">
+                  const pathLeft =
+                    index === 0 ? null : index === 1 ? (
                       <div
-                        className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-bold transition-all duration-1000 sm:h-14 sm:w-14 sm:text-lg ${circleClass}`}
-                        id={`level-${level.id}-circle`}
-                      >
-                        <div
-                          className={`absolute inset-0 rounded-full blur-xl transition-all duration-1000 ${glowClass}`}
-                          id={`level-${level.id}-glow`}
-                        />
-                        <span className="relative z-10">{level.roman}</span>
-                      </div>
-                    </div>
-                  );
-                  if (index >= 2) return [circle];
-                  const pathSegment =
-                    index === 0 ? (
-                      <div
-                        key="path-1-2"
-                        className="relative h-0.5 min-h-[2px] w-full min-w-[1.25rem] self-center overflow-hidden rounded-full bg-cyan-400/25"
+                        className="relative h-0.5 min-h-[2px] w-full min-w-0 overflow-hidden rounded-full bg-cyan-400/25"
                         aria-hidden
                       >
                         <div className="path-glow-flow path-glow-flow-cyan animate-path-glow-1 absolute inset-0 rounded-full" />
                       </div>
                     ) : (
                       <div
-                        key="path-2-3"
-                        className="relative h-0.5 min-h-[2px] w-full min-w-[1.25rem] self-center overflow-hidden rounded-full bg-orange-400/25"
+                        className="relative h-0.5 min-h-[2px] w-full min-w-0 overflow-hidden rounded-full bg-orange-400/25"
                         aria-hidden
                       >
                         <div className="path-glow-flow path-glow-flow-orange animate-path-glow-2 absolute inset-0 rounded-full" />
                       </div>
                     );
-                  return [circle, pathSegment];
+                  const pathRight =
+                    index >= 2 ? null : index === 0 ? (
+                      <div
+                        className="relative h-0.5 min-h-[2px] w-full min-w-0 overflow-hidden rounded-full bg-cyan-400/25"
+                        aria-hidden
+                      >
+                        <div className="path-glow-flow path-glow-flow-cyan animate-path-glow-1 absolute inset-0 rounded-full" />
+                      </div>
+                    ) : (
+                      <div
+                        className="relative h-0.5 min-h-[2px] w-full min-w-0 overflow-hidden rounded-full bg-orange-400/25"
+                        aria-hidden
+                      >
+                        <div className="path-glow-flow path-glow-flow-orange animate-path-glow-2 absolute inset-0 rounded-full" />
+                      </div>
+                    );
+                  return (
+                    <div
+                      key={`row-circle-${level.id}`}
+                      className="flex min-w-0 flex-col items-stretch justify-center px-1 sm:px-2"
+                    >
+                      <div className="flex w-full min-h-[3.5rem] items-center sm:min-h-[4rem]">
+                        <div className="flex h-0.5 min-h-[2px] flex-1 items-center self-center">
+                          {pathLeft ?? <span className="block min-w-0 flex-1" aria-hidden />}
+                        </div>
+                        <div className="relative z-10 flex shrink-0 justify-center px-0.5">
+                          <div
+                            className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-bold transition-all duration-1000 sm:h-14 sm:w-14 sm:text-lg ${circleClass}`}
+                            id={`level-${level.id}-circle`}
+                          >
+                            <div
+                              className={`absolute inset-0 rounded-full blur-xl transition-all duration-1000 ${glowClass}`}
+                              id={`level-${level.id}-glow`}
+                            />
+                            <span className="relative z-10">{level.roman}</span>
+                          </div>
+                        </div>
+                        <div className="flex h-0.5 min-h-[2px] flex-1 items-center self-center">
+                          {pathRight ?? <span className="block min-w-0 flex-1" aria-hidden />}
+                        </div>
+                      </div>
+                    </div>
+                  );
                 })}
               </div>
               <div className="grid w-full grid-cols-3 divide-x divide-zinc-700/50">
@@ -296,7 +321,7 @@ export default function ChaptersPage() {
                         : "text-purple-200";
                   return (
                     <div
-                      key={level.id}
+                      key={`row-label-${level.id}`}
                       className="flex min-w-0 flex-col items-center gap-2 px-2 py-1 text-center sm:px-4"
                     >
                       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:text-xs">
