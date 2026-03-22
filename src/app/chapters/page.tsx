@@ -231,54 +231,85 @@ export default function ChaptersPage() {
           {/* Learning Path Progress Bar */}
           <AnimatedSection animation="slideRight">
             <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-            <AnimatedHeading as="h2" className="mb-6 text-center text-xl font-semibold text-cyan-200">
+            <AnimatedHeading as="h2" className="mb-2 text-center text-xl font-semibold text-cyan-200">
               Your Progress Through the Levels
             </AnimatedHeading>
-            {/* One aligned grid: Roman numeral → Level label → theme (no duplicate arrow row) */}
-            <div className="mx-auto grid w-full max-w-2xl grid-cols-3 divide-x divide-zinc-700/50">
-              {levels.map((level) => {
-                const circleClass =
-                  level.color === "cyan"
-                    ? "bg-cyan-500/20 text-cyan-300"
-                    : level.color === "orange"
-                      ? "bg-orange-500/20 text-orange-300"
-                      : "bg-purple-500/20 text-purple-300";
-                const glowClass =
-                  level.color === "cyan"
-                    ? "bg-cyan-400/0"
-                    : level.color === "orange"
-                      ? "bg-orange-400/0"
-                      : "bg-purple-400/0";
-                const themeClass =
-                  level.color === "cyan"
-                    ? "text-cyan-200"
-                    : level.color === "orange"
-                      ? "text-orange-200"
-                      : "text-purple-200";
-                return (
+            <p className="mb-6 text-center text-sm text-zinc-500">
+              <span className="text-cyan-300/90">Genesis</span>
+              <span className="mx-1.5 text-zinc-600">→</span>
+              <span className="text-orange-300/90">Difficulty Adjustment</span>
+              <span className="mx-1.5 text-zinc-600">→</span>
+              <span className="text-purple-300/90">Advanced Sovereignty</span>
+            </p>
+            <div className="mx-auto w-full max-w-2xl px-2 sm:px-0">
+              {/* Roman numerals + animated paths */}
+              <div className="relative flex items-center justify-between">
+                <div className="relative flex w-full flex-1 items-center">
                   <div
-                    key={level.id}
-                    className="flex min-w-0 flex-col items-center gap-2 px-2 py-1 text-center sm:px-4"
+                    className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-sm font-bold text-cyan-300 transition-all duration-1000"
+                    id="level-1-circle"
                   >
                     <div
-                      className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all duration-1000 ${circleClass}`}
-                      id={`level-${level.id}-circle`}
-                    >
-                      <div
-                        className={`absolute inset-0 rounded-full blur-xl transition-all duration-1000 ${glowClass}`}
-                        id={`level-${level.id}-glow`}
-                      />
-                      <span className="relative z-10">{level.roman}</span>
-                    </div>
+                      className="absolute inset-0 rounded-full bg-cyan-400/0 blur-xl transition-all duration-1000"
+                      id="level-1-glow"
+                    />
+                    <span className="relative z-10">{levels[0].roman}</span>
+                  </div>
+                  <div className="relative mx-2 h-0.5 min-w-[1.5rem] flex-1 overflow-visible bg-cyan-400/30">
+                    <div
+                      className="animate-path-glow-1 absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/0 to-cyan-400/0 transition-all duration-1000"
+                      style={{ height: "2px", top: "-1px" }}
+                    />
+                  </div>
+                  <div
+                    className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-sm font-bold text-orange-300 transition-all duration-1000"
+                    id="level-2-circle"
+                  >
+                    <div
+                      className="absolute inset-0 rounded-full bg-orange-400/0 blur-xl transition-all duration-1000"
+                      id="level-2-glow"
+                    />
+                    <span className="relative z-10">{levels[1].roman}</span>
+                  </div>
+                  <div className="relative mx-2 h-0.5 min-w-[1.5rem] flex-1 overflow-visible bg-orange-400/30">
+                    <div
+                      className="animate-path-glow-2 absolute inset-0 bg-gradient-to-r from-orange-400/0 via-orange-400/0 to-orange-400/0 transition-all duration-1000"
+                      style={{ height: "2px", top: "-1px" }}
+                    />
+                  </div>
+                  <div
+                    className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-300 transition-all duration-1000"
+                    id="level-3-circle"
+                  >
+                    <div
+                      className="absolute inset-0 rounded-full bg-purple-400/0 blur-xl transition-all duration-1000"
+                      id="level-3-glow"
+                    />
+                    <span className="relative z-10">{levels[2].roman}</span>
+                  </div>
+                </div>
+              </div>
+              {/* Labels aligned under I · II · III (same width as row above) */}
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center sm:gap-3">
+                {levels.map((level) => (
+                  <div key={`label-${level.id}`} className="flex min-w-0 flex-col items-center justify-start px-0.5">
                     <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:text-xs">
                       Level {level.roman}
                     </div>
-                    <div className={`text-xs font-semibold leading-snug sm:text-sm ${themeClass}`}>
+                    <div
+                      className={`mt-1 max-w-[9rem] text-xs font-semibold leading-tight sm:max-w-none sm:text-sm ${
+                        level.color === "cyan"
+                          ? "text-cyan-200"
+                          : level.color === "orange"
+                            ? "text-orange-200"
+                            : "text-purple-200"
+                      }`}
+                    >
                       {level.theme}
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
             </div>
             <style jsx>{`
