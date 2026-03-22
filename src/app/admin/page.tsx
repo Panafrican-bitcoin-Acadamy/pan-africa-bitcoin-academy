@@ -20,7 +20,7 @@ import {
   Clock, User, Info, Trash2, Award, Target, Briefcase, Heart,
   ClipboardList, Rocket, HelpCircle, Sparkles, Settings, 
   PenTool, GraduationCap, XCircle, Loader2, Shield, Lock, History, LogOut,
-  Eye, EyeOff, Download, X
+  Eye, EyeOff, Download, X, ChevronDown
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -938,6 +938,36 @@ export default function AdminDashboardPage() {
   const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'graded'>('submitted');
   const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
   const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
+  /** Which student accordion is open in Assignment Submissions (one at a time). */
+  const [assignmentSubmissionsAccordionOpen, setAssignmentSubmissionsAccordionOpen] = useState<string | null>(null);
+
+  const filteredAssignmentSubmissions = useMemo(() => {
+    return submissions.filter((s) => {
+      if (submissionFilter === 'all') return true;
+      return s.status === submissionFilter;
+    });
+  }, [submissions, submissionFilter]);
+
+  const assignmentSubmissionsByStudent = useMemo(() => {
+    const map = new Map<string, { key: string; student: Record<string, unknown> | null; submissions: any[] }>();
+    for (const submission of filteredAssignmentSubmissions) {
+      const student = submission.profiles as Record<string, unknown> | null | undefined;
+      const key =
+        (student?.id as string | undefined) ||
+        (submission.student_id as string | undefined) ||
+        `unknown-${String(submission.id)}`;
+      if (!map.has(key)) {
+        map.set(key, { key, student: student ?? null, submissions: [] });
+      }
+      map.get(key)!.submissions.push(submission);
+    }
+    return Array.from(map.values()).sort((a, b) => {
+      const an = String(a.student?.name || a.student?.email || '').toLowerCase();
+      const bn = String(b.student?.name || b.student?.email || '').toLowerCase();
+      return an.localeCompare(bn);
+    });
+  }, [filteredAssignmentSubmissions]);
+
   const [blogSubmissions, setBlogSubmissions] = useState<any[]>([]);
   const [loadingBlogSubmissions, setLoadingBlogSubmissions] = useState(false);
   const [blogPosts, setBlogPosts] = useState<any[]>([]);
@@ -6530,115 +6560,160 @@ export default function AdminDashboardPage() {
             <div className="text-center py-8 text-zinc-400">Loading submissions...</div>
           ) : submissions.length === 0 ? (
             <div className="text-center py-8 text-zinc-400">No submissions found.</div>
+          ) : filteredAssignmentSubmissions.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">No submissions match the current filter.</div>
           ) : (
-            <div className="space-y-4">
-              {submissions
-                .filter((s) => {
-                  if (submissionFilter === 'all') return true;
-                  return s.status === submissionFilter;
-                })
-                .map((submission) => {
-                  const assignment = submission.assignments;
-                  const student = submission.profiles;
-                  return (
-                    <div
-                      key={submission.id}
-                      className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+            <div className="space-y-2">
+              {assignmentSubmissionsByStudent.map(({ key, student, submissions: studentSubs }) => {
+                const displayName = String(student?.name || student?.email || 'Unknown student');
+                const email = student?.email ? String(student.email) : null;
+                const cohortName = student?.cohort_name ? String(student.cohort_name) : null;
+                const isOpen = assignmentSubmissionsAccordionOpen === key;
+                return (
+                  <div
+                    key={key}
+                    className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAssignmentSubmissionsAccordionOpen((prev) => (prev === key ? null : key))
+                      }
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-zinc-800/50"
                     >
-                      <div className="mb-3 flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-zinc-50">
-                            {assignment?.title || 'Untitled Assignment'}
-                          </h3>
-                          <p className="text-xs text-zinc-400 mt-1">
-                            Chapter {assignment?.chapter_number || 'N/A'} • {student?.name || student?.email || 'Unknown Student'}
-                          </p>
-                          {assignment?.reward_sats && (
-                            <p className="text-xs text-cyan-400 mt-1">
-                              Reward: {assignment.reward_sats} sats
-                            </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-zinc-100 truncate">{displayName}</span>
+                          {cohortName ? (
+                            <span className="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-medium text-cyan-300">
+                              {cohortName}
+                            </span>
+                          ) : (
+                            <span className="shrink-0 rounded-full border border-zinc-600 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-500">
+                              No cohort
+                            </span>
                           )}
+                          <span className="shrink-0 rounded-full border border-zinc-600 bg-zinc-800/80 px-2 py-0.5 text-[11px] text-zinc-400">
+                            {studentSubs.length} submission{studentSubs.length === 1 ? '' : 's'}
+                          </span>
                         </div>
-                        <span
-                          className={`rounded-full border px-2 py-1 text-xs ${
-                            submission.status === 'graded'
-                              ? submission.is_correct
-                                ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                                : 'text-red-400 bg-red-500/10 border-red-500/30'
-                              : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
-                          }`}
-                        >
-                          {submission.status === 'graded'
-                            ? submission.is_correct
-                              ? 'Approved'
-                              : 'Rejected'
-                            : 'Pending Review'}
-                        </span>
-                      </div>
-
-                      {assignment?.question && (
-                        <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                          <p className="text-xs font-medium text-zinc-300 mb-1">Question:</p>
-                          <p className="text-sm text-zinc-200">{assignment.question}</p>
-                        </div>
-                      )}
-
-                      <div className="mb-3 rounded bg-zinc-800/50 p-3">
-                        <p className="text-xs font-medium text-zinc-300 mb-1">Student Answer:</p>
-                        <p className="text-sm text-zinc-200 whitespace-pre-wrap">{submission.answer}</p>
-                      </div>
-
-                      {submission.feedback && (
-                        <div className="mb-3 rounded bg-blue-500/10 border border-blue-500/30 p-3">
-                          <p className="text-xs font-medium text-blue-300 mb-1">Feedback:</p>
-                          <p className="text-sm text-blue-200">{submission.feedback}</p>
-                        </div>
-                      )}
-
-                      <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                        <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
-                        {submission.graded_at && (
-                          <span>• Graded: {new Date(submission.graded_at).toLocaleString()}</span>
+                        {email && (
+                          <p className="mt-0.5 truncate text-xs text-zinc-500">{email}</p>
                         )}
                       </div>
+                      <ChevronDown
+                        className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        aria-hidden
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3 space-y-4">
+                        {studentSubs.map((submission) => {
+                          const assignment = submission.assignments;
+                          return (
+                            <div
+                              key={submission.id}
+                              className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                            >
+                              <div className="mb-3 flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-sm font-semibold text-zinc-50">
+                                    {assignment?.title || 'Untitled Assignment'}
+                                  </h3>
+                                  <p className="text-xs text-zinc-400 mt-1">
+                                    Chapter {assignment?.chapter_number || 'N/A'}
+                                  </p>
+                                  {assignment?.reward_sats && (
+                                    <p className="text-xs text-cyan-400 mt-1">
+                                      Reward: {assignment.reward_sats} sats
+                                    </p>
+                                  )}
+                                </div>
+                                <span
+                                  className={`shrink-0 rounded-full border px-2 py-1 text-xs ${
+                                    submission.status === 'graded'
+                                      ? submission.is_correct
+                                        ? 'text-green-400 bg-green-500/10 border-green-500/30'
+                                        : 'text-red-400 bg-red-500/10 border-red-500/30'
+                                      : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                                  }`}
+                                >
+                                  {submission.status === 'graded'
+                                    ? submission.is_correct
+                                      ? 'Approved'
+                                      : 'Rejected'
+                                    : 'Pending Review'}
+                                </span>
+                              </div>
 
-                      {submission.status === 'submitted' && (
-                        <div className="mt-4 space-y-2">
-                          <textarea
-                            placeholder="Optional feedback for student..."
-                            value={gradingFeedback[submission.id] || ''}
-                            onChange={(e) =>
-                              setGradingFeedback((prev) => ({
-                                ...prev,
-                                [submission.id]: e.target.value,
-                              }))
-                            }
-                            className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                            rows={2}
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleGradeSubmission(submission.id, true)}
-                              disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                            >
-                              {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleGradeSubmission(submission.id, false)}
-                              disabled={gradingSubmission === submission.id}
-                              className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                            >
-                              {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                              {assignment?.question && (
+                                <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                                  <p className="text-xs font-medium text-zinc-300 mb-1">Question:</p>
+                                  <p className="text-sm text-zinc-200">{assignment.question}</p>
+                                </div>
+                              )}
+
+                              <div className="mb-3 rounded bg-zinc-800/50 p-3">
+                                <p className="text-xs font-medium text-zinc-300 mb-1">Student Answer:</p>
+                                <p className="text-sm text-zinc-200 whitespace-pre-wrap">{submission.answer}</p>
+                              </div>
+
+                              {submission.feedback && (
+                                <div className="mb-3 rounded bg-blue-500/10 border border-blue-500/30 p-3">
+                                  <p className="text-xs font-medium text-blue-300 mb-1">Feedback:</p>
+                                  <p className="text-sm text-blue-200">{submission.feedback}</p>
+                                </div>
+                              )}
+
+                              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                                <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
+                                {submission.graded_at && (
+                                  <span>• Graded: {new Date(submission.graded_at).toLocaleString()}</span>
+                                )}
+                              </div>
+
+                              {submission.status === 'submitted' && (
+                                <div className="mt-4 space-y-2">
+                                  <textarea
+                                    placeholder="Optional feedback for student..."
+                                    value={gradingFeedback[submission.id] || ''}
+                                    onChange={(e) =>
+                                      setGradingFeedback((prev) => ({
+                                        ...prev,
+                                        [submission.id]: e.target.value,
+                                      }))
+                                    }
+                                    className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                    rows={2}
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleGradeSubmission(submission.id, true)}
+                                      disabled={gradingSubmission === submission.id}
+                                      className="flex-1 rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                      {gradingSubmission === submission.id ? 'Grading...' : '✓ Approve'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleGradeSubmission(submission.id, false)}
+                                      disabled={gradingSubmission === submission.id}
+                                      className="flex-1 rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                      {gradingSubmission === submission.id ? 'Grading...' : '✗ Reject'}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

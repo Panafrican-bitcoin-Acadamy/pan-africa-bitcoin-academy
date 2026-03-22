@@ -76,7 +76,43 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ submissions: submissions || [] });
+    const list = submissions || [];
+    const cohortIds = [
+      ...new Set(
+        list
+          .map((s: { profiles?: { cohort_id?: string | null } | null }) => s.profiles?.cohort_id)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
+
+    let cohortNameById = new Map<string, string>();
+    if (cohortIds.length > 0) {
+      const { data: cohortRows } = await supabaseAdmin
+        .from('cohorts')
+        .select('id, name')
+        .in('id', cohortIds);
+      cohortNameById = new Map(
+        (cohortRows || []).map((c: { id: string; name: string }) => [c.id, c.name])
+      );
+    }
+
+    const submissionsWithCohort = list.map(
+      (s: {
+        profiles?: { cohort_id?: string | null; cohort_name?: string | null } | null;
+        [key: string]: unknown;
+      }) => {
+        const cid = s.profiles?.cohort_id;
+        const cohortName = cid ? cohortNameById.get(cid) ?? null : null;
+        return {
+          ...s,
+          profiles: s.profiles
+            ? { ...s.profiles, cohort_name: cohortName }
+            : s.profiles,
+        };
+      }
+    );
+
+    return NextResponse.json({ submissions: submissionsWithCohort });
   } catch (err: any) {
     console.error('Error in GET /api/admin/assignments/submissions:', err);
     return NextResponse.json(
