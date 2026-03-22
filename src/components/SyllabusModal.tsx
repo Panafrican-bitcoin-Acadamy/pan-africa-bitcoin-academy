@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, BookOpen, Clock, CheckCircle } from 'lucide-react';
 
 interface Chapter {
@@ -23,6 +24,12 @@ interface SyllabusModalProps {
 }
 
 export function SyllabusModal({ isOpen, onClose, chapters, levels }: SyllabusModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -34,7 +41,7 @@ export function SyllabusModal({ isOpen, onClose, chapters, levels }: SyllabusMod
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const getLevelChapters = (levelId: number) => {
     return chapters.filter((ch) => ch.level === levelId);
@@ -53,30 +60,38 @@ export function SyllabusModal({ isOpen, onClose, chapters, levels }: SyllabusMod
     }
   };
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[100000] overflow-y-auto overflow-x-hidden bg-black/85 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="syllabus-modal-title"
       onClick={onClose}
     >
-      <div
-        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl border border-cyan-400/30 bg-zinc-900 p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between border-b border-cyan-400/20 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-cyan-500/20 p-2">
+      {/* Scrollable wrapper so short viewports can reach the header + full panel */}
+      <div className="flex min-h-full items-start justify-center p-4 pb-10 pt-16 sm:items-center sm:p-6 sm:pb-8 sm:pt-8">
+        <div
+          className="relative my-auto w-full max-w-4xl rounded-xl border border-cyan-400/30 bg-zinc-900 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="max-h-[min(90vh,900px)] overflow-y-auto p-6">
+        {/* Header — sticky so title stays visible while scrolling long syllabus */}
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 mb-6 flex items-center justify-between border-b border-cyan-400/20 bg-zinc-900/95 px-6 pb-4 pt-6 backdrop-blur-md">
+          <div className="flex min-w-0 items-center gap-3 pr-2">
+            <div className="shrink-0 rounded-lg bg-cyan-500/20 p-2">
               <BookOpen className="h-6 w-6 text-cyan-400" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-zinc-50">Course Syllabus</h2>
-              <p className="text-sm text-zinc-400">Complete curriculum overview</p>
+            <div className="min-w-0">
+              <h2 id="syllabus-modal-title" className="text-xl font-bold text-zinc-50 sm:text-2xl">
+                Course Syllabus
+              </h2>
+              <p className="mt-0.5 text-sm text-zinc-400">Complete curriculum overview</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 cursor-pointer"
+            className="shrink-0 rounded-full p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 cursor-pointer"
             aria-label="Close modal"
           >
             <X className="h-5 w-5" />
@@ -162,14 +177,19 @@ export function SyllabusModal({ isOpen, onClose, chapters, levels }: SyllabusMod
         {/* Footer */}
         <div className="mt-6 flex justify-end border-t border-cyan-400/20 pt-4">
           <button
+            type="button"
             onClick={onClose}
             className="rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-2 text-sm font-semibold text-black transition hover:brightness-110"
           >
             Close
           </button>
         </div>
+          </div>
+        </div>
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
 
