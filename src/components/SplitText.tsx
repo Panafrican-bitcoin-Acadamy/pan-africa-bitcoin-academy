@@ -207,6 +207,10 @@ const SplitText = ({
     whiteSpace: 'normal',
     wordWrap: 'break-word',
     willChange: 'transform, opacity',
+    /* Prevent descenders / bounce animation from being clipped at the bottom */
+    paddingTop: '0.08em',
+    paddingBottom: '0.22em',
+    lineHeight: 1.15,
   };
 
   return (

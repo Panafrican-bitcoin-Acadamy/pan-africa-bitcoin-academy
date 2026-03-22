@@ -27,9 +27,30 @@ const generateSlug = (title: string): string => {
 };
 
 const levels = [
-  { id: 1, name: "Level I (Genesis)", description: "Foundations, the fiat problem, and first steps into Bitcoin", color: "cyan" },
-  { id: 2, name: "Level II (Difficulty-Adjustment 1)", description: "Intermediate concepts and practical skills", color: "orange" },
-  { id: 3, name: "Level III (Advanced Sovereignty)", description: "Full control: your rules, your verification, collaborative custody", color: "purple" },
+  {
+    id: 1,
+    roman: "I",
+    theme: "Genesis",
+    name: "Level I — Genesis",
+    description: "Foundations, the fiat problem, and first steps into Bitcoin",
+    color: "cyan",
+  },
+  {
+    id: 2,
+    roman: "II",
+    theme: "Difficulty Adjustment",
+    name: "Level II — Difficulty Adjustment",
+    description: "Intermediate concepts, mining & security, and practical skills",
+    color: "orange",
+  },
+  {
+    id: 3,
+    roman: "III",
+    theme: "Advanced Sovereignty",
+    name: "Level III — Advanced Sovereignty",
+    description: "Full control: your rules, your verification, collaborative custody",
+    color: "purple",
+  },
 ];
 
 const comingSoon = [
@@ -164,11 +185,14 @@ export default function ChaptersPage() {
           {/* Hero Section */}
           <AnimatedSection animation="slideUp">
             <div className="mb-16 text-center">
-              <AnimatedHeading as="h1" className="text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
+              <AnimatedHeading
+                as="h1"
+                className="text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl leading-[1.15] pb-1"
+              >
                 <SplitText
                   text="Learning Path"
                   tag="span"
-                  className="inline-block"
+                  className="inline-block align-top"
                   delay={50}
                   duration={1.25}
                   ease="bounce.out"
@@ -196,7 +220,7 @@ export default function ChaptersPage() {
                 </div>
               </div>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-400 sm:text-xl">
-                Follow the lessons step-by-step or jump to any topic you want to explore.
+                Follow the lessons in order—complete each chapter to unlock the next.
               </p>
               <p className="mx-auto mt-2 max-w-3xl text-base text-zinc-400">
                 Each chapter includes diagrams, real examples, assignments, and a quick quiz.
@@ -207,42 +231,83 @@ export default function ChaptersPage() {
           {/* Learning Path Progress Bar */}
           <AnimatedSection animation="slideRight">
             <div className="mb-16 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-            <AnimatedHeading as="h2" className="mb-6 text-center text-xl font-semibold text-cyan-200">Your Progress Through the Levels</AnimatedHeading>
+            <AnimatedHeading as="h2" className="mb-2 text-center text-xl font-semibold text-cyan-200">
+              Your Progress Through the Levels
+            </AnimatedHeading>
+            <p className="mb-6 text-center text-sm text-zinc-500">
+              <span className="text-cyan-300/90">Genesis</span>
+              <span className="mx-1.5 text-zinc-600">→</span>
+              <span className="text-orange-300/90">Difficulty Adjustment</span>
+              <span className="mx-1.5 text-zinc-600">→</span>
+              <span className="text-purple-300/90">Advanced Sovereignty</span>
+            </p>
+            {/* Roman numerals + animated paths (same structure as before) */}
             <div className="relative flex items-center justify-between">
               <div className="relative flex flex-1 items-center">
-                {/* Level I */}
-                <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/20 text-sm font-bold text-cyan-300 transition-all duration-1000" id="level-1-circle">
-                  <div className="absolute inset-0 rounded-full bg-cyan-400/0 blur-xl transition-all duration-1000" id="level-1-glow"></div>
-                  <span className="relative z-10">I</span>
+                <div
+                  className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-sm font-bold text-cyan-300 transition-all duration-1000"
+                  id="level-1-circle"
+                >
+                  <div
+                    className="absolute inset-0 rounded-full bg-cyan-400/0 blur-xl transition-all duration-1000"
+                    id="level-1-glow"
+                  />
+                  <span className="relative z-10">{levels[0].roman}</span>
                 </div>
-                
-                {/* Path 1 (I to II) */}
-                <div className="relative flex-1 mx-2 h-0.5 bg-cyan-400/30 overflow-visible">
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/0 to-cyan-400/0 transition-all duration-1000 animate-path-glow-1" style={{ height: '2px', top: '-1px' }}></div>
+                <div className="relative mx-2 h-0.5 flex-1 overflow-visible bg-cyan-400/30">
+                  <div
+                    className="animate-path-glow-1 absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/0 to-cyan-400/0 transition-all duration-1000"
+                    style={{ height: "2px", top: "-1px" }}
+                  />
                 </div>
-                
-                {/* Level II */}
-                <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/20 text-sm font-bold text-orange-300 transition-all duration-1000" id="level-2-circle">
-                  <div className="absolute inset-0 rounded-full bg-orange-400/0 blur-xl transition-all duration-1000" id="level-2-glow"></div>
-                  <span className="relative z-10">II</span>
+                <div
+                  className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-sm font-bold text-orange-300 transition-all duration-1000"
+                  id="level-2-circle"
+                >
+                  <div
+                    className="absolute inset-0 rounded-full bg-orange-400/0 blur-xl transition-all duration-1000"
+                    id="level-2-glow"
+                  />
+                  <span className="relative z-10">{levels[1].roman}</span>
                 </div>
-                
-                {/* Path 2 (II to III) */}
-                <div className="relative flex-1 mx-2 h-0.5 bg-orange-400/30 overflow-visible">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-400/0 via-orange-400/0 to-orange-400/0 transition-all duration-1000 animate-path-glow-2" style={{ height: '2px', top: '-1px' }}></div>
+                <div className="relative mx-2 h-0.5 flex-1 overflow-visible bg-orange-400/30">
+                  <div
+                    className="animate-path-glow-2 absolute inset-0 bg-gradient-to-r from-orange-400/0 via-orange-400/0 to-orange-400/0 transition-all duration-1000"
+                    style={{ height: "2px", top: "-1px" }}
+                  />
                 </div>
-                
-                {/* Level III */}
-                <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-300 transition-all duration-1000" id="level-3-circle">
-                  <div className="absolute inset-0 rounded-full bg-purple-400/0 blur-xl transition-all duration-1000" id="level-3-glow"></div>
-                  <span className="relative z-10">III</span>
+                <div
+                  className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-300 transition-all duration-1000"
+                  id="level-3-circle"
+                >
+                  <div
+                    className="absolute inset-0 rounded-full bg-purple-400/0 blur-xl transition-all duration-1000"
+                    id="level-3-glow"
+                  />
+                  <span className="relative z-10">{levels[2].roman}</span>
                 </div>
               </div>
             </div>
-            <div className="mt-4 flex justify-between text-xs text-zinc-400">
-              <span>Genesis</span>
-              <span>Difficulty-Adjustment</span>
-              <span>Advanced Sovereignty</span>
+            {/* Theme names aligned under I · II · III */}
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              {levels.map((level) => (
+                <div key={`label-${level.id}`} className="min-w-0 px-1">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:text-xs">
+                    Level {level.roman}
+                  </div>
+                  <div
+                    className={`mt-1 text-xs font-semibold leading-tight sm:text-sm ${
+                      level.color === "cyan"
+                        ? "text-cyan-200"
+                        : level.color === "orange"
+                          ? "text-orange-200"
+                          : "text-purple-200"
+                    }`}
+                  >
+                    {level.theme}
+                  </div>
+                </div>
+              ))}
             </div>
             </div>
             <style jsx>{`
