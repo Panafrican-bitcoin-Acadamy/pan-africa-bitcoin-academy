@@ -5,6 +5,7 @@ import { validateAndNormalizeEmail } from '@/lib/validation';
 import { sanitizeTextContent } from '@/lib/validation';
 import { requireStudent } from '@/lib/session';
 import { requireAdmin } from '@/lib/adminSession';
+import { sendAssignmentSubmissionNotificationEmail } from '@/lib/email';
 
 /**
  * POST /api/assignments/submit
@@ -102,10 +103,10 @@ export async function POST(req: NextRequest) {
     // Get profile for authenticated user
     let profile;
     if (!isAdmin) {
-      // For students, get profile by session userId
+      // For students, get profile by session userId (fields needed for admin email notifications)
       const { data: profileData, error: profileError } = await supabaseAdmin
         .from('profiles')
-        .select('id')
+        .select('id, name, email, cohort_id')
         .eq('id', studentSession!.userId)
         .single();
 
@@ -316,6 +317,40 @@ export async function POST(req: NextRequest) {
       } catch (achievementError) {
         // Don't fail the request if achievement check fails
         console.error('Error checking achievements:', achievementError);
+      }
+    }
+
+    // Notify admin by email (same Resend + ADMIN_EMAIL pattern as sats withdrawal) when review is needed.
+    // Does not fail the request if email fails — submission is already saved.
+    if (!isAdmin && requiresReview) {
+      try {
+        let cohortName: string | undefined;
+        const cohortId = (profile as { cohort_id?: string | null }).cohort_id;
+        if (cohortId) {
+          const { data: cohortRow } = await supabaseAdmin
+            .from('cohorts')
+            .select('name')
+            .eq('id', cohortId)
+            .maybeSingle();
+          cohortName = cohortRow?.name ?? undefined;
+        }
+        const p = profile as { name?: string | null; email?: string | null };
+        const emailResult = await sendAssignmentSubmissionNotificationEmail({
+          studentName: p.name?.trim() || 'Student',
+          studentEmail: p.email?.trim() || normalizedEmail,
+          cohortName,
+          assignmentTitle: assignment.title || 'Assignment',
+          chapterNumber: assignment.chapter_number ?? null,
+          chapterSlug: assignment.chapter_slug ?? null,
+          submissionId: submission.id,
+          isResubmission: !isNewSubmission,
+          rewardSats: assignment.reward_sats ?? null,
+        });
+        if (!emailResult.success) {
+          console.error('[assignments/submit] Admin notification email failed:', emailResult.error);
+        }
+      } catch (notifyErr) {
+        console.error('[assignments/submit] Admin notification error:', notifyErr);
       }
     }
 

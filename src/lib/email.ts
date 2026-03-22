@@ -240,6 +240,188 @@ export async function sendWithdrawalRequestEmail(data: WithdrawalRequestData): P
   }
 }
 
+function escapeHtmlForEmail(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export interface AssignmentSubmissionNotificationData {
+  studentName: string;
+  studentEmail: string;
+  cohortName?: string;
+  assignmentTitle: string;
+  chapterNumber?: number | null;
+  chapterSlug?: string | null;
+  submissionId: string;
+  /** True if student updated an existing submission (resubmit). */
+  isResubmission: boolean;
+  rewardSats?: number | null;
+}
+
+/**
+ * Notify admin when a student submits an assignment that needs instructor review (same stack as withdrawal: Resend + ADMIN_EMAIL).
+ */
+export async function sendAssignmentSubmissionNotificationEmail(
+  data: AssignmentSubmissionNotificationData
+): Promise<{ success: boolean; error?: string; errorDetails?: string }> {
+  try {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('❌ RESEND_API_KEY not configured. Assignment notification email will not be sent.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const resend = getResendClient();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@panafricanbitcoin.com';
+    if (!adminEmail || !adminEmail.includes('@')) {
+      return {
+        success: false,
+        error: 'Admin email not configured',
+        errorDetails: 'Please set ADMIN_EMAIL in environment variables',
+      };
+    }
+
+    const adminEmailValidation = validateAndNormalizeEmail(adminEmail);
+    if (!adminEmailValidation.valid || !adminEmailValidation.normalized) {
+      return {
+        success: false,
+        error: 'Invalid admin email configuration',
+        errorDetails: `Admin email "${adminEmail}" is not valid`,
+      };
+    }
+
+    const normalizedAdminEmail = adminEmailValidation.normalized;
+    const {
+      studentName,
+      studentEmail,
+      cohortName,
+      assignmentTitle,
+      chapterNumber,
+      chapterSlug,
+      submissionId,
+      isResubmission,
+      rewardSats,
+    } = data;
+
+    const safeTitle = escapeHtmlForEmail(assignmentTitle);
+    const adminUrl = `${SITE_URL.replace(/\/$/, '')}/admin`;
+
+    const emailSubject = isResubmission
+      ? `Resubmission: ${assignmentTitle} — ${studentName}`
+      : `New assignment submission: ${assignmentTitle} — ${studentName}`;
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Assignment submission</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); padding: 24px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 22px;">📋 Assignment submission</h1>
+          </div>
+          <div style="background: #f9fafb; padding: 28px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 15px; margin-bottom: 18px;">
+              A student has submitted work that <strong>needs instructor review</strong> in the admin panel.
+            </p>
+            <div style="background: white; padding: 18px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #f97316;">
+              <h2 style="margin-top: 0; color: #1f2937; font-size: 17px;">Student</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563; width: 130px;">Name</td>
+                  <td style="padding: 6px 0; color: #1f2937;">${escapeHtmlForEmail(studentName)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563;">Email</td>
+                  <td style="padding: 6px 0; color: #1f2937;">${escapeHtmlForEmail(studentEmail)}</td>
+                </tr>
+                ${
+                  cohortName
+                    ? `<tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563;">Cohort</td>
+                  <td style="padding: 6px 0; color: #1f2937;">${escapeHtmlForEmail(cohortName)}</td>
+                </tr>`
+                    : ''
+                }
+              </table>
+            </div>
+            <div style="background: white; padding: 18px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #06b6d4;">
+              <h2 style="margin-top: 0; color: #1f2937; font-size: 17px;">Assignment</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563; width: 130px;">Title</td>
+                  <td style="padding: 6px 0; color: #1f2937;">${safeTitle}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563;">Chapter</td>
+                  <td style="padding: 6px 0; color: #1f2937;">${chapterNumber != null ? String(chapterNumber) : '—'}${
+      chapterSlug ? ` (${escapeHtmlForEmail(String(chapterSlug))})` : ''
+    }</td>
+                </tr>
+                ${
+                  rewardSats != null && rewardSats > 0
+                    ? `<tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563;">Reward</td>
+                  <td style="padding: 6px 0; color: #0891b2; font-weight: 600;">${Number(rewardSats)} sats</td>
+                </tr>`
+                    : ''
+                }
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563;">Submission</td>
+                  <td style="padding: 6px 0; color: #1f2937;">${isResubmission ? 'Resubmission (updated)' : 'New submission'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 600; color: #4b5563;">Submission ID</td>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 13px; word-break: break-all;">${escapeHtmlForEmail(submissionId)}</td>
+                </tr>
+              </table>
+            </div>
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+              <p style="margin: 0; color: #92400e; font-size: 14px;">
+                <strong>Action:</strong> Open the admin dashboard → <strong>Assignment Submissions</strong> to review and grade.
+              </p>
+              <p style="margin: 10px 0 0 0;">
+                <a href="${adminUrl}" style="color: #c2410c; font-weight: 600;">Open admin →</a>
+              </p>
+            </div>
+            <p style="font-size: 13px; color: #6b7280; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+              Automated notification from Pan-African ₿itcoin Academy.
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: normalizedAdminEmail,
+      subject: emailSubject,
+      html: emailHtml,
+    });
+
+    if (error) {
+      console.error('❌ Error sending assignment submission notification:', error.message);
+      return { success: false, error: error.message || 'Failed to send email' };
+    }
+
+    console.log('✅ Assignment submission notification sent to admin');
+    return { success: true };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('❌ Exception in sendAssignmentSubmissionNotificationEmail:', message);
+    return { success: false, error: message || 'Failed to send email' };
+  }
+}
+
 /**
  * Send approval email to student when their application is approved
  */
