@@ -68,16 +68,15 @@ export function SyllabusModal({ isOpen, onClose, chapters, levels }: SyllabusMod
       aria-labelledby="syllabus-modal-title"
       onClick={onClose}
     >
-      {/* Scrollable wrapper so short viewports can reach the header + full panel */}
-      <div className="flex min-h-full items-start justify-center p-4 pb-10 pt-16 sm:items-center sm:p-6 sm:pb-8 sm:pt-8">
+      {/* Single scroll: entire overlay scrolls — justify-start avoids flex center clipping tall content */}
+      <div className="flex min-h-full w-full flex-col items-center justify-start px-4 pb-16 pt-20 sm:px-6 sm:pb-12 sm:pt-16">
         <div
-          className="relative my-auto w-full max-w-4xl rounded-xl border border-cyan-400/30 bg-zinc-900 shadow-2xl"
+          className="relative w-full max-w-4xl rounded-xl border border-cyan-400/30 bg-zinc-900 p-6 shadow-2xl sm:p-8"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="max-h-[min(90vh,900px)] overflow-y-auto p-6">
-        {/* Header — sticky so title stays visible while scrolling long syllabus */}
-        <div className="sticky top-0 z-10 -mx-6 -mt-6 mb-6 flex items-center justify-between border-b border-cyan-400/20 bg-zinc-900/95 px-6 pb-4 pt-6 backdrop-blur-md">
-          <div className="flex min-w-0 items-center gap-3 pr-2">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between gap-3 border-b border-cyan-400/20 pb-4">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="shrink-0 rounded-lg bg-cyan-500/20 p-2">
               <BookOpen className="h-6 w-6 text-cyan-400" />
             </div>
@@ -184,7 +183,6 @@ export function SyllabusModal({ isOpen, onClose, chapters, levels }: SyllabusMod
             Close
           </button>
         </div>
-          </div>
         </div>
       </div>
     </div>
