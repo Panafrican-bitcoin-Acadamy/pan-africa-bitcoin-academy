@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSession } from "@/hooks/useSession";
 import { SearchBar } from "./SearchBar";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 // Lazy load modals - only load when needed (using React.lazy for better code splitting)
 const AuthModal = lazy(() => import("./AuthModal").then(mod => ({ default: mod.AuthModal })));
@@ -109,10 +110,10 @@ export function Navbar() {
       {logoutLoading && <LoadingSpinner overlay />}
       <header className="sticky top-0 z-50 border-b border-cyan-400/20 bg-black/70 text-zinc-50 backdrop-blur-xl w-full">
       {/* Mobile-first: Full width on mobile, max-width only on larger screens */}
-      <div className="w-full flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 sm:max-w-7xl sm:mx-auto lg:px-6">
+      <div className="flex w-full min-w-0 items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 sm:max-w-7xl sm:mx-auto lg:px-6">
         <Link 
           href="/" 
-          className="flex items-center gap-3 group"
+          className="flex shrink-0 items-center gap-3 group"
           aria-label="Pan-African Bitcoin Academy - Home"
           title="Pan-African Bitcoin Academy - First Eritrea Based Bitcoin Academy"
         >
@@ -140,295 +141,311 @@ export function Navbar() {
             <span className="text-xs sm:text-sm font-medium text-zinc-100">Bitcoin Academy</span>
           </div>
         </Link>
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-1 xl:flex">
-          <Link
-            href="/chapters"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Chapters
-          </Link>
-          <Link
-            href="/blog"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Blog
-          </Link>
-          <Link
-            href="/developer-hub"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Developer Hub
-          </Link>
-          {!isRegistered && (
-          <Link
-            href="/apply"
-            className="rounded-full px-3 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
-          >
-            Apply
-          </Link>
-          )}
-          <Link
-            href="/mentorship"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Mentorship
-          </Link>
-          <Link
-            href="/impact"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Impact
-          </Link>
-          <Link
-            href="/about"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            About
-          </Link>
-          <Link
-            href="/donate"
-            className="rounded-full bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
-          >
-            Donate
-          </Link>
-          {loading ? (
-            <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
-          ) : isAuthenticated && profile ? (
-            <div className="relative" ref={desktopDropdownRef}>
-              <button
-                type="button"
-                onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
-              >
-                {profile.photoUrl ? (
-                  <img
-                    src={profile.photoUrl}
-                    alt={profile.name}
-                    className="h-7 w-7 rounded-full object-cover border-2 border-orange-400/50"
-                  />
-                ) : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-xs font-bold text-black">
-                    {profile.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
-                )}
-                <span className="max-w-[100px] truncate">{profile.name || 'User'}</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${accountDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {accountDropdownOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-cyan-400/20 bg-zinc-900/95 backdrop-blur-xl shadow-xl">
-                  <div className="p-2">
-                    <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-700 mb-1">
-                      {profile.email}
-                    </div>
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setAccountDropdownOpen(false)}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                    >
-                      <LayoutDashboard className="h-4 w-4" />
-                      Dashboard
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setAccountDropdownOpen(false);
-                        setProfileModalOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200 cursor-pointer"
-                    >
-                      <User className="h-4 w-4" />
-                      Profile
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setAccountDropdownOpen(false);
-                        setChangePasswordOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200 cursor-pointer"
-                    >
-                      <Key className="h-4 w-4" />
-                      Change Password
-                    </button>
-                    <div className="my-1 border-t border-zinc-700" />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleLogout();
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10 cursor-pointer"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signin');
-                setAuthModalOpen(true);
-              }}
-              className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
-            >
-              Sign In
-            </button>
-          )}
-          <SearchBar />
-        </nav>
 
-        {/* Tablet Navigation (shows fewer items) */}
-        <nav className="hidden items-center gap-1 lg:flex xl:hidden">
-          <Link
-            href="/chapters"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Chapters
-          </Link>
-          <Link
-            href="/developer-hub"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Dev Hub
-          </Link>
-          {!isRegistered && (
-          <Link
-            href="/apply"
-            className="rounded-full px-3 py-2 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
-          >
-            Apply
-          </Link>
-          )}
-          <Link
-            href="/impact"
-            className="rounded-full px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-          >
-            Impact
-          </Link>
-          <Link
-            href="/donate"
-            className="rounded-full bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
-          >
-            Donate
-          </Link>
-          {loading ? (
-            <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
-          ) : isAuthenticated && profile ? (
-            <div className="relative" ref={tabletDropdownRef}>
-              <button
-                type="button"
-                onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+        {/* Desktop: links centered toward the right; utilities (language, account, search) on the far right */}
+        <div className="hidden min-w-0 flex-1 items-center justify-end gap-2 xl:flex">
+          <nav className="flex min-w-0 flex-wrap items-center justify-end gap-x-0 gap-y-0.5">
+            <Link
+              href="/chapters"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              Chapters
+            </Link>
+            <Link
+              href="/blog"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              Blog
+            </Link>
+            <Link
+              href="/developer-hub"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              Developer Hub
+            </Link>
+            {!isRegistered && (
+              <Link
+                href="/apply"
+                className="rounded-full px-2 py-1.5 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
               >
-                {profile.photoUrl ? (
-                  <img
-                    src={profile.photoUrl}
-                    alt={profile.name}
-                    className="h-7 w-7 rounded-full object-cover border-2 border-orange-400/50"
+                Apply
+              </Link>
+            )}
+            <Link
+              href="/mentorship"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              Mentorship
+            </Link>
+            <Link
+              href="/impact"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              Impact
+            </Link>
+            <Link
+              href="/about"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              About
+            </Link>
+            <Link
+              href="/donate"
+              className="rounded-full bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-2 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
+            >
+              Donate
+            </Link>
+          </nav>
+          <div className="flex shrink-0 items-center gap-1.5 border-l border-cyan-400/25 pl-2 sm:gap-2 sm:pl-3">
+            <LanguageSwitcher />
+            {loading ? (
+              <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
+            ) : isAuthenticated && profile ? (
+              <div className="relative" ref={desktopDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                  className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2.5 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+                >
+                  {profile.photoUrl ? (
+                    <img
+                      src={profile.photoUrl}
+                      alt={profile.name}
+                      className="h-7 w-7 rounded-full object-cover border-2 border-orange-400/50"
+                    />
+                  ) : (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-xs font-bold text-black">
+                      {profile.name?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <span className="max-w-[100px] truncate">{profile.name || "User"}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`}
                   />
-                ) : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-xs font-bold text-black">
-                    {profile.name?.charAt(0)?.toUpperCase() || 'U'}
+                </button>
+                {accountDropdownOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-cyan-400/20 bg-zinc-900/95 shadow-xl backdrop-blur-xl">
+                    <div className="p-2">
+                      <div className="mb-1 border-b border-zinc-700 px-3 py-2 text-xs text-zinc-400">
+                        {profile.email}
+                      </div>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setAccountDropdownOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAccountDropdownOpen(false);
+                          setProfileModalOpen(true);
+                        }}
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      >
+                        <User className="h-4 w-4" />
+                        Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAccountDropdownOpen(false);
+                          setChangePasswordOpen(true);
+                        }}
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      >
+                        <Key className="h-4 w-4" />
+                        Change Password
+                      </button>
+                      <div className="my-1 border-t border-zinc-700" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleLogout();
+                        }}
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 )}
-                <span className="max-w-[80px] truncate">{profile.name || 'User'}</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${accountDropdownOpen ? 'rotate-180' : ''}`} />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("signin");
+                  setAuthModalOpen(true);
+                }}
+                className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2.5 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+              >
+                Sign In
               </button>
-              {accountDropdownOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-cyan-400/20 bg-zinc-900/95 backdrop-blur-xl shadow-xl">
-                  <div className="p-2">
-                    <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-700 mb-1">
-                      {profile.email}
-                    </div>
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setAccountDropdownOpen(false)}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                    >
-                      <LayoutDashboard className="h-4 w-4" />
-                      Dashboard
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Close dropdown first, then open modal after a tiny delay to ensure dropdown closes
-                        setAccountDropdownOpen(false);
-                        setTimeout(() => {
-                          setProfileModalOpen(true);
-                        }, 50);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                    >
-                      <User className="h-4 w-4" />
-                      Profile
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Close dropdown first, then open modal after a tiny delay to ensure dropdown closes
-                        setAccountDropdownOpen(false);
-                        setTimeout(() => {
-                          setChangePasswordOpen(true);
-                        }, 50);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
-                    >
-                      <Key className="h-4 w-4" />
-                      Change Password
-                    </button>
-                    <div className="my-1 border-t border-zinc-700" />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setAccountDropdownOpen(false);
-                        handleLogout();
-                      }}
-                      disabled={logoutLoading}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {logoutLoading ? 'Logging out...' : 'Logout'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signin');
-                setAuthModalOpen(true);
-              }}
-              className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-3 py-2 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+            )}
+            <SearchBar />
+          </div>
+        </div>
+
+        {/* Tablet: fewer links + language + account */}
+        <div className="hidden min-w-0 flex-1 items-center justify-end gap-2 lg:flex xl:hidden">
+          <nav className="flex min-w-0 flex-wrap items-center justify-end gap-x-0 gap-y-0.5">
+            <Link
+              href="/chapters"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
             >
-              Sign In
-            </button>
-          )}
-        </nav>
+              Chapters
+            </Link>
+            <Link
+              href="/developer-hub"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              Dev Hub
+            </Link>
+            {!isRegistered && (
+              <Link
+                href="/apply"
+                className="rounded-full px-2 py-1.5 text-sm font-medium text-orange-300 transition hover:bg-orange-400/10"
+              >
+                Apply
+              </Link>
+            )}
+            <Link
+              href="/impact"
+              className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              Impact
+            </Link>
+            <Link
+              href="/donate"
+              className="rounded-full bg-gradient-to-r from-orange-400/20 to-cyan-400/20 px-2 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-400/30 hover:to-cyan-400/30"
+            >
+              Donate
+            </Link>
+          </nav>
+          <div className="flex shrink-0 items-center gap-1.5 border-l border-cyan-400/25 pl-2 sm:pl-3">
+            <LanguageSwitcher />
+            {loading ? (
+              <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
+            ) : isAuthenticated && profile ? (
+              <div className="relative" ref={tabletDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                  className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2.5 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+                >
+                  {profile.photoUrl ? (
+                    <img
+                      src={profile.photoUrl}
+                      alt={profile.name}
+                      className="h-7 w-7 rounded-full border-2 border-orange-400/50 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-orange-500 text-xs font-bold text-black">
+                      {profile.name?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <span className="max-w-[80px] truncate">{profile.name || "User"}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 transition-transform ${accountDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {accountDropdownOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-cyan-400/20 bg-zinc-900/95 shadow-xl backdrop-blur-xl">
+                    <div className="p-2">
+                      <div className="mb-1 border-b border-zinc-700 px-3 py-2 text-xs text-zinc-400">
+                        {profile.email}
+                      </div>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setAccountDropdownOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAccountDropdownOpen(false);
+                          setTimeout(() => {
+                            setProfileModalOpen(true);
+                          }, 50);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      >
+                        <User className="h-4 w-4" />
+                        Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAccountDropdownOpen(false);
+                          setTimeout(() => {
+                            setChangePasswordOpen(true);
+                          }, 50);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
+                      >
+                        <Key className="h-4 w-4" />
+                        Change Password
+                      </button>
+                      <div className="my-1 border-t border-zinc-700" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAccountDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        disabled={logoutLoading}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {logoutLoading ? "Logging out..." : "Logout"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("signin");
+                  setAuthModalOpen(true);
+                }}
+                className="rounded-full bg-gradient-to-r from-orange-500/20 to-cyan-500/20 px-2.5 py-1.5 text-sm font-medium text-orange-300 transition hover:from-orange-500/30 hover:to-cyan-500/30"
+              >
+                Sign In
+              </button>
+            )}
+            <SearchBar />
+          </div>
+        </div>
+
+        {/* Spacer: pushes hamburger to the right on small screens */}
+        <div className="flex-1 lg:hidden" aria-hidden="true" />
 
         {/* Mobile Menu Button - Touch-friendly */}
         <button
           type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-zinc-300 active:bg-cyan-400/10 lg:hidden touch-target"
+          className="touch-target shrink-0 rounded-lg p-2.5 text-zinc-300 min-h-[44px] min-w-[44px] active:bg-cyan-400/10 lg:hidden"
           aria-label="Toggle menu"
         >
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -439,8 +456,12 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="border-t border-cyan-400/20 bg-black/95 lg:hidden max-h-[calc(100vh-80px)] overflow-y-auto">
           <nav className="mx-auto max-w-7xl space-y-1 px-3 py-3 sm:px-4 sm:py-4">
-            <div className="mb-3 sm:mb-4">
+            <div className="mb-3 flex flex-col gap-3 sm:mb-4">
               <SearchBar />
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-cyan-400/20 bg-cyan-400/5 px-3 py-2">
+                <span className="text-sm text-zinc-400">Language</span>
+                <LanguageSwitcher compact />
+              </div>
             </div>
             <Link
               href="/"

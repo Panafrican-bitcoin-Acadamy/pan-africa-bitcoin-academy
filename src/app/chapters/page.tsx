@@ -272,7 +272,7 @@ export default function ChaptersPage() {
                         className="relative h-0.5 min-h-[2px] w-full min-w-[1.25rem] self-center overflow-hidden rounded-full bg-cyan-400/25"
                         aria-hidden
                       >
-                        <div className="animate-path-glow-1 absolute inset-0 rounded-full" />
+                        <div className="path-glow-flow path-glow-flow-cyan animate-path-glow-1 absolute inset-0 rounded-full" />
                       </div>
                     ) : (
                       <div
@@ -280,7 +280,7 @@ export default function ChaptersPage() {
                         className="relative h-0.5 min-h-[2px] w-full min-w-[1.25rem] self-center overflow-hidden rounded-full bg-orange-400/25"
                         aria-hidden
                       >
-                        <div className="animate-path-glow-2 absolute inset-0 rounded-full" />
+                        <div className="path-glow-flow path-glow-flow-orange animate-path-glow-2 absolute inset-0 rounded-full" />
                       </div>
                     );
                   return [circle, pathSegment];
@@ -313,142 +313,129 @@ export default function ChaptersPage() {
             </div>
             <style jsx>{`
               /*
-               * One sequential journey per loop: I → line → II → line → III → rest.
-               * Duration 16s: ~62% active sweep, ~38% calm pause before repeat.
+               * One sequential journey per loop: I → line → II → line → III → rest (16s).
+               * Path “water flow”: fixed soft gradient + background-position sweep (linear) —
+               * no swapping gradient keyframes, so the line reads as continuous fluid motion.
                */
+              .path-glow-flow {
+                background-repeat: no-repeat;
+                background-size: 280% 100%;
+                will-change: background-position, opacity, filter;
+              }
+
+              .path-glow-flow-cyan {
+                background-image: linear-gradient(
+                  90deg,
+                  transparent 0%,
+                  rgba(34, 211, 238, 0) 6%,
+                  rgba(34, 211, 238, 0.04) 11%,
+                  rgba(34, 211, 238, 0.14) 18%,
+                  rgba(34, 211, 238, 0.38) 28%,
+                  rgba(34, 211, 238, 0.72) 38%,
+                  rgba(34, 211, 238, 0.95) 45%,
+                  rgba(34, 211, 238, 1) 50%,
+                  rgba(34, 211, 238, 0.95) 55%,
+                  rgba(34, 211, 238, 0.72) 62%,
+                  rgba(34, 211, 238, 0.38) 72%,
+                  rgba(34, 211, 238, 0.14) 82%,
+                  rgba(34, 211, 238, 0.04) 89%,
+                  rgba(34, 211, 238, 0) 94%,
+                  transparent 100%
+                );
+                box-shadow: 0 0 14px rgba(34, 211, 238, 0.15), inset 0 0 12px rgba(34, 211, 238, 0.08);
+              }
+
+              .path-glow-flow-orange {
+                background-image: linear-gradient(
+                  90deg,
+                  transparent 0%,
+                  rgba(249, 115, 22, 0) 6%,
+                  rgba(249, 115, 22, 0.04) 11%,
+                  rgba(249, 115, 22, 0.14) 18%,
+                  rgba(249, 115, 22, 0.38) 28%,
+                  rgba(249, 115, 22, 0.72) 38%,
+                  rgba(249, 115, 22, 0.95) 45%,
+                  rgba(249, 115, 22, 1) 50%,
+                  rgba(249, 115, 22, 0.95) 55%,
+                  rgba(249, 115, 22, 0.72) 62%,
+                  rgba(249, 115, 22, 0.38) 72%,
+                  rgba(249, 115, 22, 0.14) 82%,
+                  rgba(249, 115, 22, 0.04) 89%,
+                  rgba(249, 115, 22, 0) 94%,
+                  transparent 100%
+                );
+                box-shadow: 0 0 14px rgba(249, 115, 22, 0.15), inset 0 0 12px rgba(249, 115, 22, 0.08);
+              }
+
               @keyframes path-glow-1 {
                 0%,
                 11%,
-                31%,
+                32%,
                 100% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 0%,
-                    rgba(34, 211, 238, 0) 45%,
-                    transparent 100%
-                  );
-                  box-shadow: 0 0 0 rgba(34, 211, 238, 0);
+                  opacity: 0;
+                  background-position: 100% 0;
                   filter: blur(0);
                 }
-                13% {
-                  background: linear-gradient(
-                    to right,
-                    rgba(34, 211, 238, 0.45) 0%,
-                    rgba(34, 211, 238, 0.25) 25%,
-                    transparent 50%
-                  );
-                  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
-                  filter: blur(0.35px);
+                11.5% {
+                  opacity: 0;
+                  background-position: 100% 0;
+                  filter: blur(0.4px);
                 }
-                17% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 10%,
-                    rgba(34, 211, 238, 0.95) 38%,
-                    rgba(34, 211, 238, 0.75) 48%,
-                    transparent 72%
-                  );
-                  box-shadow: 0 0 22px rgba(34, 211, 238, 0.75), 0 0 40px rgba(34, 211, 238, 0.35);
-                  filter: blur(0.65px);
-                }
-                21% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 35%,
-                    rgba(34, 211, 238, 1) 52%,
-                    rgba(34, 211, 238, 0.85) 62%,
-                    transparent 88%
-                  );
-                  box-shadow: 0 0 26px rgba(34, 211, 238, 0.85), 0 0 48px rgba(34, 211, 238, 0.45);
-                  filter: blur(0.85px);
-                }
-                25% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 55%,
-                    rgba(34, 211, 238, 0.75) 78%,
-                    rgba(34, 211, 238, 0.35) 100%
-                  );
-                  box-shadow: 0 0 18px rgba(34, 211, 238, 0.55);
+                12% {
+                  opacity: 0.35;
+                  background-position: 100% 0;
                   filter: blur(0.5px);
                 }
-                29% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 70%,
-                    rgba(34, 211, 238, 0.25) 95%,
-                    transparent 100%
-                  );
-                  box-shadow: 0 0 8px rgba(34, 211, 238, 0.25);
-                  filter: blur(0.2px);
+                12.5% {
+                  opacity: 1;
+                  background-position: 100% 0;
+                  filter: blur(0.55px);
+                }
+                30% {
+                  opacity: 1;
+                  background-position: -35% 0;
+                  filter: blur(0.55px);
+                }
+                31% {
+                  opacity: 0;
+                  background-position: -35% 0;
+                  filter: blur(0);
                 }
               }
 
               @keyframes path-glow-2 {
                 0%,
                 35%,
-                55%,
+                54%,
                 100% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 0%,
-                    rgba(249, 115, 22, 0) 45%,
-                    transparent 100%
-                  );
-                  box-shadow: 0 0 0 rgba(249, 115, 22, 0);
+                  opacity: 0;
+                  background-position: 100% 0;
                   filter: blur(0);
                 }
-                37% {
-                  background: linear-gradient(
-                    to right,
-                    rgba(249, 115, 22, 0.45) 0%,
-                    rgba(249, 115, 22, 0.28) 22%,
-                    transparent 48%
-                  );
-                  box-shadow: 0 0 12px rgba(249, 115, 22, 0.45);
-                  filter: blur(0.35px);
+                35.5% {
+                  opacity: 0;
+                  background-position: 100% 0;
+                  filter: blur(0.4px);
                 }
-                41% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 8%,
-                    rgba(249, 115, 22, 0.95) 36%,
-                    rgba(249, 115, 22, 0.78) 46%,
-                    transparent 70%
-                  );
-                  box-shadow: 0 0 22px rgba(249, 115, 22, 0.72), 0 0 40px rgba(249, 115, 22, 0.32);
-                  filter: blur(0.65px);
-                }
-                45% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 32%,
-                    rgba(249, 115, 22, 1) 50%,
-                    rgba(249, 115, 22, 0.82) 60%,
-                    transparent 85%
-                  );
-                  box-shadow: 0 0 26px rgba(249, 115, 22, 0.82), 0 0 48px rgba(249, 115, 22, 0.42);
-                  filter: blur(0.85px);
-                }
-                49% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 52%,
-                    rgba(249, 115, 22, 0.72) 76%,
-                    rgba(249, 115, 22, 0.32) 100%
-                  );
-                  box-shadow: 0 0 18px rgba(249, 115, 22, 0.52);
+                36% {
+                  opacity: 0.35;
+                  background-position: 100% 0;
                   filter: blur(0.5px);
                 }
+                36.5% {
+                  opacity: 1;
+                  background-position: 100% 0;
+                  filter: blur(0.55px);
+                }
+                52% {
+                  opacity: 1;
+                  background-position: -35% 0;
+                  filter: blur(0.55px);
+                }
                 53% {
-                  background: linear-gradient(
-                    to right,
-                    transparent 68%,
-                    rgba(249, 115, 22, 0.22) 94%,
-                    transparent 100%
-                  );
-                  box-shadow: 0 0 8px rgba(249, 115, 22, 0.22);
-                  filter: blur(0.2px);
+                  opacity: 0;
+                  background-position: -35% 0;
+                  filter: blur(0);
                 }
               }
 
@@ -635,11 +622,11 @@ export default function ChaptersPage() {
               }
 
               .animate-path-glow-1 {
-                animation: path-glow-1 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
+                animation: path-glow-1 16s linear infinite;
               }
 
               .animate-path-glow-2 {
-                animation: path-glow-2 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
+                animation: path-glow-2 16s linear infinite;
               }
 
               #level-1-circle {
@@ -670,6 +657,7 @@ export default function ChaptersPage() {
               }
 
               @media (prefers-reduced-motion: reduce) {
+                .path-glow-flow,
                 .animate-path-glow-1,
                 .animate-path-glow-2,
                 #level-1-circle,

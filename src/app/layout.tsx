@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ResourceHints } from "@/components/ResourceHints";
 import { StructuredData } from "@/components/StructuredData";
 import { ClickSparkWrapper } from "@/components/ClickSparkWrapper";
@@ -209,6 +210,7 @@ export default function RootLayout({
         {/* Global purchasing power side indicator */}
         <InflationTrackerWrapper />
         
+        <LanguageProvider>
         <ClickSparkWrapper>
           <div className="flex min-h-screen flex-col">
             <Navbar />
@@ -218,6 +220,7 @@ export default function RootLayout({
             <Footer />
           </div>
         </ClickSparkWrapper>
+        </LanguageProvider>
       </body>
     </html>
   );
