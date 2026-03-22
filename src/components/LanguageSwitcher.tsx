@@ -107,11 +107,17 @@ export function LanguageSwitcher({
           <div
             role="status"
             aria-live="polite"
-            className="pointer-events-none fixed bottom-6 left-1/2 z-[300] flex max-w-[min(90vw,20rem)] -translate-x-1/2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300"
           >
-            <div className="pointer-events-auto rounded-xl border border-cyan-400/30 bg-zinc-950/95 px-4 py-3 text-center shadow-[0_0_24px_rgba(34,211,238,0.15)] backdrop-blur-xl">
-              <p className="text-sm font-semibold text-cyan-200">Coming soon</p>
-              <p className="mt-1 text-xs text-zinc-400">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              aria-hidden
+            />
+            <div className="relative w-full max-w-[min(92vw,24rem)] rounded-2xl border border-cyan-400/25 bg-zinc-950/98 px-8 py-10 text-center shadow-[0_0_48px_rgba(34,211,238,0.2),0_25px_50px_rgba(0,0,0,0.5)] sm:max-w-md sm:px-10 sm:py-12">
+              <p className="text-2xl font-bold tracking-tight text-cyan-50 sm:text-3xl">
+                Coming soon
+              </p>
+              <p className="mt-4 text-base leading-relaxed text-zinc-200 sm:text-lg">
                 Tigrinya (ትግርኛ) translation is on the way.
               </p>
             </div>
