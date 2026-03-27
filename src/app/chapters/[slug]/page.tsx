@@ -997,10 +997,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           </div>
                         ))}
                       </div>
-                    ) : chapter.slug === "the-nature-of-money" && section.heading === "Introduction" && section.images.length >= 3 ? (
+                    ) : chapter.slug === "the-nature-of-money" && section.heading === "Introduction" && (section.images?.length ?? 0) >= 3 ? (
                       // Chapter 1 intro: circular storyboard with directional arrows
                       <div className="mt-6 flex flex-col items-center">
-                        {section.images.map((image, idx) => (
+                        {(section.images ?? []).map((image, idx, introImages) => (
                           <div key={idx} className="flex w-full flex-col items-center">
                             <div className="w-[220px] sm:w-[240px]">
                               <div className="aspect-square overflow-hidden rounded-full border border-orange-400/30 bg-zinc-900/40 p-2 shadow-lg">
@@ -1013,7 +1013,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                                 />
                               </div>
                             </div>
-                            {idx < section.images.length - 1 && (
+                            {idx < introImages.length - 1 && (
                               <div className="my-2 flex h-8 w-8 items-center justify-center rounded-full border border-orange-400/30 bg-orange-500/10 text-lg text-orange-300">
                                 ↓
                               </div>
