@@ -332,7 +332,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           <ZoomableImage
                             src={decImg.src}
                             alt={decImg.alt}
-                            caption={decImg.caption}
+                            caption={undefined}
                             className="w-full max-w-xl rounded-lg"
                           />
                         </div>
