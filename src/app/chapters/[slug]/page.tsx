@@ -1008,7 +1008,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                                 />
                               </div>
                             </div>
-                            {idx < section.images.length - 1 && (
+                            {idx < (section.images?.length ?? 0) - 1 && (
                               <div className="my-2 flex h-8 w-8 items-center justify-center rounded-full border border-orange-400/30 bg-orange-500/10 text-lg text-orange-300">
                                 ↓
                               </div>
