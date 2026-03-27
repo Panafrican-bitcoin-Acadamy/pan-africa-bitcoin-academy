@@ -303,6 +303,14 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                                        p === "Transparency Without Identity" || 
                                        p === "Scarcity";
                   
+                  // Avoid duplicate heading in chapter 5.2: keep the image caption version only.
+                  if (
+                    section.heading === "5.2 Bitcoin as Peer-to-Peer Electronic Cash" &&
+                    p === "Decentralization Explained"
+                  ) {
+                    return null;
+                  }
+
                   if (isSubHeading) {
                     return (
                       <h4 key={p} className="mt-6 mb-3 text-base font-bold text-cyan-200 sm:text-lg border-b border-cyan-400/30 pb-1.5">
@@ -311,10 +319,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                     );
                   }
                   
-                  // After "Decentralization Explained" content (paragraph index 8 in 5.3), show dec.jpeg
+                  // After "Decentralization Explained" content (before "Transparency Without Identity"), show dec.jpeg
                   const decImg = section.images?.[0];
-                  const isAfterDecentralization = section.heading === "5.3 Bitcoin as Peer-to-Peer Electronic Cash"
-                    && pIdx === 8
+                  const isAfterDecentralization = section.heading === "5.2 Bitcoin as Peer-to-Peer Electronic Cash"
+                    && pIdx === 9
                     && decImg?.src?.includes("dec.jpeg");
                   if (isAfterDecentralization && decImg) {
                     return (
@@ -327,9 +335,6 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                             caption={decImg.caption}
                             className="w-full max-w-xl rounded-lg"
                           />
-                          {decImg.caption && (
-                            <p className="mt-2 text-center text-sm text-cyan-200/90 italic">{decImg.caption}</p>
-                          )}
                         </div>
                       </div>
                     );
@@ -992,6 +997,30 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                           </div>
                         ))}
                       </div>
+                    ) : chapter.slug === "the-nature-of-money" && section.heading === "Introduction" && section.images.length >= 3 ? (
+                      // Chapter 1 intro: circular storyboard with directional arrows
+                      <div className="mt-6 flex flex-col items-center">
+                        {section.images.map((image, idx) => (
+                          <div key={idx} className="flex w-full flex-col items-center">
+                            <div className="w-[220px] sm:w-[240px]">
+                              <div className="aspect-square overflow-hidden rounded-full border border-orange-400/30 bg-zinc-900/40 p-2 shadow-lg">
+                                <ZoomableImage
+                                  src={image.src}
+                                  alt={image.alt}
+                                  caption={image.caption}
+                                  className="h-full w-full rounded-full object-cover"
+                                  thumbnailClassName="h-full max-h-none w-full"
+                                />
+                              </div>
+                            </div>
+                            {idx < section.images.length - 1 && (
+                              <div className="my-2 flex h-8 w-8 items-center justify-center rounded-full border border-orange-400/30 bg-orange-500/10 text-lg text-orange-300">
+                                ↓
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     ) : section.images.length === 2 ? (
                       // Side by side layout for sections with exactly 2 images
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1006,8 +1035,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                         ))}
                       </div>
                     ) : (
-                      // Skip dec.jpeg in 5.3 (already shown under Decentralization Explained)
-                      (section.heading === "5.3 Bitcoin as Peer-to-Peer Electronic Cash"
+                      // Skip dec.jpeg in 5.2 (already shown under Decentralization Explained)
+                      (section.heading === "5.2 Bitcoin as Peer-to-Peer Electronic Cash"
                         ? section.images.filter((img) => !img.src.includes("dec.jpeg"))
                         : section.images
                       ).map((image, idx) => (
