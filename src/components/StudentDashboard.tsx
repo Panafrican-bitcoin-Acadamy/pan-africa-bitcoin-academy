@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
-import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw } from 'lucide-react';
+import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw, X, BookOpen } from 'lucide-react';
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
 const CertificateImageSection = lazy(() => import('./CertificateImageSection').then(mod => ({ default: mod.CertificateImageSection })));
@@ -206,6 +207,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [selectedUpcomingItem, setSelectedUpcomingItem] = useState<any | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
@@ -257,6 +259,20 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     window.addEventListener('inflationTrackerEnabledChanged', handler);
     return () => window.removeEventListener('inflationTrackerEnabledChanged', handler);
   }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedUpcomingItem(null);
+    };
+    if (selectedUpcomingItem) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [selectedUpcomingItem]);
 
   // Clear withdrawal request flag when pending sats become 0 (withdrawal processed)
   useEffect(() => {
@@ -584,6 +600,18 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               time: event.time || '',
               description: event.description || '',
               link: event.link || null,
+              image_url: event.image_url || null,
+              image_alt_text: event.image_alt_text || '',
+              chapter_title: event.chapter_title || '',
+              chapter_slug: event.chapter_slug || '',
+              topic_detail: event.topic_detail || '',
+              topic_theory: event.topic_theory || '',
+              topic_practice: event.topic_practice || '',
+              topic_live_session: event.topic_live_session || '',
+              topic_quiz: event.topic_quiz || '',
+              topic_learn: Array.isArray(event.topic_learn) ? event.topic_learn : [],
+              is_registration_enabled: !!event.is_registration_enabled,
+              cohort_id: event.cohort_id || null,
             };
           });
           setEvents(transformedEvents);
@@ -1036,68 +1064,68 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           </div>
         )}
 
-        {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-zinc-50 sm:text-4xl">
-            Welcome back, {userData?.profile?.name || student.name || 'Student'} 👋
-          </h1>
-          <p className="mt-2 text-lg text-zinc-400">
-            {userData?.isRegistered 
-              ? `Your journey to Bitcoin sovereignty continues.${userData?.cohort ? ` You're enrolled in ${userData.cohort.name}.` : ''}`
-              : 'Your journey to Bitcoin sovereignty continues.'}
-          </p>
-        </div>
+        {/* Welcome + Inflation Tracker */}
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold text-zinc-50 sm:text-4xl">
+              Welcome back, {userData?.profile?.name || student.name || 'Student'} 👋
+            </h1>
+            <p className="mt-2 text-lg text-zinc-400">
+              {userData?.isRegistered
+                ? `Your journey to Bitcoin sovereignty continues.${userData?.cohort ? ` You're enrolled in ${userData.cohort.name}.` : ''}`
+                : 'Your journey to Bitcoin sovereignty continues.'}
+            </p>
+          </div>
 
-        {/* Inflation Tracker Start */}
-        <div className="mb-6 flex justify-end">
-          <div className="w-full max-w-md rounded-xl border border-orange-400/25 bg-black/80 p-4 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
-            <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <TrendingDown className="h-4 w-4 text-orange-300" />
-                <h3 className="text-lg font-semibold text-zinc-50">Inflation Tracker</h3>
+          <div className="w-full lg:w-auto lg:min-w-[360px]">
+            <div className="rounded-lg border border-orange-400/25 bg-black/80 px-3 py-2.5 shadow-[0_0_16px_rgba(249,115,22,0.12)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <TrendingDown className="h-3.5 w-3.5 text-orange-300" />
+                    <h3 className="text-sm font-semibold text-zinc-100">Inflation Tracker</h3>
+                  </div>
+                  <p className="mt-0.5 text-xs text-zinc-400">
+                    {inflationTrackingEnabled
+                      ? `Tracking is ON · Year ${inflationYear}`
+                      : 'Tracking is OFF'}
+                  </p>
+                </div>
+
+                {!inflationTrackingEnabled ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem(INF_ENABLED_KEY, 'true');
+                      localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
+                      sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
+                      setInflationTrackingEnabled(true);
+                      setInflationYear(INF_BASE_YEAR);
+                      window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
+                    }}
+                    className="whitespace-nowrap rounded-md bg-gradient-to-r from-orange-500 to-cyan-500 px-3 py-1.5 text-xs font-semibold text-black shadow-[0_0_12px_rgba(249,115,22,0.2)] transition hover:brightness-110"
+                  >
+                    Start
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem(INF_ENABLED_KEY, 'true');
+                      localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
+                      sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
+                      setInflationYear(INF_BASE_YEAR);
+                      window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
+                    }}
+                    className="whitespace-nowrap rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Restart
+                    </span>
+                  </button>
+                )}
               </div>
-              <p className="mt-1 text-sm text-zinc-400">
-                {inflationTrackingEnabled
-                  ? `Tracking is ON. Your current year is ${inflationYear}.`
-                  : 'Press Start to begin counting how inflation affects your money.'}
-              </p>
-            </div>
-
-              {!inflationTrackingEnabled ? (
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.setItem(INF_ENABLED_KEY, 'true');
-                  localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
-                  sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
-                  setInflationTrackingEnabled(true);
-                  setInflationYear(INF_BASE_YEAR);
-                  window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
-                }}
-                className="whitespace-nowrap rounded-lg bg-gradient-to-r from-orange-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-black shadow-[0_0_15px_rgba(249,115,22,0.2)] transition hover:brightness-110"
-              >
-                Start tracking
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  // Restart from the baseline year
-                  localStorage.setItem(INF_ENABLED_KEY, 'true');
-                  localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
-                  sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
-                  setInflationYear(INF_BASE_YEAR);
-                  window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
-                }}
-                className="whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <RotateCcw className="h-4 w-4" />
-                  Restart
-                </span>
-              </button>
-            )}
             </div>
           </div>
         </div>
@@ -1367,7 +1395,16 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       return (
                         <div
                           key={item.id}
-                          className={`rounded-lg border ${config.borderColor} ${config.bgColor} p-3 transition hover:brightness-110`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedUpcomingItem(item)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedUpcomingItem(item);
+                            }
+                          }}
+                          className={`cursor-pointer rounded-lg border ${config.borderColor} ${config.bgColor} p-3 transition hover:brightness-110`}
                         >
                           <div className="mb-2 flex items-start gap-2">
                             <Icon className={`h-4 w-4 ${config.color} mt-0.5 flex-shrink-0`} />
@@ -1391,26 +1428,17 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                                   {item.description}
                                 </div>
                               )}
-                              {item.link && item.link !== '#' && item.link.trim() !== '' && (
-                                <Link
-                                  href={item.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`mt-2 inline-flex items-center gap-1.5 rounded ${config.bgColor} border ${config.borderColor} px-2.5 py-1 text-xs font-medium ${config.color} transition hover:brightness-110`}
-                                >
-                                  {item.type === 'live-class' ? (
-                                    <>
-                                      <Video className="h-3 w-3" />
-                                      Join Video
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ExternalLink className="h-3 w-3" />
-                                      View Details
-                                    </>
-                                  )}
-                                </Link>
-                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedUpcomingItem(item);
+                                }}
+                                className={`mt-2 inline-flex items-center gap-1.5 rounded ${config.bgColor} border ${config.borderColor} px-2.5 py-1 text-xs font-medium ${config.color} transition hover:brightness-110`}
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                Open details
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -1426,6 +1454,136 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                 )}
               </div>
             </div>
+
+            {selectedUpcomingItem && createPortal(
+              <div
+                className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+                onClick={() => setSelectedUpcomingItem(null)}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dashboard-upcoming-modal-title"
+              >
+                <div
+                  className="relative z-[100000] w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl border-2 border-zinc-600 bg-zinc-900 shadow-2xl flex flex-col sm:flex-row"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUpcomingItem(null)}
+                    className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700 text-zinc-300 transition hover:bg-zinc-600"
+                    aria-label="Close details"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+
+                  {selectedUpcomingItem.image_url ? (
+                    <div className="flex w-full sm:w-[44%] sm:min-w-0 sm:shrink-0 items-center justify-center bg-zinc-950 p-4 sm:rounded-l-xl sm:border-r border-b sm:border-b-0 border-zinc-700/50">
+                      <img
+                        src={selectedUpcomingItem.image_url}
+                        alt={selectedUpcomingItem.image_alt_text || selectedUpcomingItem.title}
+                        className="max-h-[200px] w-full object-contain object-center sm:max-h-80"
+                      />
+                    </div>
+                  ) : null}
+
+                  <div className="flex-1 min-w-0 overflow-y-auto p-5 sm:p-6 pt-12 sm:pt-5">
+                    <div className="mb-2 flex items-center gap-2 text-sm text-zinc-400">
+                      <span className="font-medium text-zinc-200">{selectedUpcomingItem.dateString}</span>
+                      {selectedUpcomingItem.time && (
+                        <>
+                          <span className="text-zinc-600">•</span>
+                          <span>{selectedUpcomingItem.time}</span>
+                        </>
+                      )}
+                    </div>
+
+                    <h3 id="dashboard-upcoming-modal-title" className="mb-2 pr-10 text-xl font-bold text-zinc-50">
+                      {selectedUpcomingItem.title}
+                    </h3>
+
+                    {(selectedUpcomingItem.chapter_title ||
+                      selectedUpcomingItem.topic_detail ||
+                      selectedUpcomingItem.topic_theory ||
+                      selectedUpcomingItem.topic_practice ||
+                      selectedUpcomingItem.topic_live_session ||
+                      selectedUpcomingItem.topic_quiz ||
+                      (selectedUpcomingItem.topic_learn && selectedUpcomingItem.topic_learn.length > 0)) && (
+                      <div className="mt-3 rounded-lg border border-zinc-700/80 bg-zinc-950/60 p-3.5">
+                        {selectedUpcomingItem.chapter_title && (
+                          <p className="mb-2 text-sm font-semibold text-cyan-300">
+                            Topic: {selectedUpcomingItem.chapter_title}
+                          </p>
+                        )}
+                        {selectedUpcomingItem.topic_theory && (
+                          <p className="mb-1.5 text-sm text-zinc-300">Theory: {selectedUpcomingItem.topic_theory}</p>
+                        )}
+                        {selectedUpcomingItem.topic_practice && (
+                          <p className="mb-1.5 text-sm text-zinc-300">Practice: {selectedUpcomingItem.topic_practice}</p>
+                        )}
+                        {selectedUpcomingItem.topic_live_session && (
+                          <p className="mb-1.5 text-sm text-zinc-300">Live: {selectedUpcomingItem.topic_live_session}</p>
+                        )}
+                        {selectedUpcomingItem.topic_quiz && (
+                          <p className="mb-1.5 text-sm text-zinc-300">Quiz: {selectedUpcomingItem.topic_quiz}</p>
+                        )}
+                        {selectedUpcomingItem.topic_detail && (
+                          <p className="text-sm leading-relaxed text-zinc-300">{selectedUpcomingItem.topic_detail}</p>
+                        )}
+                        {selectedUpcomingItem.topic_learn && selectedUpcomingItem.topic_learn.length > 0 && (
+                          <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-zinc-300">
+                            {selectedUpcomingItem.topic_learn.map((item: string, idx: number) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+
+                    <p className="mb-4 mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
+                      {selectedUpcomingItem.description || 'No additional details.'}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-md border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-xs font-medium text-purple-300">
+                        {selectedUpcomingItem.type}
+                      </span>
+
+                      {selectedUpcomingItem.chapter_slug && (
+                        <Link
+                          href={`/chapters/${selectedUpcomingItem.chapter_slug}`}
+                          className="inline-flex items-center gap-2 rounded-md border border-cyan-500/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          View chapter{selectedUpcomingItem.chapter_title ? `: ${selectedUpcomingItem.chapter_title}` : ''}
+                        </Link>
+                      )}
+
+                      {selectedUpcomingItem.link && selectedUpcomingItem.link !== '#' && selectedUpcomingItem.link.trim() !== '' && (
+                        <a
+                          href={selectedUpcomingItem.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-md border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/25"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          Open link
+                        </a>
+                      )}
+
+                      {selectedUpcomingItem.is_registration_enabled && !selectedUpcomingItem.cohort_id && (
+                        <Link
+                          href={`/events/${selectedUpcomingItem.id}/register`}
+                          className="inline-flex items-center gap-2 rounded-md border border-green-500/35 bg-green-500/12 px-3 py-1.5 text-sm font-medium text-green-200 transition hover:bg-green-500/22"
+                        >
+                          Register
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>,
+              document.body
+            )}
 
             {/* Study Materials */}
             <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">

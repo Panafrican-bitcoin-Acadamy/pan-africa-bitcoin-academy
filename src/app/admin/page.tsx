@@ -626,6 +626,12 @@ export default function AdminDashboardPage() {
   });
   const [editSessionSubmitting, setEditSessionSubmitting] = useState(false);
   const [selectedEventForUpload, setSelectedEventForUpload] = useState<string>('');
+  const [attendanceCohortId, setAttendanceCohortId] = useState<string>('');
+  const [attendanceSessionId, setAttendanceSessionId] = useState<string>('');
+  const [attendanceStudents, setAttendanceStudents] = useState<Array<{ id: string; name: string; email: string; attended: boolean }>>([]);
+  const [attendanceCohortAccordionOpen, setAttendanceCohortAccordionOpen] = useState<string | null>(null);
+  const [loadingAttendanceStudents, setLoadingAttendanceStudents] = useState(false);
+  const [savingManualAttendance, setSavingManualAttendance] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loadingAttendanceRecords, setLoadingAttendanceRecords] = useState(false);
   const [attendanceEventFilter, setAttendanceEventFilter] = useState<string>('all');
@@ -3666,8 +3672,87 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const loadManualAttendanceStudents = async (cohortId: string, sessionId: string) => {
+    if (!cohortId || !sessionId) {
+      setAttendanceStudents([]);
+      return;
+    }
+
+    setLoadingAttendanceStudents(true);
+    try {
+      const [studentsRes, attendanceRes] = await Promise.all([
+        fetchWithAuth(`/api/admin/students/all?limit=5000&cohort_id=${encodeURIComponent(cohortId)}`),
+        fetchWithAuth(`/api/admin/attendance?event_id=${encodeURIComponent(sessionId)}&limit=5000`),
+      ]);
+
+      const studentsData = await studentsRes.json();
+      const attendanceData = await attendanceRes.json();
+
+      if (!studentsRes.ok) {
+        throw new Error(studentsData?.error || 'Failed to load students for cohort');
+      }
+      if (!attendanceRes.ok) {
+        throw new Error(attendanceData?.error || 'Failed to load attendance for session');
+      }
+
+      const attendedSet = new Set<string>(
+        ((attendanceData?.records || []) as Array<{ studentId?: string }>).map((r) => r.studentId).filter(Boolean) as string[]
+      );
+
+      const mapped = ((studentsData?.students || []) as any[]).map((student) => ({
+        id: String(student.id),
+        name: String(student.name || 'Unknown Student'),
+        email: String(student.email || ''),
+        attended: attendedSet.has(String(student.id)),
+      }));
+
+      setAttendanceStudents(mapped);
+    } catch (err: any) {
+      setAttendanceStudents([]);
+      setError(err?.message || 'Failed to load manual attendance students');
+    } finally {
+      setLoadingAttendanceStudents(false);
+    }
+  };
+
+  const saveManualAttendance = async () => {
+    if (!attendanceSessionId || !attendanceCohortId || attendanceStudents.length === 0) return;
+    setSavingManualAttendance(true);
+    setError(null);
+    try {
+      const updates = attendanceStudents.map((s) => ({ studentId: s.id, attended: !!s.attended }));
+      const res = await fetchWithAuth('/api/admin/attendance/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: attendanceSessionId,
+          updates,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to save manual attendance');
+      }
+      alert(`Attendance saved (${data.attendedCount} attended, ${data.notAttendedCount} not attended).`);
+      attendanceFetchedRef.current = false;
+      fetchAttendanceRecords();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save manual attendance');
+    } finally {
+      setSavingManualAttendance(false);
+    }
+  };
+
   const [loginLoading, setLoginLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!attendanceCohortId || !attendanceSessionId) {
+      setAttendanceStudents([]);
+      return;
+    }
+    loadManualAttendanceStudents(attendanceCohortId, attendanceSessionId);
+  }, [attendanceCohortId, attendanceSessionId]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -9620,6 +9705,217 @@ export default function AdminDashboardPage() {
                 </form>
                   </div>
                 </div>
+              </div>
+
+              {/* Manual Attendance by Cohort */}
+              <div className="mt-6 rounded-2xl border-2 border-zinc-800 bg-zinc-900/60 p-6 shadow-xl">
+                <div className="mb-5">
+                  <h3 className="text-xl font-bold text-zinc-100">Manual Attendance by Cohort</h3>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Select a cohort, choose a session, then tick students who attended.
+                  </p>
+                </div>
+
+                {(() => {
+                  const activeSessions = allSessions.filter((session: any) => session.status !== 'cancelled');
+                  const cohortMap = new Map<string, { cohortId: string; cohortName: string; sessions: any[] }>();
+
+                  activeSessions.forEach((session: any) => {
+                    const cohortId = String(session.cohort_id || '');
+                    if (!cohortId) return;
+                    const cohortName =
+                      session.cohorts?.name ||
+                      cohorts.find((c) => c.id === cohortId)?.name ||
+                      `Cohort ${cohortId.slice(0, 8)}`;
+
+                    if (!cohortMap.has(cohortId)) {
+                      cohortMap.set(cohortId, { cohortId, cohortName, sessions: [] });
+                    }
+                    cohortMap.get(cohortId)!.sessions.push(session);
+                  });
+
+                  const cohortsWithSessions = Array.from(cohortMap.values()).sort((a, b) =>
+                    a.cohortName.localeCompare(b.cohortName)
+                  );
+
+                  if (cohortsWithSessions.length === 0) {
+                    return (
+                      <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4 text-sm text-zinc-400">
+                        No cohorts with sessions available.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      {cohortsWithSessions.map(({ cohortId, cohortName, sessions }) => {
+                        const isOpen = attendanceCohortAccordionOpen === cohortId;
+                        const sortedSessions = [...sessions].sort((a: any, b: any) => {
+                          const aNum = Number(a.session_number || 0);
+                          const bNum = Number(b.session_number || 0);
+                          if (aNum !== bNum) return aNum - bNum;
+                          const aDate = a.session_date ? new Date(a.session_date).getTime() : 0;
+                          const bDate = b.session_date ? new Date(b.session_date).getTime() : 0;
+                          return aDate - bDate;
+                        });
+
+                        return (
+                          <div key={cohortId} className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/30">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAttendanceCohortAccordionOpen((prev) => (prev === cohortId ? null : cohortId));
+                                if (attendanceCohortId !== cohortId) {
+                                  setAttendanceCohortId(cohortId);
+                                  setAttendanceSessionId('');
+                                  setAttendanceStudents([]);
+                                }
+                              }}
+                              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-zinc-800/40"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-zinc-100">{cohortName}</p>
+                                <p className="mt-0.5 text-xs text-zinc-500">
+                                  {sortedSessions.length} session{sortedSessions.length === 1 ? '' : 's'}
+                                </p>
+                              </div>
+                              <ChevronDown
+                                className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                                aria-hidden
+                              />
+                            </button>
+
+                            {isOpen && (
+                              <div className="border-t border-zinc-800 bg-zinc-950/50 p-4">
+                                <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                                      Session
+                                    </label>
+                                    <select
+                                      value={attendanceCohortId === cohortId ? attendanceSessionId : ''}
+                                      onChange={(e) => {
+                                        setAttendanceCohortId(cohortId);
+                                        setAttendanceSessionId(e.target.value);
+                                      }}
+                                      className="w-full rounded-lg border border-zinc-700/60 bg-zinc-900/80 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500/50 focus:outline-none"
+                                    >
+                                      <option value="">Select session...</option>
+                                      {sortedSessions.map((session: any) => {
+                                        const dateLabel = session.session_date
+                                          ? new Date(session.session_date).toLocaleDateString('en-US', {
+                                              month: 'short',
+                                              day: 'numeric',
+                                              year: 'numeric',
+                                            })
+                                          : '';
+                                        const sessionLabel = `Session ${session.session_number || ''}${session.topic ? `: ${session.topic}` : ''}${dateLabel ? ` (${dateLabel})` : ''}`;
+                                        return (
+                                          <option key={session.id} value={String(session.id)}>
+                                            {sessionLabel}
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    disabled={!attendanceSessionId || attendanceCohortId !== cohortId || attendanceStudents.length === 0}
+                                    onClick={() => {
+                                      if (attendanceCohortId !== cohortId) return;
+                                      setAttendanceStudents((prev) => prev.map((s) => ({ ...s, attended: true })));
+                                    }}
+                                    className="rounded-lg border border-green-600/40 bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Tick all
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={!attendanceSessionId || attendanceCohortId !== cohortId || attendanceStudents.length === 0}
+                                    onClick={() => {
+                                      if (attendanceCohortId !== cohortId) return;
+                                      setAttendanceStudents((prev) => prev.map((s) => ({ ...s, attended: false })));
+                                    }}
+                                    className="rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Untick all
+                                  </button>
+                                </div>
+
+                                {attendanceCohortId === cohortId && attendanceSessionId ? (
+                                  loadingAttendanceStudents ? (
+                                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-sm text-zinc-400">
+                                      Loading students...
+                                    </div>
+                                  ) : attendanceStudents.length === 0 ? (
+                                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-sm text-zinc-400">
+                                      No students found for this cohort/session.
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div className="mb-3 flex items-center justify-between text-xs text-zinc-400">
+                                        <span>{attendanceStudents.length} students</span>
+                                        <span>
+                                          Attended:{' '}
+                                          <strong className="text-zinc-200">
+                                            {attendanceStudents.filter((s) => s.attended).length}
+                                          </strong>
+                                        </span>
+                                      </div>
+                                      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                                        {attendanceStudents.map((student) => (
+                                          <label
+                                            key={student.id}
+                                            className="flex cursor-pointer items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition hover:bg-zinc-800/60"
+                                          >
+                                            <div className="min-w-0">
+                                              <p className="truncate text-sm font-medium text-zinc-100">{student.name}</p>
+                                              <p className="truncate text-xs text-zinc-500">{student.email}</p>
+                                            </div>
+                                            <input
+                                              type="checkbox"
+                                              checked={student.attended}
+                                              onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setAttendanceStudents((prev) =>
+                                                  prev.map((s) =>
+                                                    s.id === student.id ? { ...s, attended: checked } : s
+                                                  )
+                                                );
+                                              }}
+                                              className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-cyan-400 focus:ring-cyan-500/40"
+                                            />
+                                          </label>
+                                        ))}
+                                      </div>
+
+                                      <div className="mt-4 flex justify-end">
+                                        <button
+                                          type="button"
+                                          onClick={saveManualAttendance}
+                                          disabled={savingManualAttendance}
+                                          className="rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          {savingManualAttendance ? 'Saving...' : 'Save attendance'}
+                                        </button>
+                                      </div>
+                                    </>
+                                  )
+                                ) : (
+                                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-sm text-zinc-400">
+                                    Select a session to load students.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* CSV Format Guide */}

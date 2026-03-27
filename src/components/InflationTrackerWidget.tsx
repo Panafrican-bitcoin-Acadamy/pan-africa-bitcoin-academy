@@ -10,7 +10,7 @@ const MAX_YEAR = 2025;
 const BASE_AMOUNT = 100000;
 const LOCAL_STORAGE_KEY = 'inflationYear';
 const INFLATION_ENABLED_KEY = 'inflationTrackerEnabled';
-const YEARS_PER_LOGIN = 5;
+const YEARS_PER_LOGIN = 4;
 const LOGIN_COUNTED_SESSION_KEY = 'inflationLoginCounted';
 
 // CPI anchors (US city average) used for interpolation across years.
@@ -30,7 +30,7 @@ const CPI_POINTS: Record<number, number> = {
 };
 
 type LifestyleItemId = 'house' | 'cars' | 'food' | 'child' | 'transport' | 'misc';
-type LifestyleState = 'full' | 'gone';
+type LifestyleState = 'full' | 'partial' | 'gone';
 type InflationCategory = 'housing' | 'cars' | 'food' | 'childcare' | 'transport' | 'other';
 
 const BASE_LIFESTYLE_BUDGET: Array<{
@@ -52,11 +52,11 @@ const PRIORITY_ORDER_STORAGE_KEY = 'inflationPriorityOrder';
 
 // Category sensitivity relative to CPI. >1 means category usually rises faster than headline CPI.
 const CATEGORY_INFLATION_SENSITIVITY: Record<InflationCategory, number> = {
-  housing: 1.18,
-  cars: 1.03,
-  food: 1.1,
-  childcare: 1.16,
-  transport: 1.08,
+  housing: 1.09,
+  cars: 0.98,
+  food: 1.05,
+  childcare: 1.1,
+  transport: 1.03,
   other: 1.0,
 };
 
@@ -87,7 +87,8 @@ function interpolateByYear(points: Record<number, number>, year: number): number
     const endYear = sortedYears[i + 1];
     if (year >= startYear && year <= endYear) {
       const ratio = (year - startYear) / (endYear - startYear);
-      return points[startYear] + (points[endYear] - points[startYear]) * ratio;
+      // Geometric interpolation better reflects compounding for CPI and BTC.
+      return points[startYear] * Math.pow(points[endYear] / points[startYear], ratio);
     }
   }
   return points[sortedYears[0]];
@@ -111,24 +112,69 @@ function getLifestyleStates(
   currentBudget: number,
   priorityOrder: LifestyleItemId[],
   year: number
-): Array<{ id: LifestyleItemId; label: string; cost: number; state: LifestyleState }> {
+): Array<{
+  id: LifestyleItemId;
+  label: string;
+  cost: number;
+  state: LifestyleState;
+  affordableCost: number;
+  affordabilityRatio: number;
+}> {
   let remaining = currentBudget;
   const byId = new Map(BASE_LIFESTYLE_BUDGET.map((i) => [i.id, i]));
 
   return priorityOrder.map((id) => {
     const item = byId.get(id);
     if (!item) {
-      return { id, label: String(id), cost: 0, state: 'gone' as const };
+      return {
+        id,
+        label: String(id),
+        cost: 0,
+        state: 'gone' as const,
+        affordableCost: 0,
+        affordabilityRatio: 0,
+      };
     }
 
     const currentCost = getInflatedItemCost(item.cost, item.category, year);
 
     if (remaining >= currentCost) {
       remaining -= currentCost;
-      return { ...item, cost: currentCost, state: 'full' as const };
+      return {
+        ...item,
+        cost: currentCost,
+        state: 'full' as const,
+        affordableCost: currentCost,
+        affordabilityRatio: 1,
+      };
     }
-    return { ...item, cost: currentCost, state: 'gone' as const };
+    if (remaining > 0) {
+      const affordableCost = remaining;
+      const affordabilityRatio = Math.max(0, Math.min(1, affordableCost / currentCost));
+      remaining = 0;
+      return {
+        ...item,
+        cost: currentCost,
+        state: 'partial' as const,
+        affordableCost,
+        affordabilityRatio,
+      };
+    }
+    return {
+      ...item,
+      cost: currentCost,
+      state: 'gone' as const,
+      affordableCost: 0,
+      affordabilityRatio: 0,
+    };
   });
+}
+
+function formatCompactUsd(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
+  return `$${value.toFixed(0)}`;
 }
 
 export function InflationTrackerWidget() {
@@ -407,7 +453,9 @@ export function InflationTrackerWidget() {
                             className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 ${
                               item.state === 'full'
                                 ? 'border-green-500/30 bg-green-500/10 text-green-200'
-                                : 'border-zinc-700 bg-zinc-900/70 text-zinc-500 line-through'
+                                : item.state === 'partial'
+                                  ? 'border-amber-500/35 bg-amber-500/10 text-amber-200'
+                                  : 'border-zinc-700 bg-zinc-900/70 text-zinc-500'
                             } cursor-grab`}
                             draggable
                             onDragStart={(e) => {
@@ -429,8 +477,13 @@ export function InflationTrackerWidget() {
                               <span className="text-[10px] text-zinc-400 select-none">↕</span>
                               <span className="text-xs font-medium truncate">{item.label}</span>
                             </div>
-                            <div className="flex shrink-0 items-center gap-1">
-                              <span className="w-3 text-center text-xs">{item.state === 'full' ? '✔' : '✖'}</span>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span className="text-[10px] tabular-nums text-zinc-400">
+                                {formatCompactUsd(item.cost)}
+                              </span>
+                              <span className="w-9 text-right text-[10px] font-semibold tabular-nums">
+                                {(item.affordabilityRatio * 100).toFixed(0)}%
+                              </span>
                             </div>
                           </div>
                         </div>
