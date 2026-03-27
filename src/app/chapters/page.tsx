@@ -260,14 +260,14 @@ export default function ChaptersPage() {
                         aria-hidden
                       >
                         <div className="path-glow-flow path-glow-flow-cyan animate-path-glow-1 absolute inset-0 rounded-full" />
-                      </div>
+                </div>
                     ) : (
                       <div
                         className="relative h-0.5 min-h-[2px] w-full min-w-0 overflow-hidden rounded-full bg-orange-400/25"
                         aria-hidden
                       >
                         <div className="path-glow-flow path-glow-flow-orange animate-path-glow-2 absolute inset-0 rounded-full" />
-                      </div>
+                </div>
                     );
                   const pathRight =
                     index >= 2 ? null : index === 0 ? (
@@ -276,14 +276,14 @@ export default function ChaptersPage() {
                         aria-hidden
                       >
                         <div className="path-glow-flow path-glow-flow-cyan animate-path-glow-1 absolute inset-0 rounded-full" />
-                      </div>
+                </div>
                     ) : (
                       <div
                         className="relative h-0.5 min-h-[2px] w-full min-w-0 overflow-hidden rounded-full bg-orange-400/25"
                         aria-hidden
                       >
                         <div className="path-glow-flow path-glow-flow-orange animate-path-glow-2 absolute inset-0 rounded-full" />
-                      </div>
+                </div>
                     );
                   return (
                     <div
@@ -293,7 +293,7 @@ export default function ChaptersPage() {
                       <div className="flex w-full min-h-[3.5rem] items-center sm:min-h-[4rem]">
                         <div className="flex h-0.5 min-h-[2px] flex-1 items-center self-center">
                           {pathLeft ?? <span className="block min-w-0 flex-1" aria-hidden />}
-                        </div>
+                </div>
                         <div className="relative z-10 flex shrink-0 justify-center px-0.5">
                           <div
                             className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-bold transition-all duration-1000 sm:h-14 sm:w-14 sm:text-lg ${circleClass}`}
@@ -304,8 +304,8 @@ export default function ChaptersPage() {
                               id={`level-${level.id}-glow`}
                             />
                             <span className="relative z-10">{level.roman}</span>
-                          </div>
-                        </div>
+              </div>
+            </div>
                         <div className="flex h-0.5 min-h-[2px] flex-1 items-center self-center">
                           {pathRight ?? <span className="block min-w-0 flex-1" aria-hidden />}
                         </div>
@@ -430,7 +430,7 @@ export default function ChaptersPage() {
                   filter: blur(0);
                 }
               }
-
+              
               @keyframes path-glow-2 {
                 0%,
                 35%,
@@ -497,7 +497,7 @@ export default function ChaptersPage() {
                   transform: scale(1.03);
                 }
               }
-
+              
               @keyframes level-glow-2 {
                 0%,
                 22%,
@@ -529,7 +529,7 @@ export default function ChaptersPage() {
                   transform: scale(1.03);
                 }
               }
-
+              
               @keyframes level-glow-3 {
                 0%,
                 44%,
@@ -571,7 +571,7 @@ export default function ChaptersPage() {
                 18%,
                 64%,
                 100% {
-                  opacity: 0;
+                  opacity: 0; 
                   transform: scale(0.92);
                 }
                 2% {
@@ -579,7 +579,7 @@ export default function ChaptersPage() {
                   transform: scale(0.98);
                 }
                 6% {
-                  opacity: 1;
+                  opacity: 1; 
                   transform: scale(1.06);
                 }
                 10% {
@@ -591,14 +591,14 @@ export default function ChaptersPage() {
                   transform: scale(1);
                 }
               }
-
+              
               @keyframes glow-overlay-2 {
                 0%,
                 22%,
                 42%,
                 64%,
                 100% {
-                  opacity: 0;
+                  opacity: 0; 
                   transform: scale(0.92);
                 }
                 24% {
@@ -606,7 +606,7 @@ export default function ChaptersPage() {
                   transform: scale(0.98);
                 }
                 28% {
-                  opacity: 1;
+                  opacity: 1; 
                   transform: scale(1.06);
                 }
                 32% {
@@ -618,21 +618,21 @@ export default function ChaptersPage() {
                   transform: scale(1);
                 }
               }
-
+              
               @keyframes glow-overlay-3 {
                 0%,
                 44%,
                 66%,
                 100% {
-                  opacity: 0;
+                  opacity: 0; 
                   transform: scale(0.92);
                 }
                 46% {
                   opacity: 0.35;
                   transform: scale(0.98);
                 }
-                50% {
-                  opacity: 1;
+                50% { 
+                  opacity: 1; 
                   transform: scale(1.07);
                 }
                 54% {
@@ -648,38 +648,38 @@ export default function ChaptersPage() {
                   transform: scale(1);
                 }
               }
-
+              
               .animate-path-glow-1 {
                 animation: path-glow-1 16s linear infinite;
               }
-
+              
               .animate-path-glow-2 {
                 animation: path-glow-2 16s linear infinite;
               }
-
+              
               #level-1-circle {
                 animation: level-glow-1 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
                 will-change: box-shadow, transform;
               }
-
+              
               #level-2-circle {
                 animation: level-glow-2 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
                 will-change: box-shadow, transform;
               }
-
+              
               #level-3-circle {
                 animation: level-glow-3 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
                 will-change: box-shadow, transform;
               }
-
+              
               #level-1-glow {
                 animation: glow-overlay-1 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
               }
-
+              
               #level-2-glow {
                 animation: glow-overlay-2 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
               }
-
+              
               #level-3-glow {
                 animation: glow-overlay-3 16s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
               }
