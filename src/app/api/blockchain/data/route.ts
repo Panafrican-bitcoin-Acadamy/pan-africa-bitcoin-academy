@@ -15,14 +15,17 @@ export async function GET(request: NextRequest) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+    const upstreamHeaders = {
+      Accept: 'application/json',
+      'User-Agent': 'PanAfricaBitcoinAcademy/1.0 (+educational)',
+    } as const;
+
     try {
       if (type === 'mempool') {
         // Fetch mempool blocks only
         const response = await fetch('https://mempool.space/api/v1/fees/mempool-blocks', {
           signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: upstreamHeaders,
         });
 
         clearTimeout(timeoutId);
@@ -30,19 +33,21 @@ export async function GET(request: NextRequest) {
         if (!response.ok) {
           return NextResponse.json(
             { error: `Failed to fetch mempool data: ${response.statusText}` },
-            { status: response.status }
+            { status: response.status >= 400 && response.status < 600 ? response.status : 502 }
           );
         }
 
-        const data = await response.json();
-        return NextResponse.json({ mempoolBlocks: data }, { status: 200 });
+        try {
+          const data = await response.json();
+          return NextResponse.json({ mempoolBlocks: data }, { status: 200 });
+        } catch {
+          return NextResponse.json({ error: 'Invalid JSON from mempool API' }, { status: 502 });
+        }
       } else if (type === 'blocks') {
         // Fetch confirmed blocks only
         const response = await fetch('https://mempool.space/api/blocks', {
           signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: upstreamHeaders,
         });
 
         clearTimeout(timeoutId);
@@ -50,12 +55,16 @@ export async function GET(request: NextRequest) {
         if (!response.ok) {
           return NextResponse.json(
             { error: `Failed to fetch blocks data: ${response.statusText}` },
-            { status: response.status }
+            { status: response.status >= 400 && response.status < 600 ? response.status : 502 }
           );
         }
 
-        const data = await response.json();
-        return NextResponse.json({ blocks: data }, { status: 200 });
+        try {
+          const data = await response.json();
+          return NextResponse.json({ blocks: data }, { status: 200 });
+        } catch {
+          return NextResponse.json({ error: 'Invalid JSON from blocks API' }, { status: 502 });
+        }
       } else if (type === 'block-detail') {
         // Fetch detailed block information
         const blockId = searchParams.get('blockId');
@@ -68,9 +77,7 @@ export async function GET(request: NextRequest) {
 
         const response = await fetch(`https://mempool.space/api/block/${blockId}`, {
           signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: upstreamHeaders,
         });
 
         clearTimeout(timeoutId);
@@ -78,55 +85,65 @@ export async function GET(request: NextRequest) {
         if (!response.ok) {
           return NextResponse.json(
             { error: `Failed to fetch block detail: ${response.statusText}` },
-            { status: response.status }
+            { status: response.status >= 400 && response.status < 600 ? response.status : 502 }
           );
         }
 
-        const data = await response.json();
-        return NextResponse.json({ blockDetail: data }, { status: 200 });
+        try {
+          const data = await response.json();
+          return NextResponse.json({ blockDetail: data }, { status: 200 });
+        } catch {
+          return NextResponse.json({ error: 'Invalid JSON from block detail API' }, { status: 502 });
+        }
       } else {
-        // Fetch both mempool and blocks in parallel
+        // Fetch both mempool and blocks in parallel; allow partial success
         const [mempoolResponse, blocksResponse] = await Promise.all([
           fetch('https://mempool.space/api/v1/fees/mempool-blocks', {
             signal: controller.signal,
-            headers: {
-              'Accept': 'application/json',
-            },
+            headers: upstreamHeaders,
           }),
           fetch('https://mempool.space/api/blocks', {
             signal: controller.signal,
-            headers: {
-              'Accept': 'application/json',
-            },
+            headers: upstreamHeaders,
           }),
         ]);
 
         clearTimeout(timeoutId);
 
-        if (!mempoolResponse.ok || !blocksResponse.ok) {
-          const errors = [];
-          if (!mempoolResponse.ok) {
-            errors.push(`Mempool: ${mempoolResponse.statusText}`);
+        let mempoolData: unknown[] = [];
+        let blocksData: unknown[] = [];
+        const warnings: string[] = [];
+
+        if (mempoolResponse.ok) {
+          try {
+            const raw = await mempoolResponse.json();
+            mempoolData = Array.isArray(raw) ? raw : [];
+            if (!Array.isArray(raw)) warnings.push('Mempool response was not an array');
+          } catch {
+            warnings.push('Could not parse mempool JSON');
           }
-          if (!blocksResponse.ok) {
-            errors.push(`Blocks: ${blocksResponse.statusText}`);
-          }
-          return NextResponse.json(
-            { error: `Failed to fetch blockchain data: ${errors.join(', ')}` },
-            { status: 500 }
-          );
+        } else {
+          warnings.push(`Mempool HTTP ${mempoolResponse.status}`);
         }
 
-        const [mempoolData, blocksData] = await Promise.all([
-          mempoolResponse.json(),
-          blocksResponse.json(),
-        ]);
+        if (blocksResponse.ok) {
+          try {
+            const raw = await blocksResponse.json();
+            blocksData = Array.isArray(raw) ? raw : [];
+            if (!Array.isArray(raw)) warnings.push('Blocks response was not an array');
+          } catch {
+            warnings.push('Could not parse blocks JSON');
+          }
+        } else {
+          warnings.push(`Blocks HTTP ${blocksResponse.status}`);
+        }
 
-        // Validate data structure
-        if (!Array.isArray(mempoolData) || !Array.isArray(blocksData)) {
+        if (mempoolData.length === 0 && blocksData.length === 0) {
           return NextResponse.json(
-            { error: 'Invalid data format from API' },
-            { status: 500 }
+            {
+              error: `Could not load live data from mempool.space (${warnings.join('; ') || 'no data'})`,
+            },
+            { status: 502 }
           );
         }
 
@@ -134,6 +151,7 @@ export async function GET(request: NextRequest) {
           {
             mempoolBlocks: mempoolData,
             blocks: blocksData,
+            ...(warnings.length ? { warnings } : {}),
           },
           { status: 200 }
         );
@@ -148,7 +166,12 @@ export async function GET(request: NextRequest) {
         );
       }
       
-      throw fetchError;
+      return NextResponse.json(
+        {
+          error: fetchError?.message || 'Could not reach mempool.space',
+        },
+        { status: 502 }
+      );
     }
   } catch (error: any) {
     console.error('Error in blockchain data API:', error);

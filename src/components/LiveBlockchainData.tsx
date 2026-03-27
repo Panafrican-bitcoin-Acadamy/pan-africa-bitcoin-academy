@@ -100,19 +100,33 @@ export function LiveBlockchainData({ className = '' }: LiveBlockchainDataProps) 
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Failed to fetch blockchain data' }));
-          throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch blockchain data`);
+          const msg =
+            typeof errorData.error === 'string'
+              ? errorData.error
+              : `HTTP ${response.status}: Failed to fetch blockchain data`;
+          if (!isMounted) return;
+          setError(msg);
+          if (isInitial) {
+            setLoading(false);
+          }
+          return;
         }
 
-        const data = await response.json();
-        const mempoolData: MempoolBlock[] = data.mempoolBlocks || [];
-        const blocksData: ConfirmedBlock[] = data.blocks || [];
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data !== 'object') {
+          if (!isMounted) return;
+          setError('Invalid response from blockchain API');
+          if (isInitial) {
+            setLoading(false);
+          }
+          return;
+        }
+        const mempoolData: MempoolBlock[] = Array.isArray(data.mempoolBlocks)
+          ? data.mempoolBlocks
+          : [];
+        const blocksData: ConfirmedBlock[] = Array.isArray(data.blocks) ? data.blocks : [];
 
         if (!isMounted) return;
-
-        // Validate data structure
-        if (!Array.isArray(mempoolData) || !Array.isArray(blocksData)) {
-          throw new Error('Invalid data format from API');
-        }
 
         // Check if a new block was mined
         const currentBlockHeight = blocksData[0]?.height;
