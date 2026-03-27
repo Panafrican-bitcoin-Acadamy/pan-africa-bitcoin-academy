@@ -10,8 +10,9 @@ interface ChapterExplorerAssignmentProps {
 }
 
 export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssignmentProps) {
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, loading: authLoading, sessionEmail } = useAuth();
   const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
+  const studentEmail = profile?.email || sessionEmail || null;
   const [assignment, setAssignment] = useState<any>(null);
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -20,17 +21,18 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if ((isAuthenticated && profile?.email) || (isAdminAuth && adminEmail)) {
+    if (authLoading || adminLoading) return;
+    if ((isAuthenticated && studentEmail) || (isAdminAuth && adminEmail)) {
       fetchAssignment();
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, profile, isAdminAuth, adminEmail, chapterSlug]);
+  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail, chapterSlug]);
 
   const fetchAssignment = async () => {
     try {
       setLoading(true);
-      const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+      const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
       if (!email) return;
       
       const response = await fetch(`/api/assignments?email=${encodeURIComponent(email)}`);
@@ -55,7 +57,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+    const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
     if ((!isAuthenticated && !isAdminAuth) || !email) {
       setError('Please log in to submit your assignment.');
       return;
@@ -103,7 +105,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
     }
   };
 
-  if (loading) {
+  if (authLoading || adminLoading || loading) {
     return (
       <div className="rounded-xl border border-purple-400/30 bg-purple-500/10 p-6">
         <div className="flex items-center justify-center py-8">

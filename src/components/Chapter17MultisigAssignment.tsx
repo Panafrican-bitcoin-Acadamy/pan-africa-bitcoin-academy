@@ -61,8 +61,9 @@ function buildMultisigDescriptor(xpub1: string, xpub2: string): string {
 }
 
 export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigAssignmentProps) {
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, loading: authLoading, sessionEmail } = useAuth();
   const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
+  const studentEmail = profile?.email || sessionEmail || null;
 
   const [step, setStep] = useState<Step>(1);
   const [mnemonic, setMnemonic] = useState<string>('');
@@ -110,17 +111,18 @@ export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigA
   }, [step, mnemonic, generateMnemonic]);
 
   useEffect(() => {
-    if ((isAuthenticated && profile?.email) || (isAdminAuth && adminEmail)) {
+    if (authLoading || adminLoading) return;
+    if ((isAuthenticated && studentEmail) || (isAdminAuth && adminEmail)) {
       checkSubmissionStatus();
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, profile, isAdminAuth, adminEmail]);
+  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail]);
 
   const checkSubmissionStatus = async () => {
     try {
       setLoading(true);
-      const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+      const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
       if (!email) {
         setLoading(false);
         return;
@@ -198,7 +200,7 @@ export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigA
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+    const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
     if ((!isAuthenticated && !isAdminAuth) || !email) {
       setError('Please log in to submit your assignment.');
       return;
@@ -237,7 +239,7 @@ export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigA
     }
   };
 
-  if (loading || adminLoading) {
+  if (authLoading || loading || adminLoading) {
     return (
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-950 p-5">
         <div className="animate-pulse">

@@ -78,6 +78,8 @@ export function useAuth() {
     profile,
     isRegistered,
     loading,
+    /** From session cookie (/api/profile/me). Use with profile.email for APIs when profile is still loading or missing. */
+    sessionEmail: email ?? null,
     showSessionExpired,
     setShowSessionExpired,
     logout,

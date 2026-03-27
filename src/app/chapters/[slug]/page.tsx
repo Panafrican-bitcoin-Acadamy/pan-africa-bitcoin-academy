@@ -22,6 +22,7 @@ import { ChapterSectionAnimated } from "@/components/chapters/ChapterSectionAnim
 import { ChapterTechVectors } from "@/components/chapters/ChapterTechVectors";
 import { ZoomableImage } from "@/components/ZoomableImage";
 import { KeysChapterHeroQuote } from "@/components/chapters/KeysChapterHeroQuote";
+import { BlockchainBasicsHeroQuote } from "@/components/chapters/BlockchainBasicsHeroQuote";
 import type { Metadata } from "next";
 
 type ChapterPageProps = {
@@ -142,6 +143,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
         </section>
 
         {chapter.slug === "keys-and-transactions" ? <KeysChapterHeroQuote /> : null}
+        {chapter.slug === "blockchain-basics" ? <BlockchainBasicsHeroQuote /> : null}
 
         {/* What you will learn */}
         <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { PageContainer } from '@/components/PageContainer';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 export default function AssignmentPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated, profile, loading: authLoading } = useAuth();
+  const { isAuthenticated, profile, loading: authLoading, sessionEmail } = useAuth();
   const assignmentId = params.id as string;
 
   const [assignment, setAssignment] = useState<any>(null);
@@ -20,8 +20,10 @@ export default function AssignmentPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [returnUrl, setReturnUrl] = useState<string>('/dashboard');
 
-  // Get email from profile or localStorage
-  const email = profile?.email || (typeof window !== 'undefined' ? localStorage.getItem('profileEmail') : null);
+  const email =
+    profile?.email?.trim() ||
+    sessionEmail?.trim() ||
+    (typeof window !== 'undefined' ? localStorage.getItem('profileEmail') : null);
 
   // Track where user came from
   useEffect(() => {
@@ -43,28 +45,17 @@ export default function AssignmentPage() {
     }
   }, [assignment]);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/');
-      return;
-    }
-
-    if (email) {
-      fetchAssignment();
-    }
-  }, [email, assignmentId, isAuthenticated, authLoading]);
-
-  const fetchAssignment = async () => {
+  const fetchAssignment = useCallback(async () => {
     if (!email) return;
-    
+
     try {
       setLoading(true);
       const response = await fetch(`/api/assignments?email=${encodeURIComponent(email)}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         const found = data.assignments.find((a: any) => a.id === assignmentId);
-        
+
         if (found) {
           setAssignment(found);
           setSubmission(found.submission);
@@ -74,13 +65,35 @@ export default function AssignmentPage() {
         } else {
           setMessage({ type: 'error', text: 'Assignment not found' });
         }
+      } else {
+        setMessage({ type: 'error', text: 'Could not load assignments for your account' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to load assignment' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, assignmentId]);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      router.replace('/');
+      return;
+    }
+
+    if (!email) {
+      setLoading(false);
+      setMessage({
+        type: 'error',
+        text: 'We could not read your email from this session. Try refreshing the page or signing in again.',
+      });
+      return;
+    }
+
+    fetchAssignment();
+  }, [authLoading, isAuthenticated, email, fetchAssignment, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

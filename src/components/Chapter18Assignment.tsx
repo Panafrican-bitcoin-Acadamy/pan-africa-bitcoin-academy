@@ -21,8 +21,9 @@ const CORRECT_ANSWERS = {
 };
 
 export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) {
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, loading: authLoading, sessionEmail } = useAuth();
   const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
+  const studentEmail = profile?.email || sessionEmail || null;
   const [answerA, setAnswerA] = useState('');
   const [answerB, setAnswerB] = useState('');
   const [answerC, setAnswerC] = useState('');
@@ -35,17 +36,18 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
   const [showAnswers, setShowAnswers] = useState(false);
 
   useEffect(() => {
-    if ((isAuthenticated && profile?.email) || (isAdminAuth && adminEmail)) {
+    if (authLoading || adminLoading) return;
+    if ((isAuthenticated && studentEmail) || (isAdminAuth && adminEmail)) {
       checkSubmissionStatus();
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, profile, isAdminAuth, adminEmail]);
+  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail]);
 
   const checkSubmissionStatus = async () => {
     try {
       setLoading(true);
-      const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+      const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
       if (!email) return;
       
       const response = await fetch(`/api/assignments?email=${encodeURIComponent(email)}`);
@@ -81,7 +83,7 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+    const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
     if ((!isAuthenticated && !isAdminAuth) || !email) {
       setError('Please log in to submit your assignment.');
       return;
@@ -128,7 +130,7 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
     }
   };
 
-  if (loading || adminLoading) {
+  if (authLoading || loading || adminLoading) {
     return (
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-950 p-5">
         <div className="animate-pulse">

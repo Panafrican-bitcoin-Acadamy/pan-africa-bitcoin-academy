@@ -25,8 +25,9 @@ const SEND_AMOUNT = 0.006; // BTC
 const FEE_PER_INPUT = 0.0002; // BTC per input
 
 export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentProps) {
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, loading: authLoading, sessionEmail } = useAuth();
   const { isAuthenticated: isAdminAuth, email: adminEmail, loading: adminLoading } = useSession('admin');
+  const studentEmail = profile?.email || sessionEmail || null;
   
   const [utxos, setUtxos] = useState<UTXO[]>(UTXOS);
   const [submitting, setSubmitting] = useState(false);
@@ -38,17 +39,18 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
   const [showExplanation, setShowExplanation] = useState(false);
 
   useEffect(() => {
-    if ((isAuthenticated && profile?.email) || (isAdminAuth && adminEmail)) {
+    if (authLoading || adminLoading) return;
+    if ((isAuthenticated && studentEmail) || (isAdminAuth && adminEmail)) {
       checkSubmissionStatus();
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, profile, isAdminAuth, adminEmail]);
+  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail]);
 
   const checkSubmissionStatus = async () => {
     try {
       setLoading(true);
-      const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+      const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
       if (!email) return;
       
       const response = await fetch(`/api/assignments?email=${encodeURIComponent(email)}`);
@@ -122,7 +124,7 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
   };
 
   const handleSubmit = async () => {
-    const email = isAdminAuth && adminEmail ? adminEmail : profile?.email;
+    const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
     if ((!isAuthenticated && !isAdminAuth) || !email) {
       setError('Please log in to submit your assignment.');
       return;
@@ -237,7 +239,7 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
     }
   };
 
-  if (loading || adminLoading) {
+  if (authLoading || loading || adminLoading) {
     return (
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-950 p-5">
         <div className="animate-pulse">
