@@ -1,68 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AnimatedSection } from '@/components/AnimatedSection';
 import { AnimatedHeading } from '@/components/AnimatedHeading';
-import Image from 'next/image';
-import { inputStyles, labelStyles, formStyles, buttonStyles, cardStyles, alertStyles, cn } from '@/lib/styles';
-import { FormGrid } from '@/components/ui';
+import { inputStyles, labelStyles, buttonStyles, cardStyles, cn } from '@/lib/styles';
 
 const ONCHAIN_ADDRESS = 'bc1q4pg073ws86qdnxac3y8zhk4t8vtkg2vx529jrj';
 const ONCHAIN_QR_SRC = '/images/onchain-btc-qr.jpeg';
 const LIGHTNING_ADDRESS = 'panafricanbitcoin@blink.sv';
 const LNURL_QR_SRC = '/images/lunrl_qr.jpeg';
 
-interface Student {
-  id: string;
-  name: string;
-  country: string | null;
-  city: string | null;
-  photo_url: string | null;
-  progress_percent: number;
-  status: string;
-}
-
 export default function SponsorPage() {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [sponsorType, setSponsorType] = useState<'general' | 'student'>('general');
   const [formData, setFormData] = useState({
     sponsorName: '',
     sponsorEmail: '',
+    studentName: '',
     anonymous: false,
     message: '',
     paymentMethod: 'lightning' as 'lightning' | 'onchain',
   });
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const response = await fetch('/api/sponsor/students');
-        if (response.ok) {
-          const data = await response.json();
-          setStudents(data.students || []);
-        }
-      } catch (error) {
-        console.error('Error fetching students:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStudents();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // In a real implementation, you would:
     // 1. Submit sponsorship form data
     // 2. Process payment
     // 3. Create sponsorship record in database
-    
+
     alert('Thank you for your sponsorship! After completing your payment, we will confirm your sponsorship.');
   };
+
+  const studentNameTrimmed = formData.studentName.trim();
+  const canSubmitStudent =
+    sponsorType !== 'student' || studentNameTrimmed.length > 0;
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
@@ -87,9 +59,9 @@ export default function SponsorPage() {
                 <AnimatedHeading as="h2" className="text-xl font-semibold text-cyan-200">Choose Sponsorship Type</AnimatedHeading>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <button
+                    type="button"
                     onClick={() => {
                       setSponsorType('general');
-                      setSelectedStudent(null);
                     }}
                     className={`rounded-lg border p-6 text-left transition ${
                       sponsorType === 'general'
@@ -103,6 +75,7 @@ export default function SponsorPage() {
                     </p>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setSponsorType('student')}
                     className={`rounded-lg border p-6 text-left transition ${
                       sponsorType === 'student'
@@ -112,66 +85,37 @@ export default function SponsorPage() {
                   >
                     <AnimatedHeading as="h3" className="mb-2 text-lg font-semibold text-cyan-200">Sponsor Specific Student</AnimatedHeading>
                     <p className="text-sm text-zinc-300">
-                      Choose a specific student to sponsor. Your support goes directly to their education and sats rewards.
+                      Enter the name of the student you want to sponsor. Your support goes to their education and sats rewards.
                     </p>
                   </button>
                 </div>
               </section>
             </AnimatedSection>
 
-            {/* Student Selection (if sponsoring specific student) */}
+            {/* Student name (if sponsoring a specific student) */}
             {sponsorType === 'student' && (
               <AnimatedSection animation="slideLeft">
-                <section className="space-y-6 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-                  <AnimatedHeading as="h2" className="text-xl font-semibold text-cyan-200">Select a Student</AnimatedHeading>
-                  {loading ? (
-                    <div className="text-center py-8 text-zinc-400">Loading students...</div>
-                  ) : students.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {students.map((student) => (
-                        <button
-                          key={student.id}
-                          onClick={() => setSelectedStudent(student.id)}
-                          className={`rounded-lg border p-4 text-left transition ${
-                            selectedStudent === student.id
-                              ? 'border-cyan-400/50 bg-cyan-500/10'
-                              : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            {student.photo_url ? (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20 overflow-hidden">
-                                <Image
-                                  src={student.photo_url}
-                                  alt={student.name}
-                                  width={48}
-                                  height={48}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-cyan-500/20">
-                                <span className="text-xl">👤</span>
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <div className="font-semibold text-zinc-50">{student.name}</div>
-                              {(student.city || student.country) && (
-                                <div className="text-xs text-zinc-400">
-                                  {[student.city, student.country].filter(Boolean).join(', ')}
-                                </div>
-                              )}
-                              <div className="mt-1 text-xs text-cyan-400">
-                                Progress: {student.progress_percent}%
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-zinc-400">No students available for sponsorship at this time.</div>
-                  )}
+                <section className="space-y-4 rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+                  <AnimatedHeading as="h2" className="text-xl font-semibold text-cyan-200">Student name</AnimatedHeading>
+                  <p className="text-sm text-zinc-400">
+                    Type the full name of the student you are sponsoring. If you are unsure of spelling, add a note in the message field below.
+                  </p>
+                  <div>
+                    <label htmlFor="studentName" className="mb-2 block text-sm font-medium text-zinc-300">
+                      Student name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      id="studentName"
+                      name="studentName"
+                      type="text"
+                      autoComplete="off"
+                      required={sponsorType === 'student'}
+                      value={formData.studentName}
+                      onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
+                      className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 placeholder:text-zinc-500 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                      placeholder="e.g. Jane Doe"
+                    />
+                  </div>
                 </section>
               </AnimatedSection>
             )}
@@ -227,18 +171,17 @@ export default function SponsorPage() {
                       className="h-4 w-4 rounded border-cyan-400/30 text-cyan-400 focus:ring-cyan-400/20"
                     />
                     <label htmlFor="anonymous" className="text-sm text-zinc-300">
-                      Keep my sponsorship anonymous (name won't be displayed publicly)
+                      Keep my sponsorship anonymous (name won&apos;t be displayed publicly)
                     </label>
                   </div>
 
-                  {sponsorType === 'student' && selectedStudent && (
-                    <div className={cn(cardStyles.info, "bg-cyan-500/5")}>
+                  {sponsorType === 'student' && studentNameTrimmed ? (
+                    <div className={cn(cardStyles.info, 'bg-cyan-500/5')}>
                       <p className="text-sm text-cyan-200">
-                        <span className="font-semibold">Sponsoring:</span>{' '}
-                        {students.find(s => s.id === selectedStudent)?.name}
+                        <span className="font-semibold">Sponsoring:</span> {studentNameTrimmed}
                       </p>
                     </div>
-                  )}
+                  ) : null}
 
                   <div>
                     <label htmlFor="message" className={labelStyles.base}>
@@ -250,22 +193,22 @@ export default function SponsorPage() {
                       rows={3}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className={cn(inputStyles.optional, "py-2 text-sm")}
+                      className={cn(inputStyles.optional, 'py-2 text-sm')}
                       placeholder="Optional message for the student or academy..."
                     />
                   </div>
 
                   {/* Payment Method Selection */}
                   <div>
-                    <label className={cn(labelStyles.base, "mb-3")}>
-                      Payment Method <span className={labelStyles.requiredStar}>*</span>
+                    <label className={cn(labelStyles.base, 'mb-3')}>
+                      Payment Method <span className="text-red-400">*</span>
                     </label>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, paymentMethod: 'lightning' })}
                         className={cn(
-                          "rounded-lg border p-4 text-left transition",
+                          'rounded-lg border p-4 text-left transition',
                           formData.paymentMethod === 'lightning'
                             ? 'border-cyan-400/50 bg-cyan-500/10'
                             : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
@@ -278,7 +221,7 @@ export default function SponsorPage() {
                         type="button"
                         onClick={() => setFormData({ ...formData, paymentMethod: 'onchain' })}
                         className={cn(
-                          "rounded-lg border p-4 text-left transition",
+                          'rounded-lg border p-4 text-left transition',
                           formData.paymentMethod === 'onchain'
                             ? 'border-orange-400/50 bg-orange-500/10'
                             : 'border-zinc-700 bg-zinc-900/50 hover:border-zinc-600'
@@ -304,10 +247,10 @@ export default function SponsorPage() {
                         />
                       </div>
                       <div className="w-full space-y-2">
-                        <label className="text-xs font-medium text-zinc-400 text-center block">
+                        <label className="block text-center text-xs font-medium text-zinc-400">
                           {formData.paymentMethod === 'lightning' ? 'Paycode' : 'Bitcoin Address'}
                         </label>
-                        <div className="rounded-lg border border-purple-400/20 bg-zinc-900/50 p-3 font-mono text-xs text-purple-300 break-all text-center">
+                        <div className="rounded-lg border border-purple-400/20 bg-zinc-900/50 p-3 text-center font-mono text-xs text-purple-300 break-all">
                           {formData.paymentMethod === 'lightning' ? LIGHTNING_ADDRESS : ONCHAIN_ADDRESS}
                         </div>
                         <button
@@ -317,7 +260,7 @@ export default function SponsorPage() {
                             navigator.clipboard?.writeText(address);
                             alert('Copied to clipboard!');
                           }}
-                          className={cn(buttonStyles.primary, "w-full px-4 py-2 text-sm")}
+                          className={cn(buttonStyles.primary, 'w-full px-4 py-2 text-sm')}
                         >
                           Copy {formData.paymentMethod === 'lightning' ? 'Paycode' : 'Address'}
                         </button>
@@ -333,8 +276,12 @@ export default function SponsorPage() {
 
                   <button
                     type="submit"
-                    disabled={sponsorType === 'student' && !selectedStudent}
-                    className={cn(buttonStyles.primary, "w-full text-sm", sponsorType === 'student' && !selectedStudent && 'opacity-50 cursor-not-allowed')}
+                    disabled={!canSubmitStudent}
+                    className={cn(
+                      buttonStyles.primary,
+                      'w-full text-sm',
+                      !canSubmitStudent && 'cursor-not-allowed opacity-50'
+                    )}
                   >
                     Submit Sponsorship
                   </button>
