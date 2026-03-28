@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Mentorship Program - Bitcoin Mentorship | PanAfrican Bitcoin Academy',
-  description: 'Join the Bitcoin mentorship program at PanAfrican Bitcoin Academy. Get guidance from experienced Bitcoin mentors and advance your Bitcoin knowledge.',
+  title: 'Join us on mentoring | PanAfrican Bitcoin Academy',
+  description: 'Join us on mentoring at PanAfrican Bitcoin Academy — mentor, volunteer, or guest lecture. Help grow Bitcoin education in Africa.',
   keywords: [
-    "Bitcoin mentorship",
+    "Bitcoin mentoring",
     "Bitcoin mentor",
     "Bitcoin guidance",
     "Bitcoin education Africa",
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
     canonical: '/mentorship',
   },
   openGraph: {
-    title: 'Mentorship Program - Bitcoin Mentorship | PanAfrican Bitcoin Academy',
-    description: 'Join the Bitcoin mentorship program. Get guidance from experienced Bitcoin mentors.',
+    title: 'Join us on mentoring | PanAfrican Bitcoin Academy',
+    description: 'Join us on mentoring — mentor, volunteer, or guest lecture and help grow Bitcoin education in Africa.',
     url: '/mentorship',
   },
 };

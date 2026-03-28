@@ -1115,7 +1115,7 @@ export default function DeveloperHubPage() {
             </p>
             
             {loadingMentors ? (
-              <div className="text-center py-8 text-zinc-400">Loading mentors...</div>
+              <div className="text-center py-8 text-zinc-400">Loading mentoring community…</div>
             ) : mentors.length > 0 ? (
               <AnimatedList animation="slideLeft" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {mentors.map((mentor, index) => (
@@ -1193,19 +1193,20 @@ export default function DeveloperHubPage() {
               </AnimatedList>
             ) : (
               <div className="text-center py-8 text-zinc-400">
-                <p>No mentors available at this time.</p>
+                <p>No mentoring profiles listed yet.</p>
                 <p className="mt-2 text-xs text-zinc-500">
-                  Approved mentors will appear here automatically from our mentorship database.
+                  People who join us on mentoring appear here as they’re added to the community.
                 </p>
               </div>
             )}
             
             <div className="mt-8 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-center">
               <p className="text-sm text-cyan-200">
-                <strong>Interested in becoming a mentor?</strong> Check out our{' '}
-                <Link href="/mentorship" className="underline hover:text-cyan-100">
-                  Mentorship Program
+                Want to teach, host sessions, or volunteer?{' '}
+                <Link href="/mentorship" className="font-semibold underline hover:text-cyan-100">
+                  Join us on mentoring
                 </Link>
+                .
               </p>
             </div>
           </section>
@@ -1376,7 +1377,7 @@ export default function DeveloperHubPage() {
                       <ul className="ml-4 space-y-1 text-sm">
                         <li>• <a href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji" target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:text-cyan-200 underline">WhatsApp Developer Group</a></li>
                         <li>• Contact us through our <Link href="/about" className="text-cyan-300 hover:text-cyan-200 underline">About page</Link></li>
-                        <li>• Check our <Link href="/mentorship" className="text-cyan-300 hover:text-cyan-200 underline">Mentorship Program</Link> for direct mentor access</li>
+                        <li>• <Link href="/mentorship" className="text-cyan-300 hover:text-cyan-200 underline">Join us on mentoring</Link> to get involved</li>
                         <li>• Contact our Educators <Link href="maile:admin@panafricanbitcoin.com" className="text-cyan-300 hover:text-cyan-200 underline">Admins</Link> directly</li>
                       </ul>
                       <p className="mt-2">Also use: Bitcoin Stack Exchange, developer mailing lists, Telegram groups, and IRC channels. Be respectful and do your research first. Our community is here to help!</p>

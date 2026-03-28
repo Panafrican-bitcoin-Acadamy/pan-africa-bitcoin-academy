@@ -103,7 +103,7 @@ export default function MentorshipPage() {
             <div className="mb-16 text-center w-full">
               <AnimatedHeading as="h1" className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-5xl lg:text-6xl">
                 <SplitText
-                  text="Mentorship & Volunteer"
+                  text="Join us on mentoring"
                   tag="span"
                   className="inline-block"
                   delay={50}
@@ -135,13 +135,13 @@ export default function MentorshipPage() {
           </div>
         )}
 
-        {/* Application Form (moved up + simplified) */}
+        {/* Interest form — join us on mentoring (same URL as before) */}
         <AnimatedSection animation="slideUp">
           <section id="application" className="space-y-6">
             <div className="text-center">
-              <AnimatedHeading as="h2" className="text-3xl font-bold text-cyan-200 mb-2">Join us as a Mentor or Volunteer</AnimatedHeading>
+              <AnimatedHeading as="h2" className="text-3xl font-bold text-cyan-200 mb-2">Join us on mentoring</AnimatedHeading>
               <p className="text-sm text-zinc-400">
-                Help us grow Bitcoin education across Africa — share your details and we’ll reach out with next steps.
+                Join us on mentoring as a mentor, volunteer, or guest lecturer — help grow Bitcoin education across Africa. Share your details and we’ll reach out with next steps.
               </p>
             </div>
 
@@ -152,7 +152,7 @@ export default function MentorshipPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/20">
                     <span className="text-xl">👤</span>
                   </div>
-                  <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-200">Join this role</AnimatedHeading>
+                  <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-200">Your details</AnimatedHeading>
                 </div>
                 <div className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -327,7 +327,7 @@ export default function MentorshipPage() {
                   ) : submitted ? (
                     "✓ Joined"
                   ) : (
-                    "Join this role"
+                    "Send my interest"
                   )}
                 </button>
                 <p className="text-xs text-zinc-500">
@@ -385,7 +385,7 @@ export default function MentorshipPage() {
         {/* Why Mentors Matter (moved below) */}
         <AnimatedSection animation="slideRight">
           <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-            <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Why Mentors & Volunteers Matter</AnimatedHeading>
+            <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Why mentoring & volunteers matter</AnimatedHeading>
             <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
               Bitcoin education grows through community, not classrooms.
             </p>
@@ -405,7 +405,7 @@ export default function MentorshipPage() {
           <div className="space-y-3 text-sm text-zinc-300 sm:text-base">
             <div className="flex items-start gap-2">
               <span className="text-purple-400">1.</span>
-              <span><strong className="text-purple-200">Application Review</strong> — Filter by skills, availability, and culture fit.</span>
+              <span><strong className="text-purple-200">Interest review</strong> — Filter by skills, availability, and culture fit.</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-purple-400">2.</span>
@@ -441,7 +441,7 @@ export default function MentorshipPage() {
           </div>
           
           {loadingMentors ? (
-            <div className="text-center py-8 text-zinc-400">Loading mentors...</div>
+            <div className="text-center py-8 text-zinc-400">Loading mentoring community…</div>
           ) : mentors.length > 0 ? (
             <AnimatedList animation="slideLeft" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {mentors.map((mentor, index) => (
@@ -503,9 +503,9 @@ export default function MentorshipPage() {
             </AnimatedList>
           ) : (
             <div className="text-center py-8 text-zinc-400">
-              <p>No mentor profiles to show yet.</p>
+              <p>No community highlights yet.</p>
               <p className="mt-2 text-xs text-zinc-500">
-                As people join our mentorship & volunteer community, we’ll highlight them here.
+                As people join us on mentoring and volunteer, we’ll feature them here.
               </p>
             </div>
           )}
@@ -515,7 +515,7 @@ export default function MentorshipPage() {
         {/* CTA */}
         <AnimatedSection animation="slideUp">
           <section className="rounded-xl border border-orange-500/25 bg-black/80 p-8 text-center shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-            <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Want to join our mentorship team?</AnimatedHeading>
+            <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Join us on mentoring</AnimatedHeading>
             <p className="mt-4 text-sm text-zinc-300 sm:text-base">
               Help empower the next generation of African Bitcoin talent.
             </p>
@@ -523,7 +523,7 @@ export default function MentorshipPage() {
               href="#application"
               className="mt-6 inline-block rounded-lg bg-gradient-to-r from-cyan-400 to-orange-400 px-6 py-3 text-sm font-semibold text-black transition hover:brightness-110"
             >
-              Join as a Mentor or Volunteer
+              Get started
             </a>
           </section>
         </AnimatedSection>
