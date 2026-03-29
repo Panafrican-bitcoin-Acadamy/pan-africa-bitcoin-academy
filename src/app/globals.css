@@ -795,3 +795,59 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
   }
 }
 
+/* Final exam — curved “Good luck” (top-right), glow + gentle float */
+@keyframes exam-good-luck-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px rgba(251, 146, 60, 0.55)) drop-shadow(0 0 14px rgba(34, 211, 238, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(251, 146, 60, 0.95)) drop-shadow(0 0 26px rgba(34, 211, 238, 0.7));
+  }
+}
+
+@keyframes exam-good-luck-dance {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.5deg) scale(1);
+  }
+  33% {
+    transform: translateY(-4px) rotate(1deg) scale(1.03);
+  }
+  66% {
+    transform: translateY(2px) rotate(-0.5deg) scale(0.99);
+  }
+}
+
+@keyframes exam-good-luck-pulse-opacity {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+.exam-good-luck-curved {
+  animation: exam-good-luck-glow 2.4s ease-in-out infinite, exam-good-luck-pulse-opacity 3s ease-in-out infinite;
+}
+
+.exam-good-luck-curved-inner {
+  animation: exam-good-luck-dance 3.6s ease-in-out infinite;
+  transform-origin: 120px 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-good-luck-curved,
+  .exam-good-luck-curved-inner {
+    animation: none;
+    filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.5)) drop-shadow(0 0 16px rgba(34, 211, 238, 0.4));
+    opacity: 1;
+  }
+
+  .exam-good-luck-curved-inner {
+    transform: none;
+  }
+}
+

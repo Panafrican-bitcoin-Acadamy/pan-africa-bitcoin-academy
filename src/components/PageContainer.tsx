@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 type PageContainerProps = {
   title?: string;
   subtitle?: string;
+  /** Rendered beside `subtitle` (e.g. decorative badge); use with `subtitle` for a two-column header row */
+  subtitleExtra?: ReactNode;
   children: ReactNode;
 };
 
-export function PageContainer({ title, subtitle, children }: PageContainerProps) {
+export function PageContainer({ title, subtitle, subtitleExtra, children }: PageContainerProps) {
   return (
     <div className="relative flex min-h-screen flex-col bg-black text-zinc-50 w-full">
       {/* Full width on mobile, max-width only on larger screens */}
@@ -24,10 +26,23 @@ export function PageContainer({ title, subtitle, children }: PageContainerProps)
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl lg:text-5xl">
               {title}
             </h1>
-            {subtitle ? (
-              <p className="w-full text-sm text-zinc-400 sm:text-base sm:max-w-3xl lg:text-lg">
-                {subtitle}
-              </p>
+            {subtitle || subtitleExtra ? (
+              subtitleExtra ? (
+                <div className="flex flex-wrap items-start gap-x-3 gap-y-2 sm:items-center sm:justify-between sm:gap-x-5">
+                  {subtitle ? (
+                    <p className="min-w-0 flex-1 text-pretty text-sm leading-snug text-zinc-400 sm:max-w-3xl sm:text-base lg:text-lg">
+                      {subtitle}
+                    </p>
+                  ) : (
+                    <span className="min-w-0 flex-1" aria-hidden />
+                  )}
+                  <div className="shrink-0 self-start sm:self-center">{subtitleExtra}</div>
+                </div>
+              ) : subtitle ? (
+                <p className="w-full text-sm text-zinc-400 sm:text-base sm:max-w-3xl lg:text-lg">
+                  {subtitle}
+                </p>
+              ) : null
             ) : null}
           </header>
         ) : null}

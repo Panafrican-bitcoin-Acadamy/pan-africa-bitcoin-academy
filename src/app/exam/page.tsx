@@ -71,6 +71,49 @@ function ExamTimeExpiredModal({
   );
 }
 
+/** Curved, glowing “Good luck” beside the exam subtitle (PageContainer header), animated */
+function ExamGoodLuckCurved() {
+  return (
+    <div
+      className="exam-good-luck-curved pointer-events-none w-[5.75rem] shrink-0 sm:w-28 md:w-[7.25rem]"
+      aria-hidden
+    >
+      <svg
+        className="exam-good-luck-curved-inner block w-full overflow-visible"
+        viewBox="0 0 240 88"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <path
+            id="exam-good-luck-curve"
+            d="M 10 58 Q 120 -6 230 58"
+            fill="none"
+          />
+          <linearGradient id="exam-good-luck-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#fb923c" />
+            <stop offset="35%" stopColor="#fed7aa" />
+            <stop offset="65%" stopColor="#a5f3fc" />
+            <stop offset="100%" stopColor="#22d3ee" />
+          </linearGradient>
+        </defs>
+        <text
+          fill="url(#exam-good-luck-grad)"
+          fontSize="26"
+          fontWeight={700}
+          fontStyle="italic"
+          letterSpacing="0.04em"
+          className="font-sans"
+          style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
+        >
+          <textPath href="#exam-good-luck-curve" startOffset="50%" textAnchor="middle">
+            Good luck
+          </textPath>
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 function ExamSubmitCelebration({
   show,
   onDismiss,
@@ -549,6 +592,7 @@ export default function ExamPage() {
           ? `${TOTAL_QUESTIONS} multiple choice · 70% to pass (${PASS_MARK}+ correct) · admin: no time limit`
           : `${TOTAL_QUESTIONS} multiple choice · 70% to pass (${PASS_MARK}+ correct) · 2-hour time limit`
       }
+      subtitleExtra={<ExamGoodLuckCurved />}
     >
       <div className="relative">
         <div
@@ -557,12 +601,6 @@ export default function ExamPage() {
           }`}
         >
       <div className="relative mx-auto max-w-6xl max-sm:pl-3 max-sm:pr-3 pb-8 pr-4 sm:pl-5 sm:pr-7 lg:pl-6 lg:pr-10">
-        <div className="mb-6 rounded-xl border border-cyan-500/20 bg-zinc-900/50 px-4 py-3 text-center sm:px-6 sm:py-4">
-          <p className="text-base font-bold tracking-wide sm:text-lg">
-            <span className="text-orange-400">GOOD</span>{' '}
-            <span className="text-cyan-300">Luck</span>
-          </p>
-        </div>
         {submitError ? (
           <div
             role="alert"
@@ -598,7 +636,7 @@ export default function ExamPage() {
           </div>
         ) : null}
 
-        {/* Timer + dashboard (thin vertical progress is fixed mid-screen on the left) */}
+        {/* Timer + ← Dashboard (below subtitle + Good luck in header) */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
           <div className="min-w-0">
             {accessCheck?.isAdmin ? (
@@ -716,7 +754,7 @@ export default function ExamPage() {
                   ) : (
                     <span className="font-semibold text-orange-400">
                       {TOTAL_QUESTIONS - answeredCount} question{TOTAL_QUESTIONS - answeredCount !== 1 ? 's' : ''}{' '}
-                      remaining — submit to see which are missing
+                      remaining
                     </span>
                   )}
                 </div>

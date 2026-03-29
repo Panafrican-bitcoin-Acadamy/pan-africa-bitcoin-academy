@@ -2,8 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { AnimatedHeading } from '@/components/AnimatedHeading';
+import { useSession } from '@/hooks/useSession';
 
 export function NewsletterSignup() {
+  const { isAuthenticated: studentSignedIn, loading: studentLoading } = useSession('student');
+  const { isAuthenticated: adminSignedIn, loading: adminLoading } = useSession('admin');
+
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -25,6 +29,9 @@ export function NewsletterSignup() {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  const hideForSignedInUser =
+    (!studentLoading && studentSignedIn) || (!adminLoading && adminSignedIn);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +59,10 @@ export function NewsletterSignup() {
       setMessage('Network error. Please try again.');
     }
   };
+
+  if (hideForSignedInUser) {
+    return null;
+  }
 
   return (
     <section ref={sectionRef} className="w-full border-t border-cyan-400/10 bg-gradient-to-b from-black/60 to-black/90">
