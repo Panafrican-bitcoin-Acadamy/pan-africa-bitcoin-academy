@@ -521,9 +521,14 @@ export default function ApplyPage() {
         <AnimatedSection animation="slideRight">
           <section className="rounded-2xl border border-cyan-400/30 bg-gradient-to-b from-zinc-900/90 to-black/90 p-6 sm:p-8 shadow-[0_0_40px_rgba(34,211,238,0.15)] ring-1 ring-cyan-400/10">
           <AnimatedHeading as="h2" className="mb-2 text-xl font-semibold text-cyan-200">Application Form</AnimatedHeading>
-          <p className="mb-6 text-sm text-zinc-400">
-            Choose how you want to learn, then complete your details. Live cohort students join a scheduled group; self-paced students use the same materials on their own schedule.
-          </p>
+          <div className="mb-6 space-y-2 text-sm">
+            <p className="text-zinc-400">
+              Choose how you want to learn, then complete your details. Live cohort students join a scheduled group; self-paced students use the same materials on their own schedule.
+            </p>
+            <p className="text-zinc-500 leading-relaxed">
+              ብኸመይ መገዲ ኢኻ ክትመሃር ትደሊ ምስ መምህር ኣብ ሰሙ ዝተዳለው ክላስ ወላ ባዕልኻ ነቲ ተዳልዩ ዘሎ ኮርስ ክትወስዶ ኢዩ ድለትካ።
+            </p>
+          </div>
           {submitSuccess && (
             <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200">
               {submitSuccess}
@@ -546,13 +551,16 @@ export default function ApplyPage() {
                 required
                 value={formData.learningPace}
                 onChange={handleLearningPaceChange}
-                className={inputStyles.selectWithValue(true)}
+                className={cn(
+                  inputStyles.selectWithValue(true),
+                  'max-w-md py-2 pl-2.5 pr-8 text-xs sm:text-sm'
+                )}
                 aria-label="How do you want to take the course? ብኸመይ መገዲ ኢኻ ክትመሃር ትደሊ? Live cohort or self-paced."
               >
-                <option value="live_cohort" className="bg-zinc-950 text-zinc-50">
+                <option value="live_cohort" className="bg-zinc-950 text-xs sm:text-sm text-zinc-50">
                   Live cohort — ብኣካል ክንመሃር
                 </option>
-                <option value="self_paced" className="bg-zinc-950 text-zinc-50">
+                <option value="self_paced" className="bg-zinc-950 text-xs sm:text-sm text-zinc-50">
                   Self-paced — ባዕልና ከነንብብ
                 </option>
               </select>
