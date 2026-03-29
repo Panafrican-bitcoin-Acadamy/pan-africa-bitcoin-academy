@@ -636,30 +636,24 @@ export default function ExamPage() {
           </div>
         ) : null}
 
-        {/* Timer + ← Dashboard (below subtitle + Good luck in header) */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
-          <div className="min-w-0">
-            {accessCheck?.isAdmin ? (
-              <p className="text-xs text-zinc-500">Admin preview — no exam time limit</p>
-            ) : remainingMs !== null ? (
-              <p
-                className={`font-mono text-lg font-bold tabular-nums sm:text-xl ${
-                  remainingMs <= 15 * 60 * 1000 ? 'text-amber-400' : 'text-cyan-200'
-                }`}
-              >
-                {formatCountdown(remainingMs)}
-              </p>
-            ) : (
-              <p className="text-xs text-zinc-500">Preparing timer…</p>
-            )}
+        {/* Countdown only (students); admins skip this row */}
+        {!accessCheck?.isAdmin ? (
+          <div className="mb-5 border-b border-zinc-800/60 pb-4">
+            <div className="min-w-0">
+              {remainingMs !== null ? (
+                <p
+                  className={`font-mono text-lg font-bold tabular-nums sm:text-xl ${
+                    remainingMs <= 15 * 60 * 1000 ? 'text-amber-400' : 'text-cyan-200'
+                  }`}
+                >
+                  {formatCountdown(remainingMs)}
+                </p>
+              ) : (
+                <p className="text-xs text-zinc-500">Preparing timer…</p>
+              )}
+            </div>
           </div>
-          <Link
-            href="/dashboard"
-            className="shrink-0 text-sm font-medium text-zinc-500 hover:text-zinc-300"
-          >
-            ← Dashboard
-          </Link>
-        </div>
+        ) : null}
 
         <div className="min-w-0 space-y-5">
           {/* Questions */}
