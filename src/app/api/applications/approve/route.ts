@@ -223,6 +223,7 @@ export async function POST(req: NextRequest) {
       country: application.country || null,
       city: application.city || null,
       cohort_id: application.preferred_cohort_id || null,
+      learning_pace: application.learning_pace || 'live_cohort',
       preferred_language: application.preferred_language || null,
       status: 'Enrolled', // Student is enrolled after approval
       progress_percent: existingStudent?.progress_percent || 0,
@@ -412,6 +413,7 @@ export async function POST(req: NextRequest) {
           applicantEmail: emailLower,
           applicantName: fullName,
           cohortId: application.preferred_cohort_id,
+          learningPace: application.learning_pace || 'live_cohort',
           approvedBy: sanitizedApprovedBy,
         },
       }

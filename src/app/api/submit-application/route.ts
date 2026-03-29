@@ -19,7 +19,11 @@ export async function POST(req: NextRequest) {
       experienceLevel,
       preferredCohort,
       preferredLanguage,
+      learningPace: learningPaceRaw,
     } = body;
+
+    const learningPace =
+      learningPaceRaw === 'self_paced' ? 'self_paced' : 'live_cohort';
 
     if (!firstName || !lastName || !email) {
       return NextResponse.json(
@@ -196,9 +200,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Resolve cohort (accepts ID or name). Frontend sends ID. - use admin client
+    // Resolve cohort only for live cohort mode; self-paced has no cohort
     let cohortId: string | null = null;
-    if (preferredCohort) {
+    if (learningPace === 'live_cohort') {
+      if (!preferredCohort) {
+        return NextResponse.json(
+          {
+            error:
+              'Please select a cohort for live cohort enrollment, or choose self-paced study.',
+          },
+          { status: 400 }
+        );
+      }
       // First try direct ID match
       const { data: byId } = await supabaseAdmin
         .from('cohorts')
@@ -218,6 +231,12 @@ export async function POST(req: NextRequest) {
         if (byName?.id) {
           cohortId = byName.id;
         }
+      }
+      if (!cohortId) {
+        return NextResponse.json(
+          { error: 'Invalid cohort selection. Please choose an available cohort.' },
+          { status: 400 }
+        );
       }
     }
 
@@ -277,6 +296,7 @@ export async function POST(req: NextRequest) {
         experience_level: experienceLevel || null,
         preferred_cohort_id: cohortId,
         preferred_language: preferredLanguage || null,
+        learning_pace: learningPace,
         status: 'Pending',
         profile_id: existingProfile?.id || null, // Link to existing profile if found
       })

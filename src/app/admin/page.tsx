@@ -96,6 +96,7 @@ interface Application {
   city: string | null;
   experience_level: string | null;
   preferred_cohort_id: string | null;
+  learning_pace?: string | null;
   preferred_language: string | null;
   status: string;
   created_at: string;
@@ -4671,6 +4672,12 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="space-y-1 text-xs mb-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-zinc-500">Mode:</span>
+                      <span className="text-zinc-200">
+                        {app.learning_pace === 'self_paced' ? 'Self-paced' : 'Live cohort'}
+                      </span>
+                    </div>
                     {app.preferred_cohort_id && (
                       <div className="flex items-center gap-1">
                         <span className="text-zinc-500">Cohort:</span>
@@ -4763,6 +4770,16 @@ export default function AdminDashboardPage() {
                         <div>
                           <span className="text-zinc-500">Experience Level:</span>
                           <p className="text-zinc-200">{app.experience_level || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Learning pace:</span>
+                          <p className="text-zinc-200">
+                            {app.learning_pace === 'self_paced'
+                              ? 'Self-paced'
+                              : app.learning_pace === 'live_cohort'
+                                ? 'Live cohort'
+                                : app.learning_pace || 'Live cohort'}
+                          </p>
                         </div>
                         <div>
                           <span className="text-zinc-500">Preferred Language:</span>

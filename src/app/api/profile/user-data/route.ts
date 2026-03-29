@@ -291,6 +291,7 @@ export async function POST(req: NextRequest) {
           sessions: cohort.sessions,
         } : null,
         cohortEnrollments,
+        learningPace: student?.learning_pace ?? null,
       },
       { status: 200 }
     );

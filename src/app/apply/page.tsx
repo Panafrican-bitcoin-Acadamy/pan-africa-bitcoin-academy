@@ -26,6 +26,7 @@ interface Cohort {
   enrolled: number;
 }
 
+type LearningPace = 'live_cohort' | 'self_paced';
 
 export default function ApplyPage() {
   const router = useRouter();
@@ -88,6 +89,7 @@ export default function ApplyPage() {
     preferredCohort: "",
     birthDate: "",
     preferredLanguage: "",
+    learningPace: 'live_cohort' as LearningPace,
   });
 
   // Pre-fill form data from profile if user is logged in (only once when profile loads)
@@ -150,6 +152,7 @@ export default function ApplyPage() {
       preferredCohort: '',
       birthDate: '',
       preferredLanguage: '',
+      learningPace: 'live_cohort',
     });
   }, [authLoading, isAuthenticated, profile]); // Only depend on auth state, not form state
 
@@ -308,14 +311,15 @@ export default function ApplyPage() {
     return normalized;
   };
 
-  // Auto-fill preferred cohort and experience level when a cohort is selected
+  // Auto-fill preferred cohort and experience from cohort selection (live cohort only)
   useEffect(() => {
+    if (formData.learningPace === 'self_paced') {
+      return;
+    }
     if (selectedCohort !== null) {
       const cohort = cohorts.find((c) => c.id === selectedCohort);
       if (cohort) {
-        // Update preferredCohort and experienceLevel to match the selected cohort
         const normalizedLevel = normalizeLevel(cohort.level);
-        console.log('Setting experience level:', normalizedLevel, 'from cohort level:', cohort.level);
         setFormData((prev) => ({
           ...prev,
           preferredCohort: cohort.id,
@@ -323,15 +327,24 @@ export default function ApplyPage() {
         }));
       }
     } else {
-      // If no cohort is selected, clear the experience level
       setFormData((prev) => ({
         ...prev,
         experienceLevel: '',
       }));
     }
-  }, [selectedCohort, cohorts]);
+  }, [selectedCohort, cohorts, formData.learningPace]);
 
-  const selectedCohortData = selectedCohort ? cohorts.find((c) => c.id === selectedCohort) : null;
+  const handleLearningPaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value as LearningPace;
+    setFormData((prev) => ({
+      ...prev,
+      learningPace: v,
+      preferredCohort: v === 'self_paced' ? '' : prev.preferredCohort,
+    }));
+    if (v === 'self_paced') {
+      setSelectedCohort(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -371,18 +384,29 @@ export default function ApplyPage() {
       return;
     }
     
-    // The phone number is already combined in formData.phone via handlePhoneChange
-    const selectedCohortObj = selectedCohort ? cohorts.find((c) => c.id === selectedCohort) : null;
-    
-    // Validate that the selected cohort is not full
-    if (selectedCohortObj && selectedCohortObj.available === 0) {
-      setSubmitError('This cohort is full. Please select a different cohort.');
-      setSubmitting(false);
-      return;
+    const selectedCohortObj =
+      formData.learningPace === 'live_cohort' && selectedCohort
+        ? cohorts.find((c) => c.id === selectedCohort)
+        : null;
+
+    if (formData.learningPace === 'live_cohort') {
+      if (!selectedCohortObj) {
+        setSubmitError('Please select a cohort for live cohort enrollment.');
+        setSubmitting(false);
+        return;
+      }
+      if (selectedCohortObj.available === 0) {
+        setSubmitError('This cohort is full. Please select a different cohort.');
+        setSubmitting(false);
+        return;
+      }
     }
-    
-    const cohortNumber = selectedCohortObj ? selectedCohortObj.id : null;
-    
+
+    const cohortNumber =
+      formData.learningPace === 'live_cohort' && selectedCohortObj
+        ? selectedCohortObj.id
+        : null;
+
     const finalFormData = {
       ...formData,
       name: `${formData.firstName} ${formData.lastName}`.trim(), // Combine first and last name
@@ -394,8 +418,9 @@ export default function ApplyPage() {
           return parsed ? parsed.formatInternational() : `${selectedCountryCode} ${phoneNumber}`.trim();
         } catch { return `${selectedCountryCode} ${phoneNumber}`.trim(); }
       })(),
-      preferredCohort: cohortNumber, // Add preferredCohort (cohort ID) to the request
-      preferredLanguage: formData.preferredLanguage || null, // Include preferred language
+      preferredCohort: cohortNumber,
+      preferredLanguage: formData.preferredLanguage || null,
+      learningPace: formData.learningPace,
     };
 
     try {
@@ -428,6 +453,7 @@ export default function ApplyPage() {
           preferredCohort: "",
           birthDate: "",
           preferredLanguage: "",
+          learningPace: 'live_cohort',
         });
         setSelectedCountry("");
         setSelectedCountryCode("");
@@ -491,159 +517,13 @@ export default function ApplyPage() {
           </AnimatedSection>
 
       <div className="space-y-12">
-        {/* Cohort Details — redesigned */}
-        <AnimatedSection animation="slideLeft">
-          <section className="space-y-6">
-            <div>
-              <AnimatedHeading as="h2" className="text-2xl font-bold tracking-tight text-zinc-50">Upcoming Cohorts</AnimatedHeading>
-              <p className="mt-1 text-sm text-zinc-500">Choose your start date and apply below.</p>
-            </div>
-            {cohortsLoading ? (
-              <div className="flex items-center justify-center py-12 text-cyan-400">Loading cohorts…</div>
-            ) : cohortsError ? (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center text-red-300">
-                {cohortsError}
-              </div>
-            ) : cohorts.length === 0 ? (
-              <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/30 py-12 text-center text-zinc-400">
-                No upcoming cohorts at this time. Check back later.
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-16 bg-gradient-to-l from-black/80 to-transparent z-10" aria-hidden />
-                <div
-                  className="overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide py-2 -mx-2 px-2 sm:-mx-4 sm:px-4"
-                  style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
-                >
-                  <div className="flex gap-5 w-max min-w-full pb-1">
-                    {cohorts.map((cohort, index) => {
-                      const statusLower = (cohort.status || '').toLowerCase();
-                      const isCompleted = statusLower === 'completed' || statusLower === 'ended';
-                      const isActive = statusLower === 'active' || statusLower === 'live';
-                      const isUpcoming = statusLower === 'upcoming' || (!isCompleted && !isActive);
-                      const seatsPct = cohort.seats ? Math.round((cohort.available / cohort.seats) * 100) : 0;
-                      const levelLabel = cohort.level ? cohort.level.charAt(0).toUpperCase() + cohort.level.slice(1).toLowerCase() : 'Beginner';
-
-                      return (
-                        <div
-                          key={cohort.id}
-                          className={cn(
-                            "cohort-card-entrance flex-shrink-0 w-[88vw] sm:w-[44vw] lg:w-[340px] transition scroll-ml-4 sm:scroll-ml-6 rounded-2xl overflow-hidden",
-                            selectedCohort === cohort.id ? "ring-2 ring-cyan-400 ring-offset-2 ring-offset-black" : ""
-                          )}
-                          style={{ scrollSnapAlign: 'start', animationDelay: `${index * 80}ms` }}
-                        >
-                          <div
-                            className={cn(
-                              "h-full rounded-2xl border bg-zinc-900/90 p-5 flex flex-col",
-                              isCompleted && "border-zinc-700/60 opacity-80",
-                              isActive && "border-emerald-500/40 shadow-[0_0_24px_rgba(16,185,129,0.12)]",
-                              isUpcoming && !isCompleted && "border-cyan-400/30"
-                            )}
-                          >
-                            {/* Status + level row */}
-                            <div className="flex items-center justify-between gap-2 mb-4">
-                              <span
-                                className={cn(
-                                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
-                                  isCompleted && "bg-zinc-600/40 text-zinc-400",
-                                  isActive && "bg-emerald-500/25 text-emerald-300",
-                                  isUpcoming && "bg-cyan-500/25 text-cyan-300"
-                                )}
-                              >
-                                {isActive && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-                                {isCompleted ? 'Completed' : isActive ? 'Active' : 'Upcoming'}
-                              </span>
-                              <span
-                                className={cn(
-                                  "rounded-full px-2.5 py-1 text-xs font-medium",
-                                  cohort.level?.toLowerCase() === 'intermediate' && "bg-amber-500/20 text-amber-300",
-                                  cohort.level?.toLowerCase() === 'advanced' && "bg-purple-500/20 text-purple-300",
-                                  (cohort.level?.toLowerCase() === 'beginner' || !cohort.level) && "bg-blue-500/20 text-blue-300",
-                                  cohort.level?.toLowerCase() && !['beginner', 'intermediate', 'advanced'].includes(cohort.level?.toLowerCase()) && "bg-cyan-500/20 text-cyan-300"
-                                )}
-                              >
-                                {levelLabel}
-                              </span>
-                            </div>
-
-                            <h3 className="text-lg font-bold text-zinc-50 mb-1">{cohort.name}</h3>
-                            <p className="text-sm text-zinc-500 mb-4">
-                              {cohort.startDate} → {cohort.endDate}
-                            </p>
-
-                            {/* Stats row */}
-                            <div className="flex items-center gap-4 text-sm mb-4">
-                              <span className="text-zinc-400">
-                                <span className="font-semibold text-zinc-200">{cohort.sessions}</span> sessions
-                              </span>
-                              <span className="text-zinc-500">·</span>
-                              <span className={cohort.available > 0 ? "text-cyan-400" : "text-zinc-500"}>
-                                <span className="font-semibold">{cohort.available}</span> / {cohort.seats} seats
-                              </span>
-                            </div>
-
-                            {/* Seats progress bar */}
-                            <div className="mb-4 h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
-                              <div
-                                className={cn(
-                                  "h-full rounded-full transition-all",
-                                  cohort.available === 0 && "bg-zinc-600",
-                                  cohort.available > 0 && seatsPct <= 20 && "bg-amber-500/80",
-                                  cohort.available > 0 && seatsPct > 20 && "bg-cyan-500/80"
-                                )}
-                                style={{ width: `${100 - seatsPct}%` }}
-                                aria-hidden
-                              />
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (cohort.available === 0) return;
-                                setSelectedCohort(cohort.id);
-                                const normalizedLevel = normalizeLevel(cohort.level);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  preferredCohort: cohort.id,
-                                  experienceLevel: normalizedLevel,
-                                }));
-                              }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              disabled={cohort.available === 0}
-                              className={cn(
-                                "mt-auto w-full rounded-xl py-3 text-sm font-semibold transition",
-                                cohort.available === 0
-                                  ? "cursor-not-allowed bg-zinc-800 text-zinc-500"
-                                  : selectedCohort === cohort.id
-                                    ? "bg-cyan-500 text-black"
-                                    : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
-                              )}
-                            >
-                              {cohort.available === 0
-                                ? "Full"
-                                : selectedCohort === cohort.id
-                                  ? "Selected"
-                                  : "Select cohort"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-        </AnimatedSection>
-
         {/* Registration Form */}
         <AnimatedSection animation="slideRight">
           <section className="rounded-2xl border border-cyan-400/30 bg-gradient-to-b from-zinc-900/90 to-black/90 p-6 sm:p-8 shadow-[0_0_40px_rgba(34,211,238,0.15)] ring-1 ring-cyan-400/10">
           <AnimatedHeading as="h2" className="mb-2 text-xl font-semibold text-cyan-200">Application Form</AnimatedHeading>
-          <p className="mb-6 text-sm text-zinc-400">Fill in your details to join the next cohort.</p>
+          <p className="mb-6 text-sm text-zinc-400">
+            Choose how you want to learn, then complete your details. Live cohort students join a scheduled group; self-paced students use the same materials on their own schedule.
+          </p>
           {submitSuccess && (
             <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200">
               {submitSuccess}
@@ -655,6 +535,193 @@ export default function ApplyPage() {
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
+            <div>
+              <label htmlFor="learningPace" className={labelStyles.required}>
+                How do you want to take the course?{' '}
+                <span className="text-zinc-400 font-normal">ብኸመይ መገዲ ኢኻ ክትመሃር ትደሊ?</span>{' '}
+                <span className={labelStyles.requiredStar}>*</span>
+              </label>
+              <select
+                id="learningPace"
+                required
+                value={formData.learningPace}
+                onChange={handleLearningPaceChange}
+                className={inputStyles.selectWithValue(true)}
+                aria-label="How do you want to take the course? ብኸመይ መገዲ ኢኻ ክትመሃር ትደሊ? Live cohort or self-paced."
+              >
+                <option value="live_cohort" className="bg-zinc-950 text-zinc-50">
+                  Live cohort — ብኣካል ክንመሃር
+                </option>
+                <option value="self_paced" className="bg-zinc-950 text-zinc-50">
+                  Self-paced — ባዕልና ከነንብብ
+                </option>
+              </select>
+            </div>
+
+            {formData.learningPace === 'self_paced' ? (
+              <div className="rounded-xl border border-cyan-400/20 bg-zinc-950/50 p-4 text-sm text-zinc-300">
+                <p className="font-medium text-cyan-200 mb-1">Self-paced — ባዕልና ከነንብብ</p>
+                <p>
+                  You will read the materials and progress on your own schedule. No live cohort or start date is required. Select your experience level below.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 border-b border-zinc-800 pb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-zinc-50">Upcoming cohorts</h3>
+                  <p className="mt-1 text-sm text-zinc-500">Pick a cohort (or use the dropdown later in the form).</p>
+                </div>
+                {cohortsLoading ? (
+                  <div className="flex items-center justify-center py-12 text-cyan-400">Loading cohorts…</div>
+                ) : cohortsError ? (
+                  <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center text-red-300">
+                    {cohortsError}
+                  </div>
+                ) : cohorts.length === 0 ? (
+                  <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/30 py-12 text-center text-zinc-400">
+                    No upcoming cohorts at this time. Check back later or contact us.
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-16 bg-gradient-to-l from-zinc-950/90 to-transparent z-10" aria-hidden />
+                    <div
+                      className="overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide py-2 -mx-2 px-2 sm:-mx-4 sm:px-4"
+                      style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+                    >
+                      <div className="flex gap-5 w-max min-w-full pb-1">
+                        {cohorts.map((cohort, index) => {
+                          const statusLower = (cohort.status || '').toLowerCase();
+                          const isCompleted = statusLower === 'completed' || statusLower === 'ended';
+                          const isActive = statusLower === 'active' || statusLower === 'live';
+                          const isUpcoming = statusLower === 'upcoming' || (!isCompleted && !isActive);
+                          const seatsPct = cohort.seats ? Math.round((cohort.available / cohort.seats) * 100) : 0;
+                          const levelLabel = cohort.level ? cohort.level.charAt(0).toUpperCase() + cohort.level.slice(1).toLowerCase() : 'Beginner';
+                          const isCardSelected = selectedCohort === cohort.id;
+
+                          return (
+                            <div
+                              key={cohort.id}
+                              className={cn(
+                                "cohort-card-entrance flex-shrink-0 w-[88vw] sm:w-[44vw] lg:w-[340px] transition-all duration-300 scroll-ml-4 sm:scroll-ml-6 rounded-2xl overflow-hidden",
+                                isCardSelected &&
+                                  "ring-2 ring-amber-400/90 ring-offset-2 ring-offset-zinc-950 shadow-[0_0_36px_rgba(245,158,11,0.35),0_0_72px_rgba(234,179,8,0.12)]"
+                              )}
+                              style={{ scrollSnapAlign: 'start', animationDelay: `${index * 80}ms` }}
+                            >
+                              <div
+                                className={cn(
+                                  "h-full rounded-2xl border bg-zinc-900/90 p-5 flex flex-col transition-[box-shadow,border-color] duration-300",
+                                  isCardSelected &&
+                                    "border-amber-400/75 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.2),0_0_28px_rgba(245,158,11,0.18)]",
+                                  !isCardSelected && isCompleted && "border-zinc-700/60 opacity-80",
+                                  !isCardSelected && isActive && "border-emerald-500/40 shadow-[0_0_24px_rgba(16,185,129,0.12)]",
+                                  !isCardSelected && isUpcoming && !isCompleted && "border-cyan-400/30"
+                                )}
+                              >
+                                <div className="flex items-center justify-between gap-2 mb-4">
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
+                                      isCompleted && "bg-zinc-600/40 text-zinc-400",
+                                      isActive && "bg-emerald-500/25 text-emerald-300",
+                                      isUpcoming && "bg-cyan-500/25 text-cyan-300"
+                                    )}
+                                  >
+                                    {isActive && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                                    {isCompleted ? 'Completed' : isActive ? 'Active' : 'Upcoming'}
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-2.5 py-1 text-xs font-medium",
+                                      cohort.level?.toLowerCase() === 'intermediate' && "bg-amber-500/20 text-amber-300",
+                                      cohort.level?.toLowerCase() === 'advanced' && "bg-purple-500/20 text-purple-300",
+                                      (cohort.level?.toLowerCase() === 'beginner' || !cohort.level) && "bg-blue-500/20 text-blue-300",
+                                      cohort.level?.toLowerCase() && !['beginner', 'intermediate', 'advanced'].includes(cohort.level?.toLowerCase()) && "bg-cyan-500/20 text-cyan-300"
+                                    )}
+                                  >
+                                    {levelLabel}
+                                  </span>
+                                </div>
+
+                                <h3 className="text-lg font-bold text-zinc-50 mb-1">{cohort.name}</h3>
+                                <p className="text-sm text-zinc-500 mb-4">
+                                  {cohort.startDate} → {cohort.endDate}
+                                </p>
+
+                                <div className="flex items-center gap-4 text-sm mb-4">
+                                  <span className="text-zinc-400">
+                                    <span className="font-semibold text-zinc-200">{cohort.sessions}</span> sessions
+                                  </span>
+                                  <span className="text-zinc-500">·</span>
+                                  <span
+                                    className={
+                                      cohort.available === 0
+                                        ? "text-zinc-500"
+                                        : isCardSelected
+                                          ? "text-amber-400"
+                                          : "text-cyan-400"
+                                    }
+                                  >
+                                    <span className="font-semibold">{cohort.available}</span> / {cohort.seats} seats
+                                  </span>
+                                </div>
+
+                                <div className="mb-4 h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all",
+                                      cohort.available === 0 && "bg-zinc-600",
+                                      cohort.available > 0 && seatsPct <= 20 && "bg-amber-500/80",
+                                      cohort.available > 0 && seatsPct > 20 && !isCardSelected && "bg-cyan-500/80",
+                                      cohort.available > 0 && seatsPct > 20 && isCardSelected && "bg-gradient-to-r from-amber-500 to-amber-400"
+                                    )}
+                                    style={{ width: `${100 - seatsPct}%` }}
+                                    aria-hidden
+                                  />
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (cohort.available === 0) return;
+                                    setSelectedCohort(cohort.id);
+                                    const normalizedLevel = normalizeLevel(cohort.level);
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      preferredCohort: cohort.id,
+                                      experienceLevel: normalizedLevel,
+                                    }));
+                                  }}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  disabled={cohort.available === 0}
+                                  className={cn(
+                                    "mt-auto w-full rounded-xl py-3 text-sm font-semibold transition-all duration-300",
+                                    cohort.available === 0
+                                      ? "cursor-not-allowed bg-zinc-800 text-zinc-500"
+                                      : isCardSelected
+                                        ? "bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-[0_0_24px_rgba(245,158,11,0.45)] hover:from-amber-300 hover:to-amber-400"
+                                        : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+                                  )}
+                                >
+                                  {cohort.available === 0
+                                    ? "Full"
+                                    : isCardSelected
+                                      ? "Selected"
+                                      : "Select cohort"}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* First Name and Last Name */}
             <FormGrid>
               <div>
@@ -882,87 +949,130 @@ export default function ApplyPage() {
               </div>
             </FormGrid>
 
-            {/* Experience Level and Preferred Cohort */}
-            <FormGrid>
-              <div>
-                <label htmlFor="experienceLevel" className={labelStyles.required}>
-                  Experience Level <span className={labelStyles.requiredStar}>*</span>
-                </label>
-                <select
-                  id="experienceLevel"
-                  required
-                  value={formData.experienceLevel}
-                  onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
-                  className={inputStyles.selectWithValue(!!formData.experienceLevel)}
-                >
-                  <option value="" className="bg-zinc-950 text-zinc-400">Select your level</option>
-                  <option 
-                    value="beginner" 
-                    className={`bg-zinc-950 ${
-                      formData.experienceLevel === 'beginner' ? 'text-green-400' : 'text-zinc-50'
-                    }`}
+            {/* Experience level; live cohort also picks preferred cohort here */}
+            {formData.learningPace === 'self_paced' ? (
+              <FormGrid cols={1}>
+                <div>
+                  <label htmlFor="experienceLevel" className={labelStyles.required}>
+                    Experience Level <span className={labelStyles.requiredStar}>*</span>
+                  </label>
+                  <select
+                    id="experienceLevel"
+                    required
+                    value={formData.experienceLevel}
+                    onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
+                    className={inputStyles.selectWithValue(!!formData.experienceLevel)}
                   >
-                    Beginner - New to Bitcoin
-                  </option>
-                  <option 
-                    value="intermediate" 
-                    className={`bg-zinc-950 ${
-                      formData.experienceLevel === 'intermediate' ? 'text-green-400' : 'text-zinc-50'
-                    }`}
-                  >
-                    Intermediate - Some knowledge
-                  </option>
-                  <option 
-                    value="advanced" 
-                    className={`bg-zinc-950 ${
-                      formData.experienceLevel === 'advanced' ? 'text-green-400' : 'text-zinc-50'
-                    }`}
-                  >
-                    Advanced - Experienced user
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="preferredCohort" className={labelStyles.required}>
-                  Preferred Cohort <span className={labelStyles.requiredStar}>*</span>
-                </label>
-                <select
-                  id="preferredCohort"
-                  required
-                  value={formData.preferredCohort}
-                  onChange={(e) => {
-                    const cohortId = e.target.value;
-                    const selectedCohortObj = cohorts.find((c) => c.id === cohortId);
-                    const normalizedLevel = normalizeLevel(selectedCohortObj?.level);
-                    setFormData({ 
-                      ...formData, 
-                      preferredCohort: cohortId,
-                      experienceLevel: normalizedLevel
-                    });
-                    setSelectedCohort(cohortId || null);
-                  }}
-                  className={cn(inputStyles.select, formData.preferredCohort ? 'text-green-400' : 'text-zinc-50')}
-                >
-                  <option value="" className="bg-zinc-950 text-zinc-400">Select a cohort</option>
-                  {cohorts.map((cohort) => (
-                    <option 
-                      key={cohort.id} 
-                      value={cohort.id}
-                      disabled={cohort.available === 0}
+                    <option value="" className="bg-zinc-950 text-zinc-400">Select your level</option>
+                    <option
+                      value="beginner"
                       className={`bg-zinc-950 ${
-                        cohort.available === 0
-                          ? 'text-zinc-600 cursor-not-allowed'
-                          : formData.preferredCohort === cohort.id.toString() 
-                            ? 'text-green-400' 
-                            : 'text-zinc-50'
+                        formData.experienceLevel === 'beginner' ? 'text-green-400' : 'text-zinc-50'
                       }`}
                     >
-                      {cohort.name} ({cohort.available === 0 ? 'Full' : `${cohort.available} seats available`})
+                      Beginner - New to Bitcoin
                     </option>
-                  ))}
-                </select>
-              </div>
-            </FormGrid>
+                    <option
+                      value="intermediate"
+                      className={`bg-zinc-950 ${
+                        formData.experienceLevel === 'intermediate' ? 'text-green-400' : 'text-zinc-50'
+                      }`}
+                    >
+                      Intermediate - Some knowledge
+                    </option>
+                    <option
+                      value="advanced"
+                      className={`bg-zinc-950 ${
+                        formData.experienceLevel === 'advanced' ? 'text-green-400' : 'text-zinc-50'
+                      }`}
+                    >
+                      Advanced - Experienced user
+                    </option>
+                  </select>
+                </div>
+              </FormGrid>
+            ) : (
+              <FormGrid>
+                <div>
+                  <label htmlFor="experienceLevel" className={labelStyles.required}>
+                    Experience Level <span className={labelStyles.requiredStar}>*</span>
+                  </label>
+                  <select
+                    id="experienceLevel"
+                    required
+                    value={formData.experienceLevel}
+                    onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
+                    className={inputStyles.selectWithValue(!!formData.experienceLevel)}
+                  >
+                    <option value="" className="bg-zinc-950 text-zinc-400">Select your level</option>
+                    <option
+                      value="beginner"
+                      className={`bg-zinc-950 ${
+                        formData.experienceLevel === 'beginner' ? 'text-green-400' : 'text-zinc-50'
+                      }`}
+                    >
+                      Beginner - New to Bitcoin
+                    </option>
+                    <option
+                      value="intermediate"
+                      className={`bg-zinc-950 ${
+                        formData.experienceLevel === 'intermediate' ? 'text-green-400' : 'text-zinc-50'
+                      }`}
+                    >
+                      Intermediate - Some knowledge
+                    </option>
+                    <option
+                      value="advanced"
+                      className={`bg-zinc-950 ${
+                        formData.experienceLevel === 'advanced' ? 'text-green-400' : 'text-zinc-50'
+                      }`}
+                    >
+                      Advanced - Experienced user
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="preferredCohort" className={labelStyles.required}>
+                    Preferred Cohort <span className={labelStyles.requiredStar}>*</span>
+                  </label>
+                  <select
+                    id="preferredCohort"
+                    required
+                    value={formData.preferredCohort}
+                    onChange={(e) => {
+                      const cohortId = e.target.value;
+                      const cohortOpt = cohorts.find((c) => c.id === cohortId);
+                      const normalizedLevel = normalizeLevel(cohortOpt?.level);
+                      setFormData({
+                        ...formData,
+                        preferredCohort: cohortId,
+                        experienceLevel: normalizedLevel,
+                      });
+                      setSelectedCohort(cohortId || null);
+                    }}
+                    className={cn(inputStyles.select, formData.preferredCohort ? 'text-green-400' : 'text-zinc-50')}
+                  >
+                    <option value="" className="bg-zinc-950 text-zinc-400">Select a cohort</option>
+                    {cohorts.map((cohort) => (
+                      <option
+                        key={cohort.id}
+                        value={cohort.id}
+                        disabled={cohort.available === 0}
+                        className={`bg-zinc-950 ${
+                          cohort.available === 0
+                            ? 'text-zinc-600 cursor-not-allowed'
+                            : formData.preferredCohort === cohort.id.toString()
+                              ? 'text-green-400'
+                              : 'text-zinc-50'
+                        }`}
+                      >
+                        {cohort.name} ({cohort.available === 0 ? 'Full' : `${cohort.available} seats available`})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </FormGrid>
+            )}
 
             <div className="rounded-lg border border-cyan-400/20 bg-cyan-500/5 p-4">
               <p className="text-sm text-zinc-300">
