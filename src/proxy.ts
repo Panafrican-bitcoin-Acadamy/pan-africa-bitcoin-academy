@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  checkRateLimit, 
-  getClientIP, 
-  validateRequestSize, 
+import {
+  checkRateLimit,
+  getClientIP,
+  validateRequestSize,
   checkConcurrentConnections,
-  releaseConnection 
+  releaseConnection,
 } from '@/lib/rate-limit';
-import { ENDPOINT_RATE_LIMITS, getRateLimitForPath } from '@/lib/api-rate-limit';
+import { getRateLimitForPath } from '@/lib/api-rate-limit';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only apply rate limiting to API routes
@@ -40,9 +40,10 @@ export function middleware(request: NextRequest) {
   // Security: Check concurrent connections per IP
   // Skip for admin routes and public read-only endpoints (e.g. apply page needs /api/cohorts)
   const isAdminRoute = pathname.startsWith('/api/admin/');
-  const isPublicReadOnly = pathname === '/api/cohorts' || pathname === '/api/health' || pathname === '/api/status';
+  const isPublicReadOnly =
+    pathname === '/api/cohorts' || pathname === '/api/health' || pathname === '/api/status';
   let connectionCheck = { allowed: true, active: 0, max: 20 };
-  
+
   if (!isAdminRoute && !isPublicReadOnly) {
     connectionCheck = checkConcurrentConnections(clientIP);
     if (!connectionCheck.allowed) {
@@ -65,10 +66,10 @@ export function middleware(request: NextRequest) {
   // Get rate limit config based on endpoint path and method
   const method = request.method;
   const config = getRateLimitForPath(pathname, method);
-  
+
   // Create unique identifier for this endpoint + IP
   const identifier = `${pathname}:${clientIP}`;
-  
+
   // Check rate limit
   const rateLimit = checkRateLimit(identifier, config);
 
@@ -79,17 +80,18 @@ export function middleware(request: NextRequest) {
     const retryAfterMinutes = Math.ceil(retryAfterSeconds / 60);
     const retryAfterHours = Math.floor(retryAfterMinutes / 60);
     const remainingMinutes = retryAfterMinutes % 60;
-    
+
     // Format wait time message
     let waitTimeMessage = '';
     if (retryAfterHours > 0) {
-      waitTimeMessage = remainingMinutes > 0 
-        ? `${retryAfterHours} hour${retryAfterHours > 1 ? 's' : ''} and ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`
-        : `${retryAfterHours} hour${retryAfterHours > 1 ? 's' : ''}`;
+      waitTimeMessage =
+        remainingMinutes > 0
+          ? `${retryAfterHours} hour${retryAfterHours > 1 ? 's' : ''} and ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`
+          : `${retryAfterHours} hour${retryAfterHours > 1 ? 's' : ''}`;
     } else {
       waitTimeMessage = `${retryAfterMinutes} minute${retryAfterMinutes > 1 ? 's' : ''}`;
     }
-    
+
     return NextResponse.json(
       {
         error: `Access denied. Your IP has been temporarily blocked due to repeated violations. Please try again in ${waitTimeMessage}.`,
@@ -128,7 +130,7 @@ export function middleware(request: NextRequest) {
 
   // Create response and add rate limit headers
   const response = NextResponse.next();
-  
+
   // Add rate limit headers to successful responses
   response.headers.set('X-RateLimit-Limit', config.maxRequests.toString());
   response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
@@ -136,14 +138,13 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Concurrent-Connections', connectionCheck.active.toString());
   response.headers.set('X-Max-Concurrent-Connections', connectionCheck.max.toString());
 
-  // Release connection when response is sent (using AbortController)
-  // Note: In Next.js middleware, we can't easily track response completion
+  // Note: In Next.js proxy, we can't easily track response completion
   // This is a limitation - connections will auto-release after timeout
 
   return response;
 }
 
-// Configure which routes the middleware should run on
+// Configure which routes the proxy should run on
 export const config = {
   matcher: [
     /*
@@ -157,4 +158,3 @@ export const config = {
     '/api/:path*',
   ],
 };
-

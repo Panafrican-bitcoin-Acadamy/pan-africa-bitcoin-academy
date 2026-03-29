@@ -454,7 +454,7 @@ export function Navbar() {
 
       {/* Mobile Menu - Touch-friendly with larger tap targets */}
       {mobileMenuOpen && (
-        <div className="border-t border-cyan-400/20 bg-black/95 lg:hidden max-h-[calc(100vh-80px)] overflow-y-auto">
+        <div className="border-t border-cyan-400/20 bg-black/95 lg:hidden max-h-[min(100dvh-5rem,100vh-5rem)] overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
           <nav className="mx-auto max-w-7xl space-y-1 px-3 py-3 sm:px-4 sm:py-4">
             <div className="mb-3 flex flex-col gap-3 sm:mb-4">
               <SearchBar />

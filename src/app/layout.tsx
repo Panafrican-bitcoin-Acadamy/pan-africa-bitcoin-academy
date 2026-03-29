@@ -212,7 +212,7 @@ export default function RootLayout({
         
         <LanguageProvider>
         <ClickSparkWrapper>
-          <div className="flex min-h-screen flex-col">
+          <div className="flex min-h-screen min-h-dvh flex-col">
             <Navbar />
             {/* Mobile-first: Full width on mobile, max-width only on larger screens */}
             <main className="flex-1 relative z-10 w-full">{children}</main>

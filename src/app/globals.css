@@ -19,11 +19,16 @@
 html {
   background-color: #020617;
   min-height: 100vh;
+  min-height: 100dvh;
   /* Mobile-first: Base font size for readability without zooming */
   font-size: 16px;
   /* Prevent text size adjustment on iOS */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Smooth vertical scroll on mobile; avoid horizontal rubber-band when x is clipped */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -33,9 +38,17 @@ body {
   position: relative;
   overflow-x: hidden;
   min-height: 100vh;
+  min-height: 100dvh;
   /* Mobile-first: Ensure readable base font size */
   font-size: 1rem; /* 16px */
   line-height: 1.5;
+}
+
+/* Fixed backgrounds often break or stutter page scroll on mobile Safari; scroll attachment restores reliable scrolling */
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+  }
 }
 
 /* Gradient overlay: darker on left (text area), brighter on right (image area) */
