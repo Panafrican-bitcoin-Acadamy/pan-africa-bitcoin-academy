@@ -1,11 +1,108 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
 import { examQuestions } from '@/content/examQuestions';
-import { CheckCircle2, XCircle, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { PageContainer } from '@/components/PageContainer';
+import { CheckCircle2, Lock, AlertCircle, Loader2, X } from 'lucide-react';
+
+const TOTAL_QUESTIONS = examQuestions.length;
+const PASS_MARK = Math.ceil(TOTAL_QUESTIONS * 0.7);
+/** Two-hour exam limit (non-admin students). */
+const EXAM_TIME_LIMIT_MS = 2 * 60 * 60 * 1000;
+
+function examTimerStorageKey(email: string) {
+  const safe = email.toLowerCase().trim().replace(/[^a-z0-9@._-]+/g, '_');
+  return `paba_final_exam_start_${safe}`;
+}
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return '0:00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+function ExamTimeExpiredModal({
+  onOk,
+  okPending,
+}: {
+  onOk: () => void;
+  okPending?: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[250] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="exam-time-expired-title"
+    >
+      <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-zinc-900 p-6 text-center shadow-2xl shadow-black/50 sm:p-8">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15">
+          <Lock className="h-7 w-7 text-red-400" aria-hidden />
+        </div>
+        <h2 id="exam-time-expired-title" className="text-lg font-bold text-white sm:text-xl">
+          Time is up
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+          Your 2-hour exam session has ended. Tap <strong className="text-zinc-200">OK</strong> to send a retake request to
+          your administrators and go to your <strong className="text-zinc-200">dashboard</strong>. When they approve,
+          open the final exam again: you <strong className="text-zinc-200">start over from question 1</strong> with a new
+          2-hour timer (answers from this attempt are not kept).
+        </p>
+        <p className="mt-4 text-base font-medium leading-relaxed text-cyan-200" lang="ti-ER">
+          ካልኣይ ግዜ ፈተና ውሰድ
+        </p>
+        <button
+          type="button"
+          onClick={onOk}
+          disabled={okPending}
+          className="mt-6 w-full rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-[8rem] sm:px-10"
+        >
+          {okPending ? 'Sending request…' : 'OK'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExamSubmitCelebration({
+  show,
+  onDismiss,
+}: {
+  show: boolean;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    if (!show) return;
+    const t = setTimeout(onDismiss, 4200);
+    return () => clearTimeout(t);
+  }, [show, onDismiss]);
+
+  if (!show) return null;
+
+  return (
+    <div
+      className="exam-submit-backdrop-in fixed inset-0 z-[200] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+      role="alert"
+      aria-live="polite"
+    >
+      <div className="exam-submit-card-in relative w-full max-w-md rounded-2xl border border-emerald-500/35 bg-gradient-to-b from-zinc-900 to-zinc-950 p-8 text-center shadow-[0_0_60px_rgba(16,185,129,0.15)]">
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15 ring-2 ring-emerald-400/50">
+          <CheckCircle2 className="exam-submit-check-pop h-12 w-12 text-emerald-400" strokeWidth={2.25} />
+        </div>
+        <p className="text-lg font-semibold tracking-tight text-white">Final exam submitted</p>
+        <p className="mt-2 text-base font-medium text-emerald-300/95">Good job!</p>
+        <p className="mt-4 text-xs text-zinc-500">Your score is saved. Check your email and dashboard for details.</p>
+      </div>
+    </div>
+  );
+}
 
 interface ExamAccess {
   hasAccess: boolean;
@@ -16,6 +113,7 @@ interface ExamAccess {
   hasAdminAccess: boolean;
   examCompleted: boolean;
   examScore?: number | null;
+  examTimerResetAt?: string | null;
   message: string;
 }
 
@@ -38,12 +136,39 @@ export default function ExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [examResult, setExamResult] = useState<ExamResult | null>(null);
   const [validationErrors, setValidationErrors] = useState<number[]>([]);
+  const [validationBanner, setValidationBanner] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [celebrateSubmit, setCelebrateSubmit] = useState(false);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
+  const [timeExpired, setTimeExpired] = useState(false);
+  const [timeExpiredOkPending, setTimeExpiredOkPending] = useState(false);
   const questionRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  const dismissCelebrate = useCallback(() => setCelebrateSubmit(false), []);
 
   // Determine if user is authenticated (either as student or admin)
   const isAuthenticated = isStudentAuth || isAdminAuth;
   const userEmail = profile?.email || adminEmail || null;
   const loading = authLoading || adminLoading;
+
+  const handleTimeExpiredOk = useCallback(async () => {
+    if (!accessCheck?.isAdmin) {
+      setTimeExpiredOkPending(true);
+      try {
+        await fetch('/api/exam/retake-request', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'time_expired' }),
+        });
+      } catch {
+        /* Still go to dashboard; if the request failed, student can contact support */
+      } finally {
+        setTimeExpiredOkPending(false);
+      }
+    }
+    router.push('/dashboard');
+  }, [accessCheck?.isAdmin, router]);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -55,6 +180,75 @@ export default function ExamPage() {
       checkExamAccess();
     }
   }, [isAuthenticated, loading, userEmail]);
+
+  // 2-hour countdown (students only); persisted so refresh does not reset the clock.
+  useEffect(() => {
+    if (!userEmail || !accessCheck) return;
+    if (!accessCheck.hasAccess || accessCheck.examCompleted || accessCheck.isAdmin) {
+      return;
+    }
+
+    const key = examTimerStorageKey(userEmail);
+    const resetAtMs = accessCheck.examTimerResetAt
+      ? new Date(accessCheck.examTimerResetAt).getTime()
+      : 0;
+    const resetValid = Number.isFinite(resetAtMs) && resetAtMs > 0;
+
+    let startStr = localStorage.getItem(key);
+    let startMs = startStr ? parseInt(startStr, 10) : NaN;
+
+    if (resetValid && (!Number.isFinite(startMs) || startMs < resetAtMs)) {
+      startStr = String(Date.now());
+      try {
+        localStorage.setItem(key, startStr);
+      } catch {
+        /* private mode */
+      }
+      startMs = parseInt(startStr, 10);
+      setTimeExpired(false);
+      // Admin approved a new session: treat as a blank exam from question 1
+      setAnswers({});
+      setValidationErrors([]);
+      setValidationBanner(null);
+      setSubmitError(null);
+    } else if (!startStr) {
+      startStr = String(Date.now());
+      try {
+        localStorage.setItem(key, startStr);
+      } catch {
+        /* private mode */
+      }
+      startMs = parseInt(startStr, 10);
+    }
+
+    const startMsFinal =
+      Number.isFinite(startMs) && !Number.isNaN(startMs) ? startMs : Date.now();
+
+    let intervalId: number | undefined;
+    const tick = () => {
+      const elapsed = Date.now() - startMsFinal;
+      const rem = EXAM_TIME_LIMIT_MS - elapsed;
+      if (rem <= 0) {
+        setRemainingMs(0);
+        setTimeExpired(true);
+        if (intervalId !== undefined) window.clearInterval(intervalId);
+        return;
+      }
+      setRemainingMs(rem);
+    };
+
+    tick();
+    intervalId = window.setInterval(tick, 1000);
+    return () => {
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+    };
+  }, [
+    userEmail,
+    accessCheck?.hasAccess,
+    accessCheck?.examCompleted,
+    accessCheck?.isAdmin,
+    accessCheck?.examTimerResetAt,
+  ]);
 
   const checkExamAccess = async () => {
     if (!userEmail) return;
@@ -112,16 +306,17 @@ export default function ExamPage() {
       ...prev,
       [questionId.toString()]: answer,
     }));
-    // Clear validation error for this question
     setValidationErrors((prev) => prev.filter((id) => id !== questionId));
+    setValidationBanner(null);
+    setSubmitError(null);
   };
 
   const validateAnswers = (): number[] => {
     const errors: number[] = [];
-    for (let i = 1; i <= 50; i++) {
-      const answer = answers[i.toString()];
+    for (const q of examQuestions) {
+      const answer = answers[q.id.toString()];
       if (!answer || !['A', 'B', 'C', 'D'].includes(answer.toUpperCase())) {
-        errors.push(i);
+        errors.push(q.id);
       }
     }
     return errors;
@@ -142,25 +337,34 @@ export default function ExamPage() {
   const handleSubmit = async () => {
     if (!userEmail) return;
 
+    if (!accessCheck?.isAdmin && (timeExpired || (remainingMs !== null && remainingMs <= 0))) {
+      setTimeExpired(true);
+      setSubmitError('Time is up. You can no longer submit this session.');
+      return;
+    }
+
     // Validate all answers
     const errors = validateAnswers();
     if (errors.length > 0) {
       setValidationErrors(errors);
-      // Scroll to first error
       scrollToQuestion(errors[0]);
-      
-      // Show detailed message with unanswered questions
-      const unansweredList = errors.map(q => `Question ${q}`).join(', ');
-      alert(`Please answer all questions before submitting.\n\nUnanswered questions: ${unansweredList}\n\n(${errors.length} question${errors.length > 1 ? 's' : ''} remaining)`);
+      const unansweredList = errors.slice(0, 12).map((q) => `Q${q}`).join(', ');
+      const more = errors.length > 12 ? ` … +${errors.length - 12} more` : '';
+      setValidationBanner(
+        `Please answer all ${TOTAL_QUESTIONS} questions before submitting. Unanswered: ${unansweredList}${more}`,
+      );
       return;
     }
 
-    // Confirm submission
+    setValidationBanner(null);
+
     const confirmed = window.confirm(
-      'Are you sure you want to submit your exam? You cannot change your answers after submission.'
+      'Are you sure you want to submit your exam? You cannot change your answers after submission.',
     );
 
     if (!confirmed) return;
+
+    setSubmitError(null);
 
     try {
       setSubmitting(true);
@@ -176,15 +380,26 @@ export default function ExamPage() {
       const data = await response.json();
 
       if (data.error) {
-        alert(`Error: ${data.error}`);
-        if (data.missingQuestions) {
-          setValidationErrors(data.missingQuestions);
-          scrollToQuestion(data.missingQuestions[0]);
+        setSubmitError(data.message || data.error);
+        if (Array.isArray(data.missingQuestions) && data.missingQuestions.length > 0) {
+          const missing = data.missingQuestions as number[];
+          setValidationErrors(missing);
+          scrollToQuestion(missing[0]);
         }
         return;
       }
 
-      // Success - show results
+      setAccessCheck((prev) =>
+        prev
+          ? {
+              ...prev,
+              examCompleted: true,
+              examScore: data.score ?? null,
+              hasAccess: prev.isAdmin ? prev.hasAccess : false,
+            }
+          : null,
+      );
+
       setExamResult({
         completed: true,
         score: data.score,
@@ -193,126 +408,241 @@ export default function ExamPage() {
         submittedAt: data.submittedAt,
         message: data.message,
       });
-    } catch (error: any) {
+      setCelebrateSubmit(true);
+      if (!accessCheck?.isAdmin && userEmail) {
+        try {
+          localStorage.removeItem(examTimerStorageKey(userEmail));
+        } catch {
+          /* ignore */
+        }
+      }
+    } catch (error: unknown) {
       console.error('Error submitting exam:', error);
-      alert('Failed to submit exam. Please try again.');
+      setSubmitError('Failed to submit exam. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const answeredCount = examQuestions.filter((q) => {
+    const a = answers[q.id.toString()];
+    return a && ['A', 'B', 'C', 'D'].includes(a.toUpperCase());
+  }).length;
+
+  /** Shown only after submit (or server) validation — which numbers are still missing */
+  const missingQuestionIds = [...validationErrors].sort((a, b) => a - b);
+
   if (loading || checkingAccess) {
     return (
-      <>
-        <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-500 mx-auto mb-4" />
-            <p className="text-zinc-400">Loading exam...</p>
-          </div>
+      <PageContainer title="Final Exam" subtitle="Loading…">
+        <div className="flex min-h-[40vh] flex-col items-center justify-center">
+          <Loader2 className="mb-4 h-8 w-8 animate-spin text-orange-500" />
+          <p className="text-zinc-400">Loading exam...</p>
         </div>
-      </>
+      </PageContainer>
     );
   }
 
   if (!accessCheck) {
     return (
-      <>
-        <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center p-4">
-          <div className="text-center">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-zinc-300">Failed to load exam access information.</p>
-          </div>
+      <PageContainer title="Final Exam" subtitle="Access check failed">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+          <p className="text-zinc-300">Failed to load exam access information.</p>
+          <Link
+            href="/dashboard"
+            className="mt-6 text-sm font-semibold text-orange-400 hover:text-orange-300"
+          >
+            Back to dashboard →
+          </Link>
         </div>
-      </>
+      </PageContainer>
     );
   }
 
-  // Show access denied screen
   if (!accessCheck.hasAccess) {
     return (
-      <>
-        <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-8 text-center">
-            <Lock className="w-16 h-16 text-orange-500 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-white mb-4">Exam Locked</h1>
-            <p className="text-zinc-400 mb-6">{accessCheck.message}</p>
-            
-            {!accessCheck.chapter21Completed && (
-              <div className="bg-zinc-900/50 rounded-lg p-4 mb-4">
-                <p className="text-sm text-zinc-300 mb-2">Complete Chapter 21 first</p>
-                <button
-                  onClick={() => router.push('/chapters')}
-                  className="text-orange-500 hover:text-orange-400 underline"
-                >
-                  Go to Chapters →
-                </button>
-              </div>
-            )}
+      <PageContainer title="Final Exam" subtitle="Certification assessment">
+        <div className="mx-auto max-w-lg rounded-xl border border-zinc-700/80 bg-zinc-900/50 p-8 text-center">
+          <Lock className="mx-auto mb-6 h-16 w-16 text-orange-500" />
+          <h2 className="mb-4 text-xl font-bold text-white">Exam locked</h2>
+          <p className="mb-6 text-zinc-400">{accessCheck.message}</p>
 
-            {!accessCheck.hasAdminAccess && accessCheck.chapter21Completed && (
-              <div className="bg-zinc-900/50 rounded-lg p-4">
-                <p className="text-sm text-zinc-300">
-                  ⏳ Waiting for admin approval. Please contact your administrator.
-                </p>
-              </div>
-            )}
-          </div>
+          {!accessCheck.chapter21Completed && (
+            <div className="mb-4 rounded-lg bg-black/30 p-4">
+              <p className="mb-2 text-sm text-zinc-300">Complete Chapter 21 (wrap-up) first.</p>
+              <Link
+                href="/chapters"
+                className="text-sm font-semibold text-orange-400 hover:text-orange-300"
+              >
+                Go to chapters →
+              </Link>
+            </div>
+          )}
+
+          {!accessCheck.hasAdminAccess && accessCheck.chapter21Completed && (
+            <div className="rounded-lg bg-black/30 p-4">
+              <p className="text-sm text-zinc-300">
+                Waiting for admin approval. Contact your administrator if this persists.
+              </p>
+            </div>
+          )}
+
+          <Link
+            href="/dashboard"
+            className="mt-6 inline-block text-sm font-semibold text-zinc-400 hover:text-zinc-200"
+          >
+            ← Dashboard
+          </Link>
         </div>
-      </>
+      </PageContainer>
     );
   }
 
-  // Show exam results if already completed (but allow admins to retake)
   if (accessCheck.examCompleted && examResult?.completed && !accessCheck.isAdmin) {
+    const passed = (examResult.score ?? 0) >= PASS_MARK;
     return (
       <>
-        <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 py-12 px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-8 text-center">
-              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
-              <h1 className="text-3xl font-bold text-white mb-4">Exam Completed</h1>
-              <div className="text-6xl font-bold text-orange-500 mb-2">
-                {examResult.score}/{examResult.totalQuestions}
-              </div>
-              <div className="text-2xl text-zinc-400 mb-6">{examResult.percentage}%</div>
-              <p className="text-zinc-300 mb-8">
-                Submitted on {new Date(examResult.submittedAt || '').toLocaleString()}
-              </p>
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                Back to Dashboard
-              </button>
+        <PageContainer title="Final Exam" subtitle="Your result">
+          <div className="mx-auto max-w-xl rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-zinc-900/90 to-zinc-950 p-8 text-center shadow-[0_0_40px_rgba(34,211,238,0.06)]">
+            <CheckCircle2 className="mx-auto mb-6 h-16 w-16 text-emerald-500" />
+            <h2 className="mb-2 text-2xl font-bold text-white">Exam completed</h2>
+            <p
+              className={`mb-6 text-sm font-medium ${passed ? 'text-emerald-400' : 'text-amber-400'}`}
+            >
+              {passed ? `Passed (70%+ — ${PASS_MARK}/${TOTAL_QUESTIONS}+)` : `Below passing — need ${PASS_MARK}/${TOTAL_QUESTIONS}+ (70%)`}
+            </p>
+            <div className="mb-2 text-5xl font-bold text-orange-500 sm:text-6xl">
+              {examResult.score}/{examResult.totalQuestions}
             </div>
+            <div className="mb-6 text-xl text-zinc-400">{examResult.percentage}%</div>
+            <p className="mb-8 text-sm text-zinc-400">
+              Submitted {new Date(examResult.submittedAt || '').toLocaleString()}
+            </p>
+            <p className="mb-6 text-xs text-zinc-500">
+              A confirmation email was sent if your inbox allows it. Your dashboard shows this score under certification.
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-flex rounded-lg bg-orange-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+            >
+              Back to dashboard
+            </Link>
           </div>
-        </div>
+        </PageContainer>
+        <ExamSubmitCelebration show={celebrateSubmit} onDismiss={dismissCelebrate} />
       </>
     );
   }
 
-  // Show exam form
+  const submitDisabled =
+    submitting ||
+    timeExpired ||
+    (!accessCheck?.isAdmin && remainingMs !== null && remainingMs <= 0);
+
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900">
-        <div className="max-w-5xl mx-auto px-4 pt-12 pb-8">
-          {/* Header */}
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-2">Final Exam</h1>
-                <p className="text-zinc-400">50 Multiple Choice Questions</p>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-sm text-zinc-400">
-                Answered: {Object.keys(answers).length} / 50
-              </div>
-            </div>
+    <PageContainer
+      title="Final Exam"
+      subtitle={
+        accessCheck?.isAdmin
+          ? `${TOTAL_QUESTIONS} multiple choice · 70% to pass (${PASS_MARK}+ correct) · admin: no time limit`
+          : `${TOTAL_QUESTIONS} multiple choice · 70% to pass (${PASS_MARK}+ correct) · 2-hour time limit`
+      }
+    >
+      <div className="relative">
+        <div
+          className={`transition-[filter] duration-300 ${
+            timeExpired ? 'pointer-events-none select-none blur-md brightness-[0.65]' : ''
+          }`}
+        >
+      <div className="max-w-6xl pb-24 md:pb-8">
+        {submitError ? (
+          <div
+            role="alert"
+            className="mb-6 flex gap-3 rounded-xl border border-red-500/40 bg-red-950/50 p-4 text-sm text-red-100"
+          >
+            <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-400" />
+            <p className="flex-1 leading-relaxed">{submitError}</p>
+            <button
+              type="button"
+              onClick={() => setSubmitError(null)}
+              className="rounded p-1 text-red-300 hover:bg-red-500/20"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
+        ) : null}
+        {validationBanner ? (
+          <div
+            role="alert"
+            className="mb-6 flex gap-3 rounded-xl border border-red-500/40 bg-red-950/40 p-4 text-sm text-red-100"
+          >
+            <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-400" />
+            <p className="flex-1 leading-relaxed">{validationBanner}</p>
+            <button
+              type="button"
+              onClick={() => setValidationBanner(null)}
+              className="rounded p-1 text-red-300 hover:bg-red-500/20"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
 
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+          {/* Stays fixed in view while scrolling (below site header) */}
+          <aside
+            className="w-full shrink-0 lg:w-72 xl:w-80 lg:sticky lg:top-24 lg:z-10 lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
+          >
+            <div className="sticky top-14 z-20 rounded-2xl border border-cyan-500/20 bg-zinc-950/95 p-4 shadow-[0_0_30px_rgba(34,211,238,0.06)] backdrop-blur-md sm:top-16 lg:static lg:top-auto lg:z-auto lg:border-cyan-500/15 lg:bg-zinc-950/90 lg:p-5 lg:backdrop-blur-none">
+              <p className="text-sm text-zinc-400">
+                Progress:{' '}
+                <span className="font-semibold text-cyan-100">
+                  {answeredCount} / {TOTAL_QUESTIONS}
+                </span>{' '}
+                answered
+              </p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-orange-600 to-cyan-500 transition-all duration-300"
+                  style={{ width: `${TOTAL_QUESTIONS ? (answeredCount / TOTAL_QUESTIONS) * 100 : 0}%` }}
+                />
+              </div>
+              {accessCheck?.isAdmin ? (
+                <p className="mt-3 border-t border-zinc-800/80 pt-3 text-xs text-zinc-500">
+                  Admin preview — no exam time limit.
+                </p>
+              ) : remainingMs !== null ? (
+                <div className="mt-3 border-t border-zinc-800/80 pt-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                    Time remaining (2h max)
+                  </p>
+                  <p
+                    className={`mt-1 font-mono text-xl font-bold tabular-nums sm:text-2xl ${
+                      remainingMs <= 15 * 60 * 1000 ? 'text-amber-400' : 'text-cyan-200'
+                    }`}
+                  >
+                    {formatCountdown(remainingMs)}
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-zinc-500">Preparing timer…</p>
+              )}
+              <Link
+                href="/dashboard"
+                className="mt-4 inline-block text-sm font-medium text-zinc-500 hover:text-zinc-300"
+              >
+                ← Dashboard
+              </Link>
+            </div>
+          </aside>
+
+          <div className="min-w-0 flex-1 space-y-5">
           {/* Questions */}
-          <div className="space-y-6">
+          <div className="space-y-4">
           {examQuestions.map((question) => {
             const questionId = question.id;
             const selectedAnswer = answers[questionId.toString()];
@@ -324,21 +654,23 @@ export default function ExamPage() {
                 ref={(el) => {
                   questionRefs.current[questionId] = el;
                 }}
-                className={`bg-zinc-800/50 border rounded-lg p-6 ${
-                  hasError ? 'border-red-500' : 'border-zinc-700'
-                }`}
+                className={`rounded-xl border bg-zinc-950/60 p-4 sm:p-5 ${
+                  hasError
+                    ? 'border-red-500/70 ring-1 ring-red-500/30'
+                    : 'border-zinc-800/90 hover:border-cyan-500/20'
+                } transition-colors`}
               >
-                <div className="flex items-start gap-3 mb-4">
-                  <span className="text-lg font-semibold text-orange-500">
-                    {questionId}.
-                  </span>
-                  <p className="text-white text-lg flex-1">{question.question}</p>
+                <div className="mb-2.5 flex items-start gap-2.5">
+                  <span className="text-base font-bold tabular-nums text-cyan-400 sm:text-lg">{questionId}.</span>
+                  <p className="flex-1 text-sm leading-snug text-zinc-100 sm:text-base sm:leading-relaxed">
+                    {question.question}
+                  </p>
                   {hasError && (
                     <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                   )}
                 </div>
 
-                <div className="space-y-3 ml-8">
+                <div className="ml-0 space-y-1.5 sm:ml-7">
                   {(['A', 'B', 'C', 'D'] as const).map((option) => {
                     const optionText = question.options[option];
                     const isSelected = selectedAnswer === option;
@@ -346,11 +678,11 @@ export default function ExamPage() {
                     return (
                       <label
                         key={option}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                        className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 transition-colors sm:gap-2.5 sm:p-2.5 ${
                           isSelected
-                            ? 'bg-orange-500/20 border-2 border-orange-500'
-                            : 'bg-zinc-900/50 border-2 border-transparent hover:bg-zinc-900/70'
-                        } ${hasError ? 'border-red-500' : ''}`}
+                            ? 'border-orange-500 bg-orange-500/15 shadow-[0_0_16px_rgba(249,115,22,0.1)]'
+                            : 'border-transparent bg-zinc-900/40 hover:border-zinc-600 hover:bg-zinc-900/70'
+                        } ${hasError && !isSelected ? 'border-red-500/40' : ''}`}
                       >
                         <input
                           type="radio"
@@ -358,10 +690,10 @@ export default function ExamPage() {
                           value={option}
                           checked={isSelected}
                           onChange={() => handleAnswerChange(questionId, option)}
-                          className="w-5 h-5 text-orange-500 focus:ring-orange-500 focus:ring-2"
+                          className="h-4 w-4 shrink-0 text-orange-500 focus:ring-2 focus:ring-orange-500"
                         />
-                        <span className="font-semibold text-zinc-300 w-6">{option}.</span>
-                        <span className="text-zinc-300 flex-1">{optionText}</span>
+                        <span className="w-5 shrink-0 text-sm font-semibold text-zinc-300">{option}.</span>
+                        <span className="flex-1 text-sm text-zinc-300">{optionText}</span>
                       </label>
                     );
                   })}
@@ -371,43 +703,117 @@ export default function ExamPage() {
           })}
           </div>
 
-          {/* Submit Section */}
-          <div className="mt-8 bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                {Object.keys(answers).length === 50 ? (
-                  <span className="text-green-500 font-semibold">✓ All questions answered</span>
-                ) : (
-                  <div className="flex flex-col">
-                    <span className="text-orange-500 font-semibold">
-                      ⚠ {50 - Object.keys(answers).length} question{50 - Object.keys(answers).length > 1 ? 's' : ''} remaining
-                    </span>
-                    {validationErrors.length > 0 && (
-                      <span className="text-red-400 text-xs mt-1">
-                        Unanswered: {validationErrors.slice(0, 5).map(q => `Q${q}`).join(', ')}{validationErrors.length > 5 ? ` +${validationErrors.length - 5} more` : ''}
-                      </span>
-                    )}
+        {/* Submit — desktop / tablet */}
+        <div className="hidden rounded-2xl border border-zinc-800/80 bg-zinc-950/90 p-6 md:block">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 text-sm">
+              {answeredCount === TOTAL_QUESTIONS ? (
+                <span className="font-semibold text-emerald-400">✓ All questions answered — ready to submit</span>
+              ) : missingQuestionIds.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <span className="font-semibold text-red-400">
+                    Missing {missingQuestionIds.length} answer{missingQuestionIds.length !== 1 ? 's' : ''} — tap to jump
+                  </span>
+                  <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                    {missingQuestionIds.map((id) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => scrollToQuestion(id)}
+                        className="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-200 hover:bg-red-500/20"
+                      >
+                        Q{id}
+                      </button>
+                    ))}
                   </div>
-                )}
-              </div>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="px-8 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit Exam'
-                )}
-              </button>
+                </div>
+              ) : (
+                <span className="font-semibold text-orange-400">
+                  {TOTAL_QUESTIONS - answeredCount} question{TOTAL_QUESTIONS - answeredCount !== 1 ? 's' : ''}{' '}
+                  remaining — submit to see which are missing
+                </span>
+              )}
             </div>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitDisabled}
+              className="flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-8 py-3 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-zinc-700"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit exam'
+              )}
+            </button>
+          </div>
+        </div>
           </div>
         </div>
       </div>
+
+      {/* Sticky submit — mobile */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-cyan-500/20 bg-zinc-950/98 px-3 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.4)] backdrop-blur-md supports-[padding:max(0px)]:pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
+      >
+        <div className="mx-auto flex max-w-6xl flex-col gap-2">
+          {!accessCheck?.isAdmin && remainingMs !== null ? (
+            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-1.5 text-[11px]">
+              <span className="text-zinc-500">Time left</span>
+              <span
+                className={`font-mono font-bold tabular-nums ${
+                  remainingMs <= 15 * 60 * 1000 ? 'text-amber-400' : 'text-cyan-300'
+                }`}
+              >
+                {formatCountdown(remainingMs)}
+              </span>
+            </div>
+          ) : null}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-zinc-400">
+              <span className="font-semibold text-cyan-200">{answeredCount}</span> / {TOTAL_QUESTIONS}
+            </p>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitDisabled}
+              className="flex min-w-[7rem] items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-zinc-700"
+            >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {submitting ? '…' : 'Submit'}
+            </button>
+          </div>
+          {missingQuestionIds.length > 0 ? (
+            <div className="max-h-20 overflow-y-auto border-t border-zinc-800/80 pt-2">
+              <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-red-400/90">
+                Missing ({missingQuestionIds.length})
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {missingQuestionIds.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => scrollToQuestion(id)}
+                    className="rounded border border-red-500/40 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-200"
+                  >
+                    Q{id}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+        </div>
+        {timeExpired ? (
+          <ExamTimeExpiredModal onOk={() => void handleTimeExpiredOk()} okPending={timeExpiredOkPending} />
+        ) : null}
+      </div>
+    </PageContainer>
+    <ExamSubmitCelebration show={celebrateSubmit} onDismiss={dismissCelebrate} />
     </>
   );
 }

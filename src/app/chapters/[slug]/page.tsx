@@ -20,6 +20,7 @@ import { SeedPhraseGrid } from "@/components/SeedPhraseGrid";
 import { BtcSatsConverter } from "@/components/BtcSatsConverter";
 import { ChapterSectionAnimated } from "@/components/chapters/ChapterSectionAnimated";
 import { ChapterTechVectors } from "@/components/chapters/ChapterTechVectors";
+import { WrapUpResourcesContent } from "@/components/chapters/WrapUpResourcesContent";
 import { ZoomableImage } from "@/components/ZoomableImage";
 import { KeysChapterHeroQuote } from "@/components/chapters/KeysChapterHeroQuote";
 import { BlockchainBasicsHeroQuote } from "@/components/chapters/BlockchainBasicsHeroQuote";
@@ -92,16 +93,34 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     ? chaptersContent.find((c) => c.number === chapter.number - 1)
     : null;
 
+  const isWrapUpResources = chapter.slug === "wrap-up-resources";
+
   return (
     <AdminModeWrapper>
       <ChapterAccessCheck chapterNumber={chapter.number} chapterSlug={chapter.slug}>
         <ChapterCompletionTracker chapterNumber={chapter.number} chapterSlug={chapter.slug} />
         <PageContainer
-      title={`${chapter.number < 10 ? `Chapter ${chapter.number}` : `Chapter ${chapter.number}`} · ${chapter.title}`}
-      subtitle={`${chapter.level} · ${chapter.duration} · ${chapter.type}`}
+      title={
+        isWrapUpResources
+          ? undefined
+          : `${chapter.number < 10 ? `Chapter ${chapter.number}` : `Chapter ${chapter.number}`} · ${chapter.title}`
+      }
+      subtitle={isWrapUpResources ? undefined : `${chapter.level} · ${chapter.duration} · ${chapter.type}`}
     >
       <div className="space-y-8 text-sm text-zinc-100 sm:text-base">
-        {/* Hero */}
+        {isWrapUpResources ? (
+          previousChapter ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Link
+                href={`/chapters/${previousChapter.slug}`}
+                className="inline-flex items-center justify-center rounded-lg border border-purple-400/40 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-200 transition hover:border-purple-400/70 hover:bg-purple-500/20"
+              >
+                ← Chapter {previousChapter.number}
+              </Link>
+            </div>
+          ) : null
+        ) : (
+        /* Hero */
         <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
@@ -141,11 +160,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             </div>
           </div>
         </section>
+        )}
 
         {chapter.slug === "keys-and-transactions" ? <KeysChapterHeroQuote /> : null}
         {chapter.slug === "blockchain-basics" ? <BlockchainBasicsHeroQuote /> : null}
 
-        {/* What you will learn */}
+        {!isWrapUpResources ? (
         <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
           <h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
             What You Will Learn
@@ -156,8 +176,11 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             ))}
           </ul>
         </section>
+        ) : null}
 
-        {/* Main lesson content */}
+        {isWrapUpResources ? (
+        <WrapUpResourcesContent />
+        ) : (
         <section className="relative space-y-4 rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
           <ChapterTechVectors />
           <h2 className="relative text-base font-semibold text-zinc-100 sm:text-lg">
@@ -1073,7 +1096,10 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             })}
           </div>
         </section>
+        )}
 
+        {!isWrapUpResources ? (
+        <>
         {/* Assignments */}
         <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
           <h2 className="text-base font-semibold text-zinc-100 sm:text-lg mb-4">
@@ -1188,7 +1214,11 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             />
           ) : null}
         </section>
+        </>
+        ) : null}
 
+        {!isWrapUpResources ? (
+        <>
         {/* Summary */}
         <section className="rounded-xl border border-green-400/25 bg-black/70 p-5 sm:p-6">
           <h2 className="text-base font-semibold text-green-200 sm:text-lg">
@@ -1243,6 +1273,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             })}
           </div>
         </section>
+        </>
+        ) : null}
 
         {/* Navigation CTA */}
         <div className="flex items-center justify-between gap-4">

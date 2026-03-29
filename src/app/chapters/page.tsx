@@ -129,7 +129,7 @@ export default function ChaptersPage() {
   const handleChapterClick = (chapterNumber: number, chapterTitle: string) => {
     // Admins can always access, so if admin is logged in and chapter is unlocked, navigate directly
     if (isAdminAuth && isChapterUnlocked(chapterNumber)) {
-      router.push(`/chapters/${chapterTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`);
+      router.push(`/chapters/${generateSlug(chapterTitle)}`);
       return;
     }
 

@@ -732,3 +732,66 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
   }
 }
 
+/* Final exam — submit success overlay */
+@keyframes exam-submit-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes exam-submit-card-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.02) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes exam-submit-check-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.exam-submit-backdrop-in {
+  animation: exam-submit-backdrop-in 0.28s ease-out forwards;
+}
+
+.exam-submit-card-in {
+  animation: exam-submit-card-in 0.42s ease-out forwards;
+}
+
+.exam-submit-check-pop {
+  animation: exam-submit-check-pop 0.55s cubic-bezier(0.34, 1.45, 0.64, 1) 0.08s forwards;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-submit-backdrop-in,
+  .exam-submit-card-in,
+  .exam-submit-check-pop {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+

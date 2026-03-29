@@ -2464,6 +2464,94 @@ export const chaptersContent: ChapterContent[] = [
       "Network consensus",
       "Cryptographic scarcity",
     ],
+    nextSlug: "wrap-up-resources",
+  },
+  {
+    slug: "wrap-up-resources",
+    number: 21,
+    title: "Wrap-Up & Resources",
+    level: "Advanced",
+    duration: "40–50 min",
+    type: "Theory",
+    hook: "Close the loop: definitions, primary sources, and where to go next in your Bitcoin journey.",
+    learn: [
+      "Glossary recap of core terms used across the course",
+      "Primary sources and local-first tools to deepen learning",
+      "How to keep practicing verification, security, and self-custody",
+    ],
+    sections: [
+      {
+        heading: "Introduction",
+        paragraphs: [
+          "You have worked through the story of money, the limits of fiat, Bitcoin’s design, custody, mining, Lightning, and more. This final chapter is not new theory — it is a compass: concise definitions, trustworthy references, and practical next steps so you keep learning safely after the cohort ends.",
+        ],
+      },
+      {
+        heading: "21.1 Course Summary — What to Remember",
+        paragraphs: [
+          "A few ideas repeat across every chapter: verify instead of trusting marketing, protect private keys and recovery words, understand trade-offs (convenience vs sovereignty), and treat fixed-supply digital scarcity as a different category from inflated fiat.",
+        ],
+        bullets: [
+          "Money functions and sound-money properties still matter in a digital world.",
+          "Bitcoin’s security model combines proof-of-work, full nodes, and economic incentives.",
+          "Self-custody and good operational security are skills, not one-time setup tasks.",
+        ],
+      },
+      {
+        heading: "21.2 Glossary & Key Terms (Quick Reference)",
+        paragraphs: [
+          "Use this list as a launch point; your notes and the earlier chapters remain the full reference.",
+        ],
+        bullets: [
+          "UTXO, address, seed phrase, PSBT, fee rate (sat/vB), mempool, confirmation, merkle root, difficulty adjustment, halving.",
+          "Layer 1 vs Layer 2 (e.g. Lightning) — settlement vs speed.",
+          "Hot vs cold signing; multi-sig; coin control; privacy vs fee trade-offs.",
+        ],
+      },
+      {
+        heading: "21.3 Primary Sources & Local-First Tools",
+        paragraphs: [
+          "Prefer original documents and open-source tools you can run yourself. When in doubt, read the sources and verify checksums or builds from projects you trust.",
+        ],
+        bullets: [
+          "Bitcoin Core, Bitcoin whitepaper, BIPs repository.",
+          "Block explorers and your own node for checking transactions and policy.",
+          "Wallet projects with reproducible builds and clear security models.",
+        ],
+        callouts: [
+          {
+            type: "tip",
+            content: "Bookmark a short list of tools you actually use; fewer trusted surfaces is simpler and safer than dozens of half-tested apps.",
+          },
+        ],
+      },
+      {
+        heading: "21.4 Next Steps — Stay Secure, Stay Curious",
+        paragraphs: [
+          "Continue with small, deliberate experiments: run a node when you can, practice restoring a wallet from backup, and teach one concept you understand well. Community learning and open-source collaboration are part of how Bitcoin improves over time.",
+        ],
+      },
+    ],
+    activities: [
+      "Final reflection — From Failing Fiat to Sovereign Bitcoin:",
+      "• Name one habit you will keep (e.g. verifying addresses, labeling UTXOs, avoiding phishing links).",
+      "• What is one topic you want to study next — technical (Script, Lightning), operational (multi-sig), or economic (monetary history)?",
+      "• Who could you responsibly help with one clear lesson you learned in this course?",
+    ],
+    summary: [
+      "This wrap-up ties together themes from the full curriculum rather than introducing new consensus rules.",
+      "A compact glossary helps you retrieve vocabulary when reading docs or talking with peers.",
+      "Primary sources and local-first tools keep you anchored to verifiable reality.",
+      "Small ongoing practices (backups, verification, node usage) matter more than one-time cramming.",
+    ],
+    keyTerms: [
+      "Self-custody",
+      "Verification",
+      "Primary sources",
+      "Operational security",
+      "Layer 2",
+      "Open source",
+    ],
     nextSlug: undefined,
   },
 ];

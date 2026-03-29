@@ -666,7 +666,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     role: 'Student',
     courseProgress: 0,
     chaptersCompleted: 0,
-    totalChapters: 20,
+    totalChapters: 21,
     assignmentsCompleted: 0,
     totalAssignments: 4,
     satsEarned: 0,
@@ -869,9 +869,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   // Use userData if available, otherwise fallback to chapterStatus
   const chaptersCompleted = userData?.student?.chaptersCompleted ?? 
     Object.values(chapterStatus).filter((status) => status.isCompleted === true).length;
+
+  const totalChapters = 21;
   
   // Calculate course progress from completed chapters (dynamic)
-  const courseProgress = Math.round((chaptersCompleted / 20) * 100);
+  const courseProgress = Math.round((chaptersCompleted / totalChapters) * 100);
   
   // Get attendance from userData if available, otherwise from student data
   const attendance = userData?.student?.attendancePercent ?? student.attendancePercent ?? student.attendanceRate ?? 0;
@@ -884,7 +886,6 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const satsPending = userData?.student?.satsPending ?? satsTotals.pending ?? 0;
   
   // Certification requirements
-  const totalChapters = 20;
   const totalAssignments = 4;
   const requiredAttendance = 80; // 80%
   const requiredSats = 500;
@@ -993,7 +994,12 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     }
   };
 
-  const hasPassedFinalAssessment = examResult ? examResult.score >= 35 : false; // 70% passing score (35/50)
+  const examPassMark = examResult
+    ? Math.max(1, Math.ceil(examResult.totalQuestions * 0.7))
+    : Math.ceil(50 * 0.7);
+  const hasPassedFinalAssessment = examResult
+    ? examResult.score >= examPassMark
+    : false;
   
   // Calculate certification progress (20% per requirement)
   const certificationRequirements = [
@@ -1334,7 +1340,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       <div className="mb-2 text-2xl">📘</div>
                       <div className="text-sm text-zinc-400">Chapters</div>
                       <div className="text-lg font-semibold text-cyan-300">
-                            {chaptersCompleted}/20
+                            {chaptersCompleted}/{totalChapters}
                       </div>
                     </div>
                     <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
@@ -1936,20 +1942,24 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           Pass final exam (70% required)
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {examResult ? (
+                      <div className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                        {loadingExam ? (
+                          <span className="text-xs text-zinc-500">Loading exam…</span>
+                        ) : examResult ? (
                           <span className={hasPassedFinalAssessment ? 'text-green-300 font-semibold' : 'text-red-400'}>
                             {examResult.score}/{examResult.totalQuestions} ({examResult.percentage}%)
                           </span>
                         ) : examAccess?.hasAccess && hasCompletedAllChapters ? (
                           <Link
                             href="/exam"
-                            className="text-orange-400 hover:text-orange-300 underline text-sm"
+                            className="text-sm text-orange-400 underline hover:text-orange-300"
                           >
                             Take Exam →
                           </Link>
                         ) : !hasCompletedAllChapters ? (
-                          <span className="text-zinc-500 text-sm">Complete all 20 chapters first</span>
+                          <span className="text-right text-sm text-zinc-500">
+                            Complete all {totalChapters} chapters first
+                          </span>
                         ) : examAccess?.chapter21Completed ? (
                           <span className="text-zinc-500 text-sm">Waiting for access</span>
                         ) : (

@@ -1101,3 +1101,250 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
     };
   }
 }
+
+export interface FinalExamResultEmailData {
+  studentEmail: string;
+  studentName?: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  passed: boolean;
+  passLabel: string;
+  submittedAtIso: string;
+}
+
+/**
+ * Notify the student by email after a successful final exam submission (Resend).
+ * Does not throw; logs on failure so the API can still return success.
+ */
+export async function sendFinalExamResultEmail(
+  data: FinalExamResultEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('❌ RESEND_API_KEY not configured. Final exam result email skipped.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const resend = getResendClient();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const emailValidation = validateAndNormalizeEmail(data.studentEmail);
+    if (!emailValidation.valid || !emailValidation.normalized) {
+      return { success: false, error: 'Invalid student email' };
+    }
+
+    const to = emailValidation.normalized;
+    const name = (data.studentName || '').trim() || 'there';
+    const dashboardUrl = `${SITE_URL.replace(/\/$/, '')}/dashboard`;
+    const submitted = new Date(data.submittedAtIso).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const subject = data.passed
+      ? `Final exam submitted — ${data.percentage}% (${data.score}/${data.totalQuestions}) ✓`
+      : `Final exam submitted — ${data.percentage}% (${data.score}/${data.totalQuestions})`;
+
+    const passBlock = data.passed
+      ? `<p style="margin: 0 0 16px; font-size: 16px; color: #065f46;"><strong>✓ ${escapeHtmlForEmail(data.passLabel)}</strong></p>`
+      : `<p style="margin: 0 0 16px; font-size: 15px; color: #92400e;"><strong>Keep learning:</strong> review the course material and speak with your instructor if you want to improve.</p>`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <div style="background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%); padding: 22px; text-align: center; border-radius: 12px 12px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 20px;">Final exam submitted</h1>
+          </div>
+          <div style="background: #f9fafb; padding: 28px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+            <p style="margin: 0 0 12px; font-size: 16px;">Hi ${escapeHtmlForEmail(name)},</p>
+            <p style="margin: 0 0 20px; font-size: 15px; color: #374151;">
+              Good job — we&apos;ve recorded your final exam. Your score is saved to your account and appears on your <strong>dashboard</strong>.
+            </p>
+            <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #10b981; text-align: center;">
+              <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em;">Score</p>
+              <p style="margin: 0; font-size: 36px; font-weight: 700; color: #ea580c;">${data.score}<span style="font-size: 20px; color: #9ca3af;">/${data.totalQuestions}</span></p>
+              <p style="margin: 8px 0 0; font-size: 18px; font-weight: 600; color: #374151;">${data.percentage}%</p>
+            </div>
+            ${passBlock}
+            <p style="margin: 0 0 20px; font-size: 13px; color: #6b7280;">Submitted: ${escapeHtmlForEmail(submitted)}</p>
+            <a href="${dashboardUrl}" style="display: inline-block; background: #ea580c; color: white; text-decoration: none; padding: 12px 22px; border-radius: 8px; font-weight: 600; font-size: 15px;">Open dashboard</a>
+            <p style="margin: 24px 0 0; font-size: 13px; color: #9ca3af;">Questions? ${escapeHtmlForEmail(SUPPORT_EMAIL)}</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('❌ Final exam result email failed:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ Final exam result email sent to', to);
+    return { success: true };
+  } catch (e: any) {
+    console.error('❌ sendFinalExamResultEmail exception:', e?.message);
+    return { success: false, error: e?.message };
+  }
+}
+
+export interface ExamRetakeRequestAdminEmailData {
+  studentEmail: string;
+  studentName?: string;
+  reason: string;
+  requestId: string;
+}
+
+/** Notify admin when a student requests a final exam retake (e.g. time expired). */
+export async function sendExamRetakeRequestToAdmin(
+  data: ExamRetakeRequestAdminEmailData,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('❌ RESEND_API_KEY not configured. Retake request email skipped.');
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const resend = getResendClient();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@panafricanbitcoin.com';
+    const adminValidation = validateAndNormalizeEmail(adminEmail);
+    if (!adminValidation.valid || !adminValidation.normalized) {
+      return { success: false, error: 'Admin email not configured' };
+    }
+
+    const name = (data.studentName || '').trim() || data.studentEmail;
+    const subject = `Student requesting to retake final exam — ${data.studentEmail}`;
+    const adminUrl = `${SITE_URL.replace(/\/$/, '')}/admin`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <h1 style="font-size: 18px;">A student is requesting to retake the final exam</h1>
+          <p style="margin: 12px 0;">Review and approve or reject in the admin panel under <strong>Assessments → Final Exam Submissions</strong>.</p>
+          <p style="margin: 12px 0;"><strong>Student:</strong> ${escapeHtmlForEmail(name)}<br/>
+          <strong>Email:</strong> ${escapeHtmlForEmail(data.studentEmail)}</p>
+          <p style="margin: 12px 0;"><strong>Reason:</strong> ${escapeHtmlForEmail(data.reason)}</p>
+          <p style="margin: 12px 0; font-size: 13px; color: #6b7280;">Request ID: ${escapeHtmlForEmail(data.requestId)}</p>
+          <p style="margin: 20px 0 0;"><a href="${adminUrl}" style="color: #ea580c;">Open admin panel</a></p>
+        </body>
+      </html>
+    `;
+
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminValidation.normalized,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('❌ Retake request admin email failed:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Failed to send';
+    console.error('❌ sendExamRetakeRequestToAdmin:', msg);
+    return { success: false, error: msg };
+  }
+}
+
+export interface ExamRetakeDecisionEmailData {
+  studentEmail: string;
+  studentName?: string;
+  approved: boolean;
+  adminNote?: string | null;
+}
+
+export async function sendExamRetakeDecisionToStudent(
+  data: ExamRetakeDecisionEmailData,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const resend = getResendClient();
+    if (!resend) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const emailValidation = validateAndNormalizeEmail(data.studentEmail);
+    if (!emailValidation.valid || !emailValidation.normalized) {
+      return { success: false, error: 'Invalid student email' };
+    }
+
+    const to = emailValidation.normalized;
+    const name = (data.studentName || '').trim() || 'there';
+    const examUrl = `${SITE_URL.replace(/\/$/, '')}/exam`;
+    const subject = data.approved
+      ? 'Your final exam retake was approved'
+      : 'Update on your final exam retake request';
+
+    const bodyApproved = `
+      <p style="margin: 0 0 16px;">Hi ${escapeHtmlForEmail(name)},</p>
+      <p style="margin: 0 0 16px;">Your request for a new final exam session was <strong>approved</strong>. When you open the exam again, you <strong>start from the beginning</strong> (question 1) with a new full 2-hour timer. Answers from your timed-out attempt are not carried over.</p>
+      <p style="margin: 0 0 20px;"><a href="${examUrl}" style="display: inline-block; background: #ea580c; color: white; text-decoration: none; padding: 12px 22px; border-radius: 8px; font-weight: 600;">Open final exam</a></p>
+    `;
+
+    const bodyRejected = `
+      <p style="margin: 0 0 16px;">Hi ${escapeHtmlForEmail(name)},</p>
+      <p style="margin: 0 0 16px;">Your request for a new final exam session was <strong>not approved</strong>. If you have questions, reply to this thread or contact ${escapeHtmlForEmail(SUPPORT_EMAIL)}.</p>
+    `;
+
+    const noteBlock =
+      data.adminNote && data.adminNote.trim()
+        ? `<p style="margin: 16px 0; padding: 12px; background: #f3f4f6; border-radius: 8px; font-size: 14px;"><strong>Note:</strong> ${escapeHtmlForEmail(data.adminNote)}</p>`
+        : '';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 24px;">
+          ${data.approved ? bodyApproved : bodyRejected}
+          ${noteBlock}
+        </body>
+      </html>
+    `;
+
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('❌ Retake decision email failed:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Failed to send';
+    console.error('❌ sendExamRetakeDecisionToStudent:', msg);
+    return { success: false, error: msg };
+  }
+}

@@ -4,13 +4,17 @@ import { examQuestions } from '@/content/examQuestions';
 import { validateAndNormalizeEmail } from '@/lib/validation';
 import { requireStudent } from '@/lib/session';
 import { requireAdmin } from '@/lib/adminSession';
+import { sendFinalExamResultEmail } from '@/lib/email';
+
+const EXAM_TOTAL = examQuestions.length;
+const PASS_MARK = Math.ceil(EXAM_TOTAL * 0.7);
 
 /**
  * Submit final exam answers and calculate score
  * Validates that:
  * 1. Student has access
- * 2. All 50 questions have exactly one answer
- * 3. Student hasn't already submitted
+ * 2. Every exam question has exactly one valid A–D answer
+ * 3. Student hasn't already submitted (non-admin)
  */
 export async function POST(req: NextRequest) {
   try {
@@ -131,33 +135,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Step 3: Validate answers - check all 50 questions have exactly one answer
+    // Step 3: Validate answers — every question in examQuestions must have A–D
     const validationErrors: number[] = [];
     const validAnswers: Record<string, string> = {};
 
-    for (let i = 1; i <= 50; i++) {
-      const answer = answers[i.toString()];
-      
+    for (const q of examQuestions) {
+      const answer = answers[q.id.toString()];
+
       if (!answer || typeof answer !== 'string') {
-        validationErrors.push(i);
+        validationErrors.push(q.id);
         continue;
       }
 
-      // Validate answer is A, B, C, or D
       if (!['A', 'B', 'C', 'D'].includes(answer.toUpperCase())) {
-        validationErrors.push(i);
+        validationErrors.push(q.id);
         continue;
       }
 
-      validAnswers[i.toString()] = answer.toUpperCase();
+      validAnswers[q.id.toString()] = answer.toUpperCase();
     }
 
     if (validationErrors.length > 0) {
+      const missingSorted = [...validationErrors].sort((a, b) => a - b);
       return NextResponse.json(
         {
           error: 'Invalid answers',
-          missingQuestions: validationErrors,
-          message: `Please answer all questions. Missing answers for questions: ${validationErrors.join(', ')}`,
+          missingQuestions: missingSorted,
+          message: `Please answer all questions. Missing or invalid: ${missingSorted.join(', ')}`,
         },
         { status: 400 }
       );
@@ -183,8 +187,8 @@ export async function POST(req: NextRequest) {
     });
 
     const score = correctCount;
-    const totalQuestions = 50;
-    const percentage = Math.round((score / totalQuestions) * 100);
+    const totalQuestions = EXAM_TOTAL;
+    const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
 
     // Step 5: Store exam result (update if admin and already exists, otherwise insert)
     let examResult;
@@ -261,6 +265,28 @@ export async function POST(req: NextRequest) {
         );
       }
       examResult = newResult;
+    }
+
+    // Email student (non-blocking; skip admins testing the flow)
+    if (!isAdmin) {
+      const passed = score >= PASS_MARK;
+      const passLabel = passed
+        ? `Passed — you met the 70% requirement (${PASS_MARK}+ correct of ${totalQuestions})`
+        : `Not yet passing — 70% required (${PASS_MARK}+ correct of ${totalQuestions})`;
+
+      void sendFinalExamResultEmail({
+        studentEmail: emailValidation.normalized,
+        score,
+        totalQuestions,
+        percentage,
+        passed,
+        passLabel,
+        submittedAtIso: examResult.submitted_at || new Date().toISOString(),
+      }).then((r) => {
+        if (!r.success) {
+          console.warn('Final exam confirmation email not sent:', r.error);
+        }
+      });
     }
 
     // Step 6: Update students table with exam score (if student record exists)

@@ -794,7 +794,9 @@ export default function AdminDashboardPage() {
     }
   };
   const [examAccessList, setExamAccessList] = useState<any[]>([]);
+  const [examRetakeRequests, setExamRetakeRequests] = useState<any[]>([]);
   const [loadingExamAccess, setLoadingExamAccess] = useState(false);
+  const [resolvingRetakeRequestId, setResolvingRetakeRequestId] = useState<string | null>(null);
   
   // Student Sats Rewards state
   const [studentSatsRewards, setStudentSatsRewards] = useState<any[]>([]);
@@ -2624,14 +2626,49 @@ export default function AdminDashboardPage() {
     try {
       examAccessFetchingRef.current = true;
       setLoadingExamAccess(true);
-      const res = await fetchWithAuth('/api/admin/exam/access-list');
-      const data = await res.json();
-      if (data.students) setExamAccessList(data.students);
+      const [accessOutcome, retakeOutcome] = await Promise.allSettled([
+        fetchWithAuth('/api/admin/exam/access-list'),
+        fetchWithAuth('/api/admin/exam/retake-requests'),
+      ]);
+      if (accessOutcome.status === 'fulfilled' && accessOutcome.value.ok) {
+        const accessData = await accessOutcome.value.json();
+        if (accessData.students) setExamAccessList(accessData.students);
+      }
+      if (retakeOutcome.status === 'fulfilled' && retakeOutcome.value.ok) {
+        const retakeData = await retakeOutcome.value.json();
+        if (retakeData.requests) setExamRetakeRequests(retakeData.requests);
+      } else {
+        setExamRetakeRequests([]);
+      }
     } catch (err) {
       console.error('Error fetching exam access:', err);
     } finally {
       setLoadingExamAccess(false);
       examAccessFetchingRef.current = false;
+    }
+  };
+
+  const resolveExamRetakeRequest = async (requestId: string, action: 'approve' | 'reject') => {
+    if (!admin) return;
+    setResolvingRetakeRequestId(requestId);
+    try {
+      const res = await fetchWithAuth('/api/admin/exam/retake-requests/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update request');
+      setAckPopup({
+        title: action === 'approve' ? 'Retake approved' : 'Request rejected',
+        message: data.message || 'Done.',
+      });
+      await fetchExamAccess();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed';
+      setAckPopup({ title: 'Error', message: msg });
+    } finally {
+      setResolvingRetakeRequestId(null);
     }
   };
 
@@ -7410,6 +7447,197 @@ export default function AdminDashboardPage() {
               </>
             )}
 
+
+            {/* Assessments — Final exam access, submissions, retake requests */}
+            {activeSubMenu === 'final-exam-submissions' && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-100">Final exam submissions</h2>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Grant exam access, see who has submitted, and handle students who ran out of time: they press OK, go to
+                    the dashboard, and you get an email. Approve so they can open the exam again{' '}
+                    <strong className="font-medium text-zinc-400">from question 1</strong> with a full 2-hour attempt.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-zinc-200">Retake requests (session time ran out)</h3>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Pending requests appear below. Approve or reject here (or use the link in the email).
+                  </p>
+                  {loadingExamAccess && examRetakeRequests.length === 0 ? (
+                    <p className="mt-4 text-sm text-zinc-500">Loading…</p>
+                  ) : examRetakeRequests.filter((r: { status: string }) => r.status === 'pending').length === 0 ? (
+                    <p className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-500">
+                      No students are waiting for a retake right now.
+                    </p>
+                  ) : (
+                    <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
+                      <table className="w-full min-w-[640px] text-left text-sm text-zinc-300">
+                        <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
+                          <tr>
+                            <th className="px-4 py-3">Student</th>
+                            <th className="px-4 py-3">Reason</th>
+                            <th className="px-4 py-3">Requested</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {examRetakeRequests
+                            .filter((r: { status: string }) => r.status === 'pending')
+                            .map((r: any) => (
+                              <tr key={r.id} className="border-b border-zinc-800/80 last:border-0">
+                                <td className="px-4 py-3">
+                                  <div className="font-medium text-zinc-200">{r.studentName || '—'}</div>
+                                  <div className="text-xs text-zinc-500">{r.studentEmail || r.student_id}</div>
+                                </td>
+                                <td className="max-w-[200px] px-4 py-3 text-xs text-zinc-400">
+                                  {r.reason || '—'}
+                                </td>
+                                <td className="whitespace-nowrap px-4 py-3 text-xs text-zinc-500">
+                                  {r.created_at
+                                    ? new Date(r.created_at).toLocaleString(undefined, {
+                                        dateStyle: 'medium',
+                                        timeStyle: 'short',
+                                      })
+                                    : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      disabled={resolvingRetakeRequestId === r.id}
+                                      onClick={() => resolveExamRetakeRequest(r.id, 'approve')}
+                                      className="rounded-lg bg-emerald-600/90 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={resolvingRetakeRequestId === r.id}
+                                      onClick={() => resolveExamRetakeRequest(r.id, 'reject')}
+                                      className="rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 disabled:opacity-50"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-zinc-200">Students and exam access</h3>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Grant or revoke final exam access. Scores appear after submission.
+                  </p>
+                  {loadingExamAccess && examAccessList.length === 0 ? (
+                    <p className="mt-4 text-sm text-zinc-500">Loading…</p>
+                  ) : (
+                    <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
+                      <table className="w-full min-w-[720px] text-left text-sm text-zinc-300">
+                        <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
+                          <tr>
+                            <th className="px-4 py-3">Student</th>
+                            <th className="px-4 py-3">Cohort</th>
+                            <th className="px-4 py-3">Ch.21</th>
+                            <th className="px-4 py-3">Access</th>
+                            <th className="px-4 py-3">Exam</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {examAccessList.map((s: any) => (
+                            <tr key={s.id} className="border-b border-zinc-800/80 last:border-0">
+                              <td className="px-4 py-3">
+                                <div className="font-medium text-zinc-200">{s.name || '—'}</div>
+                                <div className="text-xs text-zinc-500">{s.email}</div>
+                              </td>
+                              <td className="px-4 py-3 text-xs">{s.cohortName || '—'}</td>
+                              <td className="px-4 py-3">
+                                {s.chapter21Completed ? (
+                                  <span className="text-emerald-400">Yes</span>
+                                ) : (
+                                  <span className="text-zinc-500">No</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {s.hasExamAccess ? (
+                                  <span className="text-cyan-400">Granted</span>
+                                ) : (
+                                  <span className="text-zinc-500">No</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-xs">
+                                {s.examCompleted ? (
+                                  <span>
+                                    Done <span className="text-zinc-500">({s.examScore ?? '—'})</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-500">Not submitted</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {!s.examCompleted && s.chapter21Completed ? (
+                                  s.hasExamAccess ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => revokeExamAccess(s.id)}
+                                      className="text-xs font-semibold text-amber-400 hover:text-amber-300"
+                                    >
+                                      Revoke access
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => grantExamAccess(s.id)}
+                                      className="text-xs font-semibold text-cyan-400 hover:text-cyan-300"
+                                    >
+                                      Grant access
+                                    </button>
+                                  )
+                                ) : (
+                                  <span className="text-xs text-zinc-600">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {examRetakeRequests.some((r: { status: string }) => r.status !== 'pending') ? (
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-400">Recent resolved requests</h3>
+                    <ul className="mt-2 space-y-2 text-xs text-zinc-500">
+                      {examRetakeRequests
+                        .filter((r: { status: string }) => r.status !== 'pending')
+                        .slice(0, 12)
+                        .map((r: any) => (
+                          <li key={r.id} className="flex flex-wrap gap-x-3 gap-y-1 border-b border-zinc-800/60 pb-2">
+                            <span className="text-zinc-400">{r.studentEmail || r.student_id}</span>
+                            <span
+                              className={
+                                r.status === 'approved' ? 'text-emerald-500' : 'text-zinc-500'
+                              }
+                            >
+                              {r.status}
+                            </span>
+                            {r.resolved_at ? (
+                              <span>{new Date(r.resolved_at).toLocaleString()}</span>
+                            ) : null}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {/* Assessments Section - Student Sats Rewards */}
             {activeSubMenu === 'student-sats-rewards' && (

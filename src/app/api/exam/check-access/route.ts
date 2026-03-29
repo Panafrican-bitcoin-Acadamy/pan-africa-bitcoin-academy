@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     // Step 1: Check if user has a profile
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email')
+      .select('id, email, exam_timer_reset_at')
       .eq('email', email.toLowerCase().trim())
       .single();
 
@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
       examCompleted,
       examScore: examResult?.score || null,
       examSubmittedAt: examResult?.submitted_at || null,
+      examTimerResetAt: profile.exam_timer_reset_at ?? null,
       message: hasAccess
         ? 'You have access to take the exam'
         : !chapter21Completed
