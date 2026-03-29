@@ -175,7 +175,7 @@ export function Navbar() {
               href="/mentorship"
               className="rounded-full px-2 py-1.5 text-sm text-zinc-300 transition hover:bg-cyan-400/10 hover:text-cyan-200"
             >
-              Join us on mentoring
+              Mentoring
             </Link>
             <Link
               href="/impact"
@@ -505,7 +505,7 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="block rounded-lg px-4 py-3 min-h-[48px] text-base text-zinc-300 active:bg-cyan-400/10 active:text-cyan-200 touch-target flex items-center"
             >
-              Join us on mentoring
+              Mentoring
             </Link>
             <Link
               href="/impact"
