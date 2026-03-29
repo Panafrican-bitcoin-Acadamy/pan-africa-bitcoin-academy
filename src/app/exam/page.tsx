@@ -556,7 +556,7 @@ export default function ExamPage() {
             timeExpired ? 'pointer-events-none select-none blur-md brightness-[0.65]' : ''
           }`}
         >
-      <div className="max-w-6xl pb-24 md:pb-8">
+      <div className="relative mx-auto max-w-6xl max-sm:pl-3 max-sm:pr-3 pb-8 pr-4 sm:pl-5 sm:pr-7 lg:pl-6 lg:pr-10">
         {submitError ? (
           <div
             role="alert"
@@ -592,55 +592,32 @@ export default function ExamPage() {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-          {/* Stays fixed in view while scrolling (below site header) */}
-          <aside
-            className="w-full shrink-0 lg:w-72 xl:w-80 lg:sticky lg:top-24 lg:z-10 lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
-          >
-            <div className="sticky top-14 z-20 rounded-2xl border border-cyan-500/20 bg-zinc-950/95 p-4 shadow-[0_0_30px_rgba(34,211,238,0.06)] backdrop-blur-md sm:top-16 lg:static lg:top-auto lg:z-auto lg:border-cyan-500/15 lg:bg-zinc-950/90 lg:p-5 lg:backdrop-blur-none">
-              <p className="text-sm text-zinc-400">
-                Progress:{' '}
-                <span className="font-semibold text-cyan-100">
-                  {answeredCount} / {TOTAL_QUESTIONS}
-                </span>{' '}
-                answered
-              </p>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-orange-600 to-cyan-500 transition-all duration-300"
-                  style={{ width: `${TOTAL_QUESTIONS ? (answeredCount / TOTAL_QUESTIONS) * 100 : 0}%` }}
-                />
-              </div>
-              {accessCheck?.isAdmin ? (
-                <p className="mt-3 border-t border-zinc-800/80 pt-3 text-xs text-zinc-500">
-                  Admin preview — no exam time limit.
-                </p>
-              ) : remainingMs !== null ? (
-                <div className="mt-3 border-t border-zinc-800/80 pt-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-                    Time remaining (2h max)
-                  </p>
-                  <p
-                    className={`mt-1 font-mono text-xl font-bold tabular-nums sm:text-2xl ${
-                      remainingMs <= 15 * 60 * 1000 ? 'text-amber-400' : 'text-cyan-200'
-                    }`}
-                  >
-                    {formatCountdown(remainingMs)}
-                  </p>
-                </div>
-              ) : (
-                <p className="mt-3 text-xs text-zinc-500">Preparing timer…</p>
-              )}
-              <Link
-                href="/dashboard"
-                className="mt-4 inline-block text-sm font-medium text-zinc-500 hover:text-zinc-300"
+        {/* Timer + dashboard (thin vertical progress is fixed mid-screen on the left) */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
+          <div className="min-w-0">
+            {accessCheck?.isAdmin ? (
+              <p className="text-xs text-zinc-500">Admin preview — no exam time limit</p>
+            ) : remainingMs !== null ? (
+              <p
+                className={`font-mono text-lg font-bold tabular-nums sm:text-xl ${
+                  remainingMs <= 15 * 60 * 1000 ? 'text-amber-400' : 'text-cyan-200'
+                }`}
               >
-                ← Dashboard
-              </Link>
-            </div>
-          </aside>
+                {formatCountdown(remainingMs)}
+              </p>
+            ) : (
+              <p className="text-xs text-zinc-500">Preparing timer…</p>
+            )}
+          </div>
+          <Link
+            href="/dashboard"
+            className="shrink-0 text-sm font-medium text-zinc-500 hover:text-zinc-300"
+          >
+            ← Dashboard
+          </Link>
+        </div>
 
-          <div className="min-w-0 flex-1 space-y-5">
+        <div className="min-w-0 space-y-5">
           {/* Questions */}
           <div className="space-y-4">
           {examQuestions.map((question) => {
@@ -703,111 +680,96 @@ export default function ExamPage() {
           })}
           </div>
 
-        {/* Submit — desktop / tablet */}
-        <div className="hidden rounded-2xl border border-zinc-800/80 bg-zinc-950/90 p-6 md:block">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 text-sm">
-              {answeredCount === TOTAL_QUESTIONS ? (
-                <span className="font-semibold text-emerald-400">✓ All questions answered — ready to submit</span>
-              ) : missingQuestionIds.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  <span className="font-semibold text-red-400">
-                    Missing {missingQuestionIds.length} answer{missingQuestionIds.length !== 1 ? 's' : ''} — tap to jump
-                  </span>
-                  <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+          {/* Mobile: sits in page flow directly under the last question. sm+: pins to viewport bottom while scrolling. */}
+          <div
+            className="z-20 mt-6 rounded-2xl border border-zinc-800/90 bg-zinc-950/95 px-4 py-4 shadow-lg backdrop-blur-md max-sm:mb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:static max-sm:shadow-md sm:sticky sm:bottom-0 sm:px-6 sm:py-5 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:shadow-[0_-12px_40px_rgba(0,0,0,0.45)]"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 text-sm">
+                <div className="hidden sm:block">
+                  {answeredCount === TOTAL_QUESTIONS ? (
+                    <span className="font-semibold text-emerald-400">✓ All questions answered — ready to submit</span>
+                  ) : missingQuestionIds.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      <span className="font-semibold text-red-400">
+                        Missing {missingQuestionIds.length} answer{missingQuestionIds.length !== 1 ? 's' : ''} — tap to jump
+                      </span>
+                      <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                        {missingQuestionIds.map((id) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => scrollToQuestion(id)}
+                            className="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-200 hover:bg-red-500/20"
+                          >
+                            Q{id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="font-semibold text-orange-400">
+                      {TOTAL_QUESTIONS - answeredCount} question{TOTAL_QUESTIONS - answeredCount !== 1 ? 's' : ''}{' '}
+                      remaining — submit to see which are missing
+                    </span>
+                  )}
+                </div>
+                {missingQuestionIds.length > 0 ? (
+                  <div className="flex max-h-20 flex-wrap gap-1.5 overflow-y-auto sm:hidden">
                     {missingQuestionIds.map((id) => (
                       <button
                         key={id}
                         type="button"
                         onClick={() => scrollToQuestion(id)}
-                        className="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-200 hover:bg-red-500/20"
+                        className="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold text-red-200 hover:bg-red-500/20"
                       >
                         Q{id}
                       </button>
                     ))}
                   </div>
-                </div>
-              ) : (
-                <span className="font-semibold text-orange-400">
-                  {TOTAL_QUESTIONS - answeredCount} question{TOTAL_QUESTIONS - answeredCount !== 1 ? 's' : ''}{' '}
-                  remaining — submit to see which are missing
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitDisabled}
-              className="flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-8 py-3 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-zinc-700"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit exam'
-              )}
-            </button>
-          </div>
-        </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky submit — mobile */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-cyan-500/20 bg-zinc-950/98 px-3 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.4)] backdrop-blur-md supports-[padding:max(0px)]:pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
-      >
-        <div className="mx-auto flex max-w-6xl flex-col gap-2">
-          {!accessCheck?.isAdmin && remainingMs !== null ? (
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-1.5 text-[11px]">
-              <span className="text-zinc-500">Time left</span>
-              <span
-                className={`font-mono font-bold tabular-nums ${
-                  remainingMs <= 15 * 60 * 1000 ? 'text-amber-400' : 'text-cyan-300'
-                }`}
-              >
-                {formatCountdown(remainingMs)}
-              </span>
-            </div>
-          ) : null}
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-zinc-400">
-              <span className="font-semibold text-cyan-200">{answeredCount}</span> / {TOTAL_QUESTIONS}
-            </p>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitDisabled}
-              className="flex min-w-[7rem] items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-zinc-700"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {submitting ? '…' : 'Submit'}
-            </button>
-          </div>
-          {missingQuestionIds.length > 0 ? (
-            <div className="max-h-20 overflow-y-auto border-t border-zinc-800/80 pt-2">
-              <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-red-400/90">
-                Missing ({missingQuestionIds.length})
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {missingQuestionIds.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => scrollToQuestion(id)}
-                    className="rounded border border-red-500/40 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-200"
-                  >
-                    Q{id}
-                  </button>
-                ))}
+                ) : null}
               </div>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitDisabled}
+                className="flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-orange-500 px-8 py-3 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-zinc-700 max-sm:py-3.5 sm:w-auto"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit exam'
+                )}
+              </button>
             </div>
-          ) : null}
+          </div>
+        </div>
+
+        {/* Fixed mid-viewport on the left: floating pill, no labels; stays put while scrolling */}
+        <div
+          className="pointer-events-none fixed top-1/2 z-30 block -translate-y-1/2 left-[max(0.5rem,env(safe-area-inset-left))] sm:left-[max(1rem,env(safe-area-inset-left))] lg:left-6"
+          role="progressbar"
+          aria-valuenow={answeredCount}
+          aria-valuemin={0}
+          aria-valuemax={TOTAL_QUESTIONS}
+          aria-label={`Exam progress, ${answeredCount} of ${TOTAL_QUESTIONS} answered`}
+        >
+          <div className="rounded-full bg-zinc-950/75 p-[3px] shadow-[0_8px_32px_rgba(0,0,0,0.45)] ring-1 ring-cyan-500/20 backdrop-blur-md sm:p-1">
+          <div className="relative h-20 w-0.5 overflow-hidden rounded-full bg-zinc-800/95 shadow-inner ring-1 ring-zinc-700/50 sm:h-36 sm:w-1.5 sm:ring-zinc-700/60">
+            <div
+              className="absolute top-0 left-0 right-0 rounded-full bg-gradient-to-b from-orange-600 via-orange-500/90 to-cyan-500 transition-[height] duration-300 ease-out"
+              style={{
+                height: `${TOTAL_QUESTIONS ? Math.max(6, (answeredCount / TOTAL_QUESTIONS) * 100) : 0}%`,
+              }}
+            />
+          </div>
+          </div>
+        </div>
         </div>
       </div>
-        </div>
         {timeExpired ? (
           <ExamTimeExpiredModal onOk={() => void handleTimeExpiredOk()} okPending={timeExpiredOkPending} />
         ) : null}

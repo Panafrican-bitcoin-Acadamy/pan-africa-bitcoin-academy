@@ -1952,7 +1952,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                         ) : examAccess?.hasAccess && hasCompletedAllChapters ? (
                           <Link
                             href="/exam"
-                            className="text-sm text-orange-400 underline hover:text-orange-300"
+                            className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                           >
                             Take Exam →
                           </Link>
