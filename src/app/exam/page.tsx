@@ -557,6 +557,12 @@ export default function ExamPage() {
           }`}
         >
       <div className="relative mx-auto max-w-6xl max-sm:pl-3 max-sm:pr-3 pb-8 pr-4 sm:pl-5 sm:pr-7 lg:pl-6 lg:pr-10">
+        <div className="mb-6 rounded-xl border border-cyan-500/20 bg-zinc-900/50 px-4 py-3 text-center sm:px-6 sm:py-4">
+          <p className="text-base font-bold tracking-wide sm:text-lg">
+            <span className="text-orange-400">GOOD</span>{' '}
+            <span className="text-cyan-300">Luck</span>
+          </p>
+        </div>
         {submitError ? (
           <div
             role="alert"
