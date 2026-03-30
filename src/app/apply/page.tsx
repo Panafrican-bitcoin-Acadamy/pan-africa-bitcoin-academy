@@ -537,7 +537,7 @@ export default function ApplyPage() {
               Choose how you want to learn, then complete your details. Live cohort students join a scheduled group; self-paced students use the same materials on their own schedule.
             </p>
             <p className="text-zinc-500 leading-relaxed">
-              ብኸመይ መገዲ ኢኻ ክትመሃር ትደሊ ምስ መምህር ኣብ ሰሙ ዝተዳለው ክላስ ወላ ባዕልኻ ነቲ ተዳልዩ ዘሎ ኮርስ ክትወስዶ ኢዩ ድለትካ።
+              ብኸመይ መገዲ ኢኻ ክትመሃር ትደሊ ምስ መምህር ኣብ ሰሙን 3 ግዜ ዝተዳለው ክላስ ወላ ባዕልኻ ነቲ ተዳልዩ ዘሎ ኮርስ ክትወስዶ ኢዩ ድለትካ።
             </p>
           </div>
           {submitSuccess && (
