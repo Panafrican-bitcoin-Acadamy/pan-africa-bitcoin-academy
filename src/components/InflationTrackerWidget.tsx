@@ -189,7 +189,112 @@ export function InflationTrackerWidget() {
   const prevLifestyleRef = useRef(BASE_AMOUNT);
   const dragIdRef = useRef<LifestyleItemId | null>(null);
   const trackerRef = useRef<HTMLDivElement | null>(null);
+  const itemRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [isTouchDragging, setIsTouchDragging] = useState(false);
+  const [draggingItemId, setDraggingItemId] = useState<LifestyleItemId | null>(null);
+
+  const lockDocumentScroll = () => {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'none';
+  };
+
+  const unlockDocumentScroll = () => {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+    document.documentElement.style.overflow = '';
+    document.documentElement.style.overscrollBehavior = '';
+  };
+
+  const movePriorityByOffset = (id: LifestyleItemId, offset: number) => {
+    setPriorityOrder((prev) => {
+      const fromIndex = prev.indexOf(id);
+      if (fromIndex < 0) return prev;
+      const toIndex = Math.max(0, Math.min(prev.length - 1, fromIndex + offset));
+      if (toIndex === fromIndex) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  };
+
+  const reorderByDropIndex = (fromId: LifestyleItemId, targetDropIndex: number) => {
+    setPriorityOrder((prev) => {
+      const fromIndex = prev.indexOf(fromId);
+      if (fromIndex < 0) return prev;
+      const next = [...prev];
+      next.splice(fromIndex, 1);
+      const insertAt = targetDropIndex > fromIndex ? targetDropIndex - 1 : targetDropIndex;
+      next.splice(Math.max(0, Math.min(insertAt, next.length)), 0, fromId);
+      return next;
+    });
+  };
+
+  const getTouchDropIndex = (clientY: number): number | null => {
+    if (typeof document === 'undefined') return null;
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-inflation-row-index]'));
+    if (rows.length === 0) return null;
+    for (const row of rows) {
+      const idxRaw = row.dataset.inflationRowIndex;
+      if (idxRaw == null) continue;
+      const idx = Number(idxRaw);
+      if (Number.isNaN(idx)) continue;
+      const rect = row.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      if (clientY < midpoint) return idx;
+    }
+    return rows.length;
+  };
+
+  const triggerLandingAnimation = (id: LifestyleItemId) => {
+    const el = itemRowRefs.current[id];
+    if (!el || typeof el.animate !== 'function') return;
+    try {
+      const rowElements = Object.values(itemRowRefs.current).filter(Boolean) as HTMLDivElement[];
+      const landedIndex = rowElements.findIndex((node) => node === el);
+
+      // Main dropped-row spring + glow sequence.
+      el.animate(
+        [
+          { transform: 'translateY(-6px) scale(0.985)', boxShadow: '0 0 0 rgba(251,146,60,0)' },
+          { transform: 'translateY(0px) scale(1.04)', boxShadow: '0 0 20px rgba(251,146,60,0.38)' },
+          { transform: 'translateY(1px) scale(0.995)', boxShadow: '0 0 10px rgba(251,146,60,0.22)' },
+          { transform: 'translateY(0px) scale(1.015)', boxShadow: '0 0 14px rgba(34,211,238,0.16)' },
+          { transform: 'translateY(0px) scale(1)', boxShadow: '0 0 0 rgba(251,146,60,0)' },
+        ],
+        { duration: 520, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }
+      );
+
+      // Subtle settle for immediate neighbors for a cohesive feel.
+      if (landedIndex >= 0) {
+        const neighborIndices = [landedIndex - 1, landedIndex + 1].filter(
+          (idx) => idx >= 0 && idx < rowElements.length
+        );
+        neighborIndices.forEach((idx, offset) => {
+          const neighbor = rowElements[idx];
+          neighbor.animate(
+            [
+              { transform: 'translateY(0px)', opacity: 0.94 },
+              { transform: 'translateY(2px)', opacity: 1 },
+              { transform: 'translateY(0px)', opacity: 1 },
+            ],
+            {
+              duration: 320,
+              delay: 35 + offset * 18,
+              easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            }
+          );
+        });
+      }
+    } catch {
+      // Ignore animation API issues silently.
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -352,10 +457,34 @@ export function InflationTrackerWidget() {
     };
   }, [open]);
 
+  // Mobile focus mode: when open, lock background scroll.
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth >= 640) return;
+    lockDocumentScroll();
+    return () => {
+      if (!isTouchDragging) {
+        unlockDocumentScroll();
+      }
+    };
+  }, [open, isTouchDragging]);
+
   if (authLoading || !isAuthenticated || !hydrated) return null;
 
   return (
-    <div ref={trackerRef} className="fixed right-0 top-1/2 z-40 -translate-y-1/2">
+    <div
+      ref={trackerRef}
+      className="fixed right-0 top-1/2 z-[120] -translate-y-1/2"
+    >
+      {open ? (
+        <button
+          type="button"
+          aria-label="Close tracker backdrop"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-[1px] sm:hidden"
+        />
+      ) : null}
       <div className="flex items-center">
         <button
           type="button"
@@ -381,8 +510,10 @@ export function InflationTrackerWidget() {
         </button>
 
         <div
-          className={`overflow-hidden border border-orange-400/30 bg-zinc-950/95 shadow-[0_0_30px_rgba(249,115,22,0.25)] transition-all duration-300 ${
-            open ? 'w-[320px] p-4' : 'w-0 p-0 border-l-0 border-r-0'
+          className={`z-40 overflow-hidden border border-orange-400/30 bg-zinc-950/95 shadow-[0_0_30px_rgba(249,115,22,0.25)] transition-all duration-300 ${
+            open
+              ? 'w-[88vw] max-w-[360px] max-h-[85vh] overflow-y-auto rounded-l-xl p-4 sm:w-[320px] sm:max-h-none sm:rounded-none'
+              : 'w-0 p-0 border-l-0 border-r-0'
           }`}
         >
           {open && (
@@ -445,21 +576,34 @@ export function InflationTrackerWidget() {
                                 next.splice(fromIndex, 1);
                                 const insertAt = idx > fromIndex ? idx - 1 : idx;
                                 next.splice(insertAt, 0, fromId);
+                                setTimeout(() => triggerLandingAnimation(fromId), 0);
                                 return next;
                               });
                             }}
                           />
                           <div
+                            ref={(el) => {
+                              itemRowRefs.current[item.id] = el;
+                            }}
+                            data-inflation-row-index={idx}
                             className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 ${
                               item.state === 'full'
                                 ? 'border-green-500/30 bg-green-500/10 text-green-200'
                                 : item.state === 'partial'
                                   ? 'border-amber-500/35 bg-amber-500/10 text-amber-200'
                                   : 'border-zinc-700 bg-zinc-900/70 text-zinc-500'
-                            } cursor-grab`}
+                            } ${
+                              draggingItemId
+                                ? draggingItemId === item.id
+                                  ? 'ring-2 ring-orange-400/70 shadow-[0_0_18px_rgba(249,115,22,0.35)] scale-[1.01] opacity-100'
+                                  : 'opacity-35 saturate-50'
+                                : ''
+                            } ${isTouchDragging ? 'cursor-grabbing' : 'cursor-grab'} transition-all duration-150`}
                             draggable
+                            style={{ touchAction: isTouchDragging ? 'none' : 'manipulation' }}
                             onDragStart={(e) => {
                               dragIdRef.current = item.id;
+                              setDraggingItemId(item.id);
                               try {
                                 e.dataTransfer.setData('text/plain', item.id);
                               } catch {
@@ -470,7 +614,48 @@ export function InflationTrackerWidget() {
                             }}
                             onDragEnd={() => {
                               dragIdRef.current = null;
+                              setDraggingItemId(null);
                               setDropIndex(null);
+                            }}
+                            onTouchStart={() => {
+                              dragIdRef.current = item.id;
+                              setDraggingItemId(item.id);
+                              setIsTouchDragging(true);
+                              setDropIndex(idx);
+                              lockDocumentScroll();
+                            }}
+                            onTouchMove={(e) => {
+                              if (!dragIdRef.current) return;
+                              const touch = e.touches[0];
+                              if (!touch) return;
+                              const target = getTouchDropIndex(touch.clientY);
+                              if (target != null) {
+                                setDropIndex(target);
+                              }
+                              e.preventDefault();
+                            }}
+                            onTouchEnd={() => {
+                              const fromId = dragIdRef.current;
+                              const target = dropIndex;
+                              dragIdRef.current = null;
+                              setDraggingItemId(null);
+                              setIsTouchDragging(false);
+                              setDropIndex(null);
+                              if (!open) {
+                                unlockDocumentScroll();
+                              }
+                              if (!fromId || target == null) return;
+                              reorderByDropIndex(fromId, target);
+                              setTimeout(() => triggerLandingAnimation(fromId), 0);
+                            }}
+                            onTouchCancel={() => {
+                              dragIdRef.current = null;
+                              setDraggingItemId(null);
+                              setIsTouchDragging(false);
+                              setDropIndex(null);
+                              if (!open) {
+                                unlockDocumentScroll();
+                              }
                             }}
                           >
                             <div className="flex min-w-0 items-center gap-2">
@@ -511,13 +696,14 @@ export function InflationTrackerWidget() {
                           const next = [...prev];
                           next.splice(fromIndex, 1);
                           next.push(fromId);
+                          setTimeout(() => triggerLandingAnimation(fromId), 0);
                           return next;
                         });
                       }}
                     />
                   </div>
                   <p className="pt-2 text-[11px] text-zinc-500">
-                    Drag to reorder priorities. Items shown ✔ stay longer.
+                    Press and move items to reorder priorities. Items shown ✔ stay longer.
                   </p>
 
                   {btcPrice ? (

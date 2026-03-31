@@ -6,6 +6,7 @@ import { getChapterBySlug, chaptersContent } from "@/content/chaptersContent";
 import { ChapterAccessCheck } from "./ChapterAccessCheck";
 import { ChapterCompletionTracker } from "./ChapterCompletionTracker";
 import { NextChapterButton } from "./NextChapterButton";
+import { DoneChapterButton } from "./DoneChapterButton";
 import { LiveBlockchainData } from "@/components/LiveBlockchainData";
 import { AdminModeWrapper } from "@/components/AdminModeWrapper";
 import { ChapterAssignment } from "@/components/ChapterAssignment";
@@ -109,16 +110,9 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
     >
       <div className="space-y-8 text-sm text-zinc-100 sm:text-base">
         {isWrapUpResources ? (
-          previousChapter ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Link
-                href={`/chapters/${previousChapter.slug}`}
-                className="inline-flex items-center justify-center rounded-lg border border-purple-400/40 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-200 transition hover:border-purple-400/70 hover:bg-purple-500/20"
-              >
-                ← Chapter {previousChapter.number}
-              </Link>
-            </div>
-          ) : null
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <DoneChapterButton chapterNumber={chapter.number} chapterSlug={chapter.slug} />
+          </div>
         ) : (
         /* Hero */
         <section className="rounded-xl border border-zinc-800/50 bg-zinc-950 p-5 sm:p-6 shadow-inner">
@@ -1302,12 +1296,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               variant="bottom"
             />
           ) : (
-            <Link
-              href="/chapters"
-              className="inline-flex items-center justify-center rounded-lg border border-cyan-400/50 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20"
-            >
-              Back to Chapters →
-            </Link>
+            <DoneChapterButton chapterNumber={chapter.number} chapterSlug={chapter.slug} />
           )}
         </div>
       </div>

@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
     // Get chapter progress data
     let chapterProgress = {
       completedChapters: 0,
-      totalChapters: 20,
+      totalChapters: 21,
       completedChapterNumbers: [] as number[],
       chapters: [] as any[],
     };

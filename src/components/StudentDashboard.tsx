@@ -219,6 +219,16 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
 
   const [inflationTrackingEnabled, setInflationTrackingEnabled] = useState(false);
   const [inflationYear, setInflationYear] = useState(INF_BASE_YEAR);
+  const [showInflationResetConfirm, setShowInflationResetConfirm] = useState(false);
+  const inflationResetConfirmRef = useRef<HTMLDivElement | null>(null);
+
+  const resetInflationTracker = () => {
+    localStorage.setItem(INF_ENABLED_KEY, 'true');
+    localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
+    sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
+    setInflationYear(INF_BASE_YEAR);
+    window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
+  };
 
   // Check localStorage for withdrawal request status on mount
   useEffect(() => {
@@ -273,6 +283,33 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       document.body.style.overflow = '';
     };
   }, [selectedUpcomingItem]);
+
+  useEffect(() => {
+    if (!showInflationResetConfirm) return;
+
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (!inflationResetConfirmRef.current?.contains(target)) {
+        setShowInflationResetConfirm(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowInflationResetConfirm(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showInflationResetConfirm]);
 
   // Clear withdrawal request flag when pending sats become 0 (withdrawal processed)
   useEffect(() => {
@@ -860,6 +897,20 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       isUnlocked,
     };
   });
+
+  const chapterNumberBySlug = new Map(chaptersContent.map((c) => [c.slug, c.number]));
+  const byChapterOrder = (a: any, b: any) => {
+    const aNum = a?.chapterSlug ? chapterNumberBySlug.get(a.chapterSlug) ?? Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER;
+    const bNum = b?.chapterSlug ? chapterNumberBySlug.get(b.chapterSlug) ?? Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER;
+    if (aNum !== bNum) return aNum - bNum;
+    return String(a?.title || '').localeCompare(String(b?.title || ''));
+  };
+  const pendingOrOverdueAssignments = assignments
+    .filter((a: any) => a.status === 'pending' || a.status === 'overdue')
+    .sort(byChapterOrder);
+  const completedAssignments = assignments
+    .filter((a: any) => a.status === 'completed')
+    .sort(byChapterOrder);
   
   // Assignments are now fetched from API and stored in state
   const resources = student.resources || [];
@@ -1102,34 +1153,50 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   <button
                     type="button"
                     onClick={() => {
-                      localStorage.setItem(INF_ENABLED_KEY, 'true');
-                      localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
-                      sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
+                      resetInflationTracker();
                       setInflationTrackingEnabled(true);
-                      setInflationYear(INF_BASE_YEAR);
-                      window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
                     }}
                     className="whitespace-nowrap rounded-md bg-gradient-to-r from-orange-500 to-cyan-500 px-3 py-1.5 text-xs font-semibold text-black shadow-[0_0_12px_rgba(249,115,22,0.2)] transition hover:brightness-110"
                   >
                     Start
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      localStorage.setItem(INF_ENABLED_KEY, 'true');
-                      localStorage.setItem(INF_YEAR_KEY, String(INF_BASE_YEAR));
-                      sessionStorage.setItem(INF_LOGIN_COUNTED_SESSION_KEY, 'true');
-                      setInflationYear(INF_BASE_YEAR);
-                      window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
-                    }}
-                    className="whitespace-nowrap rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800"
-                  >
-                    <span className="inline-flex items-center gap-1.5">
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      Restart
-                    </span>
-                  </button>
+                  <div className="relative" ref={inflationResetConfirmRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowInflationResetConfirm((prev) => !prev)}
+                      className="whitespace-nowrap rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800"
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Restart
+                      </span>
+                    </button>
+                    {showInflationResetConfirm && (
+                      <div className="absolute right-0 z-50 mt-2 w-60 rounded-lg border border-orange-400/30 bg-zinc-900 p-3 text-xs shadow-xl">
+                        <p className="text-zinc-200">Are you sure you want to reset the tracker?</p>
+                        <div className="mt-3 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowInflationResetConfirm(false)}
+                            className="rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-zinc-300 transition hover:bg-zinc-700"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              resetInflationTracker();
+                              setShowInflationResetConfirm(false);
+                            }}
+                            className="rounded-md border border-orange-400/40 bg-orange-500/20 px-2.5 py-1 font-semibold text-orange-200 transition hover:bg-orange-500/30"
+                          >
+                            Yes, reset
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -1287,10 +1354,10 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       <button 
                         type="button"
                         onClick={handleWithdraw}
-                        disabled={withdrawing || satsPending === 0 || withdrawalRequested}
+                        disabled={withdrawing || satsPending === 0}
                         className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
-                        {withdrawing ? 'Submitting Request...' : withdrawalRequested ? 'Withdrawal Requested' : 'Withdraw (LNURL)'}
+                        {withdrawing ? 'Submitting Request...' : withdrawalRequested ? 'Request Again (LNURL)' : 'Withdraw (LNURL)'}
                       </button>
                       {withdrawMessage && (
                         <div className={`mt-2 rounded-lg border p-3 text-sm ${
@@ -1783,10 +1850,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   <div>
                     <h3 className="mb-3 text-lg font-medium text-orange-300">Due Soon</h3>
                     <div className="space-y-2">
-                      {assignments.filter((a: any) => a.status === 'pending' || a.status === 'overdue').length > 0 ? (
-                        assignments
-                          .filter((a: any) => a.status === 'pending' || a.status === 'overdue')
-                          .map((assignment: any) => (
+                      {pendingOrOverdueAssignments.length > 0 ? (
+                        pendingOrOverdueAssignments.map((assignment: any) => (
                             <Link
                               key={assignment.id}
                               href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
@@ -1815,10 +1880,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   <div>
                     <h3 className="mb-3 text-lg font-medium text-green-300">Completed</h3>
                     <div className="space-y-2">
-                      {assignments.filter((a: any) => a.status === 'completed').length > 0 ? (
-                        assignments
-                          .filter((a: any) => a.status === 'completed')
-                          .map((assignment: any) => (
+                      {completedAssignments.length > 0 ? (
+                        completedAssignments.map((assignment: any) => (
                             <Link
                               key={assignment.id}
                               href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
@@ -1879,7 +1942,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           {hasCompletedAllChapters ? '✓' : '✗'}
                         </span>
                         <span className={hasCompletedAllChapters ? 'text-green-300' : 'text-zinc-400'}>
-                          Complete all 20 chapters
+                          Complete all {totalChapters} chapters
                         </span>
                       </div>
                       <span className="text-zinc-500">
@@ -1946,24 +2009,29 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                         {loadingExam ? (
                           <span className="text-xs text-zinc-500">Loading exam…</span>
                         ) : examResult ? (
-                          <span className={hasPassedFinalAssessment ? 'text-green-300 font-semibold' : 'text-red-400'}>
-                            {examResult.score}/{examResult.totalQuestions} ({examResult.percentage}%)
-                          </span>
-                        ) : examAccess?.hasAccess && hasCompletedAllChapters ? (
+                          <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
+                            <span className={hasPassedFinalAssessment ? 'text-green-300 font-semibold' : 'text-red-400'}>
+                              {examResult.score}/{examResult.totalQuestions} ({examResult.percentage}%)
+                            </span>
+                            <span
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                                hasPassedFinalAssessment
+                                  ? 'border-green-500/40 bg-green-500/10 text-green-300'
+                                  : 'border-red-500/40 bg-red-500/10 text-red-300'
+                              }`}
+                            >
+                              {hasPassedFinalAssessment ? 'Passed' : 'Not Passed'}
+                            </span>
+                          </div>
+                        ) : examAccess?.hasAccess ? (
                           <Link
                             href="/exam"
                             className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                           >
                             Take Exam →
                           </Link>
-                        ) : !hasCompletedAllChapters ? (
-                          <span className="text-right text-sm text-zinc-500">
-                            Complete all {totalChapters} chapters first
-                          </span>
-                        ) : examAccess?.chapter21Completed ? (
-                          <span className="text-zinc-500 text-sm">Waiting for access</span>
                         ) : (
-                          <span className="text-zinc-500 text-sm">Complete Chapter 21 first</span>
+                          <span className="text-zinc-500 text-sm">Reach Chapter 21 first</span>
                         )}
                       </div>
                     </li>
@@ -1981,8 +2049,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   }`}
                 >
                   {certificationProgress >= 100
-                    ? 'Download Certificate'
-                    : `Download Certificate (${certificationProgress}% Complete)`}
+                    ? 'Ask for Certificate'
+                    : `Ask for Certificate (${certificationProgress}% Complete)`}
                 </button>
               </div>
             </div>

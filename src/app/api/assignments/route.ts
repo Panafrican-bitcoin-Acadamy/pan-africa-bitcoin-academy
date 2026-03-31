@@ -71,6 +71,44 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // De-duplicate assignments that represent the same chapter task.
+    // This can happen when both a global assignment (cohort_id null) and
+    // a cohort-specific assignment exist for the same chapter/title.
+    const dedupedAssignments = (() => {
+      const rows = assignments || [];
+      const pickByKey = new Map<string, any>();
+      const normalize = (v: unknown) => String(v || '').trim().toLowerCase();
+
+      for (const row of rows) {
+        const key = `${normalize(row.chapter_slug)}::${normalize(row.title)}`;
+        const existing = pickByKey.get(key);
+        if (!existing) {
+          pickByKey.set(key, row);
+          continue;
+        }
+
+        // Prefer exact cohort match over global/null assignment.
+        const existingIsExactCohort = !!(profile?.cohort_id && existing.cohort_id === profile.cohort_id);
+        const rowIsExactCohort = !!(profile?.cohort_id && row.cohort_id === profile.cohort_id);
+        if (rowIsExactCohort && !existingIsExactCohort) {
+          pickByKey.set(key, row);
+          continue;
+        }
+        if (existingIsExactCohort && !rowIsExactCohort) {
+          continue;
+        }
+
+        // Otherwise keep the newest record.
+        const existingTs = Date.parse(existing.created_at || '') || 0;
+        const rowTs = Date.parse(row.created_at || '') || 0;
+        if (rowTs > existingTs) {
+          pickByKey.set(key, row);
+        }
+      }
+
+      return Array.from(pickByKey.values());
+    })();
+
     // Fetch student's submissions (skip for admins without profile)
     let submissions = [];
     if (!isAdmin && profile.id) {
@@ -105,7 +143,7 @@ export async function GET(req: NextRequest) {
     );
 
     // Combine assignments with submission status
-    const assignmentsWithStatus = (assignments || []).map((assignment) => {
+    const assignmentsWithStatus = dedupedAssignments.map((assignment) => {
       const submission = submissionsMap.get(assignment.id);
       const isOverdue = assignment.due_date
         ? new Date(assignment.due_date) < new Date()

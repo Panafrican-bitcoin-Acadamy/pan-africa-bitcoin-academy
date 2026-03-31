@@ -206,7 +206,7 @@ export async function GET(_req: NextRequest) {
         studentId: student?.id || null,
         completedChapters: completed,
         unlockedChapters: unlocked,
-        totalChapters: 20, // Assuming 20 chapters total
+        totalChapters: 21,
         lecturesAttended,
         totalLiveLectures,
         attendancePercent,

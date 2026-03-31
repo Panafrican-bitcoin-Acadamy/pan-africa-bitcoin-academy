@@ -5,7 +5,6 @@ import { supabaseAdmin } from '@/lib/supabase';
  * Check if a student has access to take the final exam
  * Requirements:
  * 1. Must have completed Chapter 21 (final chapter)
- * 2. Must have admin-granted access
  */
 export async function POST(req: NextRequest) {
   try {
@@ -97,24 +96,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Step 3: Check if Chapter 21 is completed
+    // Step 3: Check if Chapter 21 is reached (unlocked or completed)
     const { data: chapter21, error: chapterError } = await supabaseAdmin
       .from('chapter_progress')
-      .select('is_completed')
+      .select('is_completed, is_unlocked')
       .eq('student_id', profile.id)
       .eq('chapter_number', 21)
       .maybeSingle();
 
-    const chapter21Completed = chapter21?.is_completed || false;
+    const chapter21Completed = !!chapter21?.is_completed;
+    const chapter21Reached = !!(chapter21?.is_completed || chapter21?.is_unlocked);
 
-    // Step 4: Check if admin has granted exam access
-    const { data: examAccess, error: accessError } = await supabaseAdmin
-      .from('exam_access')
-      .select('id, granted_at')
-      .eq('student_id', profile.id)
-      .maybeSingle();
-
-    const hasAdminAccess = !!examAccess;
+    // Step 4: No extra grant required once chapter 21 is complete
+    const hasAdminAccess = true;
 
     // Step 5: Check if exam already completed
     const { data: examResult, error: resultError } = await supabaseAdmin
@@ -125,14 +119,15 @@ export async function POST(req: NextRequest) {
 
     const examCompleted = !!examResult;
 
-    // Final access check: Chapter 21 completed AND admin access granted
-    const hasAccess = chapter21Completed && hasAdminAccess && !examCompleted;
+    // Final access check: Chapter 21 reached and exam not already submitted
+    const hasAccess = chapter21Reached && !examCompleted;
 
     return NextResponse.json({
       hasAccess,
       isRegistered: true,
       isEnrolled: true,
       chapter21Completed,
+      chapter21Reached,
       hasAdminAccess,
       examCompleted,
       examScore: examResult?.score || null,
@@ -140,10 +135,8 @@ export async function POST(req: NextRequest) {
       examTimerResetAt: profile.exam_timer_reset_at ?? null,
       message: hasAccess
         ? 'You have access to take the exam'
-        : !chapter21Completed
-        ? 'Please complete Chapter 21 first'
-        : !hasAdminAccess
-        ? 'Admin access required. Please contact your administrator.'
+        : !chapter21Reached
+        ? 'Please reach Chapter 21 first'
         : examCompleted
         ? 'You have already completed the exam'
         : 'Access denied',
