@@ -947,7 +947,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const hasMetAttendance = attendance >= requiredAttendance;
   const hasEarnedEnoughSats = satsEarned >= requiredSats;
   const [examResult, setExamResult] = useState<{ score: number; totalQuestions: number; percentage: number; submittedAt: string } | null>(null);
-  const [examAccess, setExamAccess] = useState<{ hasAccess: boolean; chapter21Completed: boolean; hasAdminAccess: boolean; examCompleted: boolean } | null>(null);
+  const [examAccess, setExamAccess] = useState<{ hasAccess: boolean; chapter21Completed: boolean; hasAdminAccess: boolean; examCompleted: boolean; isAdmin?: boolean } | null>(null);
   const [loadingExam, setLoadingExam] = useState(false);
 
   // Fetch exam results and access
@@ -1028,6 +1028,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
         chapter21Completed: accessData.chapter21Completed || false,
         hasAdminAccess: accessData.hasAdminAccess || false,
         examCompleted: accessData.examCompleted || false,
+        isAdmin: accessData.isAdmin || false,
       });
 
       if (resultsData.completed) {
@@ -1062,6 +1063,12 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   ];
   const completedRequirements = certificationRequirements.filter(Boolean).length;
   const certificationProgress = Math.round((completedRequirements / 5) * 100);
+  const hasMetPreExamCriteria =
+    hasCompletedAllChapters && hasCompletedAllAssignments && hasEarnedEnoughSats;
+  const canTakeExam = !!(
+    examAccess?.hasAccess &&
+    (examAccess?.isAdmin ? true : hasMetPreExamCriteria)
+  );
 
   return (
     <>
@@ -2023,7 +2030,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                               {hasPassedFinalAssessment ? 'Passed' : 'Not Passed'}
                             </span>
                           </div>
-                        ) : examAccess?.hasAccess ? (
+                        ) : canTakeExam ? (
                           <Link
                             href="/exam"
                             className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
@@ -2031,7 +2038,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                             Take Exam →
                           </Link>
                         ) : (
-                          <span className="text-zinc-500 text-sm">Reach Chapter 21 first</span>
+                          <span className="text-zinc-500 text-sm">
+                            {hasMetPreExamCriteria
+                              ? 'Reach Chapter 21 first'
+                              : 'Complete all certification requirements first'}
+                          </span>
                         )}
                       </div>
                     </li>
