@@ -1745,6 +1745,31 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   </div>
                 </Link>
 
+                {/* Bitcoin Africa Guide to Freedom Money */}
+                <a
+                  href="https://bitcoiners.africa/wp-content/uploads/2026/03/BITCOIN_Africa-Guide-to-Freedom-Money_by-African-Bitcoiners-2ND-EDITION.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 transition hover:border-emerald-500/50 hover:bg-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)]"
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="rounded-lg bg-emerald-500/20 p-2">
+                      <Book className="h-5 w-5 text-emerald-300" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-zinc-100">Bitcoin Africa: Guide to Freedom Money</h3>
+                      <p className="text-xs text-zinc-400">African Bitcoiners (2nd Edition)</p>
+                    </div>
+                  </div>
+                  <p className="mb-3 text-sm text-zinc-300">
+                    Africa-focused Bitcoin learning guide on sovereignty, practical usage, and money freedom.
+                  </p>
+                  <div className="flex items-center gap-2 text-sm font-medium text-emerald-300 group-hover:text-emerald-200">
+                    <Download className="h-4 w-4" />
+                    <span>Download PDF</span>
+                  </div>
+                </a>
+
                 {/* Mastering Bitcoin */}
                 <a
                   href="https://github.com/bitcoinbook/bitcoinbook"

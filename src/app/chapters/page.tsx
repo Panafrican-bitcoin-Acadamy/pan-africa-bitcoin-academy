@@ -845,6 +845,40 @@ export default function ChaptersPage() {
               </a>
               </AnimatedSection>
 
+              {/* Bitcoin Africa Guide to Freedom Money */}
+              <AnimatedSection animation="slideUp" delay={280}>
+              <a
+                href="https://bitcoiners.africa/wp-content/uploads/2026/03/BITCOIN_Africa-Guide-to-Freedom-Money_by-African-Bitcoiners-2ND-EDITION.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col rounded-xl border border-emerald-400/30 bg-black/60 p-6 transition hover:border-emerald-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(52,211,153,0.2)]"
+              >
+                <div className="mb-4 flex items-start gap-3">
+                  <div className="rounded-lg bg-emerald-500/20 p-3">
+                    <BookOpen className="h-6 w-6 text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-emerald-300 transition group-hover:text-emerald-200">
+                      Bitcoin Africa: Guide to Freedom Money
+                    </AnimatedHeading>
+                    <p className="text-sm text-zinc-400">African Bitcoiners (2nd Edition)</p>
+                  </div>
+                </div>
+                <p className="mb-4 flex-1 text-sm text-zinc-300">
+                  A practical Africa-focused Bitcoin guide covering financial freedom, self-custody, and real-world use.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-300">
+                    Free PDF
+                  </span>
+                  <div className="flex items-center gap-2 text-emerald-300 transition group-hover:text-emerald-200">
+                    <Download className="h-4 w-4" />
+                    <span className="text-sm font-medium">Download PDF</span>
+                  </div>
+                </div>
+              </a>
+              </AnimatedSection>
+
               {/* Programming Bitcoin */}
               <AnimatedSection animation="slideUp" delay={320}>
               <a
