@@ -124,9 +124,15 @@ export default function ImpactPage() {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  // Completion: show 10% when computed rate is 0 (empty / early cohorts)
+  const completionRateTarget =
+    progressMetrics != null && progressMetrics.completionRate === 0
+      ? 10
+      : progressMetrics?.completionRate ?? 0;
+
   // Animated values for progress metrics
   const animatedCompletionRate = useAnimatedCounter(
-    progressMetrics?.completionRate || 0,
+    completionRateTarget,
     1500,
     shouldAnimate
   );
@@ -301,13 +307,13 @@ export default function ImpactPage() {
               </div>
             </div>
           ) : (
-            // Show placeholder with 0 values while loading
+            // Placeholder while loading (completion uses 10% so the bar is not empty)
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
                 <AnimatedHeading as="h3" className="mb-2 text-sm font-medium text-zinc-400">Completion Rate</AnimatedHeading>
-                <div className="text-3xl font-bold text-orange-400">0%</div>
+                <div className="text-3xl font-bold text-orange-400">10%</div>
                 <div className="mt-2 h-2 w-full rounded-full bg-zinc-900">
-                  <div className="h-2 rounded-full bg-orange-400" style={{ width: '0%' }}></div>
+                  <div className="h-2 rounded-full bg-orange-400" style={{ width: '10%' }}></div>
                 </div>
               </div>
               <div className="rounded-xl border border-cyan-500/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
