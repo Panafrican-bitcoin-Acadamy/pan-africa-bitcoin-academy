@@ -1224,7 +1224,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           </div>
 
           <div className="w-full lg:w-auto lg:min-w-[360px]">
-            <div className="rounded-lg border border-orange-400/25 bg-black/80 px-3 py-2.5 shadow-[0_0_16px_rgba(249,115,22,0.12)]">
+            <div className="flex items-stretch gap-2">
+            <div className="min-w-0 flex-1 rounded-lg border border-orange-400/25 bg-black/80 px-3 py-2.5 shadow-[0_0_16px_rgba(249,115,22,0.12)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
@@ -1289,13 +1290,13 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                 )}
               </div>
             </div>
-            <div className="mt-2 flex justify-end">
+            <div className="flex items-center">
               <div className="relative" ref={feedbackNotificationsRef}>
                 <button
                   type="button"
                   onClick={() => setFeedbackNotificationsOpen((prev) => !prev)}
                   aria-label="Open assignment feedback notifications"
-                  className="relative inline-flex items-center rounded-full border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 text-lg transition hover:bg-cyan-500/25"
+                  className="relative inline-flex h-full items-center rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 text-lg transition hover:bg-cyan-500/25"
                 >
                   <span aria-hidden="true">🔔</span>
                   <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-black">
@@ -1305,11 +1306,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                 {feedbackNotificationsOpen && (
                   <div className="absolute right-0 z-40 mt-2 w-[min(92vw,26rem)] rounded-lg border border-zinc-700 bg-zinc-950/95 p-3 shadow-xl backdrop-blur-sm">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-zinc-100">Assignment Feedback</p>
-                      <span className="text-xs text-zinc-400">{unreadFeedbackCount} unread</span>
+                      <p className="text-sm font-semibold text-zinc-100">Notifications</p>
+                      <span className="text-xs text-zinc-400">{unreadFeedbackCount} notification{unreadFeedbackCount === 1 ? '' : 's'}</span>
                     </div>
                     {feedbackNotifications.length === 0 ? (
-                      <p className="text-sm text-zinc-400">No feedback yet.</p>
+                      <p className="text-sm text-zinc-400">0 notification</p>
                     ) : (
                       <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
                         {feedbackNotifications.map((item) => (
@@ -1339,6 +1340,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   </div>
                 )}
               </div>
+            </div>
             </div>
           </div>
         </div>
