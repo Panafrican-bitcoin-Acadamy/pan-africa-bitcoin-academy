@@ -30,6 +30,10 @@ export function ChapterAssignment({
   const [error, setError] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const isRejected =
+    submissionStatus &&
+    ((submissionStatus.status === 'rejected') ||
+      (submissionStatus.status === 'graded' && submissionStatus.is_correct === false));
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -155,15 +159,15 @@ export function ChapterAssignment({
 
       {submitted && submissionStatus ? (
         <div className="space-y-4">
-          <div className="p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
+          <div className={`p-4 rounded-lg border ${isRejected ? 'bg-red-900/20 border-red-800/50' : 'bg-green-900/20 border-green-800/50'}`}>
             <p className="text-green-200 font-medium mb-2">✓ Assignment Submitted</p>
             <p className="text-sm text-zinc-300 mb-3">Your submission is under instructor review. You will receive {rewardSats} sats once approved.</p>
             {submissionStatus.status === 'graded' && submissionStatus.is_correct && (
               <p className="text-sm text-green-300 font-medium">✓ Approved! You earned {rewardSats} sats.</p>
             )}
-            {submissionStatus.status === 'graded' && !submissionStatus.is_correct && submissionStatus.feedback && (
+            {isRejected && submissionStatus.feedback && (
               <div className="mt-2">
-                <p className="text-sm text-yellow-300 font-medium">Feedback:</p>
+                <p className="text-sm text-red-300 font-medium">Rejected — Feedback:</p>
                 <p className="text-sm text-zinc-300">{submissionStatus.feedback}</p>
               </div>
             )}
@@ -172,7 +176,7 @@ export function ChapterAssignment({
             <p className="text-sm font-medium text-zinc-400 mb-2">Your Submission:</p>
             <p className="text-zinc-200 whitespace-pre-wrap">{submissionStatus.answer}</p>
           </div>
-          {submissionStatus.status === 'submitted' && (
+          {isRejected && (
             <button
               onClick={() => {
                 setSubmitted(false);
@@ -180,7 +184,7 @@ export function ChapterAssignment({
               }}
               className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
             >
-              Edit Submission
+              Resubmit Assignment
             </button>
           )}
         </div>

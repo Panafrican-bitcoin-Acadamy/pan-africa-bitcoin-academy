@@ -211,6 +211,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
+  const [requestedPendingSnapshot, setRequestedPendingSnapshot] = useState<number | null>(null);
+  const WITHDRAW_REQUEST_SNAPSHOT_KEY = 'withdrawalRequestedPendingSnapshot';
   const [feedbackNotificationsOpen, setFeedbackNotificationsOpen] = useState(false);
   const [seenFeedbackMap, setSeenFeedbackMap] = useState<Record<string, string>>({});
   const [highlightedFeedbackAssignmentId, setHighlightedFeedbackAssignmentId] = useState<string | null>(null);
@@ -235,12 +237,15 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     window.dispatchEvent(new Event('inflationTrackerEnabledChanged'));
   };
 
-  // Check localStorage for withdrawal request status on mount
+  // Check localStorage for withdrawal request snapshot on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const requested = localStorage.getItem('withdrawalRequested');
-      if (requested === 'true') {
-        setWithdrawalRequested(true);
+      const requestedSnapshotRaw = localStorage.getItem(WITHDRAW_REQUEST_SNAPSHOT_KEY);
+      if (requestedSnapshotRaw) {
+        const requestedSnapshot = Number(requestedSnapshotRaw);
+        if (!Number.isNaN(requestedSnapshot) && requestedSnapshot > 0) {
+          setRequestedPendingSnapshot(requestedSnapshot);
+        }
       }
     }
   }, []);
@@ -351,16 +356,25 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     };
   }, [feedbackNotificationsOpen]);
 
-  // Clear withdrawal request flag when pending sats become 0 (withdrawal processed)
+  // Keep withdrawal lock only for the same pending snapshot.
+  // If pending drops to 0 OR changes to a different amount, unlock request button.
   useEffect(() => {
-    const satsPending = userData?.student?.satsPending ?? satsTotals.pending ?? 0;
-    if (satsPending === 0 && withdrawalRequested) {
+    const currentPending = userData?.student?.satsPending ?? satsTotals.pending ?? 0;
+    if (!requestedPendingSnapshot) {
       setWithdrawalRequested(false);
+      return;
+    }
+
+    const samePendingSnapshot = currentPending > 0 && currentPending === requestedPendingSnapshot;
+    setWithdrawalRequested(samePendingSnapshot);
+
+    if (!samePendingSnapshot) {
+      setRequestedPendingSnapshot(null);
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('withdrawalRequested');
+        localStorage.removeItem(WITHDRAW_REQUEST_SNAPSHOT_KEY);
       }
     }
-  }, [userData?.student?.satsPending, satsTotals.pending, withdrawalRequested]);
+  }, [userData?.student?.satsPending, satsTotals.pending, requestedPendingSnapshot]);
 
   useEffect(() => {
     let mounted = true;
@@ -1064,12 +1078,33 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           type: 'success',
           text: data.message || 'Withdrawal request submitted successfully! You will receive your sats via Lightning Network soon.',
         });
-        // Mark withdrawal as requested to disable the button
-        setWithdrawalRequested(true);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('withdrawalRequested', 'true');
+        const snapshot = Number(data.pendingSnapshotSats ?? satsPending);
+        if (!Number.isNaN(snapshot) && snapshot > 0) {
+          setRequestedPendingSnapshot(snapshot);
+          setWithdrawalRequested(true);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(WITHDRAW_REQUEST_SNAPSHOT_KEY, String(snapshot));
+          }
         }
+      } else if (response.status === 409 && data?.alreadyRequested) {
+        // Server-side dedupe: lock only for current pending snapshot
+        const snapshot = Number(data.pendingSnapshotSats ?? satsPending);
+        if (!Number.isNaN(snapshot) && snapshot > 0) {
+          setRequestedPendingSnapshot(snapshot);
+          setWithdrawalRequested(true);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(WITHDRAW_REQUEST_SNAPSHOT_KEY, String(snapshot));
+          }
+        }
+        setWithdrawMessage({
+          type: 'success',
+          text: data.message || 'You already requested withdrawal for your current pending sats.',
+        });
       } else {
+        setWithdrawalRequested(false);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(WITHDRAW_REQUEST_SNAPSHOT_KEY);
+        }
         setWithdrawMessage({
           type: 'error',
           text: data.error || 'Failed to submit withdrawal request. Please try again.',
@@ -1496,10 +1531,14 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       <button 
                         type="button"
                         onClick={handleWithdraw}
-                        disabled={withdrawing || satsPending === 0}
+                        disabled={withdrawing || satsPending === 0 || withdrawalRequested}
                         className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
-                        {withdrawing ? 'Submitting Request...' : withdrawalRequested ? 'Request Again (LNURL)' : 'Withdraw (LNURL)'}
+                        {withdrawing
+                          ? 'Submitting Request...'
+                          : withdrawalRequested
+                          ? 'Already Requested (Current Pending)'
+                          : 'Withdraw (LNURL)'}
                       </button>
                       {withdrawMessage && (
                         <div className={`mt-2 rounded-lg border p-3 text-sm ${

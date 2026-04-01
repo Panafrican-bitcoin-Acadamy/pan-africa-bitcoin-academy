@@ -67,6 +67,58 @@ export async function POST(req: NextRequest) {
       cohortName = cohort?.name;
     }
 
+    if (satsPending <= 0) {
+      return NextResponse.json(
+        { error: 'You have no pending sats to withdraw yet.' },
+        { status: 400 }
+      );
+    }
+
+    // Prevent duplicate requests for the same pending-sats snapshot
+    const { data: existingRequest, error: existingRequestError } = await supabaseAdmin
+      .from('withdrawal_requests')
+      .select('id, status, pending_snapshot_sats, requested_at')
+      .eq('student_id', profile.id)
+      .eq('pending_snapshot_sats', satsPending)
+      .eq('status', 'requested')
+      .maybeSingle();
+
+    if (existingRequestError) {
+      console.error('Error checking existing withdrawal request:', existingRequestError);
+      return NextResponse.json(
+        { error: 'Failed to validate withdrawal request state' },
+        { status: 500 }
+      );
+    }
+
+    if (existingRequest) {
+      return NextResponse.json(
+        {
+          success: false,
+          alreadyRequested: true,
+          pendingSnapshotSats: satsPending,
+          message: 'You already requested withdrawal for your current pending sats. You can request again when new pending sats are added.'
+        },
+        { status: 409 }
+      );
+    }
+
+    const { error: insertRequestError } = await supabaseAdmin
+      .from('withdrawal_requests')
+      .insert({
+        student_id: profile.id,
+        pending_snapshot_sats: satsPending,
+        status: 'requested',
+      });
+
+    if (insertRequestError) {
+      console.error('Error creating withdrawal request record:', insertRequestError);
+      return NextResponse.json(
+        { error: 'Failed to create withdrawal request' },
+        { status: 500 }
+      );
+    }
+
     // Send withdrawal request email to admin
     const emailResult = await sendWithdrawalRequestEmail({
       studentName: profile.name || 'Unknown Student',
@@ -91,6 +143,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Withdrawal request submitted successfully. You will receive your sats via Lightning Network soon.',
+      pendingSnapshotSats: satsPending,
     });
   } catch (error: any) {
     console.error('Error in withdrawal request:', error);
