@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
-import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw, X, BookOpen } from 'lucide-react';
+import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw, X, BookOpen, Bell } from 'lucide-react';
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
 const CertificateImageSection = lazy(() => import('./CertificateImageSection').then(mod => ({ default: mod.CertificateImageSection })));
@@ -211,6 +211,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
+  const [feedbackNotificationsOpen, setFeedbackNotificationsOpen] = useState(false);
+  const [seenFeedbackMap, setSeenFeedbackMap] = useState<Record<string, string>>({});
+  const [highlightedFeedbackAssignmentId, setHighlightedFeedbackAssignmentId] = useState<string | null>(null);
+  const feedbackNotificationsRef = useRef<HTMLDivElement | null>(null);
+  const FEEDBACK_SEEN_STORAGE_KEY = 'assignmentFeedbackSeenMap';
 
   const INF_ENABLED_KEY = 'inflationTrackerEnabled';
   const INF_YEAR_KEY = 'inflationYear';
@@ -310,6 +315,41 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [showInflationResetConfirm]);
+
+  // Load feedback-read state for notification badge
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(FEEDBACK_SEEN_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          setSeenFeedbackMap(parsed);
+        }
+      }
+    } catch {
+      // Ignore malformed localStorage data
+    }
+  }, []);
+
+  // Close feedback notification popover on outside click
+  useEffect(() => {
+    if (!feedbackNotificationsOpen) return;
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (!feedbackNotificationsRef.current?.contains(target)) {
+        setFeedbackNotificationsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [feedbackNotificationsOpen]);
 
   // Clear withdrawal request flag when pending sats become 0 (withdrawal processed)
   useEffect(() => {
@@ -909,8 +949,50 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     .filter((a: any) => a.status === 'pending' || a.status === 'overdue')
     .sort(byChapterOrder);
   const completedAssignments = assignments
-    .filter((a: any) => a.status === 'completed')
+    // Treat any submitted assignment as "done" for dashboard organization
+    .filter((a: any) => a.status === 'completed' || a.status === 'submitted' || Boolean(a?.submission))
     .sort(byChapterOrder);
+  const completedAssignmentsWithFeedback = completedAssignments.filter(
+    (assignment: any) => Boolean(assignment?.submission?.feedback && String(assignment.submission.feedback).trim().length > 0)
+  );
+  const feedbackNotifications = completedAssignmentsWithFeedback.map((assignment: any) => {
+    const submissionId = String(assignment?.submission?.id || assignment.id);
+    const feedback = String(assignment?.submission?.feedback || '').trim();
+    const feedbackKey = `${submissionId}:${feedback}`;
+    const isUnread = seenFeedbackMap[submissionId] !== feedbackKey;
+    return {
+      assignmentId: String(assignment.id),
+      submissionId,
+      title: assignment.title,
+      chapterSlug: assignment.chapterSlug || null,
+      feedback,
+      feedbackKey,
+      isUnread,
+    };
+  });
+  const unreadFeedbackCount = feedbackNotifications.filter((item) => item.isUnread).length;
+
+  const markFeedbackAsRead = (submissionId: string, feedbackKey: string) => {
+    const next = { ...seenFeedbackMap, [submissionId]: feedbackKey };
+    setSeenFeedbackMap(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(FEEDBACK_SEEN_STORAGE_KEY, JSON.stringify(next));
+    }
+  };
+
+  const handleFeedbackNotificationClick = (item: { assignmentId: string; submissionId: string; feedbackKey: string }) => {
+    markFeedbackAsRead(item.submissionId, item.feedbackKey);
+    setFeedbackNotificationsOpen(false);
+    setActiveTab('overview');
+    setHighlightedFeedbackAssignmentId(item.assignmentId);
+
+    setTimeout(() => {
+      const target = document.getElementById(`completed-feedback-${item.assignmentId}`);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 120);
+  };
   
   // Assignments are now fetched from API and stored in state
   const resources = student.resources || [];
@@ -1144,7 +1226,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           <div className="w-full lg:w-auto lg:min-w-[360px]">
             <div className="rounded-lg border border-orange-400/25 bg-black/80 px-3 py-2.5 shadow-[0_0_16px_rgba(249,115,22,0.12)]">
               <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <TrendingDown className="h-3.5 w-3.5 text-orange-300" />
                     <h3 className="text-sm font-semibold text-zinc-100">Inflation Tracker</h3>
@@ -1205,6 +1287,57 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                     )}
                   </div>
                 )}
+              </div>
+              <div className="mt-2 border-t border-zinc-800 pt-2">
+                <div className="relative" ref={feedbackNotificationsRef}>
+                  <button
+                    type="button"
+                    onClick={() => setFeedbackNotificationsOpen((prev) => !prev)}
+                    className="relative inline-flex items-center gap-2 rounded-md border border-cyan-400/40 bg-cyan-500/15 px-2.5 py-1.5 text-xs font-medium text-cyan-100 transition hover:bg-cyan-500/25"
+                  >
+                    <Bell className="h-3.5 w-3.5" />
+                    <span>Feedback</span>
+                    <span className="inline-flex min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 py-0.5 text-[10px] font-bold text-black">
+                      {unreadFeedbackCount}
+                    </span>
+                  </button>
+                  {feedbackNotificationsOpen && (
+                    <div className="absolute right-0 z-40 mt-2 w-[min(92vw,26rem)] rounded-lg border border-zinc-700 bg-zinc-950/95 p-3 shadow-xl backdrop-blur-sm">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-zinc-100">Assignment Feedback</p>
+                        <span className="text-xs text-zinc-400">{unreadFeedbackCount} unread</span>
+                      </div>
+                      {feedbackNotifications.length === 0 ? (
+                        <p className="text-sm text-zinc-400">No feedback yet.</p>
+                      ) : (
+                        <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                          {feedbackNotifications.map((item) => (
+                            <button
+                              key={item.submissionId}
+                              type="button"
+                              onClick={() => handleFeedbackNotificationClick(item)}
+                              className={`w-full rounded-md border px-3 py-2 text-left transition ${
+                                item.isUnread
+                                  ? 'border-orange-400/40 bg-orange-500/10 hover:bg-orange-500/20'
+                                  : 'border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800/80'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-medium text-zinc-100">{item.title}</p>
+                                {item.isUnread && (
+                                  <span className="rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-black">
+                                    NEW
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-1 line-clamp-2 text-xs text-zinc-300">{item.feedback}</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1878,7 +2011,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               {loadingAssignments ? (
                 <div className="py-8 text-center text-zinc-400">Loading assignments...</div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
                   <div>
                     <h3 className="mb-3 text-lg font-medium text-orange-300">Due Soon</h3>
                     <div className="space-y-2">
@@ -1914,15 +2047,24 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                     <div className="space-y-2">
                       {completedAssignments.length > 0 ? (
                         completedAssignments.map((assignment: any) => (
-                            <Link
+                            <div
                               key={assignment.id}
-                              href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
-                              className="block rounded-lg border border-green-500/30 bg-green-500/10 p-4 transition hover:border-green-500/50"
+                              id={`completed-feedback-${assignment.id}`}
+                              className={`rounded-lg border border-green-500/30 bg-green-500/10 p-4 transition ${
+                                highlightedFeedbackAssignmentId === String(assignment.id)
+                                  ? 'ring-2 ring-orange-400/70 shadow-[0_0_18px_rgba(249,115,22,0.3)]'
+                                  : 'hover:border-green-500/50'
+                              }`}
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="text-green-400">✔</span>
-                                  <span className="font-medium text-zinc-100">{assignment.title}</span>
+                                  <Link
+                                    href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
+                                    className="font-medium text-zinc-100 hover:text-cyan-200"
+                                  >
+                                    {assignment.title}
+                                  </Link>
                                 </div>
                                 {assignment.submission?.pointsEarned > 0 && (
                                   <span className="text-sm text-green-300">
@@ -1930,7 +2072,13 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                                   </span>
                                 )}
                               </div>
-                            </Link>
+                              {assignment.submission?.feedback && (
+                                <div className="mt-3 rounded-md border border-blue-400/30 bg-blue-500/10 p-3">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-200">Admin Feedback</p>
+                                  <p className="mt-1 text-sm text-zinc-200">{assignment.submission.feedback}</p>
+                                </div>
+                              )}
+                            </div>
                           ))
                       ) : (
                         <p className="text-sm text-zinc-500">No completed assignments yet</p>
