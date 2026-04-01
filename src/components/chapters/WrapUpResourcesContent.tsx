@@ -197,6 +197,21 @@ export function WrapUpResourcesContent() {
 
         <div className="mt-6 space-y-6">
           <div>
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-300">Offline supporting wallets</h4>
+            <p className="mt-1 text-xs text-zinc-500">
+              Options that can work with limited connectivity or community setups—understand the custody model before using.
+            </p>
+            <div className="mt-3 space-y-2">
+              <LinkRow
+                name="Fedi"
+                note="Fedimint-based community app—federated custody model (different trade-offs vs self-custody singlesig). Read how it works before using."
+                href="https://www.fedi.xyz"
+                iosHref="https://apps.apple.com/us/app/fedi/id6448916281"
+                androidHref="https://play.google.com/store/apps/details?id=com.fedi"
+              />
+            </div>
+          </div>
+          <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-cyan-400">Mobile (beginner-friendly)</h4>
             <div className="mt-3 space-y-2">
               <LinkRow
@@ -349,13 +364,6 @@ export function WrapUpResourcesContent() {
             androidHref="https://play.google.com/store/apps/details?id=me.tando.tandoapp"
             downloadHref="https://tando.me/download/"
             downloadLabel="Download hub"
-          />
-          <LinkRow
-            name="Fedi"
-            note="Fedimint-based community app—federated custody model (different trade-offs vs self-custody singlesig). Read how it works before using."
-            href="https://www.fedi.xyz"
-            iosHref="https://apps.apple.com/us/app/fedi/id6448916281"
-            androidHref="https://play.google.com/store/apps/details?id=com.fedi"
           />
         </div>
       </section>
