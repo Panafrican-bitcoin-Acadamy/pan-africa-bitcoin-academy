@@ -196,12 +196,15 @@ export function WrapUpResourcesContent() {
         </p>
 
         <div className="mt-6 space-y-6">
-          <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-zinc-300">Offline supporting wallets</h4>
-            <p className="mt-1 text-xs text-zinc-500">
+          <div className="rounded-xl border border-teal-500/30 bg-gradient-to-br from-teal-950/40 via-zinc-950/50 to-cyan-950/20 p-4 shadow-[0_0_24px_rgba(45,212,191,0.06)] sm:p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.7)]" aria-hidden />
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-teal-300">Offline supporting wallets</h4>
+            </div>
+            <p className="text-xs leading-relaxed text-teal-100/55 sm:text-sm">
               Options that can work with limited connectivity or community setups—understand the custody model before using.
             </p>
-            <div className="mt-3 space-y-2">
+            <div className="mt-4 space-y-2 rounded-lg border border-teal-500/15 bg-black/25 p-3 sm:p-4">
               <LinkRow
                 name="Fedi"
                 note="Fedimint-based community app—federated custody model (different trade-offs vs self-custody singlesig). Read how it works before using."
