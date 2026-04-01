@@ -208,7 +208,6 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [events, setEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [selectedUpcomingItem, setSelectedUpcomingItem] = useState<any | null>(null);
-  const [expandedStudyMaterial, setExpandedStudyMaterial] = useState<string | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
@@ -1902,54 +1901,35 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               <p className="mb-6 text-sm text-zinc-400">
                 Download essential Bitcoin resources and books to deepen your understanding.
               </p>
-              <div className="space-y-2">
-                {studyMaterials.map((material) => {
-                  const isOpen = expandedStudyMaterial === material.id;
-                  return (
-                    <div key={material.id} className="overflow-hidden rounded-lg border border-zinc-800/80 bg-zinc-950/40">
-                      <button
-                        type="button"
-                        onClick={() => setExpandedStudyMaterial((prev) => (prev === material.id ? null : material.id))}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-zinc-900/60"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-zinc-100">{material.title}</p>
-                          <p className="text-xs text-zinc-400">{material.author}</p>
-                        </div>
-                        <span
-                          className={`text-lg leading-none text-zinc-300 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                          aria-hidden="true"
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {studyMaterials.map((material) => (
+                  <div key={material.id} className="group rounded-lg border border-cyan-400/25 bg-zinc-950/45 p-4 transition hover:border-cyan-400/45 hover:bg-zinc-900/60">
+                    <h3 className="text-sm font-semibold text-zinc-100">{material.title}</h3>
+                    <p className="mt-1 text-xs text-zinc-400">{material.author}</p>
+                    <p className="mt-3 text-sm text-zinc-300">{material.description}</p>
+                    <div className="mt-4">
+                      {material.external ? (
+                        <a
+                          href={material.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
                         >
-                          ⌄
-                        </span>
-                      </button>
-                      {isOpen && (
-                        <div className="border-t border-zinc-800/80 px-4 py-3">
-                          <p className="mb-3 text-sm text-zinc-300">{material.description}</p>
-                          {material.external ? (
-                            <a
-                              href={material.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
-                            >
-                              <Download className="h-4 w-4" />
-                              {material.action}
-                            </a>
-                          ) : (
-                            <Link
-                              href={material.href}
-                              className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
-                            >
-                              <Download className="h-4 w-4" />
-                              {material.action}
-                            </Link>
-                          )}
-                        </div>
+                          <Download className="h-4 w-4" />
+                          {material.action}
+                        </a>
+                      ) : (
+                        <Link
+                          href={material.href}
+                          className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
+                        >
+                          <Download className="h-4 w-4" />
+                          {material.action}
+                        </Link>
                       )}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
 

@@ -68,6 +68,7 @@ const comingSoon = [
 
 export default function ChaptersPage() {
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
+  const [expandedStudyMaterial, setExpandedStudyMaterial] = useState<string | null>(null);
   const [chapterStatus, setChapterStatus] = useState<Record<number, { isUnlocked: boolean; isCompleted: boolean }>>({});
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -708,7 +709,68 @@ export default function ChaptersPage() {
                 Download essential Bitcoin resources and books to deepen your understanding:
               </p>
             </AnimatedSection>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mb-6 space-y-2">
+              {[
+                { id: 'whitepaper', title: 'Bitcoin: A Peer-to-Peer Electronic Cash System', author: 'Satoshi Nakamoto (2008)', description: "The original white paper that started it all. Essential reading for understanding Bitcoin's core design.", href: 'https://bitcoin.org/bitcoin.pdf', action: 'Download', external: true },
+                { id: 'little-book', title: 'The Little Bitcoin Book', author: 'Bitcoin Collective (2019)', description: 'A simple, beginner-friendly introduction to Bitcoin that explains why it matters for sovereignty and self-custody.', href: 'https://www.littlebitcoinbook.com/', action: 'Read Online', external: true },
+                { id: 'mastering', title: 'Mastering Bitcoin', author: 'Andreas M. Antonopoulos', description: 'Comprehensive technical guide to Bitcoin for developers, engineers, and technically-minded individuals.', href: 'https://github.com/bitcoinbook/bitcoinbook', action: 'Access', external: true },
+                { id: 'bitcoin-standard', title: 'The Bitcoin Standard', author: 'Saifedean Ammous (2018)', description: "Economic analysis of Bitcoin's origins, monetary properties, and its potential impact on the global economy.", href: 'https://saifedean.com/thebitcoinstandard/', action: 'Learn More', external: true },
+                { id: 'africa-guide', title: 'Bitcoin Africa: Guide to Freedom Money', author: 'African Bitcoiners (2nd Edition)', description: 'A practical Africa-focused Bitcoin guide covering financial freedom, self-custody, and real-world use.', href: 'https://bitcoiners.africa/wp-content/uploads/2026/03/BITCOIN_Africa-Guide-to-Freedom-Money_by-African-Bitcoiners-2ND-EDITION.pdf', action: 'Download PDF', external: true },
+                { id: 'programming', title: 'Programming Bitcoin', author: 'Jimmy Song (2019)', description: 'Learn Bitcoin by programming it from scratch. Build Bitcoin libraries in Python step by step.', href: 'https://github.com/jimmysong/programmingbitcoin', action: 'Access', external: true },
+                { id: 'layered-money', title: 'Layered Money', author: 'Nik Bhatia (2021)', description: 'Explains the evolution of money through different layers and why Bitcoin represents a new monetary layer.', href: 'https://www.layeredmoney.com/', action: 'Learn More', external: true },
+                { id: 'tigrigna', title: 'The Little Book of Bitcoin in Tigrigna', author: 'ትግርኛ ትርጉም', description: 'A simple, beginner-friendly introduction to Bitcoin translated into Tigrigna, explaining why it matters for sovereignty and self-custody.', href: 'https://drive.google.com/file/d/1YcU6OIHZEsp4c6KOwAVDUGI2BfNtxx5T/view?usp=drive_link', action: 'Download', external: true },
+                { id: 'dev-philosophy', title: 'Bitcoin Development Philosophy', author: 'Kalle Rosenbaum & Linnéa Rosenbaum', description: "A guide for Bitcoin developers covering decentralization, trustlessness, privacy, scaling, and the philosophy behind Bitcoin's design trade-offs.", href: 'https://bitcointeaching.dev/', action: 'Read Online', external: true },
+                { id: 'scams', title: 'Understanding Bitcoin Scams', author: 'Pan-Africa Bitcoin Academy', description: 'Learn to recognize and avoid investment scams, impersonation, phishing, and malware. Essential reading to protect yourself.', href: '/scam', action: 'Read', external: false },
+                { id: 'exonumia', title: 'Exonumia Africa', author: 'Localized African Bitcoin learning resources', description: 'Explore Bitcoin education resources in multiple African languages and countries.', href: 'https://exonumia.africa/', action: 'Visit', external: true },
+              ].map((material, idx) => {
+                const isOpen = expandedStudyMaterial === material.id;
+                return (
+                  <AnimatedSection animation="slideUp" delay={idx * 60} key={material.id}>
+                    <div className="overflow-hidden rounded-xl border border-zinc-800/80 bg-black/60">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedStudyMaterial((prev) => (prev === material.id ? null : material.id))}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-zinc-900/60"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-zinc-100">{material.title}</p>
+                          <p className="text-xs text-zinc-400">{material.author}</p>
+                        </div>
+                        <span className={`text-lg leading-none text-zinc-300 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true">
+                          ⌄
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="border-t border-zinc-800/80 px-4 py-3">
+                          <p className="mb-3 text-sm text-zinc-300">{material.description}</p>
+                          {material.external ? (
+                            <a
+                              href={material.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              {material.action}
+                            </a>
+                          ) : (
+                            <Link
+                              href={material.href}
+                              className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              {material.action}
+                            </Link>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </AnimatedSection>
+                );
+              })}
+            </div>
+
+            <div className="hidden grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Bitcoin White Paper */}
               <AnimatedSection animation="slideUp" delay={0}>
               <a
