@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
-import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw, X, BookOpen, Bell } from 'lucide-react';
+import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw, X, BookOpen } from 'lucide-react';
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
 const CertificateImageSection = lazy(() => import('./CertificateImageSection').then(mod => ({ default: mod.CertificateImageSection })));
@@ -1288,56 +1288,56 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                   </div>
                 )}
               </div>
-              <div className="mt-2 border-t border-zinc-800 pt-2">
-                <div className="relative" ref={feedbackNotificationsRef}>
-                  <button
-                    type="button"
-                    onClick={() => setFeedbackNotificationsOpen((prev) => !prev)}
-                    className="relative inline-flex items-center gap-2 rounded-md border border-cyan-400/40 bg-cyan-500/15 px-2.5 py-1.5 text-xs font-medium text-cyan-100 transition hover:bg-cyan-500/25"
-                  >
-                    <Bell className="h-3.5 w-3.5" />
-                    <span>Feedback</span>
-                    <span className="inline-flex min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 py-0.5 text-[10px] font-bold text-black">
-                      {unreadFeedbackCount}
-                    </span>
-                  </button>
-                  {feedbackNotificationsOpen && (
-                    <div className="absolute right-0 z-40 mt-2 w-[min(92vw,26rem)] rounded-lg border border-zinc-700 bg-zinc-950/95 p-3 shadow-xl backdrop-blur-sm">
-                      <div className="mb-2 flex items-center justify-between">
-                        <p className="text-sm font-semibold text-zinc-100">Assignment Feedback</p>
-                        <span className="text-xs text-zinc-400">{unreadFeedbackCount} unread</span>
-                      </div>
-                      {feedbackNotifications.length === 0 ? (
-                        <p className="text-sm text-zinc-400">No feedback yet.</p>
-                      ) : (
-                        <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                          {feedbackNotifications.map((item) => (
-                            <button
-                              key={item.submissionId}
-                              type="button"
-                              onClick={() => handleFeedbackNotificationClick(item)}
-                              className={`w-full rounded-md border px-3 py-2 text-left transition ${
-                                item.isUnread
-                                  ? 'border-orange-400/40 bg-orange-500/10 hover:bg-orange-500/20'
-                                  : 'border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800/80'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm font-medium text-zinc-100">{item.title}</p>
-                                {item.isUnread && (
-                                  <span className="rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-black">
-                                    NEW
-                                  </span>
-                                )}
-                              </div>
-                              <p className="mt-1 line-clamp-2 text-xs text-zinc-300">{item.feedback}</p>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+            </div>
+            <div className="mt-2 flex justify-end">
+              <div className="relative" ref={feedbackNotificationsRef}>
+                <button
+                  type="button"
+                  onClick={() => setFeedbackNotificationsOpen((prev) => !prev)}
+                  aria-label="Open assignment feedback notifications"
+                  className="relative inline-flex items-center rounded-full border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 text-lg transition hover:bg-cyan-500/25"
+                >
+                  <span aria-hidden="true">🔔</span>
+                  <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-black">
+                    {unreadFeedbackCount}
+                  </span>
+                </button>
+                {feedbackNotificationsOpen && (
+                  <div className="absolute right-0 z-40 mt-2 w-[min(92vw,26rem)] rounded-lg border border-zinc-700 bg-zinc-950/95 p-3 shadow-xl backdrop-blur-sm">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-semibold text-zinc-100">Assignment Feedback</p>
+                      <span className="text-xs text-zinc-400">{unreadFeedbackCount} unread</span>
                     </div>
-                  )}
-                </div>
+                    {feedbackNotifications.length === 0 ? (
+                      <p className="text-sm text-zinc-400">No feedback yet.</p>
+                    ) : (
+                      <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                        {feedbackNotifications.map((item) => (
+                          <button
+                            key={item.submissionId}
+                            type="button"
+                            onClick={() => handleFeedbackNotificationClick(item)}
+                            className={`w-full rounded-md border px-3 py-2 text-left transition ${
+                              item.isUnread
+                                ? 'border-orange-400/40 bg-orange-500/10 hover:bg-orange-500/20'
+                                : 'border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800/80'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-zinc-100">{item.title}</p>
+                              {item.isUnread && (
+                                <span className="rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-black">
+                                  NEW
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 line-clamp-2 text-xs text-zinc-300">{item.feedback}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
