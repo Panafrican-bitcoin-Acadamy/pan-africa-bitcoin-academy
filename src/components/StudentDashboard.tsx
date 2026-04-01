@@ -208,6 +208,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   const [events, setEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [selectedUpcomingItem, setSelectedUpcomingItem] = useState<any | null>(null);
+  const [expandedStudyMaterial, setExpandedStudyMaterial] = useState<string | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [withdrawalRequested, setWithdrawalRequested] = useState(false);
@@ -985,6 +986,62 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     };
   });
   const unreadFeedbackCount = feedbackNotifications.filter((item) => item.isUnread).length;
+  const studyMaterials = [
+    {
+      id: 'whitepaper',
+      title: 'Bitcoin: A Peer-to-Peer Electronic Cash System',
+      author: 'Satoshi Nakamoto (2008)',
+      description: 'The original Bitcoin paper. Core reading to understand Bitcoin architecture and purpose.',
+      href: 'https://bitcoin.org/bitcoin.pdf',
+      action: 'Open PDF',
+      external: true,
+    },
+    {
+      id: 'little-book',
+      title: 'The Little Book of Bitcoin',
+      author: 'Bitcoin Collective',
+      description: 'Short and beginner-friendly introduction to Bitcoin ideas and practical usage.',
+      href: 'https://www.littlebitcoinbook.com/',
+      action: 'Read / Download',
+      external: true,
+    },
+    {
+      id: 'tigrigna',
+      title: 'The Little Book of Bitcoin in Tigrigna',
+      author: 'ትግርኛ ትርጉም',
+      description: 'Simple intro in Tigrigna for sovereignty, wallet basics, and self-custody.',
+      href: '/chapters',
+      action: 'Get from Chapters',
+      external: false,
+    },
+    {
+      id: 'mastering',
+      title: 'Mastering Bitcoin',
+      author: 'Andreas M. Antonopoulos',
+      description: 'Technical deep dive into Bitcoin internals, transactions, scripts, and networking.',
+      href: 'https://github.com/bitcoinbook/bitcoinbook',
+      action: 'Read Online',
+      external: true,
+    },
+    {
+      id: 'programming',
+      title: 'Programming Bitcoin',
+      author: 'Jimmy Song',
+      description: 'Hands-on coding approach to Bitcoin using Python and protocol-level exercises.',
+      href: 'https://programmingbitcoin.com/',
+      action: 'Get the Book',
+      external: true,
+    },
+    {
+      id: 'devdocs',
+      title: 'Bitcoin Developer Docs',
+      author: 'developer.bitcoin.org',
+      description: 'Official reference docs for developers building on Bitcoin.',
+      href: 'https://developer.bitcoin.org/',
+      action: 'Browse Docs',
+      external: true,
+    },
+  ];
 
   const markFeedbackAsRead = (submissionId: string, feedbackKey: string) => {
     const next = { ...seenFeedbackMap, [submissionId]: feedbackKey };
@@ -1843,206 +1900,56 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
             <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
               <h2 className="mb-4 text-2xl font-semibold text-zinc-50">Study Materials</h2>
               <p className="mb-6 text-sm text-zinc-400">
-                Download essential Bitcoin resources and reading materials to support your learning journey.
+                Download essential Bitcoin resources and books to deepen your understanding.
               </p>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Bitcoin Whitepaper */}
-                <a
-                  href="https://bitcoin.org/bitcoin.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 transition hover:border-orange-500/50 hover:bg-orange-500/20 hover:shadow-[0_0_20px_rgba(249,115,22,0.3)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-orange-500/20 p-2">
-                      <FileText className="h-5 w-5 text-orange-300" />
+              <div className="space-y-2">
+                {studyMaterials.map((material) => {
+                  const isOpen = expandedStudyMaterial === material.id;
+                  return (
+                    <div key={material.id} className="overflow-hidden rounded-lg border border-zinc-800/80 bg-zinc-950/40">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedStudyMaterial((prev) => (prev === material.id ? null : material.id))}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-zinc-900/60"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-zinc-100">{material.title}</p>
+                          <p className="text-xs text-zinc-400">{material.author}</p>
+                        </div>
+                        <span
+                          className={`text-lg leading-none text-zinc-300 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                          aria-hidden="true"
+                        >
+                          ⌄
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="border-t border-zinc-800/80 px-4 py-3">
+                          <p className="mb-3 text-sm text-zinc-300">{material.description}</p>
+                          {material.external ? (
+                            <a
+                              href={material.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
+                            >
+                              <Download className="h-4 w-4" />
+                              {material.action}
+                            </a>
+                          ) : (
+                            <Link
+                              href={material.href}
+                              className="inline-flex items-center gap-2 rounded-md border border-cyan-400/35 bg-cyan-500/12 px-3 py-1.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/22"
+                            >
+                              <Download className="h-4 w-4" />
+                              {material.action}
+                            </Link>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">Bitcoin Whitepaper</h3>
-                      <p className="text-xs text-zinc-400">Satoshi Nakamoto</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    The original paper that started it all. Essential reading for every Bitcoin learner.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-orange-300 group-hover:text-orange-200">
-                    <Download className="h-4 w-4" />
-                    <span>Download PDF</span>
-                  </div>
-                </a>
-
-                {/* The Little Book of Bitcoin */}
-                <a
-                  href="https://www.littlebitcoinbook.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 transition hover:border-cyan-500/50 hover:bg-cyan-500/20 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-cyan-500/20 p-2">
-                      <Book className="h-5 w-5 text-cyan-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">The Little Book of Bitcoin</h3>
-                      <p className="text-xs text-zinc-400">Bitcoin Foundation</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    A concise introduction to Bitcoin concepts. Perfect for beginners.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-cyan-300 group-hover:text-cyan-200">
-                    <Download className="h-4 w-4" />
-                    <span>Download / Read</span>
-                  </div>
-                </a>
-
-                {/* The Little Book of Bitcoin in Tigrigna */}
-                <Link
-                  href="/chapters"
-                  className="group rounded-lg border border-green-500/30 bg-green-500/10 p-4 transition hover:border-green-500/50 hover:bg-green-500/20 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-green-500/20 p-2">
-                      <Book className="h-5 w-5 text-green-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">The Little Book of Bitcoin in Tigrigna</h3>
-                      <p className="text-xs text-zinc-400">ትግርኛ ትርጉም</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    A simple, beginner-friendly introduction to Bitcoin translated into Tigrigna, explaining why it matters for sovereignty and self-custody.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-green-300 group-hover:text-green-200">
-                    <Download className="h-4 w-4" />
-                    <span>PDF (Tigrigna) - Download in the chapters page</span>
-                  </div>
-                </Link>
-
-                {/* Bitcoin Africa Guide to Freedom Money */}
-                <a
-                  href="https://bitcoiners.africa/wp-content/uploads/2026/03/BITCOIN_Africa-Guide-to-Freedom-Money_by-African-Bitcoiners-2ND-EDITION.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 transition hover:border-emerald-500/50 hover:bg-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-emerald-500/20 p-2">
-                      <Book className="h-5 w-5 text-emerald-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">Bitcoin Africa: Guide to Freedom Money</h3>
-                      <p className="text-xs text-zinc-400">African Bitcoiners (2nd Edition)</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    Africa-focused Bitcoin learning guide on sovereignty, practical usage, and money freedom.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-emerald-300 group-hover:text-emerald-200">
-                    <Download className="h-4 w-4" />
-                    <span>Download PDF</span>
-                  </div>
-                </a>
-
-                {/* Mastering Bitcoin */}
-                <a
-                  href="https://github.com/bitcoinbook/bitcoinbook"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-lg border border-purple-500/30 bg-purple-500/10 p-4 transition hover:border-purple-500/50 hover:bg-purple-500/20 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-purple-500/20 p-2">
-                      <Book className="h-5 w-5 text-purple-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">Mastering Bitcoin</h3>
-                      <p className="text-xs text-zinc-400">Andreas M. Antonopoulos</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    Technical deep dive into Bitcoin. Essential for understanding Bitcoin at a deeper level.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-purple-300 group-hover:text-purple-200">
-                    <Download className="h-4 w-4" />
-                    <span>Read Online / Download</span>
-                  </div>
-                </a>
-
-                {/* The Bitcoin Standard */}
-                <a
-                  href="https://saifedean.com/thebitcoinstandard/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 transition hover:border-yellow-500/50 hover:bg-yellow-500/20 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-yellow-500/20 p-2">
-                      <Book className="h-5 w-5 text-yellow-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">The Bitcoin Standard</h3>
-                      <p className="text-xs text-zinc-400">Saifedean Ammous</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    Economic perspective on Bitcoin as sound money and its role in the monetary system.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-yellow-300 group-hover:text-yellow-200">
-                    <Download className="h-4 w-4" />
-                    <span>Learn More</span>
-                  </div>
-                </a>
-
-                {/* Programming Bitcoin */}
-                <a
-                  href="https://programmingbitcoin.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 transition hover:border-blue-500/50 hover:bg-blue-500/20 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-blue-500/20 p-2">
-                      <Book className="h-5 w-5 text-blue-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">Programming Bitcoin</h3>
-                      <p className="text-xs text-zinc-400">Jimmy Song</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    Learn Bitcoin programming from scratch. Build Bitcoin from the ground up in Python.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-blue-300 group-hover:text-blue-200">
-                    <Download className="h-4 w-4" />
-                    <span>Get the Book</span>
-                  </div>
-                </a>
-
-                {/* Bitcoin Development Resources */}
-                <a
-                  href="https://developer.bitcoin.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-lg border border-green-500/30 bg-green-500/10 p-4 transition hover:border-green-500/50 hover:bg-green-500/20 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-lg bg-green-500/20 p-2">
-                      <FileText className="h-5 w-5 text-green-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-100">Bitcoin Developer Docs</h3>
-                      <p className="text-xs text-zinc-400">developer.bitcoin.org</p>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-sm text-zinc-300">
-                    Official Bitcoin developer documentation and technical resources.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-medium text-green-300 group-hover:text-green-200">
-                    <Download className="h-4 w-4" />
-                    <span>Browse Docs</span>
-                  </div>
-                </a>
+                  );
+                })}
               </div>
             </div>
 
