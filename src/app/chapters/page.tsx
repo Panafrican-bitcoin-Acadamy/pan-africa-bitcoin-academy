@@ -709,7 +709,7 @@ export default function ChaptersPage() {
                 Download essential Bitcoin resources and books to deepen your understanding:
               </p>
             </AnimatedSection>
-            <div className="mb-6 space-y-2">
+            <div className="hidden mb-6 space-y-2">
               {[
                 { id: 'whitepaper', title: 'Bitcoin: A Peer-to-Peer Electronic Cash System', author: 'Satoshi Nakamoto (2008)', description: "The original white paper that started it all. Essential reading for understanding Bitcoin's core design.", href: 'https://bitcoin.org/bitcoin.pdf', action: 'Download', external: true },
                 { id: 'little-book', title: 'The Little Bitcoin Book', author: 'Bitcoin Collective (2019)', description: 'A simple, beginner-friendly introduction to Bitcoin that explains why it matters for sovereignty and self-custody.', href: 'https://www.littlebitcoinbook.com/', action: 'Read Online', external: true },
@@ -770,7 +770,7 @@ export default function ChaptersPage() {
               })}
             </div>
 
-            <div className="hidden grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Bitcoin White Paper */}
               <AnimatedSection animation="slideUp" delay={0}>
               <a
