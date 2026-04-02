@@ -17,13 +17,15 @@ import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Learn Bitcoin - First Eritrea Based Bitcoin Academy",
-  description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners community. Clear lessons, real security, and developer pathways.",
+  description: "PanAfrican Bitcoin Academy (ፓናፍሪካን ቢትኮይን ኣካዳሚ) - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education in Eritrea, Uganda, and across Africa. Convert Bitcoin to Nakfa, join Eritrean Bitcoiners and the ኤርትራ ቢትኮይን community. Clear lessons, real security, and developer pathways.",
   keywords: [
     "Bitcoin education Africa",
     "Learn Bitcoin",
     "Bitcoin academy",
     "Bitcoin tutorials for beginners",
     "PanAfrican Bitcoin Academy",
+    "ፓናፍሪካን ቢትኮይን ኣካዳሚ",
+    "ኤርትራ ቢትኮይን",
     "Eritrea Bitcoin academy",
     "Eritrea Bitcoin",
     "Eritrean Bitcoiners",
@@ -42,7 +44,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Learn Bitcoin - First Eritrea Based Bitcoin Academy",
-    description: "PanAfrican Bitcoin Academy - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education, convert Bitcoin to Nakfa, join Eritrean Bitcoiners. Clear lessons, real security, and developer pathways.",
+    description: "PanAfrican Bitcoin Academy (ፓናፍሪካን ቢትኮይን ኣካዳሚ) - first Eritrea based Bitcoin academy in Asmara. Learn Bitcoin education, convert Bitcoin to Nakfa, and join Eritrean Bitcoiners and the ኤርትራ ቢትኮይን community. Clear lessons, real security, and developer pathways.",
   },
 };
 

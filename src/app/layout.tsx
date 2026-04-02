@@ -46,13 +46,15 @@ export const metadata: Metadata = {
     template: "%s | PanAfrican Bitcoin Academy",
   },
   description:
-    "PanAfrican Bitcoin Academy is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways.",
+    "PanAfrican Bitcoin Academy (ፓናፍሪካን ቢትኮይን ኣካዳሚ) is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways, including the ኤርትራ ቢትኮይን community.",
   keywords: [
     "Bitcoin education Africa",
     "Learn Bitcoin",
     "Bitcoin academy",
     "Bitcoin tutorials for beginners",
     "PanAfrican Bitcoin Academy",
+    "ፓናፍሪካን ቢትኮይን ኣካዳሚ",
+    "ኤርትራ ቢትኮይን",
     "Eritrea Bitcoin academy",
     "Eritrea Bitcoin",
     "Eritrean Bitcoiners",
@@ -103,7 +105,7 @@ export const metadata: Metadata = {
     url: '/',
     siteName: 'PanAfrican Bitcoin Academy',
     title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
-    description: "PanAfrican Bitcoin Academy is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways.",
+    description: "PanAfrican Bitcoin Academy (ፓናፍሪካን ቢትኮይን ኣካዳሚ) is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways, including the ኤርትራ ቢትኮይን community.",
     images: [
       {
         url: '/og-image.png',
@@ -122,7 +124,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'PanAfrican Bitcoin Academy - First Eritrea Based Bitcoin Academy',
-    description: "PanAfrican Bitcoin Academy is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways.",
+    description: "PanAfrican Bitcoin Academy (ፓናፍሪካን ቢትኮይን ኣካዳሚ) is Eritrea's Bitcoin education hub—teaching practical Bitcoin skills, self-custody, and digital security through clear lessons, community learning, and developer pathways, including the ኤርትራ ቢትኮይን community.",
     images: [
       {
         url: '/og-image.png',
