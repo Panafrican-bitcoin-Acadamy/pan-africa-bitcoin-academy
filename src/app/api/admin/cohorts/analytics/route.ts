@@ -156,6 +156,11 @@ export async function GET(_req: NextRequest) {
       }
 
       const sess = sessionsByCohort.get(cohort.id) || { total: 0, completed: 0 };
+      const avgProgress = enrolledCount > 0 ? Math.round(totalProgressPct / enrolledCount) : 0;
+      const avgAttendance = enrolledCount > 0 ? Math.round(totalAttendancePct / enrolledCount) : 0;
+      const seatUtilizationPct = seats > 0 ? Math.min(100, Math.round((enrolledCount / seats) * 100)) : null;
+      const sessionProgressPct =
+        sess.total > 0 ? Math.min(100, Math.round((sess.completed / sess.total) * 100)) : 0;
 
       return {
         id: cohort.id,
@@ -166,14 +171,42 @@ export async function GET(_req: NextRequest) {
         status: cohort.status || 'Upcoming',
         seats,
         enrolled: enrolledCount,
-        avgProgress: enrolledCount > 0 ? Math.round(totalProgressPct / enrolledCount) : 0,
-        avgAttendance: enrolledCount > 0 ? Math.round(totalAttendancePct / enrolledCount) : 0,
+        avgProgress,
+        avgAttendance,
         sessionsTotal: sess.total,
         sessionsCompleted: sess.completed,
+        seatUtilizationPct,
+        sessionProgressPct,
+        liveClassEventsCount: totalCohortEvents,
       };
     });
 
-    return NextResponse.json({ analytics }, { status: 200 });
+    // Trend vs chronologically prior cohort (by start_date) for avg progress
+    const chrono = [...analytics].sort((a, b) => {
+      const ta = a.startDate ? new Date(String(a.startDate)).getTime() : 0;
+      const tb = b.startDate ? new Date(String(b.startDate)).getTime() : 0;
+      if (Number.isNaN(ta) && Number.isNaN(tb)) return 0;
+      if (Number.isNaN(ta)) return 1;
+      if (Number.isNaN(tb)) return -1;
+      return ta - tb;
+    });
+    const priorProgressById = new Map<string, number | null>();
+    for (let i = 0; i < chrono.length; i++) {
+      if (i === 0) {
+        priorProgressById.set(chrono[i].id, null);
+      } else {
+        priorProgressById.set(chrono[i].id, chrono[i - 1].avgProgress);
+      }
+    }
+
+    const analyticsWithTrend = analytics.map((row) => {
+      const prev = priorProgressById.get(row.id);
+      const progressVsPriorCohort =
+        prev === null || prev === undefined ? null : row.avgProgress - prev;
+      return { ...row, progressVsPriorCohort };
+    });
+
+    return NextResponse.json({ analytics: analyticsWithTrend }, { status: 200 });
   } catch (error: any) {
     console.error('Cohort analytics API error:', error);
     return NextResponse.json(

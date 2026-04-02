@@ -20,7 +20,7 @@ import {
   Clock, User, Info, Trash2, Award, Target, Briefcase, Heart,
   ClipboardList, Rocket, HelpCircle, Sparkles, Settings, 
   PenTool, GraduationCap, XCircle, Loader2, Shield, Lock, History, LogOut,
-  Eye, EyeOff, Download, X, ChevronDown
+  Eye, EyeOff, Download, X, ChevronDown, RefreshCw, Search, Table,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -39,6 +39,8 @@ import {
   Cell,
 } from 'recharts';
 import { chaptersContent } from '@/content/chaptersContent';
+
+const COHORT_ANALYTICS_PAGE_SIZE = 8;
 
 // Cohort color palette - same as Calendar component
 const cohortColors = [
@@ -604,10 +606,38 @@ export default function AdminDashboardPage() {
     return 'completed' as const;
   };
   const [cohortAnalytics, setCohortAnalytics] = useState<Array<{
-    id: string; name: string; enrolled: number; seats: number; avgProgress: number; avgAttendance: number;
-    sessionsTotal: number; sessionsCompleted: number; level?: string; status?: string;
+    id: string;
+    name: string;
+    enrolled: number;
+    seats: number;
+    avgProgress: number;
+    avgAttendance: number;
+    sessionsTotal: number;
+    sessionsCompleted: number;
+    level?: string;
+    status?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    seatUtilizationPct?: number | null;
+    sessionProgressPct?: number;
+    liveClassEventsCount?: number;
+    progressVsPriorCohort?: number | null;
   }>>([]);
   const [loadingCohortAnalytics, setLoadingCohortAnalytics] = useState(false);
+  const [cohortAnalyticsError, setCohortAnalyticsError] = useState<string | null>(null);
+  const [cohortAnalyticsSearch, setCohortAnalyticsSearch] = useState('');
+  const [cohortAnalyticsSort, setCohortAnalyticsSort] = useState<
+    'progress' | 'attendance' | 'enrolled' | 'seat_util' | 'session_pct'
+  >('progress');
+  const [cohortAnalyticsDatePreset, setCohortAnalyticsDatePreset] = useState<
+    'all' | 'this_year' | 'last_12_months'
+  >('all');
+  const [cohortAnalyticsPhaseFilter, setCohortAnalyticsPhaseFilter] = useState<
+    'all' | 'upcoming' | 'in-progress' | 'completed'
+  >('all');
+  const [cohortAnalyticsStatusChips, setCohortAnalyticsStatusChips] = useState<string[]>([]);
+  const [cohortAnalyticsLevelChips, setCohortAnalyticsLevelChips] = useState<string[]>([]);
+  const [cohortAnalyticsTablePage, setCohortAnalyticsTablePage] = useState(1);
   const [uploadingAttendance, setUploadingAttendance] = useState(false);
   const [regeneratingSessions, setRegeneratingSessions] = useState<string | null>(null);
   const [allSessions, setAllSessions] = useState<Session[]>([]);
@@ -2564,36 +2594,181 @@ export default function AdminDashboardPage() {
   const fetchCohortAnalytics = async () => {
     try {
       setLoadingCohortAnalytics(true);
+      setCohortAnalyticsError(null);
       const res = await fetchWithAuth('/api/admin/cohorts/analytics');
       const data = await res.json();
       if (!res.ok) {
         console.error('[Admin] Error fetching cohort analytics:', data.error);
         setCohortAnalytics([]);
+        setCohortAnalyticsError(data?.error || 'Failed to load cohort analytics.');
         return;
       }
       setCohortAnalytics(data.analytics || []);
     } catch (err) {
       console.error('[Admin] Error fetching cohort analytics:', err);
       setCohortAnalytics([]);
+      setCohortAnalyticsError('Failed to load cohort analytics.');
     } finally {
       setLoadingCohortAnalytics(false);
     }
   };
 
+  const cohortAnalyticsUniqueStatuses = useMemo(() => {
+    const s = new Set<string>();
+    cohortAnalytics.forEach((c) => {
+      if (c.status) s.add(String(c.status));
+    });
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [cohortAnalytics]);
+
+  const cohortAnalyticsUniqueLevels = useMemo(() => {
+    const s = new Set<string>();
+    cohortAnalytics.forEach((c) => {
+      if (c.level) s.add(String(c.level));
+    });
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [cohortAnalytics]);
+
+  const { cohortAnalyticsFiltered, cohortAnalyticsFilteredSorted } = useMemo(() => {
+    const q = cohortAnalyticsSearch.trim().toLowerCase();
+    const filtered = cohortAnalytics.filter((c) => {
+      if (q) {
+        const blob = `${c.name} ${c.level || ''} ${c.status || ''}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      if (cohortAnalyticsPhaseFilter !== 'all') {
+        const phase = getCohortPhase({
+          id: c.id,
+          name: c.name,
+          startDate: c.startDate,
+          endDate: c.endDate,
+          status: c.status,
+        });
+        if (phase !== cohortAnalyticsPhaseFilter) return false;
+      }
+      if (cohortAnalyticsDatePreset !== 'all') {
+        const startRaw = c.startDate ? new Date(c.startDate) : null;
+        if (!startRaw || Number.isNaN(startRaw.getTime())) return false;
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const start = new Date(startRaw);
+        start.setHours(0, 0, 0, 0);
+        if (cohortAnalyticsDatePreset === 'this_year') {
+          if (start.getFullYear() !== now.getFullYear()) return false;
+        } else if (cohortAnalyticsDatePreset === 'last_12_months') {
+          const cutoff = new Date(now);
+          cutoff.setMonth(cutoff.getMonth() - 12);
+          if (start < cutoff || start > now) return false;
+        }
+      }
+      if (cohortAnalyticsStatusChips.length > 0) {
+        const st = (c.status || '').toLowerCase();
+        if (!cohortAnalyticsStatusChips.some((x) => x.toLowerCase() === st)) return false;
+      }
+      if (cohortAnalyticsLevelChips.length > 0) {
+        const lv = (c.level || '').toLowerCase();
+        if (!cohortAnalyticsLevelChips.some((x) => x.toLowerCase() === lv)) return false;
+      }
+      return true;
+    });
+    const sorted = [...filtered].sort((a, b) => {
+      if (cohortAnalyticsSort === 'attendance') return b.avgAttendance - a.avgAttendance;
+      if (cohortAnalyticsSort === 'enrolled') return b.enrolled - a.enrolled;
+      if (cohortAnalyticsSort === 'seat_util')
+        return (b.seatUtilizationPct ?? -1) - (a.seatUtilizationPct ?? -1);
+      if (cohortAnalyticsSort === 'session_pct')
+        return (b.sessionProgressPct ?? 0) - (a.sessionProgressPct ?? 0);
+      return b.avgProgress - a.avgProgress;
+    });
+    return { cohortAnalyticsFiltered: filtered, cohortAnalyticsFilteredSorted: sorted };
+  }, [
+    cohortAnalytics,
+    cohortAnalyticsSearch,
+    cohortAnalyticsSort,
+    cohortAnalyticsDatePreset,
+    cohortAnalyticsPhaseFilter,
+    cohortAnalyticsStatusChips,
+    cohortAnalyticsLevelChips,
+  ]);
+
+  useEffect(() => {
+    setCohortAnalyticsTablePage(1);
+  }, [
+    cohortAnalyticsSearch,
+    cohortAnalyticsSort,
+    cohortAnalyticsDatePreset,
+    cohortAnalyticsPhaseFilter,
+    cohortAnalyticsStatusChips,
+    cohortAnalyticsLevelChips,
+    cohortAnalytics.length,
+  ]);
+
+  const cohortAnalyticsSummary = useMemo(() => {
+    if (cohortAnalyticsFiltered.length === 0) {
+      return {
+        cohorts: 0,
+        students: 0,
+        avgProgress: 0,
+        avgAttendance: 0,
+        avgSeatUtil: null as number | null,
+        avgSessionProgress: 0,
+      };
+    }
+    const cohorts = cohortAnalyticsFiltered.length;
+    const students = cohortAnalyticsFiltered.reduce((sum, c) => sum + (c.enrolled || 0), 0);
+    const avgProgress = Math.round(
+      cohortAnalyticsFiltered.reduce((sum, c) => sum + (c.avgProgress || 0), 0) / cohorts,
+    );
+    const avgAttendance = Math.round(
+      cohortAnalyticsFiltered.reduce((sum, c) => sum + (c.avgAttendance || 0), 0) / cohorts,
+    );
+    const withSeats = cohortAnalyticsFiltered.filter((c) => (c.seats || 0) > 0);
+    const avgSeatUtil =
+      withSeats.length > 0
+        ? Math.round(
+            withSeats.reduce((sum, c) => sum + (c.seatUtilizationPct ?? 0), 0) / withSeats.length,
+          )
+        : null;
+    const withSessions = cohortAnalyticsFiltered.filter((c) => (c.sessionsTotal || 0) > 0);
+    const avgSessionProgress =
+      withSessions.length > 0
+        ? Math.round(
+            withSessions.reduce((sum, c) => sum + (c.sessionProgressPct ?? 0), 0) / withSessions.length,
+          )
+        : 0;
+    return { cohorts, students, avgProgress, avgAttendance, avgSeatUtil, avgSessionProgress };
+  }, [cohortAnalyticsFiltered]);
+
+  const cohortAnalyticsTableTotalPages = Math.max(
+    1,
+    Math.ceil(cohortAnalyticsFilteredSorted.length / COHORT_ANALYTICS_PAGE_SIZE),
+  );
+  const cohortAnalyticsTableSlice = useMemo(() => {
+    const clampedPage = Math.min(Math.max(1, cohortAnalyticsTablePage), cohortAnalyticsTableTotalPages);
+    const start = (clampedPage - 1) * COHORT_ANALYTICS_PAGE_SIZE;
+    return cohortAnalyticsFilteredSorted.slice(start, start + COHORT_ANALYTICS_PAGE_SIZE);
+  }, [cohortAnalyticsFilteredSorted, cohortAnalyticsTablePage, cohortAnalyticsTableTotalPages]);
+
   const exportCohortAnalyticsToExcel = async () => {
-    if (cohortAnalytics.length === 0) return;
+    if (cohortAnalyticsFilteredSorted.length === 0) return;
     const XLSX = await import('xlsx');
-    const rows = cohortAnalytics.map((c) => ({
+    const rows = cohortAnalyticsFilteredSorted.map((c) => ({
       'Cohort Name': c.name,
       'Level': c.level || '—',
       'Status': c.status || '—',
+      'Start': c.startDate || '—',
+      'End': c.endDate || '—',
       'Enrolled': c.enrolled,
       'Capacity': c.seats ?? '—',
+      'Seat utilization (%)': c.seatUtilizationPct ?? '—',
       'Capacity Usage': c.seats ? `${c.enrolled}/${c.seats}` : String(c.enrolled),
       'Avg Progress (%)': c.avgProgress,
+      'Δ vs prior cohort (progress)': c.progressVsPriorCohort ?? '—',
       'Avg Attendance (%)': c.avgAttendance,
+      'Live class events': c.liveClassEventsCount ?? '—',
       'Sessions Completed': c.sessionsCompleted,
       'Sessions Total': c.sessionsTotal,
+      'Session schedule progress (%)': c.sessionProgressPct ?? '—',
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -5361,23 +5536,46 @@ export default function AdminDashboardPage() {
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-xl font-semibold text-zinc-50">Cohort Analytics</h3>
-                    <p className="mt-1 text-sm text-zinc-400">Enrollment stats, completion rates, and participation metrics</p>
+                    <p className="mt-1 text-sm text-zinc-400">Enrollment stats, completion rates, attendance, and session progress.</p>
                 </div>
-                  <button
-                    type="button"
-                    onClick={exportCohortAnalyticsToExcel}
-                    disabled={loadingCohortAnalytics || cohortAnalytics.length === 0}
-                    className="flex min-w-[8rem] items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-zinc-800/80 px-4 py-2 text-sm text-zinc-200 transition-all duration-200 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-zinc-600 disabled:hover:bg-zinc-800/80 disabled:hover:text-zinc-400"
-                  >
-                    <Download className="h-4 w-4 shrink-0" />
-                    <span>Download Excel</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={fetchCohortAnalytics}
+                      disabled={loadingCohortAnalytics}
+                      className="inline-flex min-w-[7rem] items-center justify-center gap-2 rounded-lg border border-cyan-500/30 bg-zinc-800/80 px-3 py-2 text-sm text-zinc-200 transition hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loadingCohortAnalytics ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      Refresh
+                    </button>
+                    <button
+                      type="button"
+                      onClick={exportCohortAnalyticsToExcel}
+                      disabled={loadingCohortAnalytics || cohortAnalyticsFilteredSorted.length === 0}
+                      className="flex min-w-[8rem] items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-zinc-800/80 px-4 py-2 text-sm text-zinc-200 transition-all duration-200 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-zinc-600 disabled:hover:bg-zinc-800/80 disabled:hover:text-zinc-400"
+                    >
+                      <Download className="h-4 w-4 shrink-0" />
+                      <span>Download Excel</span>
+                    </button>
+                  </div>
                 </div>
 
                 {loadingCohortAnalytics ? (
                   <div className="flex min-h-[280px] items-center justify-center rounded-lg border border-zinc-700/50 bg-zinc-800/30 py-16">
                     <Loader2 className="h-10 w-10 animate-spin text-cyan-400" />
                           </div>
+                ) : cohortAnalyticsError ? (
+                  <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-lg border border-red-500/25 bg-red-500/5 px-4 py-10 text-center">
+                    <AlertCircle className="h-10 w-10 text-red-300" />
+                    <p className="text-sm font-medium text-red-200">{cohortAnalyticsError}</p>
+                    <button
+                      type="button"
+                      onClick={fetchCohortAnalytics}
+                      className="rounded-md border border-red-400/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-100 transition hover:bg-red-500/20"
+                    >
+                      Retry
+                    </button>
+                  </div>
                 ) : cohortAnalytics.length === 0 ? (
                   <div className="group flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-zinc-600 bg-zinc-800/20 py-16 transition-colors hover:border-cyan-500/30 hover:bg-zinc-800/30">
                     <BarChart3 className="h-12 w-12 text-zinc-500 transition-colors group-hover:text-cyan-500/50" />
@@ -5386,14 +5584,232 @@ export default function AdminDashboardPage() {
                           </div>
                 ) : (
                   <>
+                    {/* Top KPIs — reflects current filters */}
+                    <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                      <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wider text-cyan-300/80">Cohorts</p>
+                        <p className="mt-1 text-2xl font-bold text-cyan-100">{cohortAnalyticsSummary.cohorts}</p>
+                        <p className="mt-1 text-[10px] text-cyan-200/50">Filtered</p>
+                      </div>
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wider text-emerald-300/80">Students</p>
+                        <p className="mt-1 text-2xl font-bold text-emerald-100">{cohortAnalyticsSummary.students}</p>
+                      </div>
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wider text-amber-300/80">Avg Progress</p>
+                        <p className="mt-1 text-2xl font-bold text-amber-100">{cohortAnalyticsSummary.avgProgress}%</p>
+                      </div>
+                      <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wider text-blue-300/80">Avg Attendance</p>
+                        <p className="mt-1 text-2xl font-bold text-blue-100">{cohortAnalyticsSummary.avgAttendance}%</p>
+                      </div>
+                      <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wider text-violet-300/80">Avg Seat use</p>
+                        <p className="mt-1 text-2xl font-bold text-violet-100">
+                          {cohortAnalyticsSummary.avgSeatUtil != null ? `${cohortAnalyticsSummary.avgSeatUtil}%` : '—'}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wider text-orange-300/80">Avg Session run</p>
+                        <p className="mt-1 text-2xl font-bold text-orange-100">{cohortAnalyticsSummary.avgSessionProgress}%</p>
+                      </div>
+                    </div>
+
+                    {/* Filters: phase + cohort start window + status/level chips */}
+                    <div className="mb-5 rounded-xl border border-zinc-700/80 bg-zinc-900/40 p-4">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Filters</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCohortAnalyticsSearch('');
+                            setCohortAnalyticsPhaseFilter('all');
+                            setCohortAnalyticsDatePreset('all');
+                            setCohortAnalyticsStatusChips([]);
+                            setCohortAnalyticsLevelChips([]);
+                          }}
+                          className="text-xs font-medium text-cyan-400 hover:text-cyan-300"
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Phase</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(
+                              [
+                                { id: 'all' as const, label: 'All' },
+                                { id: 'upcoming' as const, label: 'Upcoming' },
+                                { id: 'in-progress' as const, label: 'In progress' },
+                                { id: 'completed' as const, label: 'Completed' },
+                              ]
+                            ).map(({ id, label }) => (
+                              <button
+                                key={id}
+                                type="button"
+                                onClick={() => setCohortAnalyticsPhaseFilter(id)}
+                                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                                  cohortAnalyticsPhaseFilter === id
+                                    ? 'border-cyan-400/60 bg-cyan-500/20 text-cyan-100'
+                                    : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Cohort start date</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(
+                              [
+                                { id: 'all' as const, label: 'Any time' },
+                                { id: 'this_year' as const, label: 'Started this year' },
+                                { id: 'last_12_months' as const, label: 'Started ≤ 12m ago' },
+                              ]
+                            ).map(({ id, label }) => (
+                              <button
+                                key={id}
+                                type="button"
+                                onClick={() => setCohortAnalyticsDatePreset(id)}
+                                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                                  cohortAnalyticsDatePreset === id
+                                    ? 'border-amber-400/60 bg-amber-500/15 text-amber-100'
+                                    : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {cohortAnalyticsUniqueStatuses.length > 0 ? (
+                          <div>
+                            <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Status (multi)</p>
+                            <div className="flex flex-wrap gap-2">
+                              {cohortAnalyticsUniqueStatuses.map((st) => {
+                                const on = cohortAnalyticsStatusChips.includes(st);
+                                return (
+                                  <button
+                                    key={st}
+                                    type="button"
+                                    onClick={() =>
+                                      setCohortAnalyticsStatusChips((prev) =>
+                                        prev.includes(st) ? prev.filter((x) => x !== st) : [...prev, st],
+                                      )
+                                    }
+                                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                                      on
+                                        ? 'border-blue-400/60 bg-blue-500/20 text-blue-100'
+                                        : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
+                                    }`}
+                                  >
+                                    {st}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                        {cohortAnalyticsUniqueLevels.length > 0 ? (
+                          <div>
+                            <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Level (multi)</p>
+                            <div className="flex flex-wrap gap-2">
+                              {cohortAnalyticsUniqueLevels.map((lv) => {
+                                const on = cohortAnalyticsLevelChips.includes(lv);
+                                return (
+                                  <button
+                                    key={lv}
+                                    type="button"
+                                    onClick={() =>
+                                      setCohortAnalyticsLevelChips((prev) =>
+                                        prev.includes(lv) ? prev.filter((x) => x !== lv) : [...prev, lv],
+                                      )
+                                    }
+                                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                                      on
+                                        ? 'border-purple-400/60 bg-purple-500/20 text-purple-100'
+                                        : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
+                                    }`}
+                                  >
+                                    {lv}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="mb-6 grid gap-3 lg:grid-cols-3">
+                      <label className="relative block">
+                        <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                        <input
+                          type="text"
+                          value={cohortAnalyticsSearch}
+                          onChange={(e) => setCohortAnalyticsSearch(e.target.value)}
+                          placeholder="Search cohort name, level, status..."
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/70 py-2 pl-9 pr-3 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-400 shrink-0">Sort</span>
+                        <select
+                          value={cohortAnalyticsSort}
+                          onChange={(e) =>
+                            setCohortAnalyticsSort(
+                              e.target.value as
+                                | 'progress'
+                                | 'attendance'
+                                | 'enrolled'
+                                | 'seat_util'
+                                | 'session_pct',
+                            )
+                          }
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        >
+                          <option value="progress">Avg Progress</option>
+                          <option value="attendance">Avg Attendance</option>
+                          <option value="enrolled">Enrolled</option>
+                          <option value="seat_util">Seat utilization</option>
+                          <option value="session_pct">Session schedule progress</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center justify-start lg:justify-end">
+                        <span className="rounded-md border border-zinc-700 bg-zinc-900/70 px-3 py-2 text-xs text-zinc-300">
+                          Showing {cohortAnalyticsFilteredSorted.length} of {cohortAnalytics.length}
+                        </span>
+                      </div>
+                    </div>
+
                     {/* Summary Cards - responsive grid */}
                     <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      {cohortAnalytics.map((c, i) => (
+                      {cohortAnalyticsFilteredSorted.map((c) => {
+                        const pal = getCohortColor(c.id);
+                        const phase = getCohortPhase({
+                          id: c.id,
+                          name: c.name,
+                          startDate: c.startDate,
+                          endDate: c.endDate,
+                          status: c.status,
+                        });
+                        const phaseLabel =
+                          phase === 'in-progress' ? 'In progress' : phase === 'upcoming' ? 'Upcoming' : 'Completed';
+                        return (
                         <div
                           key={c.id}
-                          className={`group relative rounded-lg border p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:shadow-cyan-500/5 hover:ring-1 hover:ring-cyan-400/20 ${cohortColors[i % cohortColors.length].border} ${cohortColors[i % cohortColors.length].bg}`}
+                          className={`group relative rounded-lg border p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:shadow-cyan-500/5 hover:ring-1 hover:ring-cyan-400/20 ${pal.border} ${pal.bg}`}
                         >
-                          <h4 className="mb-3 truncate text-sm font-semibold text-zinc-50" title={c.name}>{c.name}</h4>
+                          <div className="mb-2 flex items-start justify-between gap-2">
+                            <h4 className="truncate text-sm font-semibold text-zinc-50" title={c.name}>{c.name}</h4>
+                            <span className="shrink-0 rounded-md border border-zinc-600/80 bg-black/30 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
+                              {phaseLabel}
+                            </span>
+                          </div>
                           <div className="space-y-2.5 text-xs">
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Enrolled</span>
@@ -5403,6 +5819,23 @@ export default function AdminDashboardPage() {
                               <span className="text-zinc-400">Avg Progress</span>
                               <span className="font-medium tabular-nums text-yellow-300">{c.avgProgress}%</span>
                             </div>
+                            {c.progressVsPriorCohort != null && (
+                              <div className="flex justify-between gap-2">
+                                <span className="text-zinc-400">vs prior cohort</span>
+                                <span
+                                  className={`font-medium tabular-nums ${
+                                    c.progressVsPriorCohort > 0
+                                      ? 'text-emerald-300'
+                                      : c.progressVsPriorCohort < 0
+                                        ? 'text-red-300'
+                                        : 'text-zinc-400'
+                                  }`}
+                                >
+                                  {c.progressVsPriorCohort > 0 ? '+' : ''}
+                                  {c.progressVsPriorCohort}%
+                                </span>
+                              </div>
+                            )}
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Avg Attendance</span>
                               <span className="font-medium tabular-nums text-blue-300">{c.avgAttendance}%</span>
@@ -5411,17 +5844,28 @@ export default function AdminDashboardPage() {
                               <span className="text-zinc-400">Capacity</span>
                               <span className="font-medium tabular-nums text-zinc-200">
                                 {c.seats ? `${c.enrolled}/${c.seats}` : c.enrolled}
+                                {c.seatUtilizationPct != null ? (
+                                  <span className="text-zinc-500"> ({c.seatUtilizationPct}%)</span>
+                                ) : null}
                               </span>
                       </div>
                             <div className="flex justify-between gap-2">
                               <span className="text-zinc-400">Sessions</span>
                               <span className="font-medium tabular-nums text-zinc-200">
                                 {c.sessionsCompleted}/{c.sessionsTotal}
+                                {c.sessionProgressPct != null ? (
+                                  <span className="text-zinc-500"> ({c.sessionProgressPct}%)</span>
+                                ) : null}
                               </span>
+                </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-zinc-400">Live classes</span>
+                              <span className="font-medium tabular-nums text-zinc-300">{c.liveClassEventsCount ?? '—'}</span>
                 </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Charts - 2-column grid on large screens */}
@@ -5432,7 +5876,7 @@ export default function AdminDashboardPage() {
                         <div className="h-56 min-h-[220px] lg:h-64">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                              data={cohortAnalytics.map((c) => ({
+                              data={cohortAnalyticsFilteredSorted.map((c) => ({
                                 name: c.name.length > 12 ? `${c.name.slice(0, 11)}…` : c.name,
                                 fullName: c.name,
                                 enrolled: c.enrolled,
@@ -5468,7 +5912,7 @@ export default function AdminDashboardPage() {
                         <div className="h-56 min-h-[220px] lg:h-64">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                              data={cohortAnalytics.map((c) => ({
+                              data={cohortAnalyticsFilteredSorted.map((c) => ({
                                 name: c.name.length > 14 ? `${c.name.slice(0, 13)}…` : c.name,
                                 fullName: c.name,
                                 progress: c.avgProgress,
@@ -5502,7 +5946,7 @@ export default function AdminDashboardPage() {
                         <div className="h-56 min-h-[220px] lg:h-64">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                              data={cohortAnalytics.map((c) => ({
+                              data={cohortAnalyticsFilteredSorted.map((c) => ({
                                 name: c.name.length > 12 ? `${c.name.slice(0, 11)}…` : c.name,
                                 fullName: c.name,
                                 attendance: c.avgAttendance,
@@ -5537,7 +5981,7 @@ export default function AdminDashboardPage() {
                           <ResponsiveContainer width="100%" height={256}>
                             <PieChart>
                               <Pie
-                                data={cohortAnalytics.map((c, i) => ({
+                                data={cohortAnalyticsFilteredSorted.map((c, i) => ({
                                   name: c.name,
                                   value: c.sessionsCompleted,
                                   total: c.sessionsTotal,
@@ -5549,7 +5993,7 @@ export default function AdminDashboardPage() {
                                 outerRadius={90}
                                 legendType="circle"
                               >
-                                {cohortAnalytics.map((_, i) => (
+                                {cohortAnalyticsFilteredSorted.map((_, i) => (
                                   <Cell key={i} fill={['#22d3ee', '#a78bfa', '#34d399', '#f59e0b', '#f472b6', '#06b6d4', '#8b5cf6'][i % 7]} />
                                 ))}
                               </Pie>
@@ -5564,6 +6008,132 @@ export default function AdminDashboardPage() {
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Detail table — paginated */}
+                    <div className="mt-8 rounded-xl border border-zinc-700/80 bg-zinc-900/35 p-4 md:p-5">
+                      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2">
+                          <Table className="h-5 w-5 text-cyan-400" />
+                          <h4 className="text-sm font-semibold text-zinc-100">Cohort detail</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                          <span>
+                            Page {Math.min(cohortAnalyticsTablePage, cohortAnalyticsTableTotalPages)} /{' '}
+                            {cohortAnalyticsTableTotalPages}
+                          </span>
+                          <span className="hidden sm:inline">·</span>
+                          <span>{COHORT_ANALYTICS_PAGE_SIZE} per page</span>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto rounded-lg border border-zinc-800/80">
+                        <table className="w-full min-w-[920px] text-left text-xs text-zinc-300">
+                          <thead className="border-b border-zinc-800 bg-zinc-950/80 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                            <tr>
+                              <th className="px-3 py-2.5">Cohort</th>
+                              <th className="px-3 py-2.5">Phase</th>
+                              <th className="px-3 py-2.5">Start</th>
+                              <th className="px-3 py-2.5">Level</th>
+                              <th className="px-3 py-2.5">Status</th>
+                              <th className="px-3 py-2.5 text-right">Enrolled</th>
+                              <th className="px-3 py-2.5 text-right">Seats %</th>
+                              <th className="px-3 py-2.5 text-right">Progress</th>
+                              <th className="px-3 py-2.5 text-right">Δ prior</th>
+                              <th className="px-3 py-2.5 text-right">Attend</th>
+                              <th className="px-3 py-2.5 text-right">Live</th>
+                              <th className="px-3 py-2.5 text-right">Sess %</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {cohortAnalyticsTableSlice.map((c) => {
+                              const ph = getCohortPhase({
+                                id: c.id,
+                                name: c.name,
+                                startDate: c.startDate,
+                                endDate: c.endDate,
+                                status: c.status,
+                              });
+                              const phLabel =
+                                ph === 'in-progress' ? 'In progress' : ph === 'upcoming' ? 'Upcoming' : 'Completed';
+                              const startStr = c.startDate
+                                ? new Date(c.startDate).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })
+                                : '—';
+                              return (
+                                <tr
+                                  key={c.id}
+                                  className="border-b border-zinc-800/60 transition hover:bg-zinc-800/40"
+                                >
+                                  <td className="max-w-[160px] truncate px-3 py-2 font-medium text-zinc-100" title={c.name}>
+                                    {c.name}
+                                  </td>
+                                  <td className="px-3 py-2 text-zinc-400">{phLabel}</td>
+                                  <td className="whitespace-nowrap px-3 py-2 tabular-nums text-zinc-400">{startStr}</td>
+                                  <td className="px-3 py-2 text-zinc-400">{c.level || '—'}</td>
+                                  <td className="px-3 py-2 text-zinc-400">{c.status || '—'}</td>
+                                  <td className="px-3 py-2 text-right tabular-nums">{c.enrolled}</td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-zinc-400">
+                                    {c.seatUtilizationPct != null ? `${c.seatUtilizationPct}%` : '—'}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-amber-200/90">{c.avgProgress}%</td>
+                                  <td className="px-3 py-2 text-right tabular-nums">
+                                    {c.progressVsPriorCohort != null ? (
+                                      <span
+                                        className={
+                                          c.progressVsPriorCohort > 0
+                                            ? 'text-emerald-400'
+                                            : c.progressVsPriorCohort < 0
+                                              ? 'text-red-400'
+                                              : 'text-zinc-500'
+                                        }
+                                      >
+                                        {c.progressVsPriorCohort > 0 ? '+' : ''}
+                                        {c.progressVsPriorCohort}%
+                                      </span>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-blue-200/90">
+                                    {c.avgAttendance}%
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-zinc-400">
+                                    {c.liveClassEventsCount ?? '—'}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-violet-200/90">
+                                    {c.sessionProgressPct != null ? `${c.sessionProgressPct}%` : '—'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          disabled={cohortAnalyticsTablePage <= 1}
+                          onClick={() => setCohortAnalyticsTablePage((p) => Math.max(1, p - 1))}
+                          className="rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          disabled={cohortAnalyticsTablePage >= cohortAnalyticsTableTotalPages}
+                          onClick={() =>
+                            setCohortAnalyticsTablePage((p) =>
+                              Math.min(cohortAnalyticsTableTotalPages, p + 1),
+                            )
+                          }
+                          className="rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Next
+                        </button>
                       </div>
                     </div>
                   </>
