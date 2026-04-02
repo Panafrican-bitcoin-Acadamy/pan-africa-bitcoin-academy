@@ -37,7 +37,6 @@ export const metadata: Metadata = {
     "Habesha Bitcoin",
     "Uganda Bitcoin education",
     "Bitcoin in Eritrea",
-    "Eritrean cryptocurrency",
   ],
   alternates: {
     canonical: '/',
