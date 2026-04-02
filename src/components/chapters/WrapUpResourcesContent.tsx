@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { WRAP_UP_GLOSSARY } from "@/content/wrapUpGlossary";
 
 function IconWallet({ className }: { className?: string }) {
@@ -57,6 +58,70 @@ type LinkRowProps = {
   downloadHref?: string;
   downloadLabel?: string;
 };
+
+type WalletCategoryTone = "teal" | "cyan" | "orange" | "purple";
+
+const WALLET_CATEGORY_STYLES: Record<
+  WalletCategoryTone,
+  { shell: string; dot: string; title: string; desc: string; inner: string }
+> = {
+  teal: {
+    shell:
+      "rounded-xl border border-teal-500/30 bg-gradient-to-br from-teal-950/40 via-zinc-950/50 to-cyan-950/20 p-4 shadow-[0_0_24px_rgba(45,212,191,0.06)] sm:p-5",
+    dot: "h-2 w-2 shrink-0 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.7)]",
+    title: "text-sm font-semibold uppercase tracking-wider text-teal-300",
+    desc: "text-xs leading-relaxed text-teal-100/55 sm:text-sm",
+    inner: "mt-4 space-y-2 rounded-lg border border-teal-500/15 bg-black/25 p-3 sm:p-4",
+  },
+  cyan: {
+    shell:
+      "rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-950/40 via-zinc-950/50 to-teal-950/25 p-4 shadow-[0_0_24px_rgba(34,211,238,0.08)] sm:p-5",
+    dot: "h-2 w-2 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.65)]",
+    title: "text-sm font-semibold uppercase tracking-wider text-cyan-300",
+    desc: "text-xs leading-relaxed text-cyan-100/55 sm:text-sm",
+    inner: "mt-4 space-y-2 rounded-lg border border-cyan-500/15 bg-black/25 p-3 sm:p-4",
+  },
+  orange: {
+    shell:
+      "rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-950/35 via-zinc-950/50 to-amber-950/20 p-4 shadow-[0_0_24px_rgba(249,115,22,0.07)] sm:p-5",
+    dot: "h-2 w-2 shrink-0 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.55)]",
+    title: "text-sm font-semibold uppercase tracking-wider text-orange-300",
+    desc: "text-xs leading-relaxed text-orange-100/55 sm:text-sm",
+    inner: "mt-4 space-y-2 rounded-lg border border-orange-500/15 bg-black/25 p-3 sm:p-4",
+  },
+  purple: {
+    shell:
+      "rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 via-zinc-950/50 to-fuchsia-950/20 p-4 shadow-[0_0_24px_rgba(192,132,252,0.08)] sm:p-5",
+    dot: "h-2 w-2 shrink-0 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.6)]",
+    title: "text-sm font-semibold uppercase tracking-wider text-purple-300",
+    desc: "text-xs leading-relaxed text-purple-100/55 sm:text-sm",
+    inner: "mt-4 space-y-2 rounded-lg border border-purple-500/15 bg-black/25 p-3 sm:p-4",
+  },
+};
+
+function WalletCategoryBlock({
+  tone,
+  title,
+  description,
+  children,
+}: {
+  tone: WalletCategoryTone;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  const s = WALLET_CATEGORY_STYLES[tone];
+  return (
+    <div className={s.shell}>
+      <div className="mb-3 flex items-center gap-2">
+        <span className={s.dot} aria-hidden />
+        <h4 className={s.title}>{title}</h4>
+      </div>
+      <p className={s.desc}>{description}</p>
+      <div className={s.inner}>{children}</div>
+    </div>
+  );
+}
 
 function LinkRow({
   name,
@@ -196,109 +261,110 @@ export function WrapUpResourcesContent() {
         </p>
 
         <div className="mt-6 space-y-6">
-          <div className="rounded-xl border border-teal-500/30 bg-gradient-to-br from-teal-950/40 via-zinc-950/50 to-cyan-950/20 p-4 shadow-[0_0_24px_rgba(45,212,191,0.06)] sm:p-5">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.7)]" aria-hidden />
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-teal-300">Offline supporting wallets</h4>
-            </div>
-            <p className="text-xs leading-relaxed text-teal-100/55 sm:text-sm">
-              Options that can work with limited connectivity or community setups—understand the custody model before using.
-            </p>
-            <div className="mt-4 space-y-2 rounded-lg border border-teal-500/15 bg-black/25 p-3 sm:p-4">
-              <LinkRow
-                name="Fedi"
-                note="Fedimint-based community app—federated custody model (different trade-offs vs self-custody singlesig). Read how it works before using."
-                href="https://www.fedi.xyz"
-                iosHref="https://apps.apple.com/us/app/fedi/id6448916281"
-                androidHref="https://play.google.com/store/apps/details?id=com.fedi"
-              />
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-cyan-400">Mobile (beginner-friendly)</h4>
-            <div className="mt-3 space-y-2">
-              <LinkRow
-                name="Phoenix"
-                note="Simple non-custodial Lightning wallet."
-                href="https://phoenix.acinq.co"
-                iosHref="https://apps.apple.com/us/app/phoenix-wallet/id1544097028"
-                androidHref="https://play.google.com/store/apps/details?id=fr.acinq.phoenix.mainnet"
-              />
-              <LinkRow
-                name="Breez"
-                note="Lightning + POS-style features."
-                href="https://breez.technology"
-                iosHref="https://apps.apple.com/us/app/breez-lightning-client-pos/id1463604142"
-                androidHref="https://play.google.com/store/apps/details?id=com.breez.client"
-              />
-              <LinkRow
-                name="Muun"
-                note="Hybrid on-chain + Lightning; easy UX."
-                href="https://muun.com"
-                iosHref="https://apps.apple.com/us/app/muun-wallet/id1482037683"
-                androidHref="https://play.google.com/store/apps/details?id=io.muun.apollo"
-              />
-              <LinkRow
-                name="BlueWallet"
-                note="Good starter: on-chain + optional Lightning."
-                href="https://bluewallet.io"
-                iosHref="https://apps.apple.com/us/app/bluewallet-bitcoin-wallet/id1376878040"
-                androidHref="https://play.google.com/store/apps/details?id=io.bluewallet.bluewallet"
-              />
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-orange-400">Desktop (more control)</h4>
-            <div className="mt-3 space-y-2">
-              <LinkRow
-                name="Sparrow"
-                note="Strong for learning UTXOs and coin control."
-                href="https://sparrowwallet.com"
-                downloadHref="https://sparrowwallet.com/download/"
-                downloadLabel="Desktop download"
-              />
-              <LinkRow
-                name="Electrum"
-                note="Lightweight; advanced options."
-                href="https://electrum.org"
-                downloadHref="https://electrum.org/#download"
-                downloadLabel="Desktop download"
-              />
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-purple-400">Hardware (best security)</h4>
-            <div className="mt-3 space-y-2">
-              <LinkRow
-                name="Coldcard"
-                note="Bitcoin-only; very security-focused."
-                href="https://coldcard.com"
-                downloadHref="https://coldcard.com/docs/"
-                downloadLabel="Docs & shop"
-              />
-              <LinkRow
-                name="Trezor"
-                note="Popular; relatively approachable setup."
-                href="https://trezor.io"
-                iosHref="https://apps.apple.com/us/app/trezor-suite-lite/id1631884497"
-                androidHref="https://play.google.com/store/apps/details?id=io.trezor.suite"
-                downloadHref="https://trezor.io/trezor-suite"
-                downloadLabel="Trezor Suite (desktop)"
-              />
-              <LinkRow
-                name="Ledger"
-                note="Widely used; supports many assets (not Bitcoin-only)."
-                href="https://www.ledger.com"
-                iosHref="https://apps.apple.com/us/app/ledger-live-crypto-wallet/id1361671700"
-                androidHref="https://play.google.com/store/apps/details?id=com.ledger.live"
-              />
-              <LinkRow
-                name="Blockstream Jade"
-                note="Open-source Bitcoin hardware wallet; often used with Blockstream Green."
-                href="https://blockstream.com/jade/"
-              />
-            </div>
-          </div>
+          <WalletCategoryBlock
+            tone="teal"
+            title="Offline supporting wallets"
+            description="Options that can work with limited connectivity or community setups—understand the custody model before using."
+          >
+            <LinkRow
+              name="Fedi"
+              note="Fedimint-based community app—federated custody model (different trade-offs vs self-custody singlesig). Read how it works before using."
+              href="https://www.fedi.xyz"
+              iosHref="https://apps.apple.com/us/app/fedi/id6448916281"
+              androidHref="https://play.google.com/store/apps/details?id=com.fedi"
+            />
+          </WalletCategoryBlock>
+
+          <WalletCategoryBlock
+            tone="cyan"
+            title="Mobile (beginner-friendly)"
+            description="Friendly mobile wallets for everyday sends and receives—always install from official store listings or the vendor site."
+          >
+            <LinkRow
+              name="Phoenix"
+              note="Simple non-custodial Lightning wallet."
+              href="https://phoenix.acinq.co"
+              iosHref="https://apps.apple.com/us/app/phoenix-wallet/id1544097028"
+              androidHref="https://play.google.com/store/apps/details?id=fr.acinq.phoenix.mainnet"
+            />
+            <LinkRow
+              name="Breez"
+              note="Lightning + POS-style features."
+              href="https://breez.technology"
+              iosHref="https://apps.apple.com/us/app/breez-lightning-client-pos/id1463604142"
+              androidHref="https://play.google.com/store/apps/details?id=com.breez.client"
+            />
+            <LinkRow
+              name="Muun"
+              note="Hybrid on-chain + Lightning; easy UX."
+              href="https://muun.com"
+              iosHref="https://apps.apple.com/us/app/muun-wallet/id1482037683"
+              androidHref="https://play.google.com/store/apps/details?id=io.muun.apollo"
+            />
+            <LinkRow
+              name="BlueWallet"
+              note="Good starter: on-chain + optional Lightning."
+              href="https://bluewallet.io"
+              iosHref="https://apps.apple.com/us/app/bluewallet-bitcoin-wallet/id1376878040"
+              androidHref="https://play.google.com/store/apps/details?id=io.bluewallet.bluewallet"
+            />
+          </WalletCategoryBlock>
+
+          <WalletCategoryBlock
+            tone="orange"
+            title="Desktop (more control)"
+            description="Full-featured desktop clients—strong for UTXO labels, coin control, and verifying transactions yourself. Download only from official domains."
+          >
+            <LinkRow
+              name="Sparrow"
+              note="Strong for learning UTXOs and coin control."
+              href="https://sparrowwallet.com"
+              downloadHref="https://sparrowwallet.com/download/"
+              downloadLabel="Desktop download"
+            />
+            <LinkRow
+              name="Electrum"
+              note="Lightweight; advanced options."
+              href="https://electrum.org"
+              downloadHref="https://electrum.org/#download"
+              downloadLabel="Desktop download"
+            />
+          </WalletCategoryBlock>
+
+          <WalletCategoryBlock
+            tone="purple"
+            title="Hardware (best security)"
+            description="Sign transactions on a dedicated device—buy from the manufacturer or trusted resellers; verify packaging and setup carefully."
+          >
+            <LinkRow
+              name="Coldcard"
+              note="Bitcoin-only; very security-focused."
+              href="https://coldcard.com"
+              downloadHref="https://coldcard.com/docs/"
+              downloadLabel="Docs & shop"
+            />
+            <LinkRow
+              name="Trezor"
+              note="Popular; relatively approachable setup."
+              href="https://trezor.io"
+              iosHref="https://apps.apple.com/us/app/trezor-suite-lite/id1631884497"
+              androidHref="https://play.google.com/store/apps/details?id=io.trezor.suite"
+              downloadHref="https://trezor.io/trezor-suite"
+              downloadLabel="Trezor Suite (desktop)"
+            />
+            <LinkRow
+              name="Ledger"
+              note="Widely used; supports many assets (not Bitcoin-only)."
+              href="https://www.ledger.com"
+              iosHref="https://apps.apple.com/us/app/ledger-live-crypto-wallet/id1361671700"
+              androidHref="https://play.google.com/store/apps/details?id=com.ledger.live"
+            />
+            <LinkRow
+              name="Blockstream Jade"
+              note="Open-source Bitcoin hardware wallet; often used with Blockstream Green."
+              href="https://blockstream.com/jade/"
+            />
+          </WalletCategoryBlock>
         </div>
       </section>
 
