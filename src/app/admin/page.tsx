@@ -620,7 +620,6 @@ export default function AdminDashboardPage() {
     endDate?: string | null;
     seatUtilizationPct?: number | null;
     sessionProgressPct?: number;
-    liveClassEventsCount?: number;
     progressVsPriorCohort?: number | null;
   }>>([]);
   const [loadingCohortAnalytics, setLoadingCohortAnalytics] = useState(false);
@@ -2765,7 +2764,6 @@ export default function AdminDashboardPage() {
       'Avg Progress (%)': c.avgProgress,
       'Δ vs prior cohort (progress)': c.progressVsPriorCohort ?? '—',
       'Avg Attendance (%)': c.avgAttendance,
-      'Live class events': c.liveClassEventsCount ?? '—',
       'Sessions Completed': c.sessionsCompleted,
       'Sessions Total': c.sessionsTotal,
       'Session schedule progress (%)': c.sessionProgressPct ?? '—',
@@ -5615,149 +5613,19 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    {/* Filters: phase + cohort start window + status/level chips */}
-                    <div className="mb-5 rounded-xl border border-zinc-700/80 bg-zinc-900/40 p-4">
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Filters</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCohortAnalyticsSearch('');
-                            setCohortAnalyticsPhaseFilter('all');
-                            setCohortAnalyticsDatePreset('all');
-                            setCohortAnalyticsStatusChips([]);
-                            setCohortAnalyticsLevelChips([]);
-                          }}
-                          className="text-xs font-medium text-cyan-400 hover:text-cyan-300"
-                        >
-                          Clear all
-                        </button>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Phase</p>
-                          <div className="flex flex-wrap gap-2">
-                            {(
-                              [
-                                { id: 'all' as const, label: 'All' },
-                                { id: 'upcoming' as const, label: 'Upcoming' },
-                                { id: 'in-progress' as const, label: 'In progress' },
-                                { id: 'completed' as const, label: 'Completed' },
-                              ]
-                            ).map(({ id, label }) => (
-                              <button
-                                key={id}
-                                type="button"
-                                onClick={() => setCohortAnalyticsPhaseFilter(id)}
-                                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                                  cohortAnalyticsPhaseFilter === id
-                                    ? 'border-cyan-400/60 bg-cyan-500/20 text-cyan-100'
-                                    : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
-                                }`}
-                              >
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Cohort start date</p>
-                          <div className="flex flex-wrap gap-2">
-                            {(
-                              [
-                                { id: 'all' as const, label: 'Any time' },
-                                { id: 'this_year' as const, label: 'Started this year' },
-                                { id: 'last_12_months' as const, label: 'Started ≤ 12m ago' },
-                              ]
-                            ).map(({ id, label }) => (
-                              <button
-                                key={id}
-                                type="button"
-                                onClick={() => setCohortAnalyticsDatePreset(id)}
-                                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                                  cohortAnalyticsDatePreset === id
-                                    ? 'border-amber-400/60 bg-amber-500/15 text-amber-100'
-                                    : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
-                                }`}
-                              >
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        {cohortAnalyticsUniqueStatuses.length > 0 ? (
-                          <div>
-                            <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Status (multi)</p>
-                            <div className="flex flex-wrap gap-2">
-                              {cohortAnalyticsUniqueStatuses.map((st) => {
-                                const on = cohortAnalyticsStatusChips.includes(st);
-                                return (
-                                  <button
-                                    key={st}
-                                    type="button"
-                                    onClick={() =>
-                                      setCohortAnalyticsStatusChips((prev) =>
-                                        prev.includes(st) ? prev.filter((x) => x !== st) : [...prev, st],
-                                      )
-                                    }
-                                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                                      on
-                                        ? 'border-blue-400/60 bg-blue-500/20 text-blue-100'
-                                        : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
-                                    }`}
-                                  >
-                                    {st}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : null}
-                        {cohortAnalyticsUniqueLevels.length > 0 ? (
-                          <div>
-                            <p className="mb-1.5 text-[11px] font-medium text-zinc-500">Level (multi)</p>
-                            <div className="flex flex-wrap gap-2">
-                              {cohortAnalyticsUniqueLevels.map((lv) => {
-                                const on = cohortAnalyticsLevelChips.includes(lv);
-                                return (
-                                  <button
-                                    key={lv}
-                                    type="button"
-                                    onClick={() =>
-                                      setCohortAnalyticsLevelChips((prev) =>
-                                        prev.includes(lv) ? prev.filter((x) => x !== lv) : [...prev, lv],
-                                      )
-                                    }
-                                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                                      on
-                                        ? 'border-purple-400/60 bg-purple-500/20 text-purple-100'
-                                        : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 hover:border-zinc-500'
-                                    }`}
-                                  >
-                                    {lv}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="mb-6 grid gap-3 lg:grid-cols-3">
-                      <label className="relative block">
-                        <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-                        <input
-                          type="text"
-                          value={cohortAnalyticsSearch}
-                          onChange={(e) => setCohortAnalyticsSearch(e.target.value)}
-                          placeholder="Search cohort name, level, status..."
-                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/70 py-2 pl-9 pr-3 text-sm text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                        />
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-400 shrink-0">Sort</span>
+                    {/* Compact toolbar: search + sort + filters in dense rows */}
+                    <div className="mb-5 rounded-lg border border-zinc-700/70 bg-zinc-900/30 px-2 py-2 sm:px-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                        <label className="relative block min-w-0 flex-1 sm:min-w-[200px] sm:max-w-md">
+                          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                          <input
+                            type="text"
+                            value={cohortAnalyticsSearch}
+                            onChange={(e) => setCohortAnalyticsSearch(e.target.value)}
+                            placeholder="Search…"
+                            className="w-full rounded-md border border-zinc-700 bg-zinc-900/80 py-1.5 pl-8 pr-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                          />
+                        </label>
                         <select
                           value={cohortAnalyticsSort}
                           onChange={(e) =>
@@ -5770,19 +5638,142 @@ export default function AdminDashboardPage() {
                                 | 'session_pct',
                             )
                           }
-                          className="w-full rounded-lg border border-zinc-700 bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                          className="w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-2 py-1.5 text-xs text-zinc-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 sm:w-auto sm:min-w-[10rem]"
                         >
-                          <option value="progress">Avg Progress</option>
-                          <option value="attendance">Avg Attendance</option>
-                          <option value="enrolled">Enrolled</option>
-                          <option value="seat_util">Seat utilization</option>
-                          <option value="session_pct">Session schedule progress</option>
+                          <option value="progress">Sort: progress</option>
+                          <option value="attendance">Sort: attendance</option>
+                          <option value="enrolled">Sort: enrolled</option>
+                          <option value="seat_util">Sort: seat %</option>
+                          <option value="session_pct">Sort: sessions</option>
                         </select>
+                        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+                          <span className="text-[10px] tabular-nums text-zinc-500">
+                            {cohortAnalyticsFilteredSorted.length}/{cohortAnalytics.length}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCohortAnalyticsSearch('');
+                              setCohortAnalyticsPhaseFilter('all');
+                              setCohortAnalyticsDatePreset('all');
+                              setCohortAnalyticsStatusChips([]);
+                              setCohortAnalyticsLevelChips([]);
+                            }}
+                            className="shrink-0 text-[10px] font-medium text-cyan-400/90 hover:text-cyan-300"
+                          >
+                            Reset
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-start lg:justify-end">
-                        <span className="rounded-md border border-zinc-700 bg-zinc-900/70 px-3 py-2 text-xs text-zinc-300">
-                          Showing {cohortAnalyticsFilteredSorted.length} of {cohortAnalytics.length}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1 border-t border-zinc-800/70 pt-2">
+                        <span className="mr-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                          Phase
                         </span>
+                        {(
+                          [
+                            { id: 'all' as const, label: 'All' },
+                            { id: 'upcoming' as const, label: 'Soon' },
+                            { id: 'in-progress' as const, label: 'Live' },
+                            { id: 'completed' as const, label: 'Done' },
+                          ]
+                        ).map(({ id, label }) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setCohortAnalyticsPhaseFilter(id)}
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition ${
+                              cohortAnalyticsPhaseFilter === id
+                                ? 'bg-cyan-500/25 text-cyan-100 ring-1 ring-cyan-400/35'
+                                : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                        <span className="ml-2 mr-0.5 hidden h-3 w-px bg-zinc-700 sm:inline" aria-hidden />
+                        <span className="mr-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                          Start
+                        </span>
+                        {(
+                          [
+                            { id: 'all' as const, label: 'Any' },
+                            { id: 'this_year' as const, label: 'This yr' },
+                            { id: 'last_12_months' as const, label: '12 mo' },
+                          ]
+                        ).map(({ id, label }) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setCohortAnalyticsDatePreset(id)}
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition ${
+                              cohortAnalyticsDatePreset === id
+                                ? 'bg-amber-500/20 text-amber-100 ring-1 ring-amber-400/35'
+                                : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                        {cohortAnalyticsUniqueStatuses.length > 0 ? (
+                          <>
+                            <span className="ml-2 mr-0.5 hidden h-3 w-px bg-zinc-700 sm:inline" aria-hidden />
+                            <span className="mr-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                              Status
+                            </span>
+                            {cohortAnalyticsUniqueStatuses.map((st) => {
+                              const on = cohortAnalyticsStatusChips.includes(st);
+                              return (
+                                <button
+                                  key={st}
+                                  type="button"
+                                  onClick={() =>
+                                    setCohortAnalyticsStatusChips((prev) =>
+                                      prev.includes(st) ? prev.filter((x) => x !== st) : [...prev, st],
+                                    )
+                                  }
+                                  className={`max-w-[7rem] truncate rounded px-1.5 py-0.5 text-[10px] font-medium transition ${
+                                    on
+                                      ? 'bg-blue-500/20 text-blue-100 ring-1 ring-blue-400/35'
+                                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                                  }`}
+                                  title={st}
+                                >
+                                  {st}
+                                </button>
+                              );
+                            })}
+                          </>
+                        ) : null}
+                        {cohortAnalyticsUniqueLevels.length > 0 ? (
+                          <>
+                            <span className="ml-2 mr-0.5 hidden h-3 w-px bg-zinc-700 sm:inline" aria-hidden />
+                            <span className="mr-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                              Level
+                            </span>
+                            {cohortAnalyticsUniqueLevels.map((lv) => {
+                              const on = cohortAnalyticsLevelChips.includes(lv);
+                              return (
+                                <button
+                                  key={lv}
+                                  type="button"
+                                  onClick={() =>
+                                    setCohortAnalyticsLevelChips((prev) =>
+                                      prev.includes(lv) ? prev.filter((x) => x !== lv) : [...prev, lv],
+                                    )
+                                  }
+                                  className={`max-w-[6rem] truncate rounded px-1.5 py-0.5 text-[10px] font-medium transition ${
+                                    on
+                                      ? 'bg-purple-500/20 text-purple-100 ring-1 ring-purple-400/35'
+                                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                                  }`}
+                                  title={lv}
+                                >
+                                  {lv}
+                                </button>
+                              );
+                            })}
+                          </>
+                        ) : null}
                       </div>
                     </div>
 
@@ -5857,10 +5848,6 @@ export default function AdminDashboardPage() {
                                   <span className="text-zinc-500"> ({c.sessionProgressPct}%)</span>
                                 ) : null}
                               </span>
-                </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="text-zinc-400">Live classes</span>
-                              <span className="font-medium tabular-nums text-zinc-300">{c.liveClassEventsCount ?? '—'}</span>
                 </div>
                           </div>
                         </div>
@@ -6028,7 +6015,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                       <div className="overflow-x-auto rounded-lg border border-zinc-800/80">
-                        <table className="w-full min-w-[920px] text-left text-xs text-zinc-300">
+                        <table className="w-full min-w-[820px] text-left text-xs text-zinc-300">
                           <thead className="border-b border-zinc-800 bg-zinc-950/80 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
                             <tr>
                               <th className="px-3 py-2.5">Cohort</th>
@@ -6041,7 +6028,7 @@ export default function AdminDashboardPage() {
                               <th className="px-3 py-2.5 text-right">Progress</th>
                               <th className="px-3 py-2.5 text-right">Δ prior</th>
                               <th className="px-3 py-2.5 text-right">Attend</th>
-                              <th className="px-3 py-2.5 text-right">Live</th>
+                              <th className="px-3 py-2.5 text-right">Sessions</th>
                               <th className="px-3 py-2.5 text-right">Sess %</th>
                             </tr>
                           </thead>
@@ -6101,8 +6088,8 @@ export default function AdminDashboardPage() {
                                   <td className="px-3 py-2 text-right tabular-nums text-blue-200/90">
                                     {c.avgAttendance}%
                                   </td>
-                                  <td className="px-3 py-2 text-right tabular-nums text-zinc-400">
-                                    {c.liveClassEventsCount ?? '—'}
+                                  <td className="px-3 py-2 text-right tabular-nums text-zinc-300">
+                                    {c.sessionsCompleted}/{c.sessionsTotal}
                                   </td>
                                   <td className="px-3 py-2 text-right tabular-nums text-violet-200/90">
                                     {c.sessionProgressPct != null ? `${c.sessionProgressPct}%` : '—'}

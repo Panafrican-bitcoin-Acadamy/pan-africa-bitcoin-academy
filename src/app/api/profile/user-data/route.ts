@@ -193,31 +193,37 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Calculate attendance percentage
+    // Attendance % vs this student's cohort: cohort_sessions (and live-class events for that cohort)
     let attendancePercent = 0;
-    if (student) {
+    if (student && cohort?.id) {
       try {
-        // Get total live-class events
-        const { data: liveEvents } = await supabaseAdmin
-          .from('events')
-          .select('id')
-          .eq('type', 'live-class');
-        
-        const totalLiveLectures = liveEvents?.length || 0;
-        
-        if (totalLiveLectures > 0) {
-          // Get attendance records for this student
+        const cohortId = cohort.id as string;
+        const [{ data: cohortSessionRows }, { data: cohortLiveEvents }] = await Promise.all([
+          supabaseAdmin.from('cohort_sessions').select('id').eq('cohort_id', cohortId),
+          supabaseAdmin
+            .from('events')
+            .select('id')
+            .eq('cohort_id', cohortId)
+            .eq('type', 'live-class'),
+        ]);
+        const sessionIds = new Set((cohortSessionRows || []).map((s: { id: string }) => s.id));
+        const eventIds = new Set((cohortLiveEvents || []).map((e: { id: string }) => e.id));
+        const eligible = new Set<string>([...sessionIds, ...eventIds]);
+        const denom = sessionIds.size > 0 ? sessionIds.size : eventIds.size;
+        if (denom > 0) {
           const { data: attendanceRecords } = await supabaseAdmin
             .from('attendance')
             .select('event_id')
             .eq('student_id', profile.id);
-          
-          const lecturesAttended = attendanceRecords?.length || 0;
-          attendancePercent = Math.round((lecturesAttended / totalLiveLectures) * 100);
+          const marked = new Set((attendanceRecords || []).map((a: { event_id: string }) => a.event_id));
+          let attended = 0;
+          eligible.forEach((eid) => {
+            if (marked.has(eid)) attended++;
+          });
+          attendancePercent = Math.round((attended / denom) * 100);
         }
       } catch (err) {
         console.error('Error calculating attendance:', err);
-        // Keep default 0 if calculation fails
       }
     }
 

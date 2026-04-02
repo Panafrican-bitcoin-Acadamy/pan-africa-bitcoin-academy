@@ -135,22 +135,48 @@ export async function GET(_req: NextRequest) {
       );
     }
 
-    // Get total live-class events count for attendance calculation
-    let totalLiveLectures = 0;
-    try {
-      const { data: liveEvents, error: eventsError } = await supabaseAdmin
-        .from('events')
-        .select('id')
-        .eq('type', 'live-class');
-      
-      if (eventsError) {
-        console.error('Error fetching live events (non-critical):', eventsError);
-      } else {
-        totalLiveLectures = liveEvents?.length || 0;
+    const cohortIdForProfile = (p: any): string | null => {
+      const enrollments = p.cohort_enrollment || [];
+      if (enrollments.length > 0) {
+        const latest = [...enrollments].sort(
+          (a: any, b: any) => new Date(b.enrolled_at).getTime() - new Date(a.enrolled_at).getTime()
+        )[0];
+        return latest.cohort_id || null;
       }
-    } catch (eventsError) {
-      console.error('Error fetching live events (non-critical):', eventsError);
-      // Continue without attendance data
+      const student = p.students?.[0];
+      return student?.cohort_id || null;
+    };
+
+    const cohortIdsForAttendance = [
+      ...new Set(profiles.map(cohortIdForProfile).filter(Boolean)),
+    ] as string[];
+
+    const sessionIdsByCohort = new Map<string, Set<string>>();
+    const eventIdsByCohort = new Map<string, Set<string>>();
+    if (cohortIdsForAttendance.length > 0) {
+      try {
+        const [{ data: sessionRows }, { data: liveEventRows }] = await Promise.all([
+          supabaseAdmin
+            .from('cohort_sessions')
+            .select('id, cohort_id')
+            .in('cohort_id', cohortIdsForAttendance),
+          supabaseAdmin
+            .from('events')
+            .select('id, cohort_id')
+            .in('cohort_id', cohortIdsForAttendance)
+            .eq('type', 'live-class'),
+        ]);
+        (sessionRows || []).forEach((s: any) => {
+          if (!sessionIdsByCohort.has(s.cohort_id)) sessionIdsByCohort.set(s.cohort_id, new Set());
+          sessionIdsByCohort.get(s.cohort_id)!.add(s.id);
+        });
+        (liveEventRows || []).forEach((e: any) => {
+          if (!eventIdsByCohort.has(e.cohort_id)) eventIdsByCohort.set(e.cohort_id, new Set());
+          eventIdsByCohort.get(e.cohort_id)!.add(e.id);
+        });
+      } catch (e) {
+        console.error('Error fetching cohort sessions/events for attendance (non-critical):', e);
+      }
     }
 
     // Map profiles to progress data
@@ -165,34 +191,29 @@ export async function GET(_req: NextRequest) {
         console.log(`[admin/students/progress] Student ${p.email}: ${chapterData.length} progress records, ${completed} completed`);
       }
       
-      // Calculate attendance
+      const student = p.students?.[0];
+      let cohortId = cohortIdForProfile(p);
+      let cohortName = null;
+
+      const sessionIds = (cohortId && sessionIdsByCohort.get(cohortId)) || new Set<string>();
+      const liveCohortEventIds = (cohortId && eventIdsByCohort.get(cohortId)) || new Set<string>();
+      const eligibleAttendanceIds = new Set<string>([...sessionIds, ...liveCohortEventIds]);
+      const attendanceDenom =
+        cohortId && sessionIds.size > 0 ? sessionIds.size : liveCohortEventIds.size;
       const attendanceRecords = p.attendance || [];
-      const lecturesAttended = attendanceRecords.length;
-      const attendancePercent = totalLiveLectures > 0 
-        ? Math.round((lecturesAttended / totalLiveLectures) * 100)
-        : 0;
+      const marked = new Set(attendanceRecords.map((a: any) => a.event_id));
+      let lecturesAttended = 0;
+      if (attendanceDenom > 0) {
+        eligibleAttendanceIds.forEach((eid) => {
+          if (marked.has(eid)) lecturesAttended++;
+        });
+      }
+      const attendancePercent =
+        attendanceDenom > 0 ? Math.round((lecturesAttended / attendanceDenom) * 100) : 0;
+      const totalLiveLectures = attendanceDenom;
 
       // Overall progress: 50% chapters + 50% attendance
       const overallProgress = Math.round((completed / 20) * 50 + attendancePercent * 0.5);
-
-      const student = p.students?.[0];
-      // Get cohort from cohort_enrollment (source of truth) first, fallback to students.cohort_id
-      let cohortId = null;
-      let cohortName = null;
-      
-      // cohort_enrollment is the source of truth for student enrollments
-      const enrollments = p.cohort_enrollment || [];
-      if (enrollments.length > 0) {
-        // If multiple enrollments, use the most recent one
-        const latestEnrollment = enrollments.sort((a: any, b: any) => 
-          new Date(b.enrolled_at).getTime() - new Date(a.enrolled_at).getTime()
-        )[0];
-        cohortId = latestEnrollment.cohort_id;
-      } else {
-        // Fallback to students.cohort_id if no enrollment record exists
-        cohortId = student?.cohort_id || null;
-      }
-      
       cohortName = cohortId ? cohortsMap.get(cohortId) || null : null;
 
       return {

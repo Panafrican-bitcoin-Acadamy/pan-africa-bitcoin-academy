@@ -9,8 +9,10 @@ const TOTAL_CHAPTERS = 20;
  * Returns per-cohort analytics: enrolled, avg progress, avg attendance, capacity, sessions.
  *
  * Progress = average chapter completion % across enrolled students (chapters completed / 20).
- * Attendance = per-cohort: for each enrolled student, count events attended out of
- *              live-class events assigned to that cohort.
+ * Attendance = per cohort: each student's `attendance` rows whose `event_id` is either a
+ *              `cohort_sessions.id` for that cohort or a live-class `events.id` for that cohort,
+ *              divided by the number of scheduled sessions (`cohort_sessions` rows), or if
+ *              there are no session rows, by live-class events for that cohort (legacy).
  * Sessions completed = sessions whose date has already passed OR status is 'completed'.
  */
 export async function GET(_req: NextRequest) {
@@ -78,14 +80,17 @@ export async function GET(_req: NextRequest) {
       }
     }
 
-    // 4. Cohort sessions: count total and completed (past date or status=completed)
+    // 4. Cohort sessions: count total and completed + session ids per cohort (attendance keys)
     const { data: cohortSessions } = await supabaseAdmin
       .from('cohort_sessions')
-      .select('cohort_id, session_date, status');
+      .select('id, cohort_id, session_date, status');
 
     const sessionsByCohort = new Map<string, { total: number; completed: number }>();
+    const sessionIdsByCohort = new Map<string, Set<string>>();
     (cohortSessions || []).forEach((s: any) => {
       if (!sessionsByCohort.has(s.cohort_id)) sessionsByCohort.set(s.cohort_id, { total: 0, completed: 0 });
+      if (!sessionIdsByCohort.has(s.cohort_id)) sessionIdsByCohort.set(s.cohort_id, new Set());
+      sessionIdsByCohort.get(s.cohort_id)!.add(s.id);
       const t = sessionsByCohort.get(s.cohort_id)!;
       t.total++;
       if (s.status === 'completed' || (s.session_date && s.session_date <= today)) {
@@ -138,20 +143,23 @@ export async function GET(_req: NextRequest) {
         totalProgressPct += Math.min(100, Math.round((done / TOTAL_CHAPTERS) * 100));
       });
 
-      // --- Avg Attendance (per-cohort events) ---
+      // --- Avg Attendance (cohort sessions + optional live-class events as attendance keys) ---
+      const cohortSessionIds = sessionIdsByCohort.get(cohort.id) || new Set<string>();
       const cohortEventIds = eventIdsByCohort.get(cohort.id) || new Set<string>();
-      const totalCohortEvents = cohortEventIds.size;
+      const eligibleAttendanceIds = new Set<string>([...cohortSessionIds, ...cohortEventIds]);
+      const attendanceDenom =
+        cohortSessionIds.size > 0 ? cohortSessionIds.size : cohortEventIds.size;
       let totalAttendancePct = 0;
-      if (totalCohortEvents > 0) {
+      if (attendanceDenom > 0) {
         enrolledIds.forEach((sid: string) => {
           const studentEvents = attendedByStudent.get(sid);
           let attended = 0;
           if (studentEvents) {
-            cohortEventIds.forEach((eid: string) => {
+            eligibleAttendanceIds.forEach((eid: string) => {
               if (studentEvents.has(eid)) attended++;
             });
           }
-          totalAttendancePct += Math.round((attended / totalCohortEvents) * 100);
+          totalAttendancePct += Math.round((attended / attendanceDenom) * 100);
         });
       }
 
@@ -177,7 +185,6 @@ export async function GET(_req: NextRequest) {
         sessionsCompleted: sess.completed,
         seatUtilizationPct,
         sessionProgressPct,
-        liveClassEventsCount: totalCohortEvents,
       };
     });
 
