@@ -1255,7 +1255,7 @@ export async function sendExamRetakeRequestToAdmin(
         <head><meta charset="utf-8"></head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 24px;">
           <h1 style="font-size: 18px;">A student is requesting to retake the final exam</h1>
-          <p style="margin: 12px 0;">Review and approve or reject in the admin panel under <strong>Assessments → Final Exam Submissions</strong>.</p>
+          <p style="margin: 12px 0;">Review and approve or reject in the admin panel under <strong>Assessments → Exam</strong>.</p>
           <p style="margin: 12px 0;"><strong>Student:</strong> ${escapeHtmlForEmail(name)}<br/>
           <strong>Email:</strong> ${escapeHtmlForEmail(data.studentEmail)}</p>
           <p style="margin: 12px 0;"><strong>Reason:</strong> ${escapeHtmlForEmail(data.reason)}</p>

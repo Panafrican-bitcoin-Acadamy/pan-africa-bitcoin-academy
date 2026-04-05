@@ -744,7 +744,7 @@ export default function AdminDashboardPage() {
       label: 'Assessments',
       icon: FileText,
       subMenus: [
-        { id: 'final-exam-submissions', label: 'Final Exam Submissions' },
+        { id: 'final-exam-submissions', label: 'Exam' },
         { id: 'student-sats-rewards', label: 'Student Sats Rewards' },
       ],
     },
@@ -8122,31 +8122,19 @@ export default function AdminDashboardPage() {
             )}
 
 
-            {/* Assessments — Final exam access, submissions, retake requests */}
             {activeSubMenu === 'final-exam-submissions' && (
               <>
               <div className="space-y-8">
-                <div>
-                  <h2 className="text-lg font-semibold text-zinc-100">Final exam submissions</h2>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Grant exam access, see who has submitted, and handle students who ran out of time: they press OK, go to
-                    the dashboard, and you get an email. Approve so they can open the exam again{' '}
-                    <strong className="font-medium text-zinc-400">from question 1</strong> with a full 2-hour attempt.
-                    Click any submitted exam row or result summary to open the full breakdown (every question and answer).
-                  </p>
-                </div>
+                <h2 className="text-lg font-semibold text-zinc-100">Exam</h2>
 
                 <div>
-                  <h3 className="text-base font-semibold text-zinc-200">Recent exam submissions</h3>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Students who finished the final exam, newest first. Click a row for score, pass/fail, and per-question
-                    detail.
-                  </p>
+                  <h3 className="text-base font-semibold text-zinc-200">Submissions</h3>
+                  <p className="mt-1 text-sm text-zinc-500">Click a row for detail.</p>
                   {loadingExamAccess && recentExamSubmissions.length === 0 ? (
                     <p className="mt-4 text-sm text-zinc-500">Loading…</p>
                   ) : recentExamSubmissions.length === 0 ? (
                     <p className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-500">
-                      No submitted exams yet.
+                      None yet.
                     </p>
                   ) : (
                     <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
@@ -8238,15 +8226,12 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-base font-semibold text-zinc-200">Retake requests (session time ran out)</h3>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Pending requests appear below. Approve or reject here (or use the link in the email).
-                  </p>
+                  <h3 className="text-base font-semibold text-zinc-200">Retake requests</h3>
                   {loadingExamAccess && examRetakeRequests.length === 0 ? (
                     <p className="mt-4 text-sm text-zinc-500">Loading…</p>
                   ) : examRetakeRequests.filter((r: { status: string }) => r.status === 'pending').length === 0 ? (
                     <p className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-500">
-                      No students are waiting for a retake right now.
+                      No pending retakes.
                     </p>
                   ) : (
                     <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
@@ -8308,11 +8293,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-base font-semibold text-zinc-200">Students and exam access</h3>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Grant or revoke final exam access. For submitted students, click the score summary to open the full
-                    breakdown (same as the submissions table above).
-                  </p>
+                  <h3 className="text-base font-semibold text-zinc-200">Access</h3>
                   {loadingExamAccess && examAccessList.length === 0 ? (
                     <p className="mt-4 text-sm text-zinc-500">Loading…</p>
                   ) : (
@@ -8401,7 +8382,7 @@ export default function AdminDashboardPage() {
                                     ) : null}
                                     <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-cyan-300">
                                       <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                                      Open full exam breakdown
+                                      View detail
                                       <ChevronRight className="h-3.5 w-3.5 opacity-70" aria-hidden />
                                     </p>
                                   </button>
@@ -8443,7 +8424,7 @@ export default function AdminDashboardPage() {
 
                 {examRetakeRequests.some((r: { status: string }) => r.status !== 'pending') ? (
                   <div>
-                    <h3 className="text-sm font-semibold text-zinc-400">Recent resolved requests</h3>
+                    <h3 className="text-sm font-semibold text-zinc-400">Resolved retakes</h3>
                     <ul className="mt-2 space-y-2 text-xs text-zinc-500">
                       {examRetakeRequests
                         .filter((r: { status: string }) => r.status !== 'pending')
@@ -8483,7 +8464,7 @@ export default function AdminDashboardPage() {
                       <div className="min-w-0 flex-1">
                         <h3 id="exam-detail-title" className="flex items-center gap-2 text-lg font-semibold text-zinc-100">
                           <GraduationCap className="h-5 w-5 shrink-0 text-cyan-400" />
-                          Final exam detail
+                          Exam detail
                         </h3>
                         <p className="mt-1 truncate text-sm text-zinc-400">
                           {examSubmissionDetailModal.studentName || 'Student'}{' '}
@@ -8506,7 +8487,7 @@ export default function AdminDashboardPage() {
                       {examSubmissionDetailModal.loading ? (
                         <div className="flex items-center justify-center py-16 text-sm text-zinc-500">
                           <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-500" />
-                          Loading exam…
+                          Loading…
                         </div>
                       ) : examSubmissionDetailModal.error ? (
                         <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -8547,7 +8528,7 @@ export default function AdminDashboardPage() {
                           </div>
 
                           <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-zinc-300">Questions and answers</h4>
+                            <h4 className="text-sm font-semibold text-zinc-300">Answers</h4>
                             <ul className="space-y-3">
                               {examSubmissionDetailModal.data.questions.map((q) => (
                                 <li
