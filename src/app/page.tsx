@@ -485,7 +485,7 @@ export default async function Home() {
         <div className="relative z-10 w-full px-4 space-y-6 sm:space-y-8 text-center sm:max-w-4xl ml-auto lg:px-6">
           <HeroHeadline />
           <p className="w-full text-base sm:text-lg text-zinc-400 leading-relaxed sm:max-w-2xl sm:mx-auto">
-            Join our hands-on Bitcoin academy designed for Africa. Learn by doing, earn sats, and become part of a growing community of builders.
+            Cohort-based lessons, assignments, and certification—with optional sats rewards and Lightning payouts for students.
           </p>
           {/* Mobile-first: Full width buttons on mobile, side-by-side on larger screens */}
           <div className="flex flex-col items-stretch sm:items-center sm:justify-center gap-3 sm:gap-4 sm:flex-row w-full sm:w-auto">
@@ -604,7 +604,7 @@ export default async function Home() {
                   <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Our Core Identity</p>
                 </div>
                 <p className="text-xl font-semibold leading-relaxed text-cyan-100 sm:text-2xl lg:text-3xl">
-                  Pan-African Bitcoin Academy is an open-source Bitcoin education infrastructure that teaches Bitcoin from first principles and builds long-term technical and contributor capacity in underserved communities.
+                  Pan-African Bitcoin Academy teaches Bitcoin from first principles through structured chapters, cohorts, and practical assignments.
                 </p>
               </div>
             </section>
