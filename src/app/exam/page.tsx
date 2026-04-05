@@ -117,9 +117,12 @@ function ExamGoodLuckCurved() {
 function ExamSubmitCelebration({
   show,
   onDismiss,
+  highScoreBonusSats = 0,
 }: {
   show: boolean;
   onDismiss: () => void;
+  /** Pending sats from 80%+ final exam bonus (API) */
+  highScoreBonusSats?: number;
 }) {
   useEffect(() => {
     if (!show) return;
@@ -141,6 +144,11 @@ function ExamSubmitCelebration({
         </div>
         <p className="text-lg font-semibold tracking-tight text-white">Final exam submitted</p>
         <p className="mt-2 text-base font-medium text-emerald-300/95">Good job!</p>
+        {highScoreBonusSats > 0 ? (
+          <p className="mt-3 text-sm font-semibold text-amber-300/95">
+            +{highScoreBonusSats.toLocaleString()} sats added to your pending balance (80%+ score).
+          </p>
+        ) : null}
         <p className="mt-4 text-xs text-zinc-500">Your score is saved. Check your email and dashboard for details.</p>
       </div>
     </div>
@@ -167,6 +175,8 @@ interface ExamResult {
   percentage?: number;
   submittedAt?: string;
   message?: string;
+  /** Pending sats granted for 80%+ score; 0 if none */
+  highScoreBonusSats?: number;
 }
 
 export default function ExamPage() {
@@ -450,6 +460,7 @@ export default function ExamPage() {
         percentage: data.percentage,
         submittedAt: data.submittedAt,
         message: data.message,
+        highScoreBonusSats: typeof data.highScoreBonusSats === 'number' ? data.highScoreBonusSats : 0,
       });
       setCelebrateSubmit(true);
       if (!accessCheck?.isAdmin && userEmail) {
@@ -559,6 +570,11 @@ export default function ExamPage() {
               {examResult.score}/{examResult.totalQuestions}
             </div>
             <div className="mb-6 text-xl text-zinc-400">{examResult.percentage}%</div>
+            {examResult.highScoreBonusSats && examResult.highScoreBonusSats > 0 ? (
+              <p className="mb-6 rounded-lg border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-200/95">
+                You earned {examResult.highScoreBonusSats.toLocaleString()} sats (80%+ exam bonus), pending in your rewards.
+              </p>
+            ) : null}
             <p className="mb-8 text-sm text-zinc-400">
               Submitted {new Date(examResult.submittedAt || '').toLocaleString()}
             </p>
@@ -573,7 +589,11 @@ export default function ExamPage() {
             </Link>
           </div>
         </PageContainer>
-        <ExamSubmitCelebration show={celebrateSubmit} onDismiss={dismissCelebrate} />
+        <ExamSubmitCelebration
+          show={celebrateSubmit}
+          onDismiss={dismissCelebrate}
+          highScoreBonusSats={examResult.highScoreBonusSats}
+        />
       </>
     );
   }
@@ -813,7 +833,11 @@ export default function ExamPage() {
         ) : null}
       </div>
     </PageContainer>
-    <ExamSubmitCelebration show={celebrateSubmit} onDismiss={dismissCelebrate} />
+    <ExamSubmitCelebration
+      show={celebrateSubmit}
+      onDismiss={dismissCelebrate}
+      highScoreBonusSats={examResult?.highScoreBonusSats}
+    />
     </>
   );
 }

@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     // Get exam results
     const { data: examResults, error: resultsError } = await supabaseAdmin
       .from('exam_results')
-      .select('student_id, score, submitted_at');
+      .select('student_id, score, submitted_at, total_questions');
 
     // Get chapter 21 completion status
     const { data: chapter21Progress, error: chapterError } = await supabaseAdmin
@@ -64,7 +64,8 @@ export async function GET(req: NextRequest) {
         chapter21Completed,
         hasExamAccess: hasAccess,
         examCompleted: !!examResult,
-        examScore: examResult?.score || null,
+        examScore: examResult?.score ?? null,
+        examTotalQuestions: examResult?.total_questions ?? null,
         examSubmittedAt: examResult?.submitted_at || null,
       };
     }) || [];

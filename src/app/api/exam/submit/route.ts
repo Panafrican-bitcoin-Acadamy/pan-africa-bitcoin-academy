@@ -8,6 +8,9 @@ import { sendFinalExamResultEmail } from '@/lib/email';
 
 const EXAM_TOTAL = examQuestions.length;
 const PASS_MARK = Math.ceil(EXAM_TOTAL * 0.7);
+/** Percentage (not question count) required for the one-time 80%+ sats bonus */
+const HIGH_SCORE_MIN_PERCENT = 80;
+const HIGH_SCORE_REWARD_SATS = 10_000;
 
 /**
  * Submit final exam answers and calculate score
@@ -267,6 +270,40 @@ export async function POST(req: NextRequest) {
       examResult = newResult;
     }
 
+    let highScoreBonusGranted = false;
+    // 80%+ final exam bonus: pending sats (real students only; idempotent per exam submission row)
+    if (
+      !isAdmin &&
+      percentage >= HIGH_SCORE_MIN_PERCENT &&
+      examResult?.id
+    ) {
+      const { data: existingExamBonus } = await supabaseAdmin
+        .from('sats_rewards')
+        .select('id')
+        .eq('student_id', profile.id)
+        .eq('related_entity_id', examResult.id)
+        .maybeSingle();
+
+      if (!existingExamBonus) {
+        const { error: examRewardError } = await supabaseAdmin.from('sats_rewards').insert({
+          student_id: profile.id,
+          amount_paid: 0,
+          amount_pending: HIGH_SCORE_REWARD_SATS,
+          reward_type: 'other',
+          related_entity_type: 'other',
+          related_entity_id: examResult.id,
+          reason: `Final exam ${percentage}% (80%+ bonus — ${HIGH_SCORE_REWARD_SATS.toLocaleString()} sats)`,
+          status: 'pending',
+        });
+
+        if (examRewardError) {
+          console.error('Final exam high-score sats reward failed:', examRewardError);
+        } else {
+          highScoreBonusGranted = true;
+        }
+      }
+    }
+
     // Email student (non-blocking; skip admins testing the flow)
     if (!isAdmin) {
       const passed = score >= PASS_MARK;
@@ -311,6 +348,7 @@ export async function POST(req: NextRequest) {
       correctCount,
       incorrectCount: totalQuestions - correctCount,
       submittedAt: examResult.submitted_at,
+      highScoreBonusSats: highScoreBonusGranted ? HIGH_SCORE_REWARD_SATS : 0,
       message: `Exam submitted successfully! You scored ${score} out of ${totalQuestions} (${percentage}%)`,
     });
   } catch (error: any) {

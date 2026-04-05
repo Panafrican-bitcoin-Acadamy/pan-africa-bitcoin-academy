@@ -20,7 +20,7 @@ import {
   Clock, User, Info, Trash2, Award, Target, Briefcase, Heart,
   ClipboardList, Rocket, HelpCircle, Sparkles, Settings, 
   PenTool, GraduationCap, XCircle, Loader2, Shield, Lock, History, LogOut,
-  Eye, EyeOff, Download, X, ChevronDown, RefreshCw, Search, Table,
+  Eye, EyeOff, Download, X, ChevronDown, ChevronRight, RefreshCw, Search, Table,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -827,7 +827,30 @@ export default function AdminDashboardPage() {
   const [examRetakeRequests, setExamRetakeRequests] = useState<any[]>([]);
   const [loadingExamAccess, setLoadingExamAccess] = useState(false);
   const [resolvingRetakeRequestId, setResolvingRetakeRequestId] = useState<string | null>(null);
-  
+  const [examSubmissionDetailModal, setExamSubmissionDetailModal] = useState<{
+    studentId: string;
+    studentName: string | null;
+    studentEmail: string | null;
+    loading: boolean;
+    error: string | null;
+    data: {
+      score: number;
+      totalQuestions: number;
+      percentage: number;
+      passMark: number;
+      passed: boolean;
+      submittedAt: string | null;
+      questions: Array<{
+        id: number;
+        question: string;
+        options: { A: string; B: string; C: string; D: string };
+        correctAnswer: string;
+        selectedAnswer: string | null;
+        isCorrect: boolean;
+      }>;
+    } | null;
+  } | null>(null);
+
   // Student Sats Rewards state
   const [studentSatsRewards, setStudentSatsRewards] = useState<any[]>([]);
   const [allSatsRewards, setAllSatsRewards] = useState<any[]>([]); // Store all fetched rewards for client-side filtering
@@ -2846,6 +2869,62 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const loadExamSubmissionDetail = useCallback(
+    async (s: { id: string; name?: string | null; email?: string | null }) => {
+      setExamSubmissionDetailModal({
+        studentId: s.id,
+        studentName: s.name ?? null,
+        studentEmail: s.email ?? null,
+        loading: true,
+        error: null,
+        data: null,
+      });
+      try {
+        const res = await fetchWithAuth(`/api/admin/exam/submission/${s.id}`);
+        const json = await res.json();
+        if (!res.ok) {
+          setExamSubmissionDetailModal((prev) =>
+            prev && prev.studentId === s.id
+              ? { ...prev, loading: false, error: json.error || 'Failed to load exam' }
+              : prev,
+          );
+          return;
+        }
+        setExamSubmissionDetailModal({
+          studentId: s.id,
+          studentName: json.student?.name ?? s.name ?? null,
+          studentEmail: json.student?.email ?? s.email ?? null,
+          loading: false,
+          error: null,
+          data: {
+            score: json.score,
+            totalQuestions: json.totalQuestions,
+            percentage: json.percentage,
+            passMark: json.passMark,
+            passed: json.passed,
+            submittedAt: json.submittedAt ?? null,
+            questions: Array.isArray(json.questions) ? json.questions : [],
+          },
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load exam';
+        setExamSubmissionDetailModal((prev) =>
+          prev && prev.studentId === s.id ? { ...prev, loading: false, error: msg } : prev,
+        );
+      }
+    },
+    [fetchWithAuth],
+  );
+
+  const recentExamSubmissions = useMemo(() => {
+    return [...examAccessList]
+      .filter((s: { examCompleted?: boolean }) => Boolean(s.examCompleted))
+      .sort((a: { examSubmittedAt?: string | null }, b: { examSubmittedAt?: string | null }) => {
+        const ta = a.examSubmittedAt ? new Date(a.examSubmittedAt).getTime() : 0;
+        const tb = b.examSubmittedAt ? new Date(b.examSubmittedAt).getTime() : 0;
+        return tb - ta;
+      });
+  }, [examAccessList]);
 
   const fetchSubmissions = async () => {
     if (!admin) return;
@@ -8024,6 +8103,7 @@ export default function AdminDashboardPage() {
 
             {/* Assessments — Final exam access, submissions, retake requests */}
             {activeSubMenu === 'final-exam-submissions' && (
+              <>
               <div className="space-y-8">
                 <div>
                   <h2 className="text-lg font-semibold text-zinc-100">Final exam submissions</h2>
@@ -8031,8 +8111,111 @@ export default function AdminDashboardPage() {
                     Grant exam access, see who has submitted, and handle students who ran out of time: they press OK, go to
                     the dashboard, and you get an email. Approve so they can open the exam again{' '}
                     <strong className="font-medium text-zinc-400">from question 1</strong> with a full 2-hour attempt.
+                    Click any submitted exam row or result summary to open the full breakdown (every question and answer).
                   </p>
                 </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-zinc-200">Recent exam submissions</h3>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Students who finished the final exam, newest first. Click a row for score, pass/fail, and per-question
+                    detail.
+                  </p>
+                  {loadingExamAccess && recentExamSubmissions.length === 0 ? (
+                    <p className="mt-4 text-sm text-zinc-500">Loading…</p>
+                  ) : recentExamSubmissions.length === 0 ? (
+                    <p className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-500">
+                      No submitted exams yet.
+                    </p>
+                  ) : (
+                    <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
+                      <table className="w-full min-w-[720px] text-left text-sm text-zinc-300">
+                        <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
+                          <tr>
+                            <th className="px-4 py-3">Student</th>
+                            <th className="px-4 py-3">Cohort</th>
+                            <th className="px-4 py-3">Submitted</th>
+                            <th className="px-4 py-3">Score</th>
+                            <th className="px-4 py-3">Result</th>
+                            <th className="px-4 py-3 w-10" aria-hidden />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recentExamSubmissions.map((s: any) => {
+                            const examTotal = s.examTotalQuestions;
+                            const examPct =
+                              typeof s.examScore === 'number' &&
+                              typeof examTotal === 'number' &&
+                              examTotal > 0
+                                ? Math.round((s.examScore / examTotal) * 100)
+                                : null;
+                            const passMark =
+                              typeof examTotal === 'number' && examTotal > 0
+                                ? Math.ceil(examTotal * 0.7)
+                                : null;
+                            const passed =
+                              typeof s.examScore === 'number' && passMark !== null
+                                ? s.examScore >= passMark
+                                : null;
+                            return (
+                              <tr
+                                key={s.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => void loadExamSubmissionDetail(s)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    void loadExamSubmissionDetail(s);
+                                  }
+                                }}
+                                className="cursor-pointer border-b border-zinc-800/80 last:border-0 hover:bg-zinc-800/40 transition-colors"
+                              >
+                                <td className="px-4 py-3">
+                                  <div className="font-medium text-zinc-200">{s.name || '—'}</div>
+                                  <div className="text-xs text-zinc-500">{s.email}</div>
+                                </td>
+                                <td className="px-4 py-3 text-xs">{s.cohortName || '—'}</td>
+                                <td className="whitespace-nowrap px-4 py-3 text-xs text-zinc-400">
+                                  {s.examSubmittedAt
+                                    ? new Date(s.examSubmittedAt).toLocaleString(undefined, {
+                                        dateStyle: 'medium',
+                                        timeStyle: 'short',
+                                      })
+                                    : '—'}
+                                </td>
+                                <td className="px-4 py-3 tabular-nums text-zinc-200">
+                                  {s.examScore ?? '—'}
+                                  {typeof examTotal === 'number' ? `/${examTotal}` : ''}
+                                  {examPct !== null ? (
+                                    <span className="text-zinc-500"> ({examPct}%)</span>
+                                  ) : null}
+                                </td>
+                                <td className="px-4 py-3">
+                                  {passed === true ? (
+                                    <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                                      Pass
+                                    </span>
+                                  ) : passed === false ? (
+                                    <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-400">
+                                      Below 70%
+                                    </span>
+                                  ) : (
+                                    <span className="text-zinc-500">—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-zinc-500">
+                                  <ChevronRight className="h-4 w-4" aria-hidden />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <h3 className="text-base font-semibold text-zinc-200">Retake requests (session time ran out)</h3>
                   <p className="mt-1 text-sm text-zinc-500">
@@ -8106,25 +8289,43 @@ export default function AdminDashboardPage() {
                 <div>
                   <h3 className="text-base font-semibold text-zinc-200">Students and exam access</h3>
                   <p className="mt-1 text-sm text-zinc-500">
-                    Grant or revoke final exam access. Scores appear after submission.
+                    Grant or revoke final exam access. For submitted students, click the score summary to open the full
+                    breakdown (same as the submissions table above).
                   </p>
                   {loadingExamAccess && examAccessList.length === 0 ? (
                     <p className="mt-4 text-sm text-zinc-500">Loading…</p>
                   ) : (
                     <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-800">
-                      <table className="w-full min-w-[720px] text-left text-sm text-zinc-300">
+                      <table className="w-full min-w-[800px] text-left text-sm text-zinc-300">
                         <thead className="border-b border-zinc-800 bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
                           <tr>
                             <th className="px-4 py-3">Student</th>
                             <th className="px-4 py-3">Cohort</th>
                             <th className="px-4 py-3">Ch.21</th>
                             <th className="px-4 py-3">Access</th>
-                            <th className="px-4 py-3">Exam</th>
+                            <th className="px-4 py-3">Exam result</th>
                             <th className="px-4 py-3 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {examAccessList.map((s: any) => (
+                          {examAccessList.map((s: any) => {
+                            const examTotal = s.examTotalQuestions;
+                            const examPct =
+                              s.examCompleted &&
+                              typeof s.examScore === 'number' &&
+                              typeof examTotal === 'number' &&
+                              examTotal > 0
+                                ? Math.round((s.examScore / examTotal) * 100)
+                                : null;
+                            const passMark =
+                              typeof examTotal === 'number' && examTotal > 0
+                                ? Math.ceil(examTotal * 0.7)
+                                : null;
+                            const passed =
+                              typeof s.examScore === 'number' && passMark !== null
+                                ? s.examScore >= passMark
+                                : null;
+                            return (
                             <tr key={s.id} className="border-b border-zinc-800/80 last:border-0">
                               <td className="px-4 py-3">
                                 <div className="font-medium text-zinc-200">{s.name || '—'}</div>
@@ -8145,16 +8346,49 @@ export default function AdminDashboardPage() {
                                   <span className="text-zinc-500">No</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-xs">
+                              <td className="px-4 py-3 text-xs align-top">
                                 {s.examCompleted ? (
-                                  <span>
-                                    Done <span className="text-zinc-500">({s.examScore ?? '—'})</span>
-                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => void loadExamSubmissionDetail(s)}
+                                    className="w-full max-w-md rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3 py-2.5 text-left transition hover:border-cyan-400/45 hover:bg-cyan-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+                                  >
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                      <span className="font-medium text-zinc-200 tabular-nums">
+                                        {s.examScore ?? '—'}
+                                        {typeof examTotal === 'number' ? `/${examTotal}` : ''}
+                                        {examPct !== null ? ` (${examPct}%)` : ''}
+                                      </span>
+                                      {passed === true ? (
+                                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                                          Pass
+                                        </span>
+                                      ) : passed === false ? (
+                                        <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-400">
+                                          Below 70%
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    {s.examSubmittedAt ? (
+                                      <p className="mt-1.5 text-[11px] text-zinc-500">
+                                        Submitted{' '}
+                                        {new Date(s.examSubmittedAt).toLocaleString(undefined, {
+                                          dateStyle: 'medium',
+                                          timeStyle: 'short',
+                                        })}
+                                      </p>
+                                    ) : null}
+                                    <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-cyan-300">
+                                      <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                                      Open full exam breakdown
+                                      <ChevronRight className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                                    </p>
+                                  </button>
                                 ) : (
                                   <span className="text-zinc-500">Not submitted</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-right">
+                              <td className="px-4 py-3 text-right align-top">
                                 {!s.examCompleted && s.chapter21Completed ? (
                                   s.hasExamAccess ? (
                                     <button
@@ -8178,7 +8412,8 @@ export default function AdminDashboardPage() {
                                 )}
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -8211,6 +8446,154 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : null}
               </div>
+
+              {examSubmissionDetailModal ? (
+                <div
+                  className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="exam-detail-title"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) setExamSubmissionDetailModal(null);
+                  }}
+                >
+                  <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-xl">
+                    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-800 p-4 sm:p-5">
+                      <div className="min-w-0 flex-1">
+                        <h3 id="exam-detail-title" className="flex items-center gap-2 text-lg font-semibold text-zinc-100">
+                          <GraduationCap className="h-5 w-5 shrink-0 text-cyan-400" />
+                          Final exam detail
+                        </h3>
+                        <p className="mt-1 truncate text-sm text-zinc-400">
+                          {examSubmissionDetailModal.studentName || 'Student'}{' '}
+                          <span className="text-zinc-500">
+                            · {examSubmissionDetailModal.studentEmail || examSubmissionDetailModal.studentId}
+                          </span>
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setExamSubmissionDetailModal(null)}
+                        className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                        aria-label="Close"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                      {examSubmissionDetailModal.loading ? (
+                        <div className="flex items-center justify-center py-16 text-sm text-zinc-500">
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-500" />
+                          Loading exam…
+                        </div>
+                      ) : examSubmissionDetailModal.error ? (
+                        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                          {examSubmissionDetailModal.error}
+                        </p>
+                      ) : examSubmissionDetailModal.data ? (
+                        <div className="space-y-6">
+                          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+                            <div className="flex flex-wrap items-end gap-3">
+                              <p className="text-2xl font-bold tabular-nums text-zinc-100">
+                                {examSubmissionDetailModal.data.score}/
+                                {examSubmissionDetailModal.data.totalQuestions}
+                                <span className="text-base font-semibold text-zinc-400">
+                                  {' '}
+                                  ({examSubmissionDetailModal.data.percentage}%)
+                                </span>
+                              </p>
+                              {examSubmissionDetailModal.data.passed ? (
+                                <span className="rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                                  Pass · {examSubmissionDetailModal.data.passMark}+ correct required
+                                </span>
+                              ) : (
+                                <span className="rounded-md bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-400">
+                                  Did not pass · need {examSubmissionDetailModal.data.passMark}+ of{' '}
+                                  {examSubmissionDetailModal.data.totalQuestions}
+                                </span>
+                              )}
+                            </div>
+                            {examSubmissionDetailModal.data.submittedAt ? (
+                              <p className="mt-2 text-xs text-zinc-500">
+                                Submitted{' '}
+                                {new Date(examSubmissionDetailModal.data.submittedAt).toLocaleString(undefined, {
+                                  dateStyle: 'medium',
+                                  timeStyle: 'short',
+                                })}
+                              </p>
+                            ) : null}
+                          </div>
+
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-zinc-300">Questions and answers</h4>
+                            <ul className="space-y-3">
+                              {examSubmissionDetailModal.data.questions.map((q) => (
+                                <li
+                                  key={q.id}
+                                  className={`rounded-xl border px-4 py-3 ${
+                                    q.isCorrect
+                                      ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
+                                      : 'border-amber-500/25 bg-amber-500/[0.06]'
+                                  }`}
+                                >
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-xs font-semibold text-zinc-500">Q{q.id}</span>
+                                    {q.isCorrect ? (
+                                      <span className="text-[11px] font-semibold text-emerald-400">Correct</span>
+                                    ) : (
+                                      <span className="text-[11px] font-semibold text-amber-400">Incorrect</span>
+                                    )}
+                                  </div>
+                                  <p className="mt-2 text-sm text-zinc-200">{q.question}</p>
+                                  <ul className="mt-3 space-y-1.5 text-xs text-zinc-400">
+                                    {(['A', 'B', 'C', 'D'] as const).map((letter) => {
+                                      const text = q.options[letter];
+                                      const isSelected = q.selectedAnswer === letter;
+                                      const isCorrectChoice = q.correctAnswer === letter;
+                                      return (
+                                        <li
+                                          key={letter}
+                                          className={`rounded-md border px-2.5 py-1.5 ${
+                                            isCorrectChoice
+                                              ? 'border-emerald-500/40 bg-emerald-500/10 text-zinc-200'
+                                              : isSelected
+                                              ? 'border-amber-500/40 bg-amber-500/10'
+                                              : 'border-zinc-800/80 bg-zinc-900/40'
+                                          }`}
+                                        >
+                                          <span className="font-semibold text-zinc-300">{letter}.</span> {text}
+                                          {isSelected ? (
+                                            <span className="ml-2 text-[11px] font-medium text-cyan-400">Chosen</span>
+                                          ) : null}
+                                          {isCorrectChoice ? (
+                                            <span className="ml-2 text-[11px] font-medium text-emerald-400">Correct</span>
+                                          ) : null}
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                  {!q.isCorrect ? (
+                                    <p className="mt-2 text-[11px] text-zinc-500">
+                                      Student selected:{' '}
+                                      <span className="font-medium text-zinc-300">
+                                        {q.selectedAnswer ?? '— (no stored answer)'}
+                                      </span>
+                                      {' · '}
+                                      Correct: <span className="font-medium text-emerald-400/90">{q.correctAnswer}</span>
+                                    </p>
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </>
             )}
 
             {/* Assessments Section - Student Sats Rewards */}
