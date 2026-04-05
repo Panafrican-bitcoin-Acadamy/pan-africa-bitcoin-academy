@@ -1111,6 +1111,8 @@ export interface FinalExamResultEmailData {
   passed: boolean;
   passLabel: string;
   submittedAtIso: string;
+  /** When set, student earned the 80%+ final exam sats bonus (pending balance). */
+  highScoreBonusSats?: number;
 }
 
 /**
@@ -1153,6 +1155,17 @@ export async function sendFinalExamResultEmail(
       ? `<p style="margin: 0 0 16px; font-size: 16px; color: #065f46;"><strong>✓ ${escapeHtmlForEmail(data.passLabel)}</strong></p>`
       : `<p style="margin: 0 0 16px; font-size: 15px; color: #92400e;"><strong>Keep learning:</strong> review the course material and speak with your instructor if you want to improve.</p>`;
 
+    const bonusSats =
+      typeof data.highScoreBonusSats === 'number' && data.highScoreBonusSats > 0
+        ? data.highScoreBonusSats
+        : 0;
+    const bonusBlock =
+      bonusSats > 0
+        ? `<p style="margin: 0 0 20px; font-size: 15px; color: #0e7490; background: #ecfeff; padding: 14px 16px; border-radius: 10px; border: 1px solid #67e8f9;">
+            <strong>🎉 ${bonusSats.toLocaleString()} sats</strong> were added to your <strong>pending</strong> rewards for scoring 80% or higher on the final exam. You can track them on your dashboard.
+          </p>`
+        : '';
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -1175,6 +1188,7 @@ export async function sendFinalExamResultEmail(
               <p style="margin: 8px 0 0; font-size: 18px; font-weight: 600; color: #374151;">${data.percentage}%</p>
             </div>
             ${passBlock}
+            ${bonusBlock}
             <p style="margin: 0 0 20px; font-size: 13px; color: #6b7280;">Submitted: ${escapeHtmlForEmail(submitted)}</p>
             <a href="${dashboardUrl}" style="display: inline-block; background: #ea580c; color: white; text-decoration: none; padding: 12px 22px; border-radius: 8px; font-weight: 600; font-size: 15px;">Open dashboard</a>
             <p style="margin: 24px 0 0; font-size: 13px; color: #9ca3af;">Questions? ${escapeHtmlForEmail(SUPPORT_EMAIL)}</p>

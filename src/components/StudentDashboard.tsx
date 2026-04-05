@@ -1113,7 +1113,8 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     if (satsPending === 0) {
       setWithdrawMessage({
         type: 'error',
-        text: 'You have no pending sats to withdraw. Complete assignments and chapters to earn sats!',
+        text:
+          'You have no pending sats to withdraw. Complete assignments and chapters, or score 80%+ on the final exam, to earn sats.',
       });
       return;
     }

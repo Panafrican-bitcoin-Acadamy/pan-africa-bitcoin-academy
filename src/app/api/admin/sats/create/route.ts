@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/adminSession';
+import { isValidSatsRewardType } from '@/lib/satsRewardConstants';
 
 /**
  * POST /api/admin/sats/create
@@ -35,11 +36,16 @@ export async function POST(request: NextRequest) {
       .eq('email', session.email.toLowerCase())
       .single();
 
+    const type = typeof reward_type === 'string' && reward_type ? reward_type : 'other';
+    if (!isValidSatsRewardType(type)) {
+      return NextResponse.json({ error: 'Invalid reward_type' }, { status: 400 });
+    }
+
     const rewardData: any = {
       student_id,
       amount_paid: amount_paid || 0,
       amount_pending: amount_pending || 0,
-      reward_type: reward_type || 'other',
+      reward_type: type,
       reason: reason || '',
       status: status || 'pending',
       awarded_by: adminProfile?.id || null,

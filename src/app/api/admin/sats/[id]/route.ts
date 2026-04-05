@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/adminSession';
+import { isValidSatsRewardType } from '@/lib/satsRewardConstants';
 
 /**
  * PATCH /api/admin/sats/[id]
@@ -18,7 +19,13 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { status, amount_paid, amount_pending, reason } = body;
+    const { status, amount_paid, amount_pending, reason, reward_type } = body;
+
+    if (reward_type !== undefined) {
+      if (typeof reward_type !== 'string' || !isValidSatsRewardType(reward_type)) {
+        return NextResponse.json({ error: 'Invalid reward_type' }, { status: 400 });
+      }
+    }
 
     // Build update object
     const updateData: any = {
@@ -36,6 +43,9 @@ export async function PATCH(
     }
     if (reason !== undefined) {
       updateData.reason = reason;
+    }
+    if (reward_type !== undefined) {
+      updateData.reward_type = reward_type;
     }
 
     const { data, error } = await supabaseAdmin

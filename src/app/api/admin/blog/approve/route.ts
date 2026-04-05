@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { BLOG_POST_REWARD_SATS, BLOG_REWARD_TYPE } from '@/lib/blog-rewards';
 import { requireAdmin } from '@/lib/adminSession';
+import { SATS_RELATED_ENTITY_TYPES, SATS_REWARD_TYPES } from '@/lib/satsRewardConstants';
 
 /**
  * POST /api/admin/blog/approve
@@ -212,8 +213,8 @@ export async function POST(request: NextRequest) {
           };
 
           // Validate all required fields and CHECK constraint values
-          const validRewardTypes = ['assignment', 'chapter', 'discussion', 'peer_help', 'project', 'attendance', 'blog', 'other'];
-          const validRelatedEntityTypes = ['assignment', 'chapter', 'event', 'discussion', 'project', 'blog', 'other'];
+          const validRewardTypes = [...SATS_REWARD_TYPES];
+          const validRelatedEntityTypes = [...SATS_RELATED_ENTITY_TYPES];
           const validStatuses = ['pending', 'processing', 'paid', 'failed'];
           
           if (!rewardData.student_id || !rewardData.related_entity_id) {

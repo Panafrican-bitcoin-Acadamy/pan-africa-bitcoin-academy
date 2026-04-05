@@ -39,6 +39,7 @@ import {
   Cell,
 } from 'recharts';
 import { chaptersContent } from '@/content/chaptersContent';
+import { formatSatsRewardTypeLabel } from '@/lib/satsRewardConstants';
 
 const COHORT_ANALYTICS_PAGE_SIZE = 8;
 
@@ -515,6 +516,10 @@ export default function AdminDashboardPage() {
   const [showBlogRewardsModal, setShowBlogRewardsModal] = useState(false);
   const [blogRewardsList, setBlogRewardsList] = useState<BlogReward[]>([]);
   const [loadingBlogRewardsList, setLoadingBlogRewardsList] = useState(false);
+
+  const [showExamRewardsModal, setShowExamRewardsModal] = useState(false);
+  const [examRewardsList, setExamRewardsList] = useState<any[]>([]);
+  const [loadingExamRewardsList, setLoadingExamRewardsList] = useState(false);
   
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [processing, setProcessing] = useState<string | null>(null);
@@ -1754,12 +1759,28 @@ export default function AdminDashboardPage() {
   }, [satsStatistics]);
 
   // Memoize formatRewardType function
-  const formatRewardType = useCallback((type: string) => {
-    return type
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }, []);
+  const formatRewardType = useCallback((type: string) => formatSatsRewardTypeLabel(type), []);
+
+  const rewardAggregatesByType = useMemo(() => {
+    const m: Record<string, { count: number; paid: number; pending: number }> = {};
+    for (const r of allSatsRewards || []) {
+      const t = typeof r.reward_type === 'string' && r.reward_type ? r.reward_type : 'other';
+      if (!m[t]) m[t] = { count: 0, paid: 0, pending: 0 };
+      m[t].count += 1;
+      m[t].paid += r.amount_paid || 0;
+      m[t].pending += r.amount_pending || 0;
+    }
+    return Object.entries(m)
+      .map(([type, v]) => ({
+        type,
+        label: formatSatsRewardTypeLabel(type),
+        count: v.count,
+        paid: v.paid,
+        pending: v.pending,
+        total: v.paid + v.pending,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [allSatsRewards]);
 
   // All students with sats summary (received, pending) for the list below Student Sats Rewards view
   const allStudentsWithSats = useMemo(() => {
@@ -8829,6 +8850,39 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : null}
 
+                {!loadingSatsRewards && rewardAggregatesByType.length > 0 ? (
+                  <div className="mb-4 sm:mb-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                    <div className="text-xs font-medium text-zinc-400 mb-2">Sats by reward type</div>
+                    <div className="flex flex-wrap gap-2">
+                      {rewardAggregatesByType.map((row) => (
+                        <button
+                          key={row.type}
+                          type="button"
+                          onClick={() => {
+                            setSatsTypeFilter(row.type);
+                            satsTypeFilterRef.current = row.type;
+                            applyFiltersToRewards(allSatsRewards);
+                          }}
+                          className={`rounded-lg border px-3 py-2 text-left text-xs transition hover:bg-zinc-800 ${
+                            satsTypeFilter === row.type
+                              ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-200'
+                              : 'border-zinc-700 bg-zinc-900/60 text-zinc-300'
+                          }`}
+                        >
+                          <span className="font-semibold text-zinc-100">{row.label}</span>
+                          <span className="block tabular-nums text-zinc-400 mt-0.5">
+                            {row.total.toLocaleString()} sats · {row.count} reward{row.count !== 1 ? 's' : ''}
+                            {row.pending > 0 ? (
+                              <span className="text-yellow-500/90"> · {row.pending.toLocaleString()} pending</span>
+                            ) : null}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-[11px] text-zinc-500">Click a type to filter the reward cards below.</p>
+                  </div>
+                ) : null}
+
                 {/* Student Sats Rewards Section */}
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
                   <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
@@ -8839,7 +8893,33 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setShowExamRewardsModal(true);
+                            setLoadingExamRewardsList(true);
+                            try {
+                              const res = await fetchWithAuth('/api/admin/sats?reward_type=exam');
+                              if (res.ok) {
+                                const data = await res.json();
+                                setExamRewardsList(data.rewards || []);
+                              } else {
+                                setExamRewardsList([]);
+                              }
+                            } catch (err) {
+                              console.error('Error fetching exam rewards:', err);
+                              setExamRewardsList([]);
+                            } finally {
+                              setLoadingExamRewardsList(false);
+                            }
+                          }}
+                          className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 flex items-center justify-center gap-2"
+                        >
+                          <GraduationCap className="h-4 w-4" />
+                          <span className="hidden sm:inline">Final exam rewards</span>
+                          <span className="sm:hidden">Exam</span>
+                        </button>
                         <button
                           onClick={handleCreateReward}
                           className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-300 transition hover:bg-green-500/20 flex items-center justify-center gap-2"
@@ -8906,6 +8986,7 @@ export default function AdminDashboardPage() {
                           <option value="project">Project</option>
                           <option value="attendance">Attendance</option>
                           <option value="blog">Blog</option>
+                          <option value="exam">Final exam</option>
                           <option value="other">Other</option>
                         </select>
                       </div>
@@ -9038,9 +9119,9 @@ export default function AdminDashboardPage() {
                               {reward.related_entity_type && (
                                 <div className="text-xs text-zinc-400">
                                   <span className="text-zinc-500">Related:</span>{' '}
-                                  <span className="text-zinc-300 capitalize">
-                                    {reward.related_entity_type}
-                                    {reward.related_entity_id && ` (${reward.related_entity_id.substring(0, 8)}...)`}
+                                  <span className="text-zinc-300">
+                                    {formatRewardType(String(reward.related_entity_type))}
+                                    {reward.related_entity_id && ` (${String(reward.related_entity_id).substring(0, 8)}…)`}
                                   </span>
                                 </div>
                               )}
@@ -9347,7 +9428,19 @@ export default function AdminDashboardPage() {
                             <div className="relative">
                               <select
                                 value={rewardForm.reward_type}
-                                onChange={(e) => setRewardForm({ ...rewardForm, reward_type: e.target.value })}
+                                onChange={(e) => {
+                                  const reward_type = e.target.value;
+                                  setRewardForm((prev) => ({
+                                    ...prev,
+                                    reward_type,
+                                    reason:
+                                      reward_type === 'exam' && !prev.reason?.trim()
+                                        ? 'Final exam'
+                                        : reward_type !== 'exam' && prev.reason === 'Final exam'
+                                          ? ''
+                                          : prev.reason,
+                                  }));
+                                }}
                                 className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer hover:border-zinc-600 hover:bg-zinc-900"
                                 style={{
                                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
@@ -9363,6 +9456,7 @@ export default function AdminDashboardPage() {
                                 <option value="project" className="bg-zinc-900 text-zinc-200">Project</option>
                                 <option value="attendance" className="bg-zinc-900 text-zinc-200">Attendance</option>
                                 <option value="blog" className="bg-zinc-900 text-zinc-200">Blog</option>
+                                <option value="exam" className="bg-zinc-900 text-zinc-200">Final exam</option>
                                 <option value="other" className="bg-zinc-900 text-zinc-200">Other</option>
                               </select>
                               <div className="absolute inset-0 rounded-xl pointer-events-none ring-0 group-hover:ring-2 ring-blue-500/20 transition-all"></div>
@@ -9378,7 +9472,19 @@ export default function AdminDashboardPage() {
                             <div className="relative">
                               <select
                                 value={rewardForm.reason}
-                                onChange={(e) => setRewardForm({ ...rewardForm, reason: e.target.value })}
+                                onChange={(e) => {
+                                  const reason = e.target.value;
+                                  setRewardForm((prev) => ({
+                                    ...prev,
+                                    reason,
+                                    reward_type:
+                                      reason === 'Final exam'
+                                        ? 'exam'
+                                        : prev.reward_type === 'exam'
+                                          ? 'other'
+                                          : prev.reward_type,
+                                  }));
+                                }}
                                 className="w-full rounded-xl border-2 border-zinc-700/50 bg-zinc-900/80 backdrop-blur-sm px-4 py-3 text-sm font-medium text-zinc-200 focus:outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all appearance-none cursor-pointer hover:border-zinc-600 hover:bg-zinc-900"
                                 style={{
                                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
@@ -9391,6 +9497,7 @@ export default function AdminDashboardPage() {
                                 <option value="Assignment completion" className="bg-zinc-900 text-zinc-200">Assignment completion</option>
                                 <option value="Chapter completion" className="bg-zinc-900 text-zinc-200">📖 Chapter completion</option>
                                 <option value="Blog post approval" className="bg-zinc-900 text-zinc-200">Blog post approval</option>
+                                <option value="Final exam" className="bg-zinc-900 text-zinc-200">Final exam</option>
                                 <option value="Attendance bonus" className="bg-zinc-900 text-zinc-200">Attendance bonus</option>
                                 <option value="Peer help contribution" className="bg-zinc-900 text-zinc-200">Peer help contribution</option>
                                 <option value="Project submission" className="bg-zinc-900 text-zinc-200">Project submission</option>
@@ -10561,6 +10668,141 @@ export default function AdminDashboardPage() {
           studentName={selectedStudent.name}
           onClose={() => setSelectedStudent(null)}
         />
+      )}
+
+      {/* Final exam sats rewards (same detail pattern as blog rewards) */}
+      {showExamRewardsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="rounded-xl border border-cyan-500/30 bg-zinc-900 p-4 sm:p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg sm:text-xl font-semibold text-cyan-200 mb-1 flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5" />
+                  <span>All final exam sats rewards</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-cyan-300/80">
+                  Automated 80%+ bonuses and any manual exam-type rewards
+                </p>
+              </div>
+              <button
+                onClick={() => setShowExamRewardsModal(false)}
+                className="text-zinc-400 hover:text-zinc-300 text-2xl font-bold"
+                type="button"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            {loadingExamRewardsList ? (
+              <div className="text-center py-12 text-zinc-400">
+                <div className="animate-spin text-4xl mb-4">⟳</div>
+                <p>Loading final exam rewards…</p>
+              </div>
+            ) : examRewardsList.length === 0 ? (
+              <div className="text-center py-12 text-zinc-400">
+                <p className="text-lg mb-2">No final exam rewards yet</p>
+                <p className="text-sm">
+                  Rewards appear when students score 80%+ on the final exam or when an admin creates a reward with type
+                  &quot;Final exam&quot;.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                  <div>
+                    <div className="text-xs text-cyan-300/80 mb-1">Rewards</div>
+                    <div className="text-lg font-bold text-cyan-200">{examRewardsList.length}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-cyan-300/80 mb-1">Total sats</div>
+                    <div className="text-lg font-bold text-cyan-200">
+                      {examRewardsList
+                        .reduce((sum: number, r: any) => sum + (r.amount_paid || 0) + (r.amount_pending || 0), 0)
+                        .toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-cyan-300/80 mb-1">Paid</div>
+                    <div className="text-lg font-bold text-green-400">
+                      {examRewardsList.reduce((sum: number, r: any) => sum + (r.amount_paid || 0), 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-cyan-300/80 mb-1">Pending</div>
+                    <div className="text-lg font-bold text-yellow-400">
+                      {examRewardsList.reduce((sum: number, r: any) => sum + (r.amount_pending || 0), 0).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                  {examRewardsList.map((reward: any) => (
+                    <div
+                      key={reward.id}
+                      className="flex items-start justify-between p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:bg-zinc-800/70 transition"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <div className="text-sm font-semibold text-zinc-200">
+                            {reward.student?.name || reward.student?.email || 'Unknown student'}
+                          </div>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-medium text-cyan-300">
+                            <GraduationCap className="h-3 w-3" />
+                            Final exam
+                          </span>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded ${
+                              reward.status === 'paid'
+                                ? 'bg-green-500/20 text-green-400'
+                                : reward.status === 'pending'
+                                  ? 'bg-yellow-500/20 text-yellow-400'
+                                  : reward.status === 'processing'
+                                    ? 'bg-blue-500/20 text-blue-400'
+                                    : 'bg-red-500/20 text-red-400'
+                            }`}
+                          >
+                            {reward.status || 'pending'}
+                          </span>
+                        </div>
+                        {reward.student?.email && (
+                          <div className="text-xs text-zinc-400 mb-2">{reward.student.email}</div>
+                        )}
+                        {reward.reason && (
+                          <div className="text-sm text-zinc-300 mb-1">
+                            <span className="text-zinc-500">Reason:</span> {reward.reason}
+                          </div>
+                        )}
+                        <div className="text-xs text-zinc-400">
+                          Created: {reward.created_at ? new Date(reward.created_at).toLocaleString() : '—'}
+                          {reward.payment_date && (
+                            <span className="ml-3">Paid: {new Date(reward.payment_date).toLocaleString()}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 ml-4 shrink-0">
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-cyan-200">
+                            {((reward.amount_paid || 0) + (reward.amount_pending || 0)).toLocaleString()} sats
+                          </div>
+                          <div className="text-xs text-zinc-400">
+                            {reward.amount_paid > 0 && (
+                              <span className="text-green-400">{reward.amount_paid.toLocaleString()} paid</span>
+                            )}
+                            {reward.amount_paid > 0 && reward.amount_pending > 0 && <span> / </span>}
+                            {reward.amount_pending > 0 && (
+                              <span className="text-yellow-400">{reward.amount_pending.toLocaleString()} pending</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Blog Rewards Modal */}

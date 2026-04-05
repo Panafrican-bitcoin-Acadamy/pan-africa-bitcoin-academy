@@ -289,8 +289,8 @@ export async function POST(req: NextRequest) {
           student_id: profile.id,
           amount_paid: 0,
           amount_pending: HIGH_SCORE_REWARD_SATS,
-          reward_type: 'other',
-          related_entity_type: 'other',
+          reward_type: 'exam',
+          related_entity_type: 'exam',
           related_entity_id: examResult.id,
           reason: `Final exam ${percentage}% (80%+ bonus — ${HIGH_SCORE_REWARD_SATS.toLocaleString()} sats)`,
           status: 'pending',
@@ -319,6 +319,7 @@ export async function POST(req: NextRequest) {
         passed,
         passLabel,
         submittedAtIso: examResult.submitted_at || new Date().toISOString(),
+        highScoreBonusSats: highScoreBonusGranted ? HIGH_SCORE_REWARD_SATS : undefined,
       }).then((r) => {
         if (!r.success) {
           console.warn('Final exam confirmation email not sent:', r.error);
