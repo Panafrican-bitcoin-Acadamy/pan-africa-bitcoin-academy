@@ -540,10 +540,10 @@ export function InflationTrackerWidget() {
         </button>
 
         <div
-          className={`z-40 overflow-hidden border border-orange-400/30 bg-zinc-950/95 shadow-[0_0_30px_rgba(249,115,22,0.25)] transition-all duration-300 ${
+          className={`z-40 border border-orange-400/30 bg-zinc-950/95 shadow-[0_0_30px_rgba(249,115,22,0.25)] transition-all duration-300 ${
             open
-              ? 'w-[88vw] max-w-[360px] max-h-[85vh] overflow-y-auto rounded-l-xl p-4 sm:w-[320px] sm:max-h-none sm:rounded-none'
-              : 'w-0 p-0 border-l-0 border-r-0'
+              ? 'w-[88vw] max-w-[360px] max-h-[min(85vh,calc(100dvh-1.5rem))] overflow-y-auto overflow-x-hidden overscroll-y-contain rounded-l-xl p-4 sm:w-[320px] sm:rounded-none [scrollbar-gutter:stable]'
+              : 'w-0 overflow-hidden p-0 border-l-0 border-r-0'
           }`}
         >
           {open && (
@@ -558,25 +558,22 @@ export function InflationTrackerWidget() {
                     trackingEnabled ? 'text-green-400' : 'text-zinc-400'
                   }`}
                 >
-                  {trackingEnabled ? 'Tracking ON' : 'Start in Dashboard'}
+                  {trackingEnabled ? 'On' : 'Dashboard'}
                 </span>
               </div>
 
-              <p className="text-zinc-400">
-                Year: <strong className="text-zinc-200">{year}</strong>
+              <p className="tabular-nums text-zinc-300">
+                <span className="text-zinc-500">Year</span> <strong className="text-zinc-100">{year}</strong>
               </p>
 
               {!trackingEnabled ? (
-                <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-300">
-                  <p className="text-zinc-200">Start counting from your Dashboard.</p>
-                  <p className="text-[11px] text-zinc-500">
-                    After you start, this widget will follow you on every page and keep updating over time.
-                  </p>
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center text-sm text-zinc-400">
+                  Start in Dashboard
                 </div>
               ) : (
                 <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-300">
-                  <p>
-                    1971 lifestyle budget:{' '}
+                  <p className="text-center tabular-nums text-sm">
+                    <span className="text-zinc-500">{BASE_YEAR}</span>{' '}
                     <strong className="text-orange-200">${BASE_AMOUNT.toLocaleString()}</strong>
                   </p>
                   <div className="space-y-1">
@@ -732,80 +729,54 @@ export function InflationTrackerWidget() {
                       }}
                     />
                   </div>
-                  <p className="pt-2 text-[11px] text-zinc-500">
-                    Press and move items to reorder priorities. Items shown ✔ stay longer.
-                  </p>
+                  <p className="pt-1 text-center text-[10px] text-zinc-600">↕ reorder</p>
 
                   {btcPrice ? (
-                    <div className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2.5 text-xs text-zinc-300">
-                      <p className="mb-2 text-[11px] leading-snug text-zinc-500">
-                        Same starting point: unmoved <strong className="text-zinc-400">${BASE_AMOUNT.toLocaleString()}</strong> from{' '}
-                        {BASE_YEAR}. Cash shows what that <em>nominal</em> stack still bought vs your 1971 basket; Bitcoin shows how many
-                        BTC that <em>same</em> ${BASE_AMOUNT.toLocaleString()} would buy at that year&apos;s{' '}
-                        <strong className="text-zinc-300">calendar-year mean BTC/USD</strong> (
-                        <a
-                          href="https://www.blockchain.com/charts/market-price"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-cyan-400/90 underline decoration-cyan-500/40 underline-offset-2 hover:text-cyan-300"
-                        >
-                          Blockchain.com
-                        </a>{' '}
-                        market price — ~weekly samples averaged per UTC year), then marked at {MAX_YEAR} using the same methodology.
-                      </p>
+                    <div className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2 text-xs text-zinc-300">
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2">
-                          <div className="text-[10px] uppercase tracking-wide text-zinc-500">Cash purchasing power ({year})</div>
-                          <div className="mt-1 font-semibold tabular-nums text-zinc-200">
+                        <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2 text-center">
+                          <div className="text-[10px] text-zinc-500">Cash {year}</div>
+                          <div className="mt-0.5 font-semibold tabular-nums text-zinc-100">
                             ${displayLifestyleBudget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                           </div>
-                          <div className="mt-1 text-[10px] text-zinc-600">1971 basket, {year} prices</div>
                         </div>
-                        <div className="rounded border border-orange-400/30 bg-orange-500/10 p-2">
-                          <div className="text-[10px] uppercase tracking-wide text-orange-300">Bitcoin from ${BASE_AMOUNT / 1000}k</div>
-                          <div className="mt-1 font-semibold tabular-nums text-orange-200">
-                            <span className="select-all">{btcEquivalent != null ? formatBtcAmount(btcEquivalent) : '—'}</span>{' '}
-                            <span className="text-orange-300/90">BTC</span>
+                        <div className="rounded border border-orange-400/30 bg-orange-500/10 p-2 text-center">
+                          <div className="text-[10px] text-orange-300/90">BTC</div>
+                          <div className="mt-0.5 font-semibold tabular-nums text-orange-200">
+                            <span className="select-all">{btcEquivalent != null ? formatBtcAmount(btcEquivalent) : '—'}</span>
                           </div>
-                          <div className="mt-1 text-[10px] tabular-nums text-orange-200/80">
-                            @ {formatBtcUsdPrice(btcPrice)} / BTC{' '}
-                            <span className="text-zinc-600">({year} year-mean USD)</span>
+                          <div className="mt-0.5 text-[10px] tabular-nums text-orange-200/80">
+                            {formatBtcUsdPrice(btcPrice)}
                           </div>
                         </div>
                       </div>
-                      <div className="mt-2 flex flex-col gap-1 rounded border border-zinc-700 bg-zinc-950/70 p-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="text-[10px] text-zinc-500">
-                            If held to {MAX_YEAR} @ {formatBtcUsdPrice(btcTodayPrice)} / BTC
-                          </div>
-                          <div className="font-semibold tabular-nums text-cyan-300">
-                            $
-                            {btcValueAtTodayPrice != null
-                              ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })
-                              : '—'}
-                          </div>
-                        </div>
-                        <div className="text-[10px] text-zinc-600">
-                          Mattress cash today still buys ~$
-                          {mattressPurchasingPowerToday.toLocaleString('en-US', { maximumFractionDigits: 0 })} of that basket (
-                          {MAX_YEAR} prices). Multiple compares BTC stack to that.
-                        </div>
-                      </div>
-                      <div className="mt-2 space-y-2 text-center">
-                        <span className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-500/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-orange-200">
-                          {btcVsCashMultiple != null ? `${btcVsCashMultiple.toFixed(2)}×` : '—'} vs mattress cash (
-                          {MAX_YEAR} real purchasing power)
+                      <div className="mt-2 flex items-center justify-between gap-2 rounded border border-zinc-700 bg-zinc-950/70 px-2 py-1.5 tabular-nums">
+                        <span className="text-[10px] text-zinc-500">{MAX_YEAR}</span>
+                        <span className="font-semibold text-cyan-300">
+                          $
+                          {btcValueAtTodayPrice != null
+                            ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })
+                            : '—'}
                         </span>
-                        <p className="text-[10px] leading-snug text-zinc-600">
-                          USD/BTC figures are not a single exchange print — they match Blockchain&apos;s consolidated chart
-                          averaged over each calendar year (method in code comment above{' '}
-                          <span className="text-zinc-500">`BTC_POINTS`</span>).
-                        </p>
+                      </div>
+                      <div className="mt-2 space-y-1 text-center tabular-nums">
+                        <div className="text-sm font-semibold text-orange-200">
+                          {btcVsCashMultiple != null ? `${btcVsCashMultiple.toFixed(2)}×` : '—'}
+                        </div>
+                        <div className="text-[10px] text-zinc-500">
+                          Cash {MAX_YEAR}{' '}
+                          <span className="text-zinc-400">
+                            $
+                            {mattressPurchasingPowerToday.toLocaleString('en-US', {
+                              maximumFractionDigits: 0,
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2 text-center text-zinc-400 text-xs">
-                      BTC comparison starts at {Math.min(...Object.keys(BTC_POINTS).map(Number))} (calendar-year mean USD/BTC).
+                    <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2 text-center text-zinc-500 text-xs tabular-nums">
+                      BTC ≥ {Math.min(...Object.keys(BTC_POINTS).map(Number))}
                     </div>
                   )}
                 </div>
