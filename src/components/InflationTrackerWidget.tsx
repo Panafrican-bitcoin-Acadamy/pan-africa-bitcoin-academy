@@ -418,6 +418,16 @@ export function InflationTrackerWidget() {
       ? btcValueAtTodayPrice / mattressPurchasingPowerToday
       : null;
 
+  const terminalComparisonMax = useMemo(() => {
+    const a = mattressPurchasingPowerToday;
+    const b = btcValueAtTodayPrice ?? 0;
+    return Math.max(a, b, 1);
+  }, [mattressPurchasingPowerToday, btcValueAtTodayPrice]);
+
+  const cashBarPct = (mattressPurchasingPowerToday / terminalComparisonMax) * 100;
+  const btcBarPct =
+    btcValueAtTodayPrice != null ? (btcValueAtTodayPrice / terminalComparisonMax) * 100 : 0;
+
   useEffect(() => {
     const startLifestyle = prevLifestyleRef.current;
     const targetLifestyle = lifestyleBudget;
@@ -731,61 +741,83 @@ export function InflationTrackerWidget() {
                   </div>
                   {btcPrice ? (
                     <div className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2.5 text-zinc-300">
-                      <p className="mb-2 border-b border-zinc-800 pb-2 text-center text-[11px] text-zinc-500">
-                        <span className="font-semibold text-zinc-200">${BASE_AMOUNT.toLocaleString()}</span>
-                        {' · '}
-                        cash vs BTC bought in <span className="text-zinc-300">{year}</span>
-                        {' · '}
-                        cash = 1971 basket affordability
+                      <p className="mb-2 text-center text-[11px] font-medium text-zinc-200">
+                        By {MAX_YEAR}: same ${BASE_AMOUNT.toLocaleString()}
                       </p>
-                      <table className="w-full border-collapse text-left text-[11px] tabular-nums">
-                        <thead>
-                          <tr className="text-[10px] font-medium text-zinc-500">
-                            <th className="w-0 whitespace-nowrap pb-2 pr-1 font-normal" />
-                            <th className="pb-2 pl-1 text-right font-normal">{year}</th>
-                            <th className="pb-2 pl-2 text-right font-normal">{MAX_YEAR}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-t border-zinc-800 align-top">
-                            <th className="py-2 pr-2 text-left text-[10px] font-medium text-zinc-500">Cash</th>
-                            <td className="py-2 pl-1 text-right font-medium text-zinc-100">
+                      <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-2 text-[10px] leading-snug text-zinc-500">
+                        <p>
+                          <span className="font-medium text-zinc-400">Cash</span> — keep the{' '}
+                          <span className="tabular-nums text-zinc-300">${BASE_AMOUNT.toLocaleString()}</span>.{' '}
+                          <span className="font-medium text-orange-300/80">BTC</span> — all-in in{' '}
+                          <span className="text-zinc-300">{year}</span>:{' '}
+                          <span className="select-all font-medium text-orange-200">
+                            {btcEquivalent != null ? formatBtcAmount(btcEquivalent) : '—'} BTC
+                          </span>{' '}
+                          @ <span className="tabular-nums text-zinc-300">{formatBtcUsdPrice(btcPrice)}</span>.
+                        </p>
+                        <p className="mt-1.5 border-t border-zinc-800/80 pt-1.5 text-zinc-600">
+                          In {year}, that cash still bought{' '}
+                          <span className="font-medium tabular-nums text-zinc-400">
+                            ${displayLifestyleBudget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          </span>{' '}
+                          of the 1971 basket (same year as the widget).
+                        </p>
+                      </div>
+
+                      <p className="mt-3 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                        Both measured in {MAX_YEAR} (1971 basket · USD)
+                      </p>
+                      <div className="mt-2 space-y-3">
+                        <div>
+                          <div className="mb-1 flex items-baseline justify-between gap-2">
+                            <span className="text-[11px] text-zinc-400">Cash</span>
+                            <span className="text-sm font-semibold tabular-nums text-zinc-100">
                               $
-                              {displayLifestyleBudget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                            </td>
-                            <td className="py-2 pl-2 text-right font-medium text-zinc-100">
-                              $
-                              {mattressPurchasingPowerToday.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                            </td>
-                          </tr>
-                          <tr className="border-t border-zinc-800 align-top">
-                            <th className="py-2 pr-2 text-left text-[10px] font-medium text-orange-300/90">BTC</th>
-                            <td className="py-2 pl-1 text-right text-orange-200">
-                              <span className="select-all font-medium">
-                                {btcEquivalent != null ? formatBtcAmount(btcEquivalent) : '—'}
-                              </span>
-                              <div className="mt-0.5 text-[10px] font-normal text-orange-200/75">
-                                avg {formatBtcUsdPrice(btcPrice)}
-                              </div>
-                            </td>
-                            <td className="py-2 pl-2 text-right font-semibold text-cyan-300">
+                              {mattressPurchasingPowerToday.toLocaleString('en-US', {
+                                maximumFractionDigits: 0,
+                              })}
+                            </span>
+                          </div>
+                          <div
+                            className="h-2.5 overflow-hidden rounded-full bg-zinc-800"
+                            role="presentation"
+                          >
+                            <div
+                              className="h-full min-w-[2px] rounded-full bg-zinc-500 transition-[width] duration-500"
+                              style={{ width: `${cashBarPct}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="mb-1 flex items-baseline justify-between gap-2">
+                            <span className="text-[11px] text-orange-300/90">BTC → USD</span>
+                            <span className="text-sm font-semibold tabular-nums text-cyan-300">
                               $
                               {btcValueAtTodayPrice != null
                                 ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })
                                 : '—'}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <p className="mt-2 rounded-md border border-zinc-800 bg-zinc-950/80 px-2 py-1.5 text-center text-[11px] tabular-nums text-zinc-400">
-                        BTC ${btcValueAtTodayPrice != null ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'}{' '}
-                        <span className="text-zinc-600">÷</span> cash $
-                        {mattressPurchasingPowerToday.toLocaleString('en-US', { maximumFractionDigits: 0 })}{' '}
-                        <span className="text-zinc-600">=</span>{' '}
-                        <span className="font-semibold text-orange-200">
-                          {btcVsCashMultiple != null ? `${btcVsCashMultiple.toFixed(2)}×` : '—'}
-                        </span>
-                      </p>
+                            </span>
+                          </div>
+                          <div
+                            className="h-2.5 overflow-hidden rounded-full bg-zinc-800"
+                            role="presentation"
+                          >
+                            <div
+                              className="h-full min-w-[2px] rounded-full bg-gradient-to-r from-orange-500 to-cyan-400 transition-[width] duration-500"
+                              style={{ width: `${btcBarPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-lg border border-orange-400/25 bg-orange-500/10 py-2 text-center">
+                        <div className="text-[10px] font-medium uppercase tracking-wide text-orange-200/80">
+                          BTC side is larger by
+                        </div>
+                        <div className="mt-0.5 text-xl font-bold tabular-nums text-orange-200">
+                          {btcVsCashMultiple != null ? `${btcVsCashMultiple.toFixed(1)}×` : '—'}
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2 text-center text-zinc-500 text-xs tabular-nums">
