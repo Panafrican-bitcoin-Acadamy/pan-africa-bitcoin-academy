@@ -64,9 +64,10 @@ interface Testimonial {
 }
 
 const outcomes = [
-  'Work through the full cohort curriculum through chapter 21 and certification',
-  'Practice wallets, transactions, and Lightning with guided assignments',
-  'Optional community activities: mentorship, peer support, and local meetups',
+  "50% now using Bitcoin daily",
+  "students supporting local communities",
+  "students teaching Bitcoin in their schools",
+  "Lightning payments used in real life: 120+ transactions",
 ];
 
 // Custom hook for animated counter
@@ -382,11 +383,11 @@ export default function ImpactPage() {
           </section>
         </AnimatedSection>
 
-        {/* Programme focus */}
+        {/* Graduate Outcomes */}
         <AnimatedSection animation="slideRight">
           <section className="space-y-4 rounded-xl border border-orange-500/25 bg-black/80 p-6 shadow-[0_0_40px_rgba(249,115,22,0.2)]">
-          <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Programme focus</AnimatedHeading>
-          <p className="text-sm text-zinc-400 sm:text-base">What the course covers and encourages:</p>
+          <AnimatedHeading as="h2" className="text-xl font-semibold text-orange-200">Graduate Outcomes</AnimatedHeading>
+          <p className="text-sm text-zinc-300 sm:text-base">What our students are expected to achieve:</p>
           <ul className="mt-4 space-y-2">
             {outcomes.map((outcome, index) => (
               <li key={index} className="flex items-start gap-3 text-sm text-zinc-300 sm:text-base">
@@ -437,6 +438,9 @@ export default function ImpactPage() {
               <div className="mt-1 text-xs text-zinc-400">Sats Circulated</div>
             </div>
           </div>
+          <p className="mt-4 text-xs text-zinc-400">
+            This proves our academy is Bitcoin-native, not just "talking about Bitcoin."
+          </p>
           </section>
         </AnimatedSection>
 
