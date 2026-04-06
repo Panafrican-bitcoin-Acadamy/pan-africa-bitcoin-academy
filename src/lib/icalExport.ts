@@ -7,6 +7,8 @@ interface CalendarEvent {
   id: string;
   title: string;
   date: Date;
+  /** Prefer for DTSTART when present (actual instant from API) */
+  startAt?: Date;
   type?: string;
   time?: string;
   link?: string;
@@ -54,7 +56,7 @@ export function generateICalContent(events: CalendarEvent[]): string {
   ].join('\r\n');
 
   events.forEach((event) => {
-    const startDate = new Date(event.date);
+    const startDate = new Date(event.startAt ?? event.date);
     // Default to 2:00 PM if no time specified
     if (!event.time) {
       startDate.setHours(14, 0, 0, 0);

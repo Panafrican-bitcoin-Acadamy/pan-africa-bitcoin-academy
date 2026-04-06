@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { chaptersContent } from '@/content/chaptersContent';
 import { Download, Book, FileText, Calendar as CalendarIcon, Video, FileCheck, Users, GraduationCap, Clock, ExternalLink, TrendingDown, RotateCcw, X, BookOpen } from 'lucide-react';
+import { toLocalCalendarDate } from '@/lib/calendarDate';
 // Lazy load heavy components
 const Calendar = lazy(() => import('./Calendar').then(mod => ({ default: mod.Calendar })));
 const CertificateImageSection = lazy(() => import('./CertificateImageSection').then(mod => ({ default: mod.CertificateImageSection })));
@@ -642,11 +643,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           // Transform sessions to match expected format
           const transformedSessions = (data.sessions || []).map((session: any) => {
             const cohortName = session.cohorts?.name || 'Cohort';
-            const sessionDate = new Date(session.session_date);
+            const cal = toLocalCalendarDate(session.session_date);
             return {
               id: session.id,
               title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
-              date: sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              date: cal.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
               time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
               link: session.link || null, // Get link from database
               session_date: session.session_date,
@@ -681,7 +682,7 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
           const data = await response.json();
           // Transform events to match expected format
           const transformedEvents = (data.events || []).map((event: any) => {
-            const startTime = event.date ? new Date(event.date) : new Date();
+            const startTime = event.date ? toLocalCalendarDate(event.date) : toLocalCalendarDate(new Date());
             return {
               id: event.id,
               title: event.title || event.name || 'Untitled Event',
@@ -795,27 +796,27 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     // Transform sessions to match event format
     const sessionItems = liveSessions
       .filter((session: any) => {
-        // Handle both session_date (from API) and date (from transformed sessions)
         const sessionDateStr = session.session_date || session.date;
         if (!sessionDateStr) return false;
         try {
-          const sessionDate = new Date(sessionDateStr);
-          if (isNaN(sessionDate.getTime())) return false;
-          sessionDate.setHours(0, 0, 0, 0);
-          return sessionDate.getTime() >= today.getTime();
+          const sessionCal = toLocalCalendarDate(sessionDateStr);
+          if (isNaN(sessionCal.getTime())) return false;
+          return sessionCal.getTime() >= today.getTime();
         } catch {
           return false;
         }
       })
       .map((session: any) => {
         const sessionDateStr = session.session_date || session.date;
-        const sessionDate = new Date(sessionDateStr);
+        const sessionCal = toLocalCalendarDate(sessionDateStr);
         return {
           id: `session-${session.id}`,
           title: session.title,
           type: 'live-class',
-          date: sessionDate,
-          dateString: session.date || sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          date: sessionCal,
+          dateString:
+            session.date ||
+            sessionCal.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           time: session.time || '',
           description: session.topic || `Cohort session ${session.session_number}`,
           link: session.link || null,
@@ -827,26 +828,29 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
       .filter((event: any) => {
         if (!event || !event.date) return false;
         try {
-          const eventDate = new Date(event.date);
-          if (isNaN(eventDate.getTime())) return false;
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate.getTime() >= today.getTime();
+          const eventCal = toLocalCalendarDate(event.date);
+          if (isNaN(eventCal.getTime())) return false;
+          return eventCal.getTime() >= today.getTime();
         } catch {
           return false;
         }
       })
       .map((event: any) => ({
         ...event,
-        dateString: event.dateString || new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        dateString:
+          event.dateString ||
+          (event.date instanceof Date
+            ? event.date
+            : toLocalCalendarDate(event.date)
+          ).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       }));
 
     // Add cohort start date as an upcoming item
     const cohortItems: any[] = [];
     if (userData?.cohort?.startDate) {
       try {
-        const cohortStartDate = new Date(userData.cohort.startDate);
+        const cohortStartDate = toLocalCalendarDate(userData.cohort.startDate);
         if (!isNaN(cohortStartDate.getTime())) {
-          cohortStartDate.setHours(0, 0, 0, 0);
           if (cohortStartDate.getTime() >= today.getTime()) {
             cohortItems.push({
               id: `cohort-start-${userData.cohort.id}`,

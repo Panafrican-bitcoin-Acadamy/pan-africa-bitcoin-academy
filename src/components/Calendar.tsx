@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Download } from 'lucide-react';
 import { downloadICalFile } from '@/lib/icalExport';
+import {
+  getMondayBasedWeekdayIndex,
+  isSameLocalCalendarDay,
+  toLocalCalendarDate,
+} from '@/lib/calendarDate';
 import { EventEditModal } from './EventEditModal';
 import { SessionEditModal } from './SessionEditModal';
 
@@ -41,7 +46,10 @@ function getCohortColor(cohortId: string | null | undefined): typeof cohortColor
 interface CalendarEvent {
   id: string;
   title: string;
+  /** Local calendar day (midnight local) for grid placement */
   date: Date;
+  /** Original instant from API (links, sort by time) */
+  startAt: Date;
   type: 'live-class' | 'assignment' | 'community' | 'workshop' | 'deadline' | 'quiz' | 'cohort';
   time?: string;
   link?: string;
@@ -161,7 +169,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
             .map((event: any) => ({
               id: event.id,
               title: event.title,
-              date: new Date(event.date),
+              date: toLocalCalendarDate(event.date),
+              startAt: new Date(event.date),
               type: event.type || 'community',
               time: event.time || '',
               link: event.link || '#',
@@ -231,11 +240,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   })
                   .map((session: any) => {
                     const cohortName = session.cohorts?.name || 'Cohort';
-                    const sessionDate = new Date(session.session_date);
-                    // Format date to ensure proper timezone handling
-                    sessionDate.setHours(0, 0, 0, 0);
-                    
-                    // Store original session data in Map
+                    const raw = session.session_date;
+                    const sessionCalendarDate = toLocalCalendarDate(raw);
                     const sessionEventId = `session-${session.id}`;
                     newSessionsMap.set(sessionEventId, session);
                     
@@ -245,7 +251,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                     return {
                       id: sessionEventId,
                       title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
-                      date: sessionDate,
+                      date: sessionCalendarDate,
+                      startAt: new Date(raw),
                       type: 'live-class' as const,
                       time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
                       link: session.link || '#',
@@ -325,12 +332,14 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                 cohortsData.cohorts.forEach((cohort: any) => {
                   // Add cohort start date
                   if (cohort.startDate) {
-                    const startDate = new Date(cohort.startDate);
+                    const raw = cohort.startDate;
+                    const startDate = toLocalCalendarDate(raw);
                     if (!isNaN(startDate.getTime())) {
                       cohortEvents.push({
                         id: `cohort-start-${cohort.id}`,
                         title: `${cohort.name} - Start`,
                         date: startDate,
+                        startAt: new Date(raw),
                         type: 'cohort',
                         time: '',
                         link: '#',
@@ -341,12 +350,14 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   
                   // Add cohort end date
                   if (cohort.endDate) {
-                    const endDate = new Date(cohort.endDate);
+                    const raw = cohort.endDate;
+                    const endDate = toLocalCalendarDate(raw);
                     if (!isNaN(endDate.getTime())) {
                       cohortEvents.push({
                         id: `cohort-end-${cohort.id}`,
                         title: `${cohort.name} - End`,
                         date: endDate,
+                        startAt: new Date(raw),
                         type: 'cohort',
                         time: '',
                         link: '#',
@@ -449,7 +460,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
             .map((event: any) => ({
               id: event.id,
               title: event.title,
-              date: new Date(event.date),
+              date: toLocalCalendarDate(event.date),
+              startAt: new Date(event.date),
               type: event.type || 'community',
               time: event.time || '',
               link: event.link || '#',
@@ -488,8 +500,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   .map((session: any) => {
                     const cohortName = session.cohorts?.name || 'Cohort';
                     const cohortId = session.cohort_id || session.cohorts?.id;
-                    const sessionDate = new Date(session.session_date);
-                    sessionDate.setHours(0, 0, 0, 0);
+                    const raw = session.session_date;
+                    const sessionCalendarDate = toLocalCalendarDate(raw);
                     
                     // Get cohort-specific color
                     const cohortColor = getCohortColor(cohortId);
@@ -500,7 +512,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                     return {
                       id: sessionEventId,
                       title: `${cohortName} - Session ${session.session_number}${session.topic ? `: ${session.topic}` : ''}`,
-                      date: sessionDate,
+                      date: sessionCalendarDate,
+                      startAt: new Date(raw),
                       type: 'live-class' as const,
                       time: session.duration_minutes ? `${session.duration_minutes} min` : '60 min',
                       link: session.link || '#',
@@ -533,12 +546,14 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                 
                 cohortsData.cohorts.forEach((cohort: any) => {
                   if (cohort.startDate) {
-                    const startDate = new Date(cohort.startDate);
+                    const raw = cohort.startDate;
+                    const startDate = toLocalCalendarDate(raw);
                     if (!isNaN(startDate.getTime())) {
                       cohortEvents.push({
                         id: `cohort-start-${cohort.id}`,
                         title: `${cohort.name} - Start`,
                         date: startDate,
+                        startAt: new Date(raw),
                         type: 'cohort',
                         time: '',
                         link: '#',
@@ -548,12 +563,14 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
                   }
                   
                   if (cohort.endDate) {
-                    const endDate = new Date(cohort.endDate);
+                    const raw = cohort.endDate;
+                    const endDate = toLocalCalendarDate(raw);
                     if (!isNaN(endDate.getTime())) {
                       cohortEvents.push({
                         id: `cohort-end-${cohort.id}`,
                         title: `${cohort.name} - End`,
                         date: endDate,
+                        startAt: new Date(raw),
                         type: 'cohort',
                         time: '',
                         link: '#',
@@ -592,16 +609,11 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay();
+  const startingDayOfWeek = getMondayBasedWeekdayIndex(firstDay.getDay());
 
   // Get events for selected date, sorted with recordings first
   const getEventsForDate = (date: Date) => {
-    const dateEvents = events.filter(
-      (event) =>
-        event.date.getDate() === date.getDate() &&
-        event.date.getMonth() === date.getMonth() &&
-        event.date.getFullYear() === date.getFullYear()
-    );
+    const dateEvents = events.filter((event) => isSameLocalCalendarDay(event.date, date));
     
     // Sort: sessions with recordings first, then other sessions, then other events
     return dateEvents.sort((a, b) => {
@@ -618,8 +630,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
       if (aIsSession && !bIsSession) return -1;
       if (!aIsSession && bIsSession) return 1;
       
-      // Then by date/time
-      return a.date.getTime() - b.date.getTime();
+      // Then by actual start instant
+      return a.startAt.getTime() - b.startAt.getTime();
     });
   };
 
@@ -655,8 +667,8 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
         if (aIsSession && !bIsSession) return -1;
         if (!aIsSession && bIsSession) return 1;
         
-        // Then by date/time
-        return a.date.getTime() - b.date.getTime();
+        // Then by actual start instant
+        return a.startAt.getTime() - b.startAt.getTime();
       })
       .slice(0, 10);
   };
@@ -672,9 +684,9 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
 
   // Generate Google Calendar link
   const generateGoogleCalendarLink = (event: CalendarEvent) => {
-    const startDate = event.date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const endDate = new Date(event.date);
-    endDate.setHours(event.date.getHours() + 1);
+    const startDate = event.startAt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endDate = new Date(event.startAt);
+    endDate.setHours(event.startAt.getHours() + 1);
     const endDateStr = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
     const params = new URLSearchParams({
@@ -702,7 +714,7 @@ export function Calendar({ cohortId, studentId, showCohorts = false, email }: Ca
     'December',
   ];
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <div className="rounded-xl border border-cyan-400/25 bg-black/80 p-2 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
