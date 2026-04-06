@@ -729,50 +729,63 @@ export function InflationTrackerWidget() {
                       }}
                     />
                   </div>
-                  <p className="pt-1 text-center text-[10px] text-zinc-600">↕ reorder</p>
-
                   {btcPrice ? (
-                    <div className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2 text-xs text-zinc-300">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2 text-center">
-                          <div className="text-[10px] text-zinc-500">Cash {year}</div>
-                          <div className="mt-0.5 font-semibold tabular-nums text-zinc-100">
-                            ${displayLifestyleBudget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                          </div>
-                        </div>
-                        <div className="rounded border border-orange-400/30 bg-orange-500/10 p-2 text-center">
-                          <div className="text-[10px] text-orange-300/90">BTC</div>
-                          <div className="mt-0.5 font-semibold tabular-nums text-orange-200">
-                            <span className="select-all">{btcEquivalent != null ? formatBtcAmount(btcEquivalent) : '—'}</span>
-                          </div>
-                          <div className="mt-0.5 text-[10px] tabular-nums text-orange-200/80">
-                            {formatBtcUsdPrice(btcPrice)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between gap-2 rounded border border-zinc-700 bg-zinc-950/70 px-2 py-1.5 tabular-nums">
-                        <span className="text-[10px] text-zinc-500">{MAX_YEAR}</span>
-                        <span className="font-semibold text-cyan-300">
-                          $
-                          {btcValueAtTodayPrice != null
-                            ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })
-                            : '—'}
-                        </span>
-                      </div>
-                      <div className="mt-2 space-y-1 text-center tabular-nums">
-                        <div className="text-sm font-semibold text-orange-200">
+                    <div className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2.5 text-zinc-300">
+                      <p className="mb-2 border-b border-zinc-800 pb-2 text-center text-[11px] text-zinc-500">
+                        <span className="font-semibold text-zinc-200">${BASE_AMOUNT.toLocaleString()}</span>
+                        {' · '}
+                        cash vs BTC bought in <span className="text-zinc-300">{year}</span>
+                        {' · '}
+                        cash = 1971 basket affordability
+                      </p>
+                      <table className="w-full border-collapse text-left text-[11px] tabular-nums">
+                        <thead>
+                          <tr className="text-[10px] font-medium text-zinc-500">
+                            <th className="w-0 whitespace-nowrap pb-2 pr-1 font-normal" />
+                            <th className="pb-2 pl-1 text-right font-normal">{year}</th>
+                            <th className="pb-2 pl-2 text-right font-normal">{MAX_YEAR}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-t border-zinc-800 align-top">
+                            <th className="py-2 pr-2 text-left text-[10px] font-medium text-zinc-500">Cash</th>
+                            <td className="py-2 pl-1 text-right font-medium text-zinc-100">
+                              $
+                              {displayLifestyleBudget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                            </td>
+                            <td className="py-2 pl-2 text-right font-medium text-zinc-100">
+                              $
+                              {mattressPurchasingPowerToday.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                            </td>
+                          </tr>
+                          <tr className="border-t border-zinc-800 align-top">
+                            <th className="py-2 pr-2 text-left text-[10px] font-medium text-orange-300/90">BTC</th>
+                            <td className="py-2 pl-1 text-right text-orange-200">
+                              <span className="select-all font-medium">
+                                {btcEquivalent != null ? formatBtcAmount(btcEquivalent) : '—'}
+                              </span>
+                              <div className="mt-0.5 text-[10px] font-normal text-orange-200/75">
+                                avg {formatBtcUsdPrice(btcPrice)}
+                              </div>
+                            </td>
+                            <td className="py-2 pl-2 text-right font-semibold text-cyan-300">
+                              $
+                              {btcValueAtTodayPrice != null
+                                ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })
+                                : '—'}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <p className="mt-2 rounded-md border border-zinc-800 bg-zinc-950/80 px-2 py-1.5 text-center text-[11px] tabular-nums text-zinc-400">
+                        BTC ${btcValueAtTodayPrice != null ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'}{' '}
+                        <span className="text-zinc-600">÷</span> cash $
+                        {mattressPurchasingPowerToday.toLocaleString('en-US', { maximumFractionDigits: 0 })}{' '}
+                        <span className="text-zinc-600">=</span>{' '}
+                        <span className="font-semibold text-orange-200">
                           {btcVsCashMultiple != null ? `${btcVsCashMultiple.toFixed(2)}×` : '—'}
-                        </div>
-                        <div className="text-[10px] text-zinc-500">
-                          Cash {MAX_YEAR}{' '}
-                          <span className="text-zinc-400">
-                            $
-                            {mattressPurchasingPowerToday.toLocaleString('en-US', {
-                              maximumFractionDigits: 0,
-                            })}
-                          </span>
-                        </div>
-                      </div>
+                        </span>
+                      </p>
                     </div>
                   ) : (
                     <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2 text-center text-zinc-500 text-xs tabular-nums">
