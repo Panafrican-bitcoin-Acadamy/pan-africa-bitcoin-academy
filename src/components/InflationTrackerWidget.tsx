@@ -64,17 +64,28 @@ function isLifestyleItemId(value: unknown): value is LifestyleItemId {
   return typeof value === 'string' && DEFAULT_PRIORITY_ORDER.includes(value as LifestyleItemId);
 }
 
-// Simplified BTC average yearly price points (USD)
+/**
+ * BTC/USD by calendar year: arithmetic mean of Blockchain.com “Market Price (USD)” samples
+ * (consolidated major exchanges; chart resolves to ~1 point/week — not every tick).
+ * API: https://api.blockchain.info/charts/market-price?timespan=all&format=json — group `values` by UTC year.
+ * Recomputed in-repo when updating: mean of all y>0 points falling in each year.
+ */
 const BTC_POINTS: Record<number, number> = {
-  2011: 5,
-  2013: 189,
-  2015: 272,
-  2017: 4000,
-  2020: 11111,
-  2021: 47686,
-  2023: 28966,
-  2024: 60000,
-  2025: 75000,
+  2011: 5.99195652173913,
+  2012: 8.464725274725275,
+  2013: 186.3886813186813,
+  2014: 524.9659782608696,
+  2015: 272.36406593406593,
+  2016: 562.5106593406593,
+  2017: 3944.3,
+  2018: 7531.742307692308,
+  2019: 7346.870879120879,
+  2020: 11157.897826086957,
+  2021: 47258.09252747252,
+  2022: 28262.354725274723,
+  2023: 28692.46802197802,
+  2024: 65828.22836956521,
+  2025: 101922.68945054946,
 };
 
 function interpolateByYear(points: Record<number, number>, year: number): number {
@@ -92,12 +103,6 @@ function interpolateByYear(points: Record<number, number>, year: number): number
     }
   }
   return points[sortedYears[0]];
-}
-
-function adjustedForInflation(year: number): number {
-  const cpiStart = CPI_POINTS[BASE_YEAR];
-  const cpiCurrent = interpolateByYear(CPI_POINTS, year);
-  return BASE_AMOUNT * (cpiCurrent / cpiStart);
 }
 
 function getInflatedItemCost(baseCost: number, category: InflationCategory, year: number): number {
@@ -175,6 +180,27 @@ function formatCompactUsd(value: number): string {
   if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
   return `$${value.toFixed(0)}`;
+}
+
+/** Full-precision BTC amount from a fixed $100k conversion (up to 8 dp, trim trailing zeros). */
+function formatBtcAmount(btc: number): string {
+  if (!Number.isFinite(btc) || btc <= 0) return '0';
+  const s = btc.toFixed(8);
+  const trimmed = s.replace(/\.?0+$/, '');
+  return trimmed;
+}
+
+/** Year-average BTC/USD for display (exact for the anchored table; interpolated years follow the curve). */
+function formatBtcUsdPrice(usd: number): string {
+  if (!Number.isFinite(usd) || usd <= 0) return '—';
+  if (usd < 1) return `$${usd.toFixed(4)}`;
+  return `$${usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function purchasingPowerOfMattressCash(year: number): number {
+  const cpiStart = CPI_POINTS[BASE_YEAR];
+  const cpiYear = interpolateByYear(CPI_POINTS, year);
+  return BASE_AMOUNT * (cpiStart / cpiYear);
 }
 
 export function InflationTrackerWidget() {
@@ -366,7 +392,6 @@ export function InflationTrackerWidget() {
     };
   }, [isAuthenticated, authLoading]);
 
-  const adjustedValue = useMemo(() => adjustedForInflation(year), [year]);
   // Inverse CPI to show purchasing power decline over time.
   const lifestyleBudget = useMemo(() => {
     const cpiStart = CPI_POINTS[BASE_YEAR];
@@ -383,10 +408,15 @@ export function InflationTrackerWidget() {
     if (year < firstBtcYear) return null;
     return interpolateByYear(BTC_POINTS, year);
   }, [year]);
-  const btcEquivalent = btcPrice ? adjustedValue / btcPrice : null;
-  const btcTodayPrice = BTC_POINTS[MAX_YEAR];
+  /** BTC you would receive converting the same unmoved $100k at this year's average BTC/USD. */
+  const btcEquivalent = btcPrice ? BASE_AMOUNT / btcPrice : null;
+  const btcTodayPrice = interpolateByYear(BTC_POINTS, MAX_YEAR);
   const btcValueAtTodayPrice = btcEquivalent ? btcEquivalent * btcTodayPrice : null;
-  const btcVsCashMultiple = btcValueAtTodayPrice ? btcValueAtTodayPrice / lifestyleBudget : null;
+  const mattressPurchasingPowerToday = useMemo(() => purchasingPowerOfMattressCash(MAX_YEAR), []);
+  const btcVsCashMultiple =
+    btcValueAtTodayPrice && mattressPurchasingPowerToday > 0
+      ? btcValueAtTodayPrice / mattressPurchasingPowerToday
+      : null;
 
   useEffect(() => {
     const startLifestyle = prevLifestyleRef.current;
@@ -708,29 +738,74 @@ export function InflationTrackerWidget() {
 
                   {btcPrice ? (
                     <div className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2.5 text-xs text-zinc-300">
+                      <p className="mb-2 text-[11px] leading-snug text-zinc-500">
+                        Same starting point: unmoved <strong className="text-zinc-400">${BASE_AMOUNT.toLocaleString()}</strong> from{' '}
+                        {BASE_YEAR}. Cash shows what that <em>nominal</em> stack still bought vs your 1971 basket; Bitcoin shows how many
+                        BTC that <em>same</em> ${BASE_AMOUNT.toLocaleString()} would buy at that year&apos;s{' '}
+                        <strong className="text-zinc-300">calendar-year mean BTC/USD</strong> (
+                        <a
+                          href="https://www.blockchain.com/charts/market-price"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-cyan-400/90 underline decoration-cyan-500/40 underline-offset-2 hover:text-cyan-300"
+                        >
+                          Blockchain.com
+                        </a>{' '}
+                        market price — ~weekly samples averaged per UTC year), then marked at {MAX_YEAR} using the same methodology.
+                      </p>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2">
-                          <div className="text-[10px] uppercase tracking-wide text-zinc-500">Cash ({year})</div>
-                          <div className="mt-1 font-semibold text-zinc-200">${displayLifestyleBudget.toFixed(0)}</div>
+                          <div className="text-[10px] uppercase tracking-wide text-zinc-500">Cash purchasing power ({year})</div>
+                          <div className="mt-1 font-semibold tabular-nums text-zinc-200">
+                            ${displayLifestyleBudget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          </div>
+                          <div className="mt-1 text-[10px] text-zinc-600">1971 basket, {year} prices</div>
                         </div>
                         <div className="rounded border border-orange-400/30 bg-orange-500/10 p-2">
-                          <div className="text-[10px] uppercase tracking-wide text-orange-300">Bitcoin</div>
-                          <div className="mt-1 font-semibold text-orange-200">{btcEquivalent?.toFixed(4)} BTC</div>
+                          <div className="text-[10px] uppercase tracking-wide text-orange-300">Bitcoin from ${BASE_AMOUNT / 1000}k</div>
+                          <div className="mt-1 font-semibold tabular-nums text-orange-200">
+                            <span className="select-all">{btcEquivalent != null ? formatBtcAmount(btcEquivalent) : '—'}</span>{' '}
+                            <span className="text-orange-300/90">BTC</span>
+                          </div>
+                          <div className="mt-1 text-[10px] tabular-nums text-orange-200/80">
+                            @ {formatBtcUsdPrice(btcPrice)} / BTC{' '}
+                            <span className="text-zinc-600">({year} year-mean USD)</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-2 flex items-center justify-between rounded border border-zinc-700 bg-zinc-950/70 p-2">
-                        <div className="text-[10px] text-zinc-500">BTC @ {MAX_YEAR} (${btcTodayPrice.toFixed(0)})</div>
-                        <div className="font-semibold text-cyan-300">${btcValueAtTodayPrice?.toFixed(0)}</div>
+                      <div className="mt-2 flex flex-col gap-1 rounded border border-zinc-700 bg-zinc-950/70 p-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-[10px] text-zinc-500">
+                            If held to {MAX_YEAR} @ {formatBtcUsdPrice(btcTodayPrice)} / BTC
+                          </div>
+                          <div className="font-semibold tabular-nums text-cyan-300">
+                            $
+                            {btcValueAtTodayPrice != null
+                              ? btcValueAtTodayPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })
+                              : '—'}
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-zinc-600">
+                          Mattress cash today still buys ~$
+                          {mattressPurchasingPowerToday.toLocaleString('en-US', { maximumFractionDigits: 0 })} of that basket (
+                          {MAX_YEAR} prices). Multiple compares BTC stack to that.
+                        </div>
                       </div>
-                      <div className="mt-2 text-center">
-                        <span className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-500/10 px-2.5 py-1 text-xs font-semibold text-orange-200">
-                          {btcVsCashMultiple?.toFixed(2)}x
+                      <div className="mt-2 space-y-2 text-center">
+                        <span className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-500/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-orange-200">
+                          {btcVsCashMultiple != null ? `${btcVsCashMultiple.toFixed(2)}×` : '—'} vs mattress cash (
+                          {MAX_YEAR} real purchasing power)
                         </span>
+                        <p className="text-[10px] leading-snug text-zinc-600">
+                          USD/BTC figures are not a single exchange print — they match Blockchain&apos;s consolidated chart
+                          averaged over each calendar year (method in code comment above{' '}
+                          <span className="text-zinc-500">`BTC_POINTS`</span>).
+                        </p>
                       </div>
                     </div>
                   ) : (
                     <div className="rounded border border-zinc-700 bg-zinc-950/70 p-2 text-center text-zinc-400 text-xs">
-                      BTC data starts at 2011
+                      BTC comparison starts at {Math.min(...Object.keys(BTC_POINTS).map(Number))} (calendar-year mean USD/BTC).
                     </div>
                   )}
                 </div>
