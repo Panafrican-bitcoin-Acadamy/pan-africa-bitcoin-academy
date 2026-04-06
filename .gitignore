@@ -32,6 +32,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Local-only tooling (not part of the site; keep off GitHub)
+/trading-bot/
+
 # WhatsApp page and Twilio integration (keep private)
 /src/app/whatsapp/
 /src/app/api/whatsapp/
