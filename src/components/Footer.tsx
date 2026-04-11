@@ -88,6 +88,7 @@ export function Footer() {
             <FooterHeading>Learn</FooterHeading>
             <ul className="space-y-1.5 text-xs sm:space-y-2">
               <FooterLink href="/chapters">Chapters</FooterLink>
+              <FooterLink href="/bitcoin-in-eritrea">Bitcoin in Eritrea</FooterLink>
               <FooterLink href="/scam">Scam Awareness</FooterLink>
               <FooterLink href="/developer-hub">Developer Hub</FooterLink>
               <FooterLink href="/exam">Final Exam</FooterLink>

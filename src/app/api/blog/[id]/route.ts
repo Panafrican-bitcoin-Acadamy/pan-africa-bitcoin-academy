@@ -118,6 +118,7 @@ export async function GET(
       category: posts.category,
       readTime: `${posts.read_time || 5} min read`,
       image: posts.image_emoji || '📝',
+      coverImageUrl: posts.cover_image_url ?? null,
       content: posts.content,
       excerpt: posts.excerpt,
       authorBio: posts.author_bio || '',

@@ -38,6 +38,18 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       };
     }
 
+    const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.com').replace(
+      /\/$/,
+      ''
+    );
+    const rawCover = post.coverImageUrl as string | null | undefined;
+    const ogImage =
+      rawCover && /^https?:\/\//i.test(rawCover)
+        ? rawCover
+        : rawCover?.startsWith('/')
+          ? `${siteBase}${rawCover}`
+          : null;
+
     return {
       title: post.title,
       description: post.excerpt || post.content.substring(0, 160) + '...',
@@ -51,7 +63,16 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
         type: 'article',
         authors: [post.author],
         publishedTime: post.publishedAt || post.createdAt,
+        ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       },
+      ...(ogImage
+        ? {
+            twitter: {
+              card: 'summary_large_image',
+              images: [ogImage],
+            },
+          }
+        : {}),
     };
   } catch (error) {
     return {

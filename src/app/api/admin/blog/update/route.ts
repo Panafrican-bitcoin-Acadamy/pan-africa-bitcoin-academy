@@ -77,6 +77,17 @@ export async function PATCH(request: NextRequest) {
       updateData.is_blog_of_month = Boolean(updates.is_blog_of_month);
     }
 
+    // Cover image for OG / sitemap (HTTPS URL or site-relative path)
+    if (updates.cover_image_url !== undefined) {
+      const v = updates.cover_image_url;
+      if (v === null || v === '') {
+        updateData.cover_image_url = null;
+      } else if (typeof v === 'string') {
+        const t = v.trim();
+        updateData.cover_image_url = t === '' ? null : t.slice(0, 2048);
+      }
+    }
+
     // Allow updating other fields
     const allowedFields = ['title', 'slug', 'category', 'excerpt', 'content', 'author_name', 'author_role', 'author_country', 'author_bio'];
     for (const field of allowedFields) {

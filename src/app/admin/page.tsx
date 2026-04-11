@@ -1054,6 +1054,7 @@ export default function AdminDashboardPage() {
   const [blogPostsSearch, setBlogPostsSearch] = useState('');
   const [blogPostsCategoryFilter, setBlogPostsCategoryFilter] = useState<string>('all');
   const [expandedBlogPostId, setExpandedBlogPostId] = useState<string | null>(null);
+  const [blogCoverDrafts, setBlogCoverDrafts] = useState<Record<string, string>>({});
   const [processingBlogPost, setProcessingBlogPost] = useState<string | null>(null);
   const [blogFilter, setBlogFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [processingBlog, setProcessingBlog] = useState<string | null>(null);
@@ -3571,6 +3572,13 @@ export default function AdminDashboardPage() {
       
       // Refresh blog posts list
       await fetchBlogPosts();
+      if (updates && typeof updates === 'object' && 'cover_image_url' in updates) {
+        setBlogCoverDrafts((prev) => {
+          const next = { ...prev };
+          delete next[postId];
+          return next;
+        });
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to update blog post');
     } finally {
@@ -8057,6 +8065,61 @@ export default function AdminDashboardPage() {
                         <p className="text-sm text-zinc-200">
                           {expandedBlogPostId === post.id ? post.excerpt : (post.excerpt && post.excerpt.length > 200 ? post.excerpt.substring(0, 200) + '...' : post.excerpt)}
                         </p>
+                      </div>
+                    )}
+
+                    {!post._isFromSubmission && (
+                      <div className="mb-4 rounded border border-zinc-800 bg-zinc-900/30 p-3">
+                        <p className="text-xs font-medium text-zinc-300 mb-0.5">Cover image (Open Graph / sitemap)</p>
+                        <p className="text-[11px] text-zinc-500 mb-2">
+                          Full HTTPS URL or a path on this site starting with <code className="text-zinc-400">/</code>. Leave empty for default.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                          <input
+                            type="text"
+                            inputMode="url"
+                            autoComplete="off"
+                            placeholder="https://… or /images/…"
+                            value={
+                              blogCoverDrafts[post.id] !== undefined
+                                ? blogCoverDrafts[post.id]
+                                : (post.cover_image_url ?? '')
+                            }
+                            onChange={(e) =>
+                              setBlogCoverDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))
+                            }
+                            className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          />
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const raw =
+                                  blogCoverDrafts[post.id] !== undefined
+                                    ? blogCoverDrafts[post.id]
+                                    : (post.cover_image_url ?? '');
+                                void handleUpdateBlogPost(post.id, {
+                                  cover_image_url: raw.trim() === '' ? null : raw.trim(),
+                                });
+                              }}
+                              disabled={processingBlogPost === post.id}
+                              className="rounded-lg bg-purple-500/20 px-3 py-2 text-xs font-medium text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                            >
+                              {processingBlogPost === post.id ? '…' : 'Save cover'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBlogCoverDrafts((prev) => ({ ...prev, [post.id]: '' }));
+                                void handleUpdateBlogPost(post.id, { cover_image_url: null });
+                              }}
+                              disabled={processingBlogPost === post.id}
+                              className="rounded-lg bg-zinc-700/80 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:bg-zinc-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
 

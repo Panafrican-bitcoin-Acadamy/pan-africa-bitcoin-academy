@@ -104,6 +104,25 @@ export async function GET(request: NextRequest) {
         keywords: ['about', 'mission', 'academy', 'education', 'bitcoin', 'africa', 'pan-african']
       },
       {
+        title: 'Bitcoin in Eritrea',
+        description:
+          'Bitcoin education in Eritrea: structured lessons, self-custody, and community with PanAfrican Bitcoin Academy in Asmara.',
+        url: '/bitcoin-in-eritrea',
+        type: 'Page',
+        icon: '🇪🇷',
+        keywords: [
+          'eritrea',
+          'eritrean',
+          'asmara',
+          'bitcoin eritrea',
+          'eritrea bitcoin',
+          'nakfa',
+          'habesha',
+          'diaspora',
+          'africa',
+        ],
+      },
+      {
         title: 'Impact',
         description: 'See the impact of our Bitcoin education program: students trained, sats rewarded, countries represented, and success stories.',
         url: '/impact',
