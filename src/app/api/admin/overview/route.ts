@@ -45,6 +45,11 @@ export async function GET(_req: NextRequest) {
       throw recentError;
     }
 
+    const { count: pendingAssignmentReviews } = await supabaseAdmin
+      .from('assignment_submissions')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['pending_review', 'submitted']);
+
     const res = NextResponse.json(
       {
         summary: {
@@ -55,6 +60,7 @@ export async function GET(_req: NextRequest) {
           totalStudents: totalStudents || 0,
           totalCohorts: totalCohorts || 0,
           upcomingEventsCount: upcomingEvents?.length || 0,
+          pendingAssignmentReviews: pendingAssignmentReviews || 0,
         },
         upcomingEvents: upcomingEvents || [],
         recentApplications: recentApplications || [],
@@ -63,12 +69,13 @@ export async function GET(_req: NextRequest) {
     );
     attachRefresh(res, session);
     return res;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in admin overview API:', error);
+    const details = error instanceof Error ? error.message : undefined;
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' ? { details: error.message } : {})
+        ...(process.env.NODE_ENV === 'development' && details ? { details } : {}),
       },
       { status: 500 },
     );

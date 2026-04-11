@@ -6,6 +6,13 @@ import { useSession } from '@/hooks/useSession';
 import * as bip39 from '@scure/bip39';
 import { wordlist as wordlistEn } from '@scure/bip39/wordlists/english.js';
 import { HDKey } from '@scure/bip32';
+import {
+  clientAwaitingInstructorReview,
+  clientAutoGradedCanPractice,
+  clientNeedsResubmit,
+  clientSubmissionIsApproved,
+  phaseHintFromRow,
+} from '@/lib/assignmentReview';
 
 const rawWordlist = wordlistEn as string | string[];
 const wordlist = typeof rawWordlist === 'string' ? rawWordlist.trim().split(/\s+/) : rawWordlist;
@@ -91,6 +98,7 @@ export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigA
   const [submissionStatus, setSubmissionStatus] = useState<any>(null);
   const [assignment, setAssignment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [practiceMode, setPracticeMode] = useState(false);
 
   const generateMnemonic = useCallback(() => {
     const m = bip39.generateMnemonic(wordlist, 128);
@@ -231,6 +239,7 @@ export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigA
       }
       const data = await response.json();
       setSubmitted(true);
+      setPracticeMode(false);
       setSubmissionStatus(data.submission);
     } catch (err: any) {
       setError(err.message || 'Failed to submit.');
@@ -258,13 +267,88 @@ export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigA
     );
   }
 
-  if (submitted && submissionStatus) {
+  if (submitted && submissionStatus && !practiceMode) {
+    const ph = phaseHintFromRow(assignment);
     return (
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner space-y-6">
         <h3 className="text-lg font-semibold text-zinc-100 mb-2">Assignment: Multi-Sig Simulator</h3>
-        <div className="p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
-          <p className="text-green-200 font-medium mb-2">✓ Assignment Submitted</p>
-          <p className="text-sm text-zinc-300">You completed the Multi-Sig simulator. Reward: {assignment?.reward_sats ?? 'TBD'} sats (after instructor review).</p>
+        <div
+          className={`p-4 rounded-lg border ${
+            clientSubmissionIsApproved(submissionStatus, ph)
+              ? 'bg-green-900/20 border-green-800/50'
+              : clientNeedsResubmit(submissionStatus, ph)
+                ? 'bg-red-900/20 border-red-800/50'
+                : clientAwaitingInstructorReview(submissionStatus, ph)
+                  ? 'bg-amber-900/20 border-amber-800/50'
+                  : 'bg-green-900/20 border-green-800/50'
+          }`}
+        >
+          <p
+            className={`font-medium mb-2 ${
+              clientSubmissionIsApproved(submissionStatus, ph)
+                ? 'text-green-200'
+                : clientNeedsResubmit(submissionStatus, ph)
+                  ? 'text-red-200'
+                  : 'text-amber-100'
+            }`}
+          >
+            {clientSubmissionIsApproved(submissionStatus, ph)
+              ? '✓ Approved'
+              : clientNeedsResubmit(submissionStatus, ph)
+                ? 'Revision needed'
+                : '⏳ Submitted — awaiting review'}
+          </p>
+          <p className="text-sm text-zinc-300">
+            {clientSubmissionIsApproved(submissionStatus, ph)
+              ? `Approved. Reward: ${assignment?.reward_sats ?? 'TBD'} sats (pending payout per academy schedule).`
+              : clientNeedsResubmit(submissionStatus, ph)
+                ? 'Read feedback if provided, then use “Start over” below to submit again.'
+                : `You completed the simulator. Reward: ${assignment?.reward_sats ?? 'TBD'} sats after instructor approval.`}
+          </p>
+          {clientNeedsResubmit(submissionStatus, ph) && submissionStatus.feedback && (
+            <p className="text-sm text-zinc-300 mt-2">{submissionStatus.feedback}</p>
+          )}
+          {clientAutoGradedCanPractice(submissionStatus, ph) && (
+            <p className="mt-2 text-xs text-zinc-500">
+              Practice the simulator again below — your sats credit stays once earned.
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-3">
+            {clientNeedsResubmit(submissionStatus, ph) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  setSubmissionStatus(null);
+                  setPracticeMode(false);
+                  setStep(1);
+                  setMnemonic('');
+                  setMnemonicWords([]);
+                  setVerifyInputs(Array(12).fill(''));
+                  setSeedSaved(false);
+                  setMyXpub('');
+                  setMyFingerprint('');
+                  setMyKeyString('');
+                  setPartnerKeyInput('');
+                  setPartnerKey(null);
+                  setDescriptor('');
+                  setSignStep('create');
+                }}
+                className="text-sm text-cyan-400 hover:text-cyan-300 underline"
+              >
+                Start over and resubmit
+              </button>
+            )}
+            {clientAutoGradedCanPractice(submissionStatus, ph) && (
+              <button
+                type="button"
+                onClick={() => setPracticeMode(true)}
+                className="rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-sm font-medium text-green-200"
+              >
+                Practice again
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -276,9 +360,6 @@ export function Chapter17MultisigAssignment({ assignmentId }: Chapter17MultisigA
         <h3 className="text-lg font-semibold text-zinc-100 mb-2">Assignment: Multi-Sig Simulator</h3>
         <p className="text-sm text-zinc-400 mb-2">
           Seed (local) → derive public key → share public key → verify partner key → construct multisig descriptor. Reward: {assignment?.reward_sats ?? 'TBD'} sats (after review).
-        </p>
-        <p className="text-xs text-amber-200/90 mb-4">
-          Important: Seed phrase is generated in the browser only and never sent to the server. Only the derived public key (xpub) is used later.
         </p>
       </div>
 

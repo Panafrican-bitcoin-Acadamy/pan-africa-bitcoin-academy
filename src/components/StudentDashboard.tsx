@@ -26,6 +26,8 @@ interface UserData {
   student: {
     progressPercent: number;
     assignmentsCompleted: number;
+    /** Expected assignment count for certification when assignments API list is not yet loaded. */
+    totalAssignments?: number;
     projectsCompleted: number;
     liveSessionsAttended: number;
     attendancePercent?: number;
@@ -963,17 +965,22 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
     if (aNum !== bNum) return aNum - bNum;
     return String(a?.title || '').localeCompare(String(b?.title || ''));
   };
-  const pendingOrOverdueAssignments = assignments
-    .filter((a: any) => a.status === 'pending' || a.status === 'overdue')
+  const actionNeededAssignments = assignments
+    .filter((a: any) =>
+      a.status === 'pending' || a.status === 'overdue' || a.status === 'needs_revision'
+    )
+    .sort(byChapterOrder);
+  const awaitingApprovalAssignments = assignments
+    .filter((a: any) => a.status === 'pending_review')
     .sort(byChapterOrder);
   const completedAssignments = assignments
-    // Treat any submitted assignment as "done" for dashboard organization
-    .filter((a: any) => a.status === 'completed' || a.status === 'submitted' || Boolean(a?.submission))
+    .filter((a: any) => a.status === 'completed')
     .sort(byChapterOrder);
-  const completedAssignmentsWithFeedback = completedAssignments.filter(
-    (assignment: any) => Boolean(assignment?.submission?.feedback && String(assignment.submission.feedback).trim().length > 0)
+  const assignmentsWithFeedbackForNotifications = assignments.filter(
+    (assignment: any) =>
+      Boolean(assignment?.submission?.feedback && String(assignment.submission.feedback).trim().length > 0)
   );
-  const feedbackNotifications = completedAssignmentsWithFeedback.map((assignment: any) => {
+  const feedbackNotifications = assignmentsWithFeedbackForNotifications.map((assignment: any) => {
     const submissionId = String(assignment?.submission?.id || assignment.id);
     const feedback = String(assignment?.submission?.feedback || '').trim();
     const feedbackKey = `${submissionId}:${feedback}`;
@@ -1094,12 +1101,23 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
   
   // Certification requirements
   const totalAssignments = 4;
+  const fallbackAssignmentTotal =
+    userData?.student?.totalAssignments ?? student.totalAssignments ?? totalAssignments;
+  const assignmentCertTotal =
+    !loadingAssignments && assignments.length > 0 ? assignments.length : fallbackAssignmentTotal;
+  const assignmentCertDone =
+    !loadingAssignments && assignments.length > 0
+      ? assignments.filter((a: any) => a.status === 'completed').length
+      : assignmentsCompleted;
   const requiredAttendance = 80; // 80%
   const requiredSats = 500;
   
   // Check each requirement
   const hasCompletedAllChapters = chaptersCompleted >= totalChapters;
-  const hasCompletedAllAssignments = assignmentsCompleted >= totalAssignments;
+  const hasCompletedAllAssignments =
+    assignmentCertTotal > 0
+      ? assignmentCertDone >= assignmentCertTotal
+      : assignmentsCompleted >= fallbackAssignmentTotal;
   const hasMetAttendance = attendance >= requiredAttendance;
   const hasEarnedEnoughSats = satsEarned >= requiredSats;
   const [examResult, setExamResult] = useState<{ score: number; totalQuestions: number; percentage: number; submittedAt: string } | null>(null);
@@ -1488,7 +1506,12 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       <h2 className="text-xl font-semibold text-orange-200">Your Next Step</h2>
                       {(() => {
                         // Determine next action based on student progress
-                        const pendingAssignments = assignments.filter((a: any) => a.status === 'pending' || a.status === 'overdue');
+                        const pendingAssignments = assignments.filter((a: any) =>
+                          a.status === 'pending' ||
+                          a.status === 'overdue' ||
+                          a.status === 'needs_revision'
+                        );
+                        const waitingApproval = assignments.filter((a: any) => a.status === 'pending_review');
                         const nextChapter = chapters.find((ch) => !ch.isCompleted && ch.isUnlocked);
                         
                         // Find upcoming sessions (handle both date strings and Date objects)
@@ -1505,14 +1528,23 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           }
                         }).slice(0, 1);
 
-                        // Priority: Pending assignments > Next chapter > Upcoming session > Default
+                        // Priority: Action-needed assignments > Awaiting approval > Next chapter > Upcoming session > Default
                         if (pendingAssignments.length > 0) {
                           const count = pendingAssignments.length;
                           return (
                             <p className="mt-2 text-lg text-zinc-100">
                               {count === 1 
-                                ? 'Complete 1 pending assignment to earn 500 sats.'
-                                : `Complete ${count} pending assignments to earn sats rewards.`}
+                                ? 'Complete 1 assignment that needs your attention to earn sats.'
+                                : `Complete ${count} assignments that need your attention to earn sats rewards.`}
+                            </p>
+                          );
+                        } else if (waitingApproval.length > 0) {
+                          const w = waitingApproval.length;
+                          return (
+                            <p className="mt-2 text-lg text-zinc-100">
+                              {w === 1
+                                ? 'One assignment is submitted and waiting for instructor approval.'
+                                : `${w} assignments are waiting for instructor approval.`}
                             </p>
                           );
                         } else if (nextChapter) {
@@ -1656,7 +1688,9 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                       <div className="mb-2 text-2xl">🛠</div>
                       <div className="text-sm text-zinc-400">Assignments</div>
                       <div className="text-lg font-semibold text-orange-300">
-                            {assignmentsCompleted}/{student.totalAssignments ?? 4}
+                            {!loadingAssignments && assignments.length > 0
+                              ? `${assignmentCertDone}/${assignmentCertTotal}`
+                              : `${assignmentsCompleted}/${student.totalAssignments ?? totalAssignments}`}
                       </div>
                     </div>
                     <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
@@ -1944,34 +1978,79 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
               {loadingAssignments ? (
                 <div className="py-8 text-center text-zinc-400">Loading assignments...</div>
               ) : (
-                <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+                <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
                   <div>
-                    <h3 className="mb-3 text-lg font-medium text-orange-300">Due Soon</h3>
+                    <h3 className="mb-3 text-lg font-medium text-orange-300">Needs action</h3>
                     <div className="space-y-2">
-                      {pendingOrOverdueAssignments.length > 0 ? (
-                        pendingOrOverdueAssignments.map((assignment: any) => (
+                      {actionNeededAssignments.length > 0 ? (
+                        actionNeededAssignments.map((assignment: any) => (
                             <Link
                               key={assignment.id}
+                              id={
+                                assignment.status === 'needs_revision'
+                                  ? `completed-feedback-${assignment.id}`
+                                  : undefined
+                              }
                               href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
                               className="block rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 transition hover:border-orange-500/50 hover:bg-orange-500/20"
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
                                   <span className="font-medium text-zinc-100">{assignment.title}</span>
                                   {assignment.dueDate && (
                                     <span className="ml-2 text-sm text-orange-300">
                                       Due: {new Date(assignment.dueDate).toLocaleDateString()}
                                     </span>
                                   )}
+                                  {assignment.status === 'needs_revision' && (
+                                    <p className="mt-1 text-xs text-amber-200/90">Revision requested — open the chapter to resubmit.</p>
+                                  )}
                                 </div>
-                                {assignment.status === 'overdue' && (
-                                  <span className="text-xs text-red-400">Overdue</span>
-                                )}
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  {assignment.status === 'overdue' && (
+                                    <span className="text-xs text-red-400">Overdue</span>
+                                  )}
+                                  {assignment.status === 'needs_revision' && (
+                                    <span className="text-xs text-amber-300">Redo</span>
+                                  )}
+                                </div>
                               </div>
+                              {assignment.submission?.feedback && assignment.status === 'needs_revision' && (
+                                <div className="mt-3 rounded-md border border-blue-400/30 bg-blue-500/10 p-3">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-200">Instructor feedback</p>
+                                  <p className="mt-1 text-sm text-zinc-200">{assignment.submission.feedback}</p>
+                                </div>
+                              )}
                             </Link>
                           ))
                       ) : (
-                        <p className="text-sm text-zinc-500">No assignments due soon</p>
+                        <p className="text-sm text-zinc-500">Nothing waiting on you right now</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="mb-3 text-lg font-medium text-cyan-300">Awaiting approval</h3>
+                    <div className="space-y-2">
+                      {awaitingApprovalAssignments.length > 0 ? (
+                        awaitingApprovalAssignments.map((assignment: any) => (
+                          <Link
+                            key={assignment.id}
+                            href={assignment.chapterSlug ? `/chapters/${assignment.chapterSlug}` : (assignment.link || '/dashboard')}
+                            className="block rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 transition hover:border-cyan-500/50 hover:bg-cyan-500/20"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-zinc-100">{assignment.title}</span>
+                              <span className="text-xs text-cyan-300">Submitted</span>
+                            </div>
+                            {assignment.dueDate && (
+                              <p className="mt-1 text-xs text-zinc-400">
+                                Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                              </p>
+                            )}
+                          </Link>
+                        ))
+                      ) : (
+                        <p className="text-sm text-zinc-500">No submissions in review</p>
                       )}
                     </div>
                   </div>
@@ -2070,11 +2149,11 @@ export function StudentDashboard({ userData }: StudentDashboardProps) {
                           {hasCompletedAllAssignments ? '✓' : '✗'}
                         </span>
                         <span className={hasCompletedAllAssignments ? 'text-green-300' : 'text-zinc-400'}>
-                          Complete all 4 assignments
+                          Complete all {assignmentCertTotal} assignments
                         </span>
                       </div>
                       <span className="text-zinc-500">
-                        {assignmentsCompleted}/{totalAssignments}
+                        {assignmentCertDone}/{assignmentCertTotal}
                       </span>
                     </li>
                     

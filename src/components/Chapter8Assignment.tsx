@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
+import {
+  clientAwaitingInstructorReview,
+  clientAutoGradedCanPractice,
+  clientNeedsResubmit,
+  clientSubmissionIsApproved,
+  phaseHintFromRow,
+} from '@/lib/assignmentReview';
 
 interface Chapter8AssignmentProps {
   assignmentId: string;
@@ -39,12 +46,9 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<any>(null);
-  const isRejected =
-    submissionStatus &&
-    ((submissionStatus.status === 'rejected') ||
-      (submissionStatus.status === 'graded' && submissionStatus.is_correct === false));
   const [assignment, setAssignment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [practiceMode, setPracticeMode] = useState(false);
 
   useEffect(() => {
     // Generate seed phrase on component mount
@@ -173,6 +177,7 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
 
       const data = await response.json();
 
+      setPracticeMode(false);
       setSubmitted(true);
       setSubmissionStatus(data.submission);
     } catch (err: any) {
@@ -209,6 +214,8 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
     );
   }
 
+  const ph = phaseHintFromRow(assignment);
+
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-950 p-5 shadow-inner space-y-6">
       <div>
@@ -216,15 +223,45 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
         <p className="text-sm text-zinc-400 mb-4">Create a wallet, back up seed securely, restore it. Reflection: What went wrong or surprised you? | Reward: {assignment?.reward_sats || 'TBD'} sats (awarded after instructor review)</p>
       </div>
 
-      {submitted && submissionStatus ? (
+      {submitted && submissionStatus && (
         <div className="space-y-4">
-          <div className={`p-4 rounded-lg border ${isRejected ? 'bg-red-900/20 border-red-800/50' : 'bg-green-900/20 border-green-800/50'}`}>
-            <p className={`${isRejected ? 'text-red-200' : 'text-green-200'} font-medium mb-2`}>{isRejected ? '✗ Assignment Rejected' : '✓ Assignment Submitted'}</p>
-            <p className="text-sm text-zinc-300 mb-3">{isRejected ? 'Please review feedback and resubmit.' : 'Your submission is under instructor review.'}</p>
-            {submissionStatus.status === 'graded' && submissionStatus.is_correct && (
-              <p className="text-sm text-green-300 font-medium">✓ Approved! You earned {assignment?.reward_sats || 0} sats.</p>
+          <div
+            className={`p-4 rounded-lg border ${
+              clientSubmissionIsApproved(submissionStatus, ph)
+                ? 'bg-green-900/20 border-green-800/50'
+                : clientNeedsResubmit(submissionStatus, ph)
+                  ? 'bg-red-900/20 border-red-800/50'
+                  : clientAwaitingInstructorReview(submissionStatus, ph)
+                    ? 'bg-amber-900/20 border-amber-800/50'
+                    : 'bg-green-900/20 border-green-800/50'
+            }`}
+          >
+            <p
+              className={`font-medium mb-2 ${
+                clientSubmissionIsApproved(submissionStatus, ph)
+                  ? 'text-green-200'
+                  : clientNeedsResubmit(submissionStatus, ph)
+                    ? 'text-red-200'
+                    : 'text-amber-100'
+              }`}
+            >
+              {clientSubmissionIsApproved(submissionStatus, ph)
+                ? '✓ Approved'
+                : clientNeedsResubmit(submissionStatus, ph)
+                  ? 'Revision needed'
+                  : '⏳ Submitted — awaiting review'}
+            </p>
+            <p className="text-sm text-zinc-300 mb-3">
+              {clientSubmissionIsApproved(submissionStatus, ph)
+                ? `Your submission was approved. You will receive ${assignment?.reward_sats || 0} sats (pending payout per academy schedule).`
+                : clientNeedsResubmit(submissionStatus, ph)
+                  ? 'Read the feedback and submit again.'
+                  : 'Your instructor has not graded this yet. You cannot submit again until it is approved or returned.'}
+            </p>
+            {clientAutoGradedCanPractice(submissionStatus, ph) && (
+              <p className="text-xs text-zinc-500">Practice again below — your sats credit for this task stays once earned.</p>
             )}
-            {isRejected && submissionStatus.feedback && (
+            {clientNeedsResubmit(submissionStatus, ph) && submissionStatus.feedback && (
               <p className="text-sm text-zinc-300">{submissionStatus.feedback}</p>
             )}
           </div>
@@ -269,19 +306,34 @@ export function Chapter8Assignment({ assignmentId }: Chapter8AssignmentProps) {
             </div>
           )}
 
-          {isRejected && (
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                setSubmissionStatus(null);
-              }}
-              className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
-            >
-              Resubmit Assignment
-            </button>
-          )}
+          <div className="flex flex-wrap gap-3">
+            {clientNeedsResubmit(submissionStatus, ph) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  setSubmissionStatus(null);
+                  setPracticeMode(false);
+                }}
+                className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
+              >
+                Resubmit Assignment
+              </button>
+            )}
+            {clientAutoGradedCanPractice(submissionStatus, ph) && (
+              <button
+                type="button"
+                onClick={() => setPracticeMode(true)}
+                className="rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-sm font-medium text-green-200"
+              >
+                Practice again
+              </button>
+            )}
+          </div>
         </div>
-      ) : (
+      )}
+
+      {(!submitted || practiceMode || clientNeedsResubmit(submissionStatus, ph)) && (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Step 1: Show seed phrase */}
           <div className="space-y-3 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">

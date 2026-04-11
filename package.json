@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "lint:strict": "eslint \"src/app/api/**/*.ts\" \"src/lib/**/*.ts\" --max-warnings 0",
+    "lint:changed": "node scripts/lint-changed.mjs",
+    "lint:ci": "node scripts/lint-changed.mjs",
+    "lint:staged": "lint-staged"
   },
   "overrides": {
     "date-fns": "^4.1.0"
@@ -42,6 +46,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.0.8",
+    "lint-staged": "^15.4.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

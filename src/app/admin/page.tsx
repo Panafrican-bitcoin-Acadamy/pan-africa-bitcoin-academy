@@ -140,6 +140,8 @@ interface OverviewSummary {
   totalStudents: number;
   totalCohorts: number;
   upcomingEventsCount: number;
+  /** assignment_submissions awaiting instructor action (pending_review or legacy submitted). */
+  pendingAssignmentReviews: number;
 }
 
 interface ProgressItem {
@@ -1001,16 +1003,26 @@ export default function AdminDashboardPage() {
   
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
-  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'graded'>('submitted');
+  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'pending' | 'done'>('pending');
   const [gradingSubmission, setGradingSubmission] = useState<string | null>(null);
   const [gradingFeedback, setGradingFeedback] = useState<Record<string, string>>({});
   /** Which student accordion is open in Assignment Submissions (one at a time). */
   const [assignmentSubmissionsAccordionOpen, setAssignmentSubmissionsAccordionOpen] = useState<string | null>(null);
 
+  const submissionIsPendingQueue = (s: { status?: string }) => {
+    const st = String(s.status || '').toLowerCase();
+    return st === 'pending_review' || st === 'submitted';
+  };
+  const submissionIsDone = (s: { status?: string }) => {
+    const st = String(s.status || '').toLowerCase();
+    return ['graded', 'approved', 'rejected', 'returned'].includes(st);
+  };
+
   const filteredAssignmentSubmissions = useMemo(() => {
     return submissions.filter((s) => {
       if (submissionFilter === 'all') return true;
-      return s.status === submissionFilter;
+      if (submissionFilter === 'pending') return submissionIsPendingQueue(s);
+      return submissionIsDone(s);
     });
   }, [submissions, submissionFilter]);
 
@@ -2958,7 +2970,11 @@ export default function AdminDashboardPage() {
     try {
       submissionsFetchingRef.current = true;
       setLoadingSubmissions(true);
-      const res = await fetchWithAuth(`/api/admin/assignments/submissions?email=${encodeURIComponent(admin.email)}&status=${submissionFilter === 'all' ? 'all' : submissionFilter}`);
+      const apiStatus =
+        submissionFilter === 'all' ? 'all' : submissionFilter === 'pending' ? 'submitted' : 'graded';
+      const res = await fetchWithAuth(
+        `/api/admin/assignments/submissions?email=${encodeURIComponent(admin.email)}&status=${apiStatus}`
+      );
       const data = await res.json();
       if (data.submissions) setSubmissions(data.submissions);
       dataLoadedRef.current.add('assignments-submissions');
@@ -4824,24 +4840,59 @@ export default function AdminDashboardPage() {
 
             {/* Overview cards - show on dashboard or when no specific sub-menu is selected */}
             {(!activeSubMenu || (activeTab === 'overview' && !activeSubMenu)) && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {overview && [
-            { label: 'Applications', value: overview.totalApplications, accent: 'cyan' },
-            { label: 'Pending', value: overview.pendingApplications, accent: 'yellow' },
-            { label: 'Approved', value: overview.approvedApplications, accent: 'green' },
-            { label: 'Students', value: overview.totalStudents, accent: 'blue' },
-            { label: 'Cohorts', value: overview.totalCohorts, accent: 'purple' },
-          ].map((card) => (
-            <div
-              key={card.label}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 shadow"
-            >
-              <p className="text-sm text-zinc-400">{card.label}</p>
-              <p className="text-2xl font-semibold text-zinc-50">
-                {card.value}
-              </p>
-            </div>
-          ))}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {overview &&
+            (
+              [
+                { label: 'Applications', value: overview.totalApplications, accent: 'cyan' },
+                { label: 'Pending', value: overview.pendingApplications, accent: 'yellow' },
+                { label: 'Approved', value: overview.approvedApplications, accent: 'green' },
+                { label: 'Students', value: overview.totalStudents, accent: 'blue' },
+                { label: 'Cohorts', value: overview.totalCohorts, accent: 'purple' },
+                {
+                  label: 'Assign. reviews',
+                  value: overview.pendingAssignmentReviews ?? 0,
+                  accent: 'orange',
+                  navigateTo: { section: 'students', subMenu: 'assignments-submissions' },
+                },
+              ] as const
+            ).map((card) => {
+              const cardClass =
+                'rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 shadow';
+              const body = (
+                <>
+                  <p className="text-sm text-zinc-400">{card.label}</p>
+                  <p className="text-2xl font-semibold text-zinc-50">{card.value}</p>
+                  {'navigateTo' in card && card.navigateTo ? (
+                    <p className="mt-2 text-xs text-orange-300/90">Open queue →</p>
+                  ) : null}
+                </>
+              );
+              if ('navigateTo' in card && card.navigateTo) {
+                return (
+                  <button
+                    key={card.label}
+                    type="button"
+                    title="Open Assignment Submissions (pending review queue)"
+                    onClick={() => {
+                      handleSidebarNavigation(
+                        card.navigateTo.section,
+                        card.navigateTo.subMenu
+                      );
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`${cardClass} w-full text-left transition hover:border-orange-500/35 hover:bg-zinc-900/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50`}
+                  >
+                    {body}
+                  </button>
+                );
+              }
+              return (
+                <div key={card.label} className={cardClass}>
+                  {body}
+                </div>
+              );
+            })}
         </div>
             )}
 
@@ -7325,7 +7376,13 @@ export default function AdminDashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-zinc-50">Assignment Submissions</h2>
             <div className="flex gap-2">
-              {(['all', 'submitted', 'graded'] as const).map((f) => (
+              {(
+                [
+                  ['all', 'All'],
+                  ['pending', 'Pending review'],
+                  ['done', 'Graded'],
+                ] as const
+              ).map(([f, label]) => (
                 <button
                   key={f}
                   type="button"
@@ -7339,11 +7396,13 @@ export default function AdminDashboardPage() {
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
-                  {f.charAt(0).toUpperCase() + f.slice(1)} (
+                  {label} (
                   {submissions.filter((s) => {
                     if (f === 'all') return true;
-                    return s.status === f;
-                  }).length})
+                    if (f === 'pending') return submissionIsPendingQueue(s);
+                    return submissionIsDone(s);
+                  }).length}
+                  )
                 </button>
               ))}
             </div>
@@ -7427,18 +7486,34 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <span
                                   className={`shrink-0 rounded-full border px-2 py-1 text-xs ${
-                                    submission.status === 'graded'
-                                      ? submission.is_correct
-                                        ? 'text-green-400 bg-green-500/10 border-green-500/30'
-                                        : 'text-red-400 bg-red-500/10 border-red-500/30'
-                                      : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                                    (() => {
+                                      const st = String(submission.status || '').toLowerCase();
+                                      if (st === 'approved' || (st === 'graded' && submission.is_correct)) {
+                                        return 'text-green-400 bg-green-500/10 border-green-500/30';
+                                      }
+                                      if (
+                                        st === 'rejected' ||
+                                        st === 'returned' ||
+                                        (st === 'graded' && !submission.is_correct)
+                                      ) {
+                                        return 'text-red-400 bg-red-500/10 border-red-500/30';
+                                      }
+                                      return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
+                                    })()
                                   }`}
                                 >
-                                  {submission.status === 'graded'
-                                    ? submission.is_correct
-                                      ? 'Approved'
-                                      : 'Rejected'
-                                    : 'Pending Review'}
+                                  {(() => {
+                                    const st = String(submission.status || '').toLowerCase();
+                                    if (st === 'approved' || (st === 'graded' && submission.is_correct)) {
+                                      return 'Approved';
+                                    }
+                                    if (st === 'rejected' || (st === 'graded' && !submission.is_correct)) {
+                                      return 'Rejected';
+                                    }
+                                    if (st === 'returned') return 'Returned';
+                                    if (st === 'pending_review') return 'Pending review';
+                                    return 'Pending Review';
+                                  })()}
                                 </span>
                               </div>
 
@@ -7468,7 +7543,7 @@ export default function AdminDashboardPage() {
                                 )}
                               </div>
 
-                              {submission.status === 'submitted' && (
+                              {submissionIsPendingQueue(submission) && (
                                 <div className="mt-4 space-y-2">
                                   <textarea
                                     placeholder="Optional feedback for student..."

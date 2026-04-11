@@ -5,6 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { PageContainer } from '@/components/PageContainer';
 import Link from 'next/link';
+import { Clock } from 'lucide-react';
+import {
+  inferPhaseFromPartial,
+  clientAwaitingInstructorReview,
+  clientNeedsResubmit,
+  clientSubmissionIsApproved,
+  phaseHintFromRow,
+} from '@/lib/assignmentReview';
 
 export default function AssignmentPage() {
   const params = useParams();
@@ -19,6 +27,8 @@ export default function AssignmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [returnUrl, setReturnUrl] = useState<string>('/dashboard');
+  /** Auto-graded pass: show form again for practice without revoking sats (API enforces one-time credit). */
+  const [practiceMode, setPracticeMode] = useState(false);
 
   const email =
     profile?.email?.trim() ||
@@ -125,21 +135,20 @@ export default function AssignmentPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        setPracticeMode(false);
+        const sub = data.submission;
+        const hint = phaseHintFromRow(assignment);
+        const p = sub?.phase ?? inferPhaseFromPartial(sub, hint);
+        const ok =
+          p === 'approved' ||
+          p === 'pending_review' ||
+          (p === 'none' && sub?.isCorrect === true);
         setMessage({
-          type: data.submission.isCorrect ? 'success' : 'error',
-          text: data.submission.message,
+          type: ok ? 'success' : 'error',
+          text: sub?.message || (ok ? 'Saved.' : 'Something went wrong.'),
         });
-        
-        // Refresh assignment data
+
         await fetchAssignment();
-        
-        // If correct, update assignments completed count
-        if (data.submission.isCorrect) {
-          // Trigger a page refresh to update dashboard stats
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        }
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to submit assignment' });
       }
@@ -186,8 +195,28 @@ export default function AssignmentPage() {
     );
   }
 
-  const isCompleted = assignment.status === 'completed';
-  const canSubmit = !isCompleted;
+  const assignHint = phaseHintFromRow(assignment);
+  const phase =
+    submission?.phase ??
+    assignment.phase ??
+    inferPhaseFromPartial(submission, assignHint);
+  const isApproved =
+    assignment.status === 'completed' ||
+    clientSubmissionIsApproved(submission, assignHint) ||
+    phase === 'approved';
+  const awaitingReview =
+    assignment.status === 'pending_review' ||
+    clientAwaitingInstructorReview(submission, assignHint) ||
+    phase === 'pending_review';
+  const needsRedo =
+    assignment.status === 'needs_revision' ||
+    clientNeedsResubmit(submission, assignHint) ||
+    phase === 'rejected' ||
+    phase === 'returned';
+  const isInstructorReview = assignment.requiresInstructorReview === true;
+  const showForm =
+    !awaitingReview && (needsRedo || !isApproved || (isApproved && !isInstructorReview && practiceMode));
+  const formLockedByApproval = isApproved && isInstructorReview;
 
   return (
     <PageContainer
@@ -236,24 +265,69 @@ export default function AssignmentPage() {
           </div>
         </div>
 
-        {/* Submission Status */}
-        {isCompleted && submission && (
+        {/* Approved */}
+        {isApproved && submission && (
           <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-6">
             <div className="flex items-start gap-3">
               <span className="text-2xl">✓</span>
               <div className="flex-1">
-                <h3 className="mb-2 text-lg font-semibold text-green-200">Assignment Completed!</h3>
+                <h3 className="mb-2 text-lg font-semibold text-green-200">Assignment completed</h3>
                 <p className="mb-2 text-zinc-300">Your answer: <span className="font-semibold">{submission.answer}</span></p>
                 <p className="text-green-300">Points earned: <span className="font-semibold">{submission.pointsEarned}</span></p>
                 {submission.feedback && (
                   <p className="mt-2 text-sm text-zinc-300">{submission.feedback}</p>
                 )}
-                <div className="mt-4">
+                {!isInstructorReview && (
+                  <p className="mt-3 text-xs text-zinc-500">
+                    You can practice again below. Your sats reward is counted once — wrong practice answers do not remove it.
+                  </p>
+                )}
+                <div className="mt-4 flex flex-wrap gap-3">
                   <button
+                    type="button"
                     onClick={() => router.push(returnUrl)}
                     className="rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-2 font-semibold text-black transition hover:brightness-110"
                   >
                     Return to {returnUrl === '/dashboard' ? 'Dashboard' : 'Chapter'}
+                  </button>
+                  {!isInstructorReview && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPracticeMode(true);
+                        setMessage(null);
+                      }}
+                      className="rounded-lg border border-green-500/40 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-200 transition hover:bg-green-500/20"
+                    >
+                      Practice again
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Awaiting instructor review — same rules as chapter assignments */}
+        {awaitingReview && submission && (
+          <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-6">
+            <div className="flex items-start gap-3">
+              <Clock className="h-8 w-8 shrink-0 text-cyan-300" />
+              <div className="flex-1">
+                <h3 className="mb-2 text-lg font-semibold text-cyan-200">Submitted — awaiting review</h3>
+                <p className="text-sm text-zinc-300">
+                  Your instructor has not approved or returned this yet. You cannot submit another answer until then.
+                </p>
+                <p className="mt-3 text-zinc-300">
+                  Your answer: <span className="font-semibold">{submission.answer}</span>
+                </p>
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => router.push(returnUrl)}
+                    className="rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
+                  >
+                    Back
                   </button>
                 </div>
               </div>
@@ -262,8 +336,17 @@ export default function AssignmentPage() {
         )}
 
         {/* Submission Form */}
-        {canSubmit && (
+        {showForm && (
           <form onSubmit={handleSubmit} className="rounded-xl border border-cyan-400/25 bg-black/80 p-6 space-y-4">
+            {needsRedo && submission && (
+              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+                <h3 className="mb-1 text-sm font-semibold text-yellow-200">Revision needed</h3>
+                <p className="text-sm text-zinc-300">Please submit a new answer.</p>
+                {submission.feedback && (
+                  <p className="mt-2 text-sm text-zinc-200">Instructor feedback: {submission.feedback}</p>
+                )}
+              </div>
+            )}
             <div>
               <label htmlFor="answer" className="mb-2 block text-sm font-medium text-zinc-300">
                 Your Answer <span className="text-red-400">*</span>
@@ -274,7 +357,7 @@ export default function AssignmentPage() {
                 name="answer"
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                disabled={submitting || isCompleted}
+                disabled={submitting || awaitingReview || formLockedByApproval}
                 className="w-full rounded-lg border border-cyan-400/30 bg-zinc-950 px-4 py-3 text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 disabled:opacity-50"
                 placeholder="Enter your answer here..."
                 autoComplete="off"
@@ -316,14 +399,6 @@ export default function AssignmentPage() {
           </form>
         )}
 
-        {/* Previous Submission (if incorrect) */}
-        {submission && !isCompleted && (
-          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-6">
-            <h3 className="mb-2 text-sm font-semibold text-yellow-200">Previous Submission</h3>
-            <p className="text-zinc-300">Your answer: <span className="font-semibold">{submission.answer}</span></p>
-            <p className="mt-2 text-sm text-yellow-300">This answer was incorrect. Please try again.</p>
-          </div>
-        )}
       </div>
     </PageContainer>
   );

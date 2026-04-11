@@ -6,6 +6,23 @@ import { sanitizeTextContent } from '@/lib/validation';
 import { requireStudent } from '@/lib/session';
 import { requireAdmin } from '@/lib/adminSession';
 import { sendAssignmentSubmissionNotificationEmail } from '@/lib/email';
+import {
+  canStudentSubmitOrReplace,
+  getSubmissionPhase,
+} from '@/lib/assignmentReview';
+
+function submissionToClient(sub: Record<string, unknown>) {
+  return {
+    id: sub.id,
+    status: sub.status,
+    isCorrect: sub.is_correct,
+    pointsEarned: sub.points_earned,
+    feedback: sub.feedback ?? null,
+    answer: sub.answer,
+    submittedAt: sub.submitted_at,
+    gradedAt: sub.graded_at ?? null,
+  };
+}
 
 /**
  * POST /api/assignments/submit
@@ -160,8 +177,6 @@ export async function POST(req: NextRequest) {
     let pointsEarned = 0;
 
     if (requiresReview) {
-      // For assignments requiring review, set status to 'submitted' and is_correct to false
-      // Instructor will grade it later
       isCorrect = false;
       pointsEarned = 0;
     } else {
@@ -185,25 +200,52 @@ export async function POST(req: NextRequest) {
       .eq('student_id', profile.id)
       .maybeSingle();
 
-    const wasAlreadyCorrect = existingSubmission?.is_correct === true;
-    const isNewlyCorrect = isCorrect && !wasAlreadyCorrect;
     const isNewSubmission = !existingSubmission;
+    /** Once true, auto-grade sats + assignments_completed are not applied again (practice resubmits). */
+    const prevAutoSatsAwarded = existingSubmission?.auto_sats_awarded === true;
+    /** First successful auto-grade credit for this row (never double-pay on wrong→correct→wrong→correct). */
+    const shouldCreditAuto =
+      isCorrect && !requiresReview && !prevAutoSatsAwarded;
+
+    if (existingSubmission && !isAdmin) {
+      const phase = getSubmissionPhase(assignment, existingSubmission);
+      const { allowed, reason } = canStudentSubmitOrReplace(phase, assignment);
+      if (!allowed) {
+        return NextResponse.json({ error: reason }, { status: 409 });
+      }
+    }
+
+    const nextStatus = requiresReview
+      ? 'pending_review'
+      : isCorrect
+        ? 'approved'
+        : 'returned';
+
+    const nextAutoSatsAwarded = prevAutoSatsAwarded || shouldCreditAuto;
 
     // Get reward amount (use assignment's reward_sats, default to 200 if not set, max 200)
     const rewardAmount = Math.min(assignment.reward_sats || 200, 200);
 
     let submission;
     if (existingSubmission) {
-      // Update existing submission
+      const clearInstructorFields = requiresReview;
       const { data: updated, error: updateError } = await supabaseAdmin
         .from('assignment_submissions')
         .update({
           answer: sanitizedAnswer,
           is_correct: isCorrect,
           points_earned: pointsEarned,
-          status: requiresReview ? 'submitted' : (isCorrect ? 'graded' : 'submitted'),
+          status: nextStatus,
+          auto_sats_awarded: nextAutoSatsAwarded,
           submitted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          ...(clearInstructorFields
+            ? {
+                graded_at: null,
+                graded_by: null,
+                feedback: null,
+              }
+            : {}),
         })
         .eq('id', existingSubmission.id)
         .select()
@@ -227,7 +269,8 @@ export async function POST(req: NextRequest) {
           answer: sanitizedAnswer,
           is_correct: isCorrect,
           points_earned: pointsEarned,
-          status: requiresReview ? 'submitted' : (isCorrect ? 'graded' : 'submitted'),
+          status: nextStatus,
+          auto_sats_awarded: isCorrect && !requiresReview,
         })
         .select()
         .single();
@@ -242,9 +285,8 @@ export async function POST(req: NextRequest) {
       submission = created;
     }
 
-    // Award sats rewards only for auto-graded correct answers (not for submissions requiring review)
-    // For assignments requiring review, sats will be awarded when admin marks it as correct
-    if (isNewlyCorrect && !requiresReview) {
+    // Award sats rewards only on first auto-grade pass (practice retries do not add sats again)
+    if (shouldCreditAuto) {
       // Use rewardAmount already calculated above (capped at 200 sats maximum)
       
       // Update or insert sats reward
@@ -275,9 +317,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update student's assignments_completed count and check achievements only if this submission is newly correct
+    // Update student's assignments_completed count and check achievements only on first auto-grade pass
     let newlyUnlockedAchievements: Array<{ id: string; title: string; icon: string; satsReward: number }> = [];
-    if (isNewlyCorrect) {
+    if (shouldCreditAuto) {
       // Get or create student record
       let { data: student } = await supabaseAdmin
         .from('students')
@@ -348,32 +390,40 @@ export async function POST(req: NextRequest) {
         });
         if (!emailResult.success) {
           console.error('[assignments/submit] Admin notification email failed:', emailResult.error);
+        } else {
+          console.info('[assignments/submit] pending_review admin email sent', {
+            submissionId: submission.id,
+            assignmentId,
+            studentEmail: normalizedEmail,
+          });
         }
       } catch (notifyErr) {
         console.error('[assignments/submit] Admin notification error:', notifyErr);
       }
     }
 
+    const payloadSubmission = {
+      ...submissionToClient(submission as Record<string, unknown>),
+      phase: getSubmissionPhase(assignment, submission as { status?: string; is_correct?: boolean; graded_at?: string }),
+      message: isCorrect
+        ? requiresReview
+          ? 'Submitted — waiting for instructor approval.'
+          : 'Correct! You earned ' + pointsEarned + ' points.'
+        : requiresReview
+          ? 'Submitted — waiting for instructor approval.'
+          : 'Not a match — review the material and try again.',
+    };
+
     return NextResponse.json({
       success: true,
-      submission: {
-        id: submission.id,
-        isCorrect,
-        pointsEarned,
-        message: isCorrect
-          ? (requiresReview 
-              ? 'Submission received! Your work is under instructor review.'
-              : 'Correct! You earned ' + pointsEarned + ' points.')
-          : requiresReview
-          ? 'Submission received! Your work is under instructor review.'
-          : 'Incorrect answer. Please try again.',
-      },
+      submission: payloadSubmission,
       newlyUnlockedAchievements: newlyUnlockedAchievements.length > 0 ? newlyUnlockedAchievements : undefined,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in submit assignment API:', error);
+    const details = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details },
       { status: 500 }
     );
   }

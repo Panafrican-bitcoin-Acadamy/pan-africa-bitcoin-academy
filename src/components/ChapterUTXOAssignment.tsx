@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
 import { Lock } from 'lucide-react';
+import {
+  clientAwaitingInstructorReview,
+  clientAutoGradedCanPractice,
+  clientNeedsResubmit,
+  clientSubmissionIsApproved,
+  phaseHintFromRow,
+  type ClientAssignmentPhaseHint,
+} from '@/lib/assignmentReview';
 
 interface ChapterUTXOAssignmentProps {
   assignmentId: string;
@@ -34,9 +42,11 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<any>(null);
+  const [phaseHint, setPhaseHint] = useState<ClientAssignmentPhaseHint | undefined>();
   const [loading, setLoading] = useState(true);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [practiceMode, setPracticeMode] = useState(false);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -45,7 +55,7 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
     } else {
       setLoading(false);
     }
-  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail]);
+  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail, assignmentId]);
 
   const checkSubmissionStatus = async () => {
     try {
@@ -61,6 +71,7 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
       
       const data = await response.json();
       const thisAssignment = data.assignments?.find((a: any) => a.id === assignmentId);
+      setPhaseHint(phaseHintFromRow(thisAssignment));
       if (thisAssignment?.submission) {
         setSubmissionStatus(thisAssignment.submission);
         setSubmitted(true);
@@ -73,6 +84,9 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
             // Legacy format, ignore
           }
         }
+      } else {
+        setSubmissionStatus(null);
+        setSubmitted(false);
       }
     } catch (err) {
       console.error('Error checking submission status:', err);
@@ -82,8 +96,8 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
   };
 
   const toggleUTXO = (id: 'A' | 'B' | 'C') => {
-    if (submitted) return; // Can't change after submission
-    
+    if (submitted && submissionStatus && !clientNeedsResubmit(submissionStatus, phaseHint)) return;
+
     setUtxos(prev => prev.map(utxo => 
       utxo.id === id ? { ...utxo, selected: !utxo.selected } : utxo
     ));
@@ -172,6 +186,7 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
       }
 
       const data = await response.json();
+      setPracticeMode(false);
       setSubmitted(true);
       setSubmissionStatus(data.submission);
       setShowExplanation(true);
@@ -285,20 +300,79 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
         </p>
       </div>
 
-      {submitted && submissionStatus ? (
+      {submitted && submissionStatus && (
         <div className="space-y-4">
-          <div className={`p-4 border rounded-lg ${
-            isCorrect 
-              ? 'bg-green-900/20 border-green-800/50' 
-              : 'bg-orange-900/20 border-orange-800/50'
-          }`}>
-            <p className={`font-medium mb-2 ${
-              isCorrect ? 'text-green-200' : 'text-orange-200'
-            }`}>
-              {explanation?.title || 'Assignment Submitted'}
+          <div
+            className={`p-4 border rounded-lg ${
+              clientSubmissionIsApproved(submissionStatus, phaseHint)
+                ? 'bg-green-900/20 border-green-800/50'
+                : clientAwaitingInstructorReview(submissionStatus, phaseHint)
+                  ? 'bg-amber-900/20 border-amber-800/50'
+                  : clientNeedsResubmit(submissionStatus, phaseHint)
+                    ? 'bg-orange-900/20 border-orange-800/50'
+                    : isCorrect
+                      ? 'bg-green-900/20 border-green-800/50'
+                      : 'bg-orange-900/20 border-orange-800/50'
+            }`}
+          >
+            <p
+              className={`font-medium mb-2 ${
+                clientSubmissionIsApproved(submissionStatus, phaseHint)
+                  ? 'text-green-200'
+                  : clientAwaitingInstructorReview(submissionStatus, phaseHint)
+                    ? 'text-amber-100'
+                    : clientNeedsResubmit(submissionStatus, phaseHint)
+                      ? 'text-orange-200'
+                      : isCorrect
+                        ? 'text-green-200'
+                        : 'text-orange-200'
+              }`}
+            >
+              {clientSubmissionIsApproved(submissionStatus, phaseHint)
+                ? '✓ Approved'
+                : clientAwaitingInstructorReview(submissionStatus, phaseHint)
+                  ? '⏳ Submitted — awaiting review'
+                  : clientNeedsResubmit(submissionStatus, phaseHint)
+                    ? 'Try again — selection was not accepted'
+                    : explanation?.title || 'Assignment Submitted'}
             </p>
-            {submissionStatus.status === 'graded' && submissionStatus.is_correct && (
-              <p className="text-sm text-green-300 font-medium">✓ Approved!</p>
+            {clientAwaitingInstructorReview(submissionStatus, phaseHint) && (
+              <p className="text-sm text-zinc-300">
+                Your instructor will approve or return this. You cannot change your selection until then.
+              </p>
+            )}
+            {clientAutoGradedCanPractice(submissionStatus, phaseHint) && (
+              <p className="text-xs text-zinc-500 mt-2">Practice again below — your sats credit stays once earned.</p>
+            )}
+            {clientNeedsResubmit(submissionStatus, phaseHint) && submissionStatus.feedback && (
+              <p className="text-sm text-zinc-300 mt-2">{submissionStatus.feedback}</p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {clientNeedsResubmit(submissionStatus, phaseHint) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  setSubmissionStatus(null);
+                  setPracticeMode(false);
+                  setUtxos(UTXOS);
+                  setSelectedAnswer(null);
+                  setShowExplanation(false);
+                }}
+                className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
+              >
+                Try again
+              </button>
+            )}
+            {clientAutoGradedCanPractice(submissionStatus, phaseHint) && (
+              <button
+                type="button"
+                onClick={() => setPracticeMode(true)}
+                className="rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-sm font-medium text-green-200"
+              >
+                Practice again
+              </button>
             )}
           </div>
 
@@ -342,7 +416,9 @@ export function ChapterUTXOAssignment({ assignmentId }: ChapterUTXOAssignmentPro
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {(!submitted || practiceMode || clientNeedsResubmit(submissionStatus, phaseHint)) && (
         <div className="space-y-6">
           {/* UTXO Selection */}
           <div className="space-y-4 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">

@@ -3,6 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
+import {
+  clientAwaitingInstructorReview,
+  clientAutoGradedCanPractice,
+  clientNeedsResubmit,
+  clientSubmissionIsApproved,
+  phaseHintFromRow,
+  type ClientAssignmentPhaseHint,
+} from '@/lib/assignmentReview';
 
 interface Chapter18AssignmentProps {
   assignmentId: string;
@@ -32,8 +40,10 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<any>(null);
+  const [phaseHint, setPhaseHint] = useState<ClientAssignmentPhaseHint | undefined>();
   const [loading, setLoading] = useState(true);
   const [showAnswers, setShowAnswers] = useState(false);
+  const [practiceMode, setPracticeMode] = useState(false);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -42,7 +52,7 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
     } else {
       setLoading(false);
     }
-  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail]);
+  }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail, assignmentId]);
 
   const checkSubmissionStatus = async () => {
     try {
@@ -54,6 +64,7 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
       if (response.ok) {
         const data = await response.json();
         const thisAssignment = data.assignments?.find((a: any) => a.id === assignmentId);
+        setPhaseHint(phaseHintFromRow(thisAssignment));
         if (thisAssignment?.submission) {
           setSubmissionStatus(thisAssignment.submission);
           setSubmitted(true);
@@ -68,6 +79,10 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
               // Legacy format, ignore
             }
           }
+        } else {
+          setSubmissionStatus(null);
+          setSubmitted(false);
+          setShowAnswers(false);
         }
       }
     } catch (err) {
@@ -120,6 +135,7 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
         throw new Error(data.error || 'Failed to submit assignment');
       }
 
+      setPracticeMode(false);
       setSubmitted(true);
       setSubmissionStatus(data.submission);
       setShowAnswers(true); // Show answers after submission
@@ -156,17 +172,49 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
         <p className="text-sm text-zinc-400 mb-4">Identify the script type for each address | Reward: TBD (after instructor review)</p>
       </div>
 
-      {submitted && submissionStatus ? (
+      {submitted && submissionStatus && (
         <div className="space-y-4">
-          <div className="p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
-            <p className="text-green-200 font-medium mb-2">✓ Assignment Submitted</p>
-            <p className="text-sm text-zinc-300 mb-3">Your submission is under instructor review.</p>
-            {submissionStatus.status === 'graded' && submissionStatus.is_correct && (
-              <p className="text-sm text-green-300 font-medium">✓ Approved!</p>
+          <div
+            className={`p-4 rounded-lg border ${
+              clientSubmissionIsApproved(submissionStatus, phaseHint)
+                ? 'bg-green-900/20 border-green-800/50'
+                : clientNeedsResubmit(submissionStatus, phaseHint)
+                  ? 'bg-red-900/20 border-red-800/50'
+                  : clientAwaitingInstructorReview(submissionStatus, phaseHint)
+                    ? 'bg-amber-900/20 border-amber-800/50'
+                    : 'bg-green-900/20 border-green-800/50'
+            }`}
+          >
+            <p
+              className={`font-medium mb-2 ${
+                clientSubmissionIsApproved(submissionStatus, phaseHint)
+                  ? 'text-green-200'
+                  : clientNeedsResubmit(submissionStatus, phaseHint)
+                    ? 'text-red-200'
+                    : 'text-amber-100'
+              }`}
+            >
+              {clientSubmissionIsApproved(submissionStatus, phaseHint)
+                ? '✓ Approved'
+                : clientNeedsResubmit(submissionStatus, phaseHint)
+                  ? 'Revision needed'
+                  : '⏳ Submitted — awaiting review'}
+            </p>
+            <p className="text-sm text-zinc-300 mb-3">
+              {clientSubmissionIsApproved(submissionStatus, phaseHint)
+                ? 'Your submission was approved.'
+                : clientNeedsResubmit(submissionStatus, phaseHint)
+                  ? 'Read the feedback (if any) and submit again.'
+                  : 'Your instructor has not graded this yet. You cannot submit again until it is approved or returned.'}
+            </p>
+            {clientAutoGradedCanPractice(submissionStatus, phaseHint) && (
+              <p className="text-xs text-zinc-500">Practice again below — your sats credit stays once earned.</p>
+            )}
+            {clientNeedsResubmit(submissionStatus, phaseHint) && submissionStatus.feedback && (
+              <p className="text-sm text-zinc-300">{submissionStatus.feedback}</p>
             )}
           </div>
-          
-          {/* Show answers after submission */}
+
           <div className="space-y-3 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
             <p className="text-sm font-medium text-zinc-300 mb-2">Your Answers & Correct Answers:</p>
             <div className="space-y-3">
@@ -187,8 +235,35 @@ export function Chapter18Assignment({ assignmentId }: Chapter18AssignmentProps) 
               </div>
             </div>
           </div>
+          <div className="flex flex-wrap gap-3">
+            {clientNeedsResubmit(submissionStatus, phaseHint) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  setSubmissionStatus(null);
+                  setShowAnswers(false);
+                  setPracticeMode(false);
+                }}
+                className="text-sm text-cyan-400 hover:text-cyan-300 underline px-2 py-1 min-h-[32px] touch-target"
+              >
+                Resubmit Assignment
+              </button>
+            )}
+            {clientAutoGradedCanPractice(submissionStatus, phaseHint) && (
+              <button
+                type="button"
+                onClick={() => setPracticeMode(true)}
+                className="rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-sm font-medium text-green-200"
+              >
+                Practice again
+              </button>
+            )}
+          </div>
         </div>
-      ) : (
+      )}
+
+      {(!submitted || practiceMode || clientNeedsResubmit(submissionStatus, phaseHint)) && (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Addresses to copy */}
           <div className="space-y-3 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">

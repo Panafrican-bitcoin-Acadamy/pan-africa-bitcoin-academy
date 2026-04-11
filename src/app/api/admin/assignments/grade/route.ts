@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkAndUnlockAchievements } from '@/lib/achievements';
+import { assignmentRequiresInstructorReview } from '@/lib/assignmentReview';
 
 /**
  * POST /api/admin/assignments/grade
@@ -45,8 +46,11 @@ export async function POST(req: NextRequest) {
         *,
         assignments (
           id,
+          title,
           points,
-          reward_sats
+          reward_sats,
+          correct_answer,
+          answer_type
         ),
         profiles:student_id (
           id,
@@ -63,10 +67,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const assignment = submission.assignments;
+    const assignment = submission.assignments as {
+      id: string;
+      title?: string;
+      points?: number;
+      reward_sats?: number;
+      correct_answer?: string | null;
+      answer_type?: string | null;
+    };
     const studentProfile = submission.profiles;
-    const wasAlreadyCorrect = submission.is_correct === true;
-    const isNewlyCorrect = isCorrect && !wasAlreadyCorrect;
+
+    if (!assignmentRequiresInstructorReview(assignment)) {
+      return NextResponse.json(
+        {
+          error:
+            'This assignment is auto-graded. Instructor grading applies only to review-required assignments.',
+        },
+        { status: 400 }
+      );
+    }
+
+    const prevSt = String(submission.status || '').toLowerCase();
+    const wasRecordedComplete =
+      prevSt === 'approved' || (prevSt === 'graded' && submission.is_correct === true);
+    const isCrossingToApproved = isCorrect && !wasRecordedComplete;
 
     // Calculate points
     const pointsEarned = isCorrect ? (assignment.points || 10) : 0;
@@ -74,12 +98,14 @@ export async function POST(req: NextRequest) {
     const rewardAmount = isCorrect ? Math.min(assignment.reward_sats || 200, 200) : 0;
 
     // Update submission
+    const nextStatus = isCorrect ? 'approved' : 'rejected';
+
     const { data: updatedSubmission, error: updateError } = await supabaseAdmin
       .from('assignment_submissions')
       .update({
         is_correct: isCorrect,
         points_earned: pointsEarned,
-        status: 'graded',
+        status: nextStatus,
         feedback: feedback || null,
         graded_by: adminProfile?.id || null,
         graded_at: new Date().toISOString(),
@@ -97,8 +123,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // If newly correct, award sats and check achievements
-    if (isNewlyCorrect && studentProfile) {
+    if (!isCorrect && wasRecordedComplete && studentProfile) {
+      const { data: studentRow } = await supabaseAdmin
+        .from('students')
+        .select('id, assignments_completed')
+        .eq('profile_id', studentProfile.id)
+        .maybeSingle();
+
+      if (studentRow) {
+        const next = Math.max(0, (studentRow.assignments_completed || 0) - 1);
+        await supabaseAdmin
+          .from('students')
+          .update({ assignments_completed: next })
+          .eq('profile_id', studentProfile.id);
+      }
+
+      const clawback = Math.min(assignment.reward_sats || 200, 200);
+      const { data: rewardRow } = await supabaseAdmin
+        .from('sats_rewards')
+        .select('id, amount_pending')
+        .eq('student_id', studentProfile.id)
+        .maybeSingle();
+
+      if (rewardRow && clawback > 0) {
+        const nextPending = Math.max(0, (rewardRow.amount_pending || 0) - clawback);
+        await supabaseAdmin
+          .from('sats_rewards')
+          .update({ amount_pending: nextPending, updated_at: new Date().toISOString() })
+          .eq('id', rewardRow.id);
+      }
+    }
+
+    // First time marked approved (or re-approved after reject with count already decremented)
+    if (isCrossingToApproved && studentProfile) {
       // Update or insert sats reward
       const { data: existingReward } = await supabaseAdmin
         .from('sats_rewards')
@@ -123,7 +180,7 @@ export async function POST(req: NextRequest) {
             reward_type: 'assignment',
             related_entity_type: 'assignment',
             related_entity_id: assignment.id,
-            reason: `Assignment approved: ${assignment.title || 'Assignment'}`,
+            reason: `Assignment approved: ${(assignment as { title?: string }).title || 'Assignment'}`,
             status: 'pending',
             awarded_by: adminProfile?.id || null,
           });
@@ -133,7 +190,7 @@ export async function POST(req: NextRequest) {
       const { data: student } = await supabaseAdmin
         .from('students')
         .select('id, assignments_completed')
-        .eq('id', studentProfile.id)
+        .eq('profile_id', studentProfile.id)
         .maybeSingle();
 
       if (student) {
@@ -141,7 +198,7 @@ export async function POST(req: NextRequest) {
         await supabaseAdmin
           .from('students')
           .update({ assignments_completed: newCount })
-          .eq('id', studentProfile.id);
+          .eq('profile_id', studentProfile.id);
 
         // Check for achievements
         await checkAndUnlockAchievements(studentProfile.id, supabaseAdmin);
@@ -151,16 +208,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       submission: updatedSubmission,
+      phase: nextStatus,
       message: isCorrect
         ? 'Assignment approved! Student will receive reward.'
         : 'Assignment rejected.',
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error in POST /api/admin/assignments/grade:', err);
-    return NextResponse.json(
-      { error: err.message || 'Internal server error' },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

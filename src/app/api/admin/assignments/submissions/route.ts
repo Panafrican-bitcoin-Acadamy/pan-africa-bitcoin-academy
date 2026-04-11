@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');
-    const status = searchParams.get('status'); // 'submitted', 'graded', 'all'
+    const status = searchParams.get('status'); // 'submitted' (queue), 'graded' (decided), 'all'
     const assignmentId = searchParams.get('assignmentId');
 
     if (!email) {
@@ -56,9 +56,15 @@ export async function GET(req: NextRequest) {
       `)
       .order('submitted_at', { ascending: false });
 
-    // Filter by status if provided
+    // Filter by status if provided (alias: submitted = awaiting review; graded = decided)
     if (status && status !== 'all') {
-      query = query.eq('status', status);
+      if (status === 'submitted') {
+        query = query.in('status', ['submitted', 'pending_review']);
+      } else if (status === 'graded') {
+        query = query.in('status', ['graded', 'approved', 'rejected', 'returned']);
+      } else {
+        query = query.eq('status', status);
+      }
     }
 
     // Filter by assignment if provided

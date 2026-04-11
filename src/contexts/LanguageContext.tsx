@@ -14,6 +14,22 @@ export type SiteLanguage = "en" | "ti";
 
 const STORAGE_KEY = "paba-language";
 
+function readStoredLanguage(): SiteLanguage {
+  if (typeof window === "undefined") return "en";
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === "ti") {
+      // Tigrinya UI not live yet — default to English and clear stale preference
+      localStorage.setItem(STORAGE_KEY, "en");
+      return "en";
+    }
+    if (raw === "en") return "en";
+  } catch {
+    /* ignore */
+  }
+  return "en";
+}
+
 type LanguageContextValue = {
   language: SiteLanguage;
   setLanguage: (lang: SiteLanguage) => void;
@@ -22,34 +38,18 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<SiteLanguage>("en");
-  const [ready, setReady] = useState(false);
+  const [language, setLanguageState] = useState<SiteLanguage>(() =>
+    readStoredLanguage()
+  );
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw === "en") {
-        setLanguageState("en");
-      } else if (raw === "ti") {
-        // Tigrinya UI not live yet — default to English and clear stale preference
-        setLanguageState("en");
-        localStorage.setItem(STORAGE_KEY, "en");
-      }
-    } catch {
-      /* ignore */
-    }
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
     document.documentElement.lang = language === "ti" ? "ti" : "en";
     try {
       localStorage.setItem(STORAGE_KEY, language);
     } catch {
       /* ignore */
     }
-  }, [language, ready]);
+  }, [language]);
 
   const setLanguage = useCallback((lang: SiteLanguage) => {
     setLanguageState(lang);
