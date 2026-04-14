@@ -808,10 +808,16 @@ export default function ChaptersPage() {
 
               {/* Bitcoin White Paper (Tigrigna) */}
               <AnimatedSection animation="slideUp" delay={40}>
-              <a
-                href="/doc_files/Bitcoin%20white%20paper%20Tigrigna.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => router.push('/white_paper')}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    router.push('/white_paper');
+                  }
+                }}
                 className="group flex flex-col rounded-xl border border-cyan-400/30 bg-black/60 p-6 transition hover:border-cyan-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
               >
                 <div className="mb-4 flex items-center gap-3">
@@ -832,12 +838,18 @@ export default function ChaptersPage() {
                   <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-medium text-cyan-300">
                     PDF (Tigrigna)
                   </span>
-                  <div className="flex items-center gap-2 text-sm text-cyan-400">
-                    <span>Download</span>
+                  <a
+                    href="/doc_files/Bitcoin%20white%20paper%20Tigrigna.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                    className="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300"
+                  >
+                    <span>Open PDF</span>
                     <ExternalLink className="h-4 w-4" />
-                  </div>
+                  </a>
                 </div>
-              </a>
+              </div>
               </AnimatedSection>
 
               {/* The Little Book of Bitcoin */}
