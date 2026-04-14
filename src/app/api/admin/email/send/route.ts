@@ -19,7 +19,7 @@ const getResendClient = () => {
 const getFromEmail = () => {
   const envFromEmail = process.env.RESEND_FROM_EMAIL;
   if (!envFromEmail || envFromEmail.trim() === '' || !envFromEmail.includes('@')) {
-    return 'PanAfrican Bitcoin Academy <noreply@panafricanbitcoin.com>';
+    return 'Pan-African Bitcoin Academy <noreply@panafricanbitcoin.com>';
   }
   return envFromEmail;
 };
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       } else {
         const emailValidation = validateAndNormalizeEmail(trimmed);
         if (emailValidation.valid && emailValidation.normalized) {
-          return `PanAfrican Bitcoin Academy <${emailValidation.normalized}>`;
+          return `Pan-African Bitcoin Academy <${emailValidation.normalized}>`;
         }
       }
       return null;

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ResourceHints } from "@/components/ResourceHints";
 import { StructuredData } from "@/components/StructuredData";
 import { ClickSparkWrapper } from "@/components/ClickSparkWrapper";
+import { ScrollToTopFab } from "@/components/ScrollToTopFab";
 import { organizationStructuredData, websiteStructuredData } from "@/lib/structured-data";
 
 // Lazy load Navbar and Footer to reduce initial bundle size
@@ -17,7 +18,7 @@ const Footer = dynamic(() => import("@/components/Footer").then(mod => ({ defaul
   ssr: true,
 });
 
-const NewsletterSignup = dynamic(() => import("@/components/NewsletterSignup").then(mod => ({ default: mod.NewsletterSignup })), {
+const SiteFeedback = dynamic(() => import("@/components/SiteFeedback").then(mod => ({ default: mod.SiteFeedback })), {
   ssr: true,
 });
 
@@ -163,6 +164,14 @@ export const metadata: Metadata = {
   },
 };
 
+/** Ensures proper scaling on phones/tablets and enables safe-area env() for notched devices. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -218,7 +227,8 @@ export default function RootLayout({
             <Navbar />
             {/* Mobile-first: Full width on mobile, max-width only on larger screens */}
             <main className="flex-1 relative z-10 w-full">{children}</main>
-            <NewsletterSignup />
+            <ScrollToTopFab />
+            <SiteFeedback />
             <Footer />
           </div>
         </ClickSparkWrapper>

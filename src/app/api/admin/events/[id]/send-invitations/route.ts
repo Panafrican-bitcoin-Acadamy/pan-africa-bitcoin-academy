@@ -24,7 +24,7 @@ const getResendClient = () => {
 const getFromEmail = () => {
   const envFromEmail = process.env.RESEND_FROM_EMAIL;
   if (!envFromEmail || envFromEmail.trim() === '' || !envFromEmail.includes('@')) {
-    return 'PanAfrican Bitcoin Academy <noreply@panafricanbitcoin.com>';
+    return 'Pan-African Bitcoin Academy <noreply@panafricanbitcoin.com>';
   }
   return envFromEmail;
 };

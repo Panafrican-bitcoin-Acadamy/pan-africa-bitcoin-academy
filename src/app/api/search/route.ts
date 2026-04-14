@@ -179,6 +179,24 @@ export async function GET(request: NextRequest) {
         keywords: ['chapters', 'lessons', 'courses', 'learning', 'curriculum', 'education', 'tutorials']
       },
       {
+        title: 'Bitcoin Whitepaper',
+        description:
+          'Interactive Bitcoin whitepaper: Satoshi’s original text in sections, glossary tooltips, diagrams, reading modes, and checkpoints.',
+        url: '/white_paper',
+        type: 'Page',
+        icon: '📄',
+        keywords: [
+          'whitepaper',
+          'white paper',
+          'satoshi',
+          'nakamoto',
+          'peer-to-peer',
+          'electronic cash',
+          'proof-of-work',
+          'bitcoin pdf',
+        ],
+      },
+      {
         title: 'Blog',
         description: 'Read articles, essays, and stories from students, graduates, and the Bitcoin community.',
         url: '/blog',

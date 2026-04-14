@@ -9,7 +9,7 @@ const getResendClient = () => {
   try { return new Resend(apiKey); } catch { return null; }
 };
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'PanAfrican Bitcoin Academy <noreply@panafricanbitcoin.com>';
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Pan-African Bitcoin Academy <noreply@panafricanbitcoin.com>';
 
 /**
  * GET /api/admin/newsletter

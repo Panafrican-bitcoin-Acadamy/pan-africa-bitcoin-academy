@@ -711,7 +711,8 @@ export default function ChaptersPage() {
             </AnimatedSection>
             <div className="hidden mb-6 space-y-2">
               {[
-                { id: 'whitepaper', title: 'Bitcoin: A Peer-to-Peer Electronic Cash System', author: 'Satoshi Nakamoto (2008)', description: "The original white paper that started it all. Essential reading for understanding Bitcoin's core design.", href: 'https://bitcoin.org/bitcoin.pdf', action: 'Download', external: true },
+                { id: 'whitepaper', title: 'Bitcoin: A Peer-to-Peer Electronic Cash System (English)', author: 'Satoshi Nakamoto (2008)', description: "The original white paper that started it all. Essential reading for understanding Bitcoin's core design.", href: 'https://bitcoin.org/bitcoin.pdf', action: 'Download', external: true },
+                { id: 'whitepaper-ti', title: 'ቢትኮይን፡ ስርዓት ናይ መዘና-ናብ-መዘና ኤሌክትሮኒካዊ ገንዘብ', author: 'ትግርኛ ትርጉም (Pan-African Bitcoin Academy)', description: 'Tigrigna translation of the Bitcoin whitepaper for Eritrean learners and native Tigrigna readers.', href: '/doc_files/Bitcoin%20white%20paper%20Tigrigna.pdf', action: 'Download PDF', external: false },
                 { id: 'little-book', title: 'The Little Bitcoin Book', author: 'Bitcoin Collective (2019)', description: 'A simple, beginner-friendly introduction to Bitcoin that explains why it matters for sovereignty and self-custody.', href: 'https://www.littlebitcoinbook.com/', action: 'Read Online', external: true },
                 { id: 'mastering', title: 'Mastering Bitcoin', author: 'Andreas M. Antonopoulos', description: 'Comprehensive technical guide to Bitcoin for developers, engineers, and technically-minded individuals.', href: 'https://github.com/bitcoinbook/bitcoinbook', action: 'Access', external: true },
                 { id: 'bitcoin-standard', title: 'The Bitcoin Standard', author: 'Saifedean Ammous (2018)', description: "Economic analysis of Bitcoin's origins, monetary properties, and its potential impact on the global economy.", href: 'https://saifedean.com/thebitcoinstandard/', action: 'Learn More', external: true },
@@ -771,7 +772,7 @@ export default function ChaptersPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Bitcoin White Paper */}
+              {/* Bitcoin White Paper (English) */}
               <AnimatedSection animation="slideUp" delay={0}>
               <a
                 href="https://bitcoin.org/bitcoin.pdf"
@@ -785,7 +786,7 @@ export default function ChaptersPage() {
                   </div>
                   <div className="flex-1">
                     <AnimatedHeading as="h3" className="text-lg font-semibold text-orange-300 transition group-hover:text-orange-200">
-                      Bitcoin: A Peer-to-Peer Electronic Cash System
+                      Bitcoin: A Peer-to-Peer Electronic Cash System (English)
                     </AnimatedHeading>
                     <p className="text-sm text-zinc-400">Satoshi Nakamoto (2008)</p>
                   </div>
@@ -798,6 +799,40 @@ export default function ChaptersPage() {
                     PDF
                   </span>
                   <div className="flex items-center gap-2 text-sm text-orange-400">
+                    <span>Download</span>
+                    <ExternalLink className="h-4 w-4" />
+                  </div>
+                </div>
+              </a>
+              </AnimatedSection>
+
+              {/* Bitcoin White Paper (Tigrigna) */}
+              <AnimatedSection animation="slideUp" delay={40}>
+              <a
+                href="/doc_files/Bitcoin%20white%20paper%20Tigrigna.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col rounded-xl border border-cyan-400/30 bg-black/60 p-6 transition hover:border-cyan-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-lg bg-cyan-500/20 p-3">
+                    <FileText className="h-6 w-6 text-cyan-400" />
+                  </div>
+                  <div className="flex-1">
+                    <AnimatedHeading as="h3" className="text-lg font-semibold text-cyan-300 transition group-hover:text-cyan-200">
+                      ቢትኮይን፡ ስርዓት ናይ መዘና-ናብ-መዘና ኤሌክትሮኒካዊ ገንዘብ
+                    </AnimatedHeading>
+                    <p className="text-sm text-zinc-400">ትግርኛ ትርጉም (Pan-African Bitcoin Academy)</p>
+                  </div>
+                </div>
+                <p className="mb-4 flex-1 text-sm text-zinc-300">
+                  Tigrigna translation of the Bitcoin whitepaper for Eritrean learners and native Tigrigna readers.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-medium text-cyan-300">
+                    PDF (Tigrigna)
+                  </span>
+                  <div className="flex items-center gap-2 text-sm text-cyan-400">
                     <span>Download</span>
                     <ExternalLink className="h-4 w-4" />
                   </div>

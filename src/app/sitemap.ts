@@ -108,6 +108,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '', priority: 1.0, changeFrequency: 'daily', images: [ogAbsolute] },
     { path: '/about', priority: 0.9, changeFrequency: 'monthly' },
     { path: '/chapters', priority: 0.95, changeFrequency: 'weekly' },
+    { path: '/white_paper', priority: 0.88, changeFrequency: 'monthly' },
     {
       path: '/bitcoin-in-eritrea',
       priority: 0.92,

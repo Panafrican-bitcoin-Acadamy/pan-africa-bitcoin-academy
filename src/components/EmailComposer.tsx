@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { X, Paperclip, Send, Trash2, Maximize2, Minimize2, Clock, Save, ChevronDown, User, Plus } from 'lucide-react';
+import { X, Paperclip, Send, Trash2, Maximize2, Minimize2, Clock, Save, ChevronDown, User, Plus, Copy } from 'lucide-react';
 
 interface EmailComposerProps {
   onClose?: () => void;
@@ -30,12 +30,63 @@ interface EmailTemplate {
   body: string;
 }
 
+const MILESTONE_TEMPLATE: EmailTemplate = {
+  id: 'milestone-tigrigna-whitepaper',
+  name: 'Milestone: Whitepaper in Tigrigna',
+  subject: '🚀 Milestone Achieved: Bitcoin Whitepaper Now in Tigrigna',
+  body: `
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:#e5e7eb;background:#02000a;border:1px solid rgba(34,211,238,0.28);border-radius:10px;overflow:hidden;">
+      <div style="padding:20px 18px 16px;text-align:center;border-bottom:1px solid rgba(34,211,238,0.24);background:linear-gradient(180deg,#090f1d 0%,#050914 100%);">
+        <img src="https://panafricanbitcoin.com/images/logo_3.png" alt="Pan-African Bitcoin Academy logo" width="64" height="64" style="display:block;margin:0 auto 10px;object-fit:contain;" />
+        <div style="font-size:22px;line-height:1.2;color:#f8fafc;font-weight:800;letter-spacing:0.01em;">Pan-African ₿itcoin Academy</div>
+      </div>
+      <div style="padding:16px 16px 16px;">
+        <p style="margin:0 0 14px;text-align:center;font-size:30px;line-height:1.35;color:#f8fafc;font-weight:800;width:100%;">
+          ቢትኮይን፡ ስርዓት ናይ መዘና-ናብ-መዘና ኤሌክትሮኒካዊ ገንዘብ
+        </p>
+        <p style="margin:0 0 10px;font-size:15px;line-height:1.65;color:#d1d5db;">We are writing to share an important milestone from our team. We have successfully translated the Bitcoin Whitepaper into Tigrigna, making this foundational document accessible to a broader community that has historically been underserved in Bitcoin education.</p>
+        <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#d1d5db;">This achievement reflects our ongoing commitment to expanding open, inclusive access to Bitcoin knowledge. By providing the whitepaper in Tigrigna, we aim to empower more individuals to understand, engage with, and build on this technology from a position of clarity and independence.</p>
+        <div style="margin:0 0 8px;text-align:center;">
+          <a href="https://panafricanbitcoin.com/white_paper" style="display:inline-block;padding:10px 16px;border-radius:8px;background:linear-gradient(135deg,#f97316 0%,#22d3ee 100%);color:#020617;text-decoration:none;font-weight:800;font-size:13px;">Visit Website Whitepaper</a>
+        </div>
+        <div style="margin:0 0 10px;padding:6px;border:1px solid rgba(34,211,238,0.22);border-radius:7px;background:#070d1a;text-align:center;">
+          <a href="https://panafricanbitcoin.com/white_paper" style="text-decoration:none;">
+            <img src="https://image.thum.io/get/width/1240/crop/900/https://panafricanbitcoin.com/white_paper" alt="Pan-African Bitcoin Academy whitepaper page preview" width="604" style="display:block;width:100%;max-width:604px;height:auto;border-radius:5px;border:1px solid #1f2937;" />
+          </a>
+        </div>
+        <div style="margin:0 0 10px;text-align:center;">
+          <a href="https://panafricanbitcoin.com/doc_files/Bitcoin%20white%20paper%20Tigrigna.pdf" style="display:inline-block;padding:10px 16px;border-radius:8px;border:1px solid #f97316;color:#fdba74;text-decoration:none;font-weight:700;font-size:13px;margin-bottom:6px;background:rgba(249,115,22,0.08);">Download Tigrigna PDF</a>
+        </div>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#d1d5db;">We would value your feedback and support as we continue developing open-source educational materials and tools.</p>
+        <p style="margin:0;font-size:13px;line-height:1.55;color:#d1d5db;">Thank you for being part of this journey.<br/><strong style="color:#f8fafc;">Pan-African ₿itcoin Academy Team</strong></p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px auto 0;border-collapse:collapse;font-size:11px;line-height:1.2;">
+          <tr>
+            <td style="padding:0 4px;"><a href="https://panafricanbitcoin.com" style="color:#67e8f9;text-decoration:none;">panafricanbitcoin.com</a></td>
+            <td style="padding:0 2px;color:#475569;">&middot;</td>
+            <td style="padding:0 4px;"><a href="https://x.com/panafricanbtc" style="color:#9dd6ff;text-decoration:none;">X</a></td>
+            <td style="padding:0 2px;color:#475569;">&middot;</td>
+            <td style="padding:0 4px;"><a href="https://www.facebook.com/profile.php?id=61586743276906" style="color:#9dd6ff;text-decoration:none;">Facebook</a></td>
+            <td style="padding:0 2px;color:#475569;">&middot;</td>
+            <td style="padding:0 4px;"><a href="https://www.instagram.com/panafricanbitcoin/" style="color:#9dd6ff;text-decoration:none;">Instagram</a></td>
+            <td style="padding:0 2px;color:#475569;">&middot;</td>
+            <td style="padding:0 4px;"><a href="https://chat.whatsapp.com/KpjlC90BGIj1EChMHsW6Ji" style="color:#9dd6ff;text-decoration:none;">WhatsApp</a></td>
+            <td style="padding:0 2px;color:#475569;">&middot;</td>
+            <td style="padding:0 4px;"><a href="https://discord.gg/4G4TUAP7" style="color:#9dd6ff;text-decoration:none;">Discord</a></td>
+          </tr>
+        </table>
+        <p style="margin:7px 0 0;font-size:10px;line-height:1.45;color:#94a3b8;"><strong>N.B.</strong> This is not a newsletter; we are sharing our milestone.</p>
+      </div>
+    </div>
+  `,
+};
+
 const EMAIL_TEMPLATES: EmailTemplate[] = [
   { id: 'blank', name: 'Blank', subject: '', body: '' },
   { id: 'welcome', name: 'Welcome', subject: 'Welcome to Pan African Bitcoin Academy', body: '<p>Hello,</p><p>Welcome to the Pan African Bitcoin Academy! We\'re excited to have you join our program.</p><p>Best regards,<br/>Pan African Bitcoin Academy Team</p>' },
   { id: 'reminder', name: 'Session Reminder', subject: 'Reminder: Upcoming Session', body: '<p>Hello,</p><p>This is a friendly reminder about our upcoming session.</p><p>We look forward to seeing you!</p><p>Best regards,<br/>Pan African Bitcoin Academy</p>' },
   { id: 'announcement', name: 'Announcement', subject: 'Important Announcement', body: '<p>Hello everyone,</p><p>We have an important announcement to share with you.</p><p>Please take a moment to read the details below.</p><p>Best regards,<br/>Pan African Bitcoin Academy</p>' },
   { id: 'followup', name: 'Follow-up', subject: 'Following up', body: '<p>Hello,</p><p>I wanted to follow up on our previous conversation.</p><p>Please let me know if you have any questions.</p><p>Best regards</p>' },
+  MILESTONE_TEMPLATE,
 ];
 
 export default function EmailComposer({ 
@@ -44,7 +95,7 @@ export default function EmailComposer({
   initialSubject = '', 
   initialBody = '' 
 }: EmailComposerProps) {
-  const [fromName, setFromName] = useState('PanAfrican Bitcoin Academy');
+  const [fromName, setFromName] = useState('Pan-African Bitcoin Academy');
   const [fromEmail, setFromEmail] = useState('noreply@panafricanbitcoin.com');
   const [replyTo, setReplyTo] = useState('');
   const [showReplyTo, setShowReplyTo] = useState(false);
@@ -218,6 +269,20 @@ export default function EmailComposer({
     bodyRef.current?.focus();
   };
 
+  const applyTemplate = (t: EmailTemplate) => {
+    if (t.subject) setSubject(t.subject);
+    if (t.body && bodyRef.current) {
+      const compactHtml = t.body
+        .replace(/\r\n/g, '\n')
+        .replace(/>\s+\n\s+</g, '><')
+        .replace(/\n{2,}/g, '\n')
+        .trim();
+      bodyRef.current.innerHTML = compactHtml;
+      setBody(compactHtml);
+      setHasBodyText(true);
+    }
+  };
+
   const handleSend = async () => {
     if (toRecipients.length === 0) {
       setError('Please add at least one recipient');
@@ -353,13 +418,36 @@ export default function EmailComposer({
       setBccRecipients([]);
       setSubject('');
       setBody('');
-      setFromName('PanAfrican Bitcoin Academy');
+      setFromName('Pan-African Bitcoin Academy');
       setFromEmail('noreply@panafricanbitcoin.com');
       setReplyTo('');
       setShowReplyTo(false);
       if (bodyRef.current) {
         bodyRef.current.innerHTML = '';
       }
+    }
+  };
+
+  const handleCopyHtml = async () => {
+    const html = (bodyRef.current?.innerHTML || body || '').trim();
+    if (!html) {
+      setError('Nothing to copy yet. Load or write an email first.');
+      return;
+    }
+
+    try {
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+        const item = new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([html.replace(/<[^>]+>/g, '').trim()], { type: 'text/plain' }),
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(html);
+      }
+      setSuccess('Full HTML copied (including inline styles/background).');
+    } catch {
+      setError('Copy failed. Try selecting the content manually.');
     }
   };
 
@@ -740,11 +828,7 @@ export default function EmailComposer({
                       key={t.id}
                       type="button"
                       onClick={() => {
-                        if (t.subject) setSubject(t.subject);
-                        if (t.body && bodyRef.current) {
-                          bodyRef.current.innerHTML = t.body;
-                          setBody(t.body);
-                        }
+                        applyTemplate(t);
                         setShowTemplates(false);
                       }}
                       className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700"
@@ -842,6 +926,26 @@ export default function EmailComposer({
           </button>
         </div>
 
+        {/* Quick milestone section for Communications > Email Composition */}
+        <div className="mx-4 mt-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Milestone Newsletter</p>
+              <p className="mt-1 text-sm text-zinc-200">🚀 Milestone Achieved: Bitcoin Whitepaper Now in Tigrigna</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => applyTemplate(MILESTONE_TEMPLATE)}
+              className="rounded-md border border-cyan-400/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/20"
+            >
+              Load into composer
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-zinc-400">
+            Clean announcement layout with clear sections and direct action links.
+          </p>
+        </div>
+
         {/* Body Editor */}
         <div className="px-4 py-3 flex-1 min-h-[200px]">
           <div
@@ -919,6 +1023,15 @@ export default function EmailComposer({
             className="px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 rounded transition cursor-pointer"
           >
             Save Draft
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyHtml}
+            className="px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 rounded transition cursor-pointer inline-flex items-center gap-1.5"
+            title="Copy full HTML email draft"
+          >
+            <Copy className="w-4 h-4" />
+            Copy HTML
           </button>
           <button
             type="button"

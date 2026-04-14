@@ -55,6 +55,33 @@
 
 ---
 
+## 📄 Bitcoin Whitepaper (Tigrigna + English)
+
+Access the whitepaper in multiple formats:
+
+- **Interactive reader (web):** [`/white_paper`](https://panafricanbitcoin.com/white_paper)
+- **English original PDF (bitcoin.org):** [`https://bitcoin.org/bitcoin.pdf`](https://bitcoin.org/bitcoin.pdf)
+- **Tigrigna PDF (project file):** [`public/doc_files/Bitcoin white paper Tigrigna.pdf`](./public/doc_files/Bitcoin%20white%20paper%20Tigrigna.pdf)
+
+### Whitepaper Contents
+
+1. Abstract
+2. Introduction
+3. Transactions
+4. Timestamp Server
+5. Proof-of-Work
+6. Network
+7. Incentive
+8. Reclaiming Disk Space
+9. Simplified Payment Verification
+10. Combining and Splitting Value
+11. Privacy
+12. Calculations
+13. Conclusion
+14. References
+
+---
+
 ## 📸 Project Screenshots
 
 <!-- Add screenshots here when available -->

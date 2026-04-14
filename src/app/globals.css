@@ -851,3 +851,27 @@ button[class*="rounded-full"][class*="border-zinc-700"]:has(svg.lucide-circle-us
   }
 }
 
+/* Bitcoin whitepaper interactive page — clean print */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .whitepaper-root {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .whitepaper-root .text-zinc-100,
+  .whitepaper-root .text-zinc-200,
+  .whitepaper-root .text-zinc-300 {
+    color: #1a1a1a !important;
+  }
+
+  .whitepaper-root pre {
+    border-color: #ccc !important;
+    background: #f8f8f8 !important;
+    color: #111 !important;
+  }
+}
+
