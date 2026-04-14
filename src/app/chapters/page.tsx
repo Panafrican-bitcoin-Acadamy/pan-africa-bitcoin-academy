@@ -808,18 +808,12 @@ export default function ChaptersPage() {
 
               {/* Bitcoin White Paper (Tigrigna) */}
               <AnimatedSection animation="slideUp" delay={40}>
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => router.push('/white_paper')}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    router.push('/white_paper');
-                  }
-                }}
-                className="group flex flex-col rounded-xl border border-cyan-400/30 bg-black/60 p-6 transition hover:border-cyan-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-              >
+              <div className="group relative flex cursor-pointer flex-col rounded-xl border border-cyan-400/30 bg-black/60 p-6 transition hover:border-cyan-400/50 hover:bg-black/80 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]">
+                <Link
+                  href="/white_paper"
+                  aria-label="Open Tigrigna whitepaper page"
+                  className="absolute inset-0 z-10 rounded-xl"
+                />
                 <div className="mb-4 flex items-center gap-3">
                   <div className="rounded-lg bg-cyan-500/20 p-3">
                     <FileText className="h-6 w-6 text-cyan-400" />
@@ -843,7 +837,7 @@ export default function ChaptersPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(event) => event.stopPropagation()}
-                    className="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300"
+                    className="relative z-20 inline-flex cursor-pointer items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300"
                   >
                     <span>Open PDF</span>
                     <ExternalLink className="h-4 w-4" />
