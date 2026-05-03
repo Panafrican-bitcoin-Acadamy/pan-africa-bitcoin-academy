@@ -35,7 +35,8 @@ export const metadata: Metadata = {
     "Bitcoin Nakfa",
     "convert Bitcoin to Nakfa",
     "Habesha Bitcoin",
-    "Uganda Bitcoin education",
+    "BTC to Nakfa",
+    "Bitcoin to nakfa",
     "Bitcoin in Eritrea",
   ],
   alternates: {

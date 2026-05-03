@@ -54,16 +54,16 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!sanitizedTitle || sanitizedTitle.length < 10) {
+    if (!sanitizedTitle || sanitizedTitle.length < 0) {
       return NextResponse.json(
-        { error: 'Title must be at least 10 characters' },
+        { error: 'what is your Title' },
         { status: 400 }
       );
     }
     
-    if (!sanitizedContent || sanitizedContent.length < 100) {
+    if (!sanitizedContent || sanitizedContent.length < 50) {
       return NextResponse.json(
-        { error: 'Content must be at least 100 characters' },
+        { error: 'Content must be at least 50 characters' },
         { status: 400 }
       );
     }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // Check word count (minimum 500 for regular posts, 300 for pre-education, maximum 2000)
     const wordCount = sanitizedContent.trim().split(/\s+/).filter(Boolean).length;
     const isPreEducation = sanitizedCategory.trim().toLowerCase() === 'pre-education';
-    const minWords = isPreEducation ? 300 : 500;
+    const minWords = isPreEducation ? 50 : 100;
     
     if (wordCount < minWords) {
       return NextResponse.json(

@@ -187,7 +187,7 @@ export default function SubmitBlogPage() {
                     Sign In Required
                   </h1>
                   <p className="text-lg text-zinc-300 mb-6">
-                    You must be signed in to submit a blog post. This ensures that we can properly track submissions and award sats rewards when your blog is approved.
+                    You must be signed in to submit a blog post.
                   </p>
                   <button
                     onClick={() => setShowLoginModal(true)}
@@ -417,12 +417,12 @@ export default function SubmitBlogPage() {
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     rows={15}
                     className="w-full rounded-lg border border-cyan-400/20 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-50 focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 font-mono"
-                    placeholder={formData.category === "pre-education" ? "Share your thoughts, questions, or ideas about Bitcoin. What do you think Bitcoin is? What questions do you have? What interests you? (minimum 300 words, maximum 2000 words)..." : "Write your blog post here (minimum 500 words, maximum 2000 words)..."}
+                    placeholder={formData.category === "pre-education" ? "Share your thoughts, questions, or ideas about Bitcoin. What do you think Bitcoin is? What questions do you have? What interests you? (minimum 100 words, maximum 2000 words)..." : "Write your blog post here (minimum 100 words, maximum 2000 words)..."}
                   />
                   <p className="mt-2 text-xs text-zinc-400">
                     Word count: {formData.content.split(/\s+/).filter(Boolean).length} words
-                    {formData.category === "pre-education" && " (minimum 300 words for pre-education posts)"}
-                    {formData.category !== "pre-education" && " (minimum 500 words)"}
+                    {formData.category === "pre-education" && " (minimum 100 words for pre-education posts)"}
+                    {formData.category !== "pre-education" && " (minimum 100 words)"}
                   </p>
                 </div>
               </div>
