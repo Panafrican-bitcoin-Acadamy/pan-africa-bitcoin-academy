@@ -550,7 +550,7 @@ export default function DeveloperHubPage() {
                     <span className="text-zinc-300">Mailing List</span>
                   </a>
                   <a
-                    href="https://bitcoin.org/en/developer-documentation"
+                    href="https://developer.bitcoin.org/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900/50 p-3 transition hover:border-orange-500/50"
