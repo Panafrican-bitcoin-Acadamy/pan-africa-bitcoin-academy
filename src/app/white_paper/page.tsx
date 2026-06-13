@@ -14,7 +14,7 @@ const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://panafricanbitcoin.
 const pagePath = '/white_paper';
 
 const pageDescription =
-  'Satoshi Nakamoto’s Bitcoin whitepaper in Tigrinya (ትግርኛ): peer-to-peer electronic cash, proof-of-work, mining (መዓብ), and network design — interactive sections, glossary, diagrams, and learning notes. Eritrean and Horn of Africa learners welcome.';
+  'Satoshi Nakamoto’s Bitcoin whitepaper in Tigrinya (ትግርኛ): peer-to-peer electronic cash, proof-of-work, mining (ምዕዳን), and network design — interactive sections, glossary, diagrams, and learning notes. Eritrean and Horn of Africa learners welcome.';
 
 export const metadata: Metadata = {
   title: 'Bitcoin Whitepaper in Tigrinya — ቢትኮይን | Interactive reader | PanAfrican Bitcoin Academy',

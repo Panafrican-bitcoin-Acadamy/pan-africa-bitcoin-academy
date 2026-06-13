@@ -20,7 +20,7 @@ function build(
 export const WHITEPAPER_SECTIONS: WhitepaperSection[] = [
   build('s-abstract', 'ሓጺር መግለጺ', 'ሓጺር መግለጺ', 'abstract', {
     simplifiedNotes: [
-      'In one minute: Bitcoin is digital cash that does not require banks in the middle. Everyone follows the same rules enforced by proof-of-work and the longest chain.',
+      'ኣብ ሓንቲ ደቒቕ: ቢትኮይን ኣብ ማእከሉ ባንክታት ዘየድልዮ ዲጂታላዊ ጥረ ገንዘብ እዩ። ኩሉ ሰብ ብመርትዖ ስራሕን ዝነውሐ ሰንሰለትን ዝትግበር ሕግታት እዩ ዝኽተል።',
     ],
     highlights: [
       { paragraphIndex: 0, phrase: 'ካልኣይ ግዜ ናይ ምጥቃም' },
@@ -28,18 +28,18 @@ export const WHITEPAPER_SECTIONS: WhitepaperSection[] = [
       { paragraphIndex: 0, phrase: 'hash' },
     ],
     commentary: [
-      'Satoshi compresses the entire design into this abstract: signatures alone are not enough—you need an ordering of events everyone agrees on.',
+      'ሳቶሺ ንብምሉኡ እቲ ዲዛይን ኣብዚ ኣብስትራክት ይጽቕጦ: ፌርማ ጥራይ እኹል ኣይኮነን-ኩሉ ሰብ ዝሰማምዓሉ ስርዓት ፍጻመታት የድልየካ።',
     ],
     insights: {
       whatItMeans:
-        'Bitcoin’s goal is cash-like payments online without trusted intermediaries, using cryptography and a shared ledger instead.',
+        'ዕላማ ቢትኮይን ነቲ ብኢንተርነት ዝግበር ናይ ገንዘብ ክፍሊት ብዘይ ማእከላውነት ናይ እሙናት መንጎኛታት ተጠቂምካ ክትገብሮ ዘኽእል ኮይኑ፡ ኣብ ክንድኦም ክሪፕቶግራፊን ናይ ሓባር መዝገብን ምጥቃም’ዩ።',
       whyItMatters:
-        'Every later section expands one sentence from this abstract; come back here after reading and it will “click” much harder.',
+        'ነፍሲ ወከፍ ድሒሩ ዝመጽእ ክፋል ካብዚ ጽማቝ ሓሳብ ሓደ ሓረግ የስፍሕ፤ ድሕሪ ምንባብ ናብዚ ተመለስ እሞ ኣዝዩ ክርደኣካ እዩ።',
     },
   }),
   build('s-1', '1. መእተዊ', '1. መእተዊ', 's1', {
     simplifiedNotes: [
-      'ባንክታትን መርበባት ካርድን ኣብ ማእከል መብዛሕትኡ ብኢንተርነት ዝግበር ክፍሊት  ይርከባ። ምምላስ ገንዘብ ንዓደግቲ ይሕግዝ ግን ወጻኢታት ይውስኽን ንኣሽቱ ክፍሊታት ይቐትልን። ቢትኮይን “እመኑና” ብዝረጋገጽ ሒሳብ ክትክኦ ይፍትን።',
+      'ባንክታትን መርበባት ካርድን ኣብ ማእከል መብዛሕትኡ ብኢንተርነት ዝግበር ክፍሊት ይርከባ። ምምላስ ገንዘብ ንዓደግቲ ይሕግዝ ግን ወጻኢታት ይውስኽን ንኣሽቱ ክፍሊታት ይቐትልን። ቢትኮይን “እመኑና” ብዝረጋገጽ ሒሳብ ክትክኦ ይፍትን።',
     ],
     highlights: [
       { paragraphIndex: 0, phrase: 'ሳልሳይ ኣካላት' },
@@ -47,13 +47,13 @@ export const WHITEPAPER_SECTIONS: WhitepaperSection[] = [
       { paragraphIndex: 1, phrase: 'ካልኣይ ግዜ ናይ ምጥቃም' },
     ],
     commentary: [
-      'Notice the problem framing: mediation and reversibility are features for commerce but they bake in surveillance and fees.',
+      'እቲ ዝሰኣል ዘሎ ጸገም ኣስተውዕለሉ ፥ ማእከላውነትን ናይ ምምላስ ክእለትን ከም ጽባቀ ናይ ዕዳጋታት ክኽዕኑ ይኽእሉ እዮም ኣብ ስለያን መሳለጥ ክፍልታትን ዝዘርኡ እዩኦም ግን',
     ],
     insights: {
       whatItMeans:
         'መንጎኛታት “እኩያት” ኣይኮኑን-ግን መንነት፡ ምድንጓያትን ዝተሓተ ክፍሊትን ክህሉ የገድዱ። መዛኑ ንመዛኑ ዝስራሕ ዲዛይን ንዝተፈለየ ምትሕውዋስ ዝዓለመ እዩ።',
       whyItMatters:
-        'ናይ ሎሚ ላይትኒንግን ኣብ-ሰንሰለት ዝርከብ UXን ክሳብ ሕጂ ነዚ ካብ 2008 ጀሚሩ እምነት-ኣጉዲልካ ዘለዎ ዕላማ ሂዙ ይርክብ።',
+        'ናይ ሎሚ ላይትኒንግን ኣብ-ሰንሰለት ዝርከብ UXን ክሳብ ሕጂ ነዚ ካብ 2008 ጀሚሩ እምነት-ኣጉዲልካ ዘለዎ ዕላማ ሒዙ ይርክብ።',
     },
   }),
   build('s-2', '2. ምልውዋጥ', '2. ምልውዋጥ', 's2', {
@@ -70,9 +70,9 @@ export const WHITEPAPER_SECTIONS: WhitepaperSection[] = [
     ],
     insights: {
       whatItMeans:
-        'Ownership is a verifiable history; preventing double-spends is what turns that history into money.',
+        'ዋንነት ክረጋገፅ ዝኽእል ታሪኽ እዩ፤ ምክልኻል ናይ ካልኣይ ግዜ ተጠቃምነት እዩ ነቲ ታሪኽ ናብ ገንዘብ ዝቕይሮ።',
       whyItMatters:
-        'UTXO selection, coin control, and privacy tools all build on this section’s logic.',
+        'ምምራጽ UTXO፡ ምቁጽጻር ሳንቲምን መሳርሒታት ብሕታዊነትን ኩሎም ኣብ ስነ-መጐት ናይዚ ክፍሊ’ዚ ዝሃንጹ’ዮም።',
     },
     checkpoint: {
       question: 'Why isn’t a chain of signatures enough on its own?',
