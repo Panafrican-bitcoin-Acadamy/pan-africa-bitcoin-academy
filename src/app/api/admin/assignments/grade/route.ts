@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
           points,
           reward_sats,
           correct_answer,
-          answer_type
+          answer_type,
+          search_address
         ),
         profiles:student_id (
           id,
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
       reward_sats?: number;
       correct_answer?: string | null;
       answer_type?: string | null;
+      search_address?: string | null;
     };
     const studentProfile = submission.profiles;
 

@@ -24,12 +24,21 @@ export function phaseHintFromRow(
 export function assignmentRequiresInstructorReview(assignment: {
   correct_answer?: string | null;
   answer_type?: string | null;
+  search_address?: string | null;
 }): boolean {
   const ca = (assignment.correct_answer || '').trim();
   return (
     ca === 'INSTRUCTOR_REVIEW' ||
-    (assignment.answer_type === 'text' && ca === 'REVIEW_REQUIRED')
+    (assignment.answer_type === 'text' && ca === 'REVIEW_REQUIRED') ||
+    !!(assignment.search_address && assignment.search_address.trim())
   );
+}
+
+/** Explorer scavenger hunts: short factual answers reviewed by an instructor. */
+export function assignmentIsExplorerScavengerHunt(assignment: {
+  search_address?: string | null;
+}): boolean {
+  return !!(assignment.search_address && assignment.search_address.trim());
 }
 
 function syntheticAssignmentFromHint(hint: ClientAssignmentPhaseHint) {

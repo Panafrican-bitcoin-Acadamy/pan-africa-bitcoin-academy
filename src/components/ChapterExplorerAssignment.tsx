@@ -17,42 +17,43 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
   const [assignment, setAssignment] = useState<any>(null);
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
     if ((isAuthenticated && studentEmail) || (isAdminAuth && adminEmail)) {
-      fetchAssignment();
+      fetchAssignment({ initial: true });
     } else {
       setLoading(false);
+      setAssignment(null);
     }
   }, [authLoading, adminLoading, isAuthenticated, studentEmail, isAdminAuth, adminEmail, chapterSlug]);
 
-  const fetchAssignment = async () => {
+  const fetchAssignment = async ({ initial = false }: { initial?: boolean } = {}) => {
     try {
-      setLoading(true);
+      if (initial) setLoading(true);
       const email = isAdminAuth && adminEmail ? adminEmail : studentEmail;
       if (!email) return;
-      
+
       const response = await fetch(`/api/assignments?email=${encodeURIComponent(email)}`);
       if (response.ok) {
         const data = await response.json();
-        // Find assignment by chapter_slug
         const found = data.assignments?.find((a: any) => a.chapterSlug === chapterSlug);
         if (found) {
           setAssignment(found);
-          if (found.submission) {
-            setSubmitted(true);
-            setAnswer(found.submission.answer || '');
+          if (found.submission?.answer) {
+            setAnswer(found.submission.answer);
           }
+        } else {
+          setAssignment(null);
         }
       }
     } catch (err) {
       console.error('Error fetching assignment:', err);
     } finally {
-      setLoading(false);
+      if (initial) setLoading(false);
     }
   };
 
@@ -77,6 +78,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
 
     setSubmitting(true);
     setError(null);
+    setStatusMessage(null);
 
     try {
       const response = await fetch('/api/assignments/submit', {
@@ -89,12 +91,12 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok && data.success) {
-        setSubmitted(true);
-        // Refresh assignment data
-        await fetchAssignment();
+        const message = data.submission?.message as string | undefined;
+        if (message) setStatusMessage(message);
+        await fetchAssignment({ initial: false });
       } else {
         setError(data.error || 'Failed to submit assignment');
       }
@@ -112,6 +114,19 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
         </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated && !isAdminAuth) {
+    return (
+      <div className="rounded-xl border border-purple-400/30 bg-purple-500/10 p-6">
+        <div className="inline-flex items-center gap-2 rounded-lg border border-purple-400/30 bg-purple-500/10 px-4 py-3 text-purple-200">
+          <span>📋 Explorer Scavenger Hunt Assignment</span>
+        </div>
+        <p className="mt-3 text-sm text-zinc-400">
+          Please log in to view and submit this assignment.
+        </p>
       </div>
     );
   }
@@ -155,7 +170,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
           <p className="text-sm leading-relaxed text-zinc-300 break-words [overflow-wrap:anywhere] sm:text-base">
             {assignment.question}
           </p>
-          
+
           {assignment.searchAddress && (
             <div className="mt-4 rounded-xl border border-cyan-400/35 bg-cyan-500/10 p-3.5 sm:p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-cyan-300">Search Address</p>
@@ -164,7 +179,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
                   {assignment.searchAddress}
                 </code>
                 <a
-                  href="https://www.blockchain.com/explorer"
+                  href={`https://mempool.space/tx/${assignment.searchAddress}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-lg border border-cyan-400/35 bg-cyan-500/15 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/25 sm:w-auto sm:px-4"
@@ -174,7 +189,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
                 </a>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-                Use a block explorer to search for this address and find the answer.
+                Use a block explorer to search for this txid, then submit what you found. An instructor will review your answer.
               </p>
             </div>
           )}
@@ -187,7 +202,8 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
             <div className="flex-1">
               <p className="text-sm font-medium text-green-300">Assignment Completed!</p>
               <p className="text-xs text-green-400/80 mt-1">
-                You earned {assignment.submission?.pointsEarned || assignment.points} points.
+                {statusMessage ||
+                  `You earned ${assignment.submission?.pointsEarned || assignment.points} points.`}
               </p>
               {assignment.submission?.answer && (
                 <p className="text-xs text-zinc-400 mt-2">
@@ -221,7 +237,8 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
             <div className="flex-1">
               <p className="text-sm font-medium text-yellow-300">Incorrect or needs revision</p>
               <p className="text-xs text-yellow-400/80 mt-1">
-                Please try again. Review the block explorer and make sure you found the correct information.
+                {statusMessage ||
+                  'Please try again. Review the block explorer and make sure you found the correct information.'}
               </p>
               {assignment.submission?.feedback && (
                 <p className="text-xs text-zinc-300 mt-2">{assignment.submission.feedback}</p>
@@ -244,7 +261,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
                 onChange={(e) => setAnswer(e.target.value)}
                 disabled={submitting || isCompleted || awaitingInstructorReview}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-zinc-100 placeholder-zinc-500 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="Enter your answer here..."
+                placeholder="What does this txid belong to?"
                 required
               />
             </div>
@@ -277,4 +294,3 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
     </div>
   );
 }
-

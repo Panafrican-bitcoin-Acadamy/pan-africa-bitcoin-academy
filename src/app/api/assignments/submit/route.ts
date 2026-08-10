@@ -9,6 +9,8 @@ import { sendAssignmentSubmissionNotificationEmail } from '@/lib/email';
 import {
   canStudentSubmitOrReplace,
   getSubmissionPhase,
+  assignmentRequiresInstructorReview,
+  assignmentIsExplorerScavengerHunt,
 } from '@/lib/assignmentReview';
 
 function submissionToClient(sub: Record<string, unknown>) {
@@ -87,14 +89,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // For non-JSON answers, require minimum length
-    if (!answerIsJSON && sanitizedAnswer.length < 10) {
-      return NextResponse.json(
-        { error: 'Answer must be at least 10 characters long' },
-        { status: 400 }
-      );
-    }
-
     // Check authentication - user must be logged in
     const studentSession = requireStudent(req);
     const adminSession = requireAdmin(req);
@@ -169,9 +163,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if this assignment requires instructor review
-    // If correct_answer is "INSTRUCTOR_REVIEW", it requires manual grading
-    const requiresReview = assignment.correct_answer === 'INSTRUCTOR_REVIEW' || 
-                          (assignment.answer_type === 'text' && assignment.correct_answer === 'REVIEW_REQUIRED');
+    const requiresReview = assignmentRequiresInstructorReview(assignment);
+
+    // Essay-style instructor review needs substance; explorer answers can be short ("pizza").
+    if (
+      !answerIsJSON &&
+      requiresReview &&
+      !assignmentIsExplorerScavengerHunt(assignment) &&
+      sanitizedAnswer.length < 10
+    ) {
+      return NextResponse.json(
+        { error: 'Answer must be at least 10 characters long' },
+        { status: 400 }
+      );
+    }
 
     let isCorrect = false;
     let pointsEarned = 0;
@@ -181,14 +186,20 @@ export async function POST(req: NextRequest) {
       pointsEarned = 0;
     } else {
       // Normalize answer for comparison (case-insensitive, trim whitespace)
-      // Only for non-JSON answers
-      const normalizedAnswer = answerIsJSON ? sanitizedAnswer : sanitizedAnswer.trim().toLowerCase();
-      const normalizedCorrectAnswer = assignment.correct_answer
-        ? assignment.correct_answer.trim().toLowerCase()
-        : '';
+      // Only for non-JSON answers. Support "|" alternatives in correct_answer.
+      const normalizedAnswer = answerIsJSON
+        ? sanitizedAnswer
+        : sanitizedAnswer.trim().toLowerCase();
+      const correctAlternatives = (assignment.correct_answer || '')
+        .split('|')
+        .map((part: string) => part.trim().toLowerCase())
+        .filter(Boolean);
 
-      // Check if answer is correct
-      isCorrect = normalizedAnswer === normalizedCorrectAnswer;
+      isCorrect = correctAlternatives.some(
+        (expected: string) =>
+          normalizedAnswer === expected ||
+          (!answerIsJSON && expected.length >= 4 && normalizedAnswer.includes(expected))
+      );
       pointsEarned = isCorrect ? assignment.points : 0;
     }
 
