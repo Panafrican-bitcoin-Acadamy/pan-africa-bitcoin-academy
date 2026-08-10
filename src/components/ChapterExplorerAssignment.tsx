@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
-import { ExternalLink, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
+import { ExternalLink, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { inferPhaseFromPartial, phaseHintFromRow } from '@/lib/assignmentReview';
 
 interface ChapterExplorerAssignmentProps {
@@ -17,6 +17,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
   const [assignment, setAssignment] = useState<any>(null);
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,8 +47,18 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
           if (found.submission?.answer) {
             setAnswer(found.submission.answer);
           }
+          const phase = inferPhaseFromPartial(
+            found.submission ?? null,
+            phaseHintFromRow(found)
+          );
+          setSubmitted(phase === 'pending_review' || phase === 'approved');
+          if (phase === 'returned' || phase === 'rejected') {
+            setSubmitted(false);
+            setStatusMessage(null);
+          }
         } else {
           setAssignment(null);
+          setSubmitted(false);
         }
       }
     } catch (err) {
@@ -76,6 +87,17 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
       return;
     }
 
+    const phase = inferPhaseFromPartial(
+      assignment.submission ?? null,
+      phaseHintFromRow(assignment)
+    );
+    const locked =
+      submitting ||
+      phase === 'approved' ||
+      phase === 'pending_review' ||
+      submitted;
+    if (locked) return;
+
     setSubmitting(true);
     setError(null);
     setStatusMessage(null);
@@ -94,8 +116,28 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
       const data = await response.json().catch(() => ({}));
 
       if (response.ok && data.success) {
-        const message = data.submission?.message as string | undefined;
-        if (message) setStatusMessage(message);
+        const sub = data.submission;
+        const message =
+          sub?.message || 'Submitted — waiting for instructor approval.';
+        setStatusMessage(message);
+        setSubmitted(true);
+        setAssignment((prev: any) =>
+          prev
+            ? {
+                ...prev,
+                requiresInstructorReview: true,
+                status: 'pending_review',
+                submission: {
+                  ...(prev.submission || {}),
+                  ...sub,
+                  answer: trimmedAnswer,
+                  status: sub?.status || 'pending_review',
+                  phase: sub?.phase || 'pending_review',
+                  submittedAt: sub?.submittedAt || new Date().toISOString(),
+                },
+              }
+            : prev
+        );
         await fetchAssignment({ initial: false });
       } else {
         setError(data.error || 'Failed to submit assignment');
@@ -149,8 +191,9 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
     phaseHintFromRow(assignment)
   );
   const isCompleted = phase === 'approved';
-  const awaitingInstructorReview = phase === 'pending_review';
+  const awaitingInstructorReview = phase === 'pending_review' || submitted;
   const needsRetry = phase === 'returned' || phase === 'rejected';
+  const formLocked = submitting || isCompleted || awaitingInstructorReview;
 
   return (
     <div className="rounded-xl border border-purple-400/30 bg-purple-500/10 p-6">
@@ -214,17 +257,21 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
           </div>
         )}
 
-        {awaitingInstructorReview && (
+        {awaitingInstructorReview && !isCompleted && (
           <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 flex items-start gap-3">
-            <Clock className="h-5 w-5 text-cyan-300 flex-shrink-0 mt-0.5" />
+            <CheckCircle2 className="h-5 w-5 text-cyan-300 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-cyan-200">Submitted — awaiting review</p>
+              <p className="text-sm font-medium text-cyan-200">Answer submitted!</p>
               <p className="text-xs text-cyan-400/80 mt-1">
-                Your answer is with the instructor. You cannot submit again until it is approved or returned for revision.
+                {statusMessage ||
+                  'Your answer has been sent to an instructor for review. You cannot submit again until it is approved or returned for revision.'}
               </p>
-              {assignment.submission?.answer && (
+              {(assignment.submission?.answer || answer) && (
                 <p className="text-xs text-zinc-400 mt-2">
-                  Your answer: <span className="text-zinc-300">{assignment.submission.answer}</span>
+                  Your answer:{' '}
+                  <span className="text-zinc-300">
+                    {assignment.submission?.answer || answer}
+                  </span>
                 </p>
               )}
             </div>
@@ -248,7 +295,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
         )}
 
         {/* Submission Form */}
-        {!isCompleted && !awaitingInstructorReview && (
+        {!isCompleted && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="answer" className="block text-sm font-medium text-zinc-300 mb-2">
@@ -259,7 +306,8 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
                 id="answer"
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                disabled={submitting || isCompleted || awaitingInstructorReview}
+                disabled={formLocked}
+                readOnly={awaitingInstructorReview}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-zinc-100 placeholder-zinc-500 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="What does this txid belong to?"
                 required
@@ -275,7 +323,7 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={submitting || isCompleted || !answer.trim()}
+                disabled={formLocked || !answer.trim()}
                 className="rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting ? (
@@ -283,6 +331,8 @@ export function ChapterExplorerAssignment({ chapterSlug }: ChapterExplorerAssign
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Submitting...
                   </>
+                ) : awaitingInstructorReview ? (
+                  'Submitted'
                 ) : (
                   'Submit Answer'
                 )}
