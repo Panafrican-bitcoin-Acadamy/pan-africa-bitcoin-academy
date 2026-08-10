@@ -92,7 +92,6 @@ export function Footer() {
               <FooterLink href="/bitcoin-in-eritrea">Bitcoin in Eritrea</FooterLink>
               <FooterLink href="/scam">Scam Awareness</FooterLink>
               <FooterLink href="/developer-hub">Developer Hub</FooterLink>
-              <FooterLink href="/exam">Final Exam</FooterLink>
               <FooterLink href="/faq">FAQ</FooterLink>
             </ul>
           </div>
