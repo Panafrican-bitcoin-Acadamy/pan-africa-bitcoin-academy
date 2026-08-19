@@ -279,36 +279,16 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
 
       {submitted && submissionStatus && (
         <div className="space-y-4">
-          <div
-            className={`p-4 border rounded-lg ${
-              clientSubmissionIsApproved(submissionStatus, phaseHint)
-                ? 'bg-green-950/40 border-green-500/40'
-                : clientNeedsResubmit(submissionStatus, phaseHint)
-                  ? 'bg-orange-900/20 border-orange-800/50'
-                  : 'bg-green-950/40 border-green-500/40'
-            }`}
-          >
-            <p
-              className={`font-semibold text-base sm:text-lg mb-1 ${
-                clientSubmissionIsApproved(submissionStatus, phaseHint)
-                  ? 'text-green-300'
-                  : clientNeedsResubmit(submissionStatus, phaseHint)
-                    ? 'text-orange-200'
-                    : 'text-green-300'
-              }`}
-            >
+          <div className="p-4 border rounded-lg bg-green-950/40 border-green-500/40">
+            <p className="font-semibold text-base sm:text-lg mb-1 text-green-300">
               {clientSubmissionIsApproved(submissionStatus, phaseHint)
                 ? '✓ Approved'
-                : clientNeedsResubmit(submissionStatus, phaseHint)
-                  ? 'Revision needed'
-                  : '✓ Submitted — awaiting review by admin'}
+                : '✓ Submitted — awaiting review by admin'}
             </p>
             <p className="text-sm text-zinc-300">
               {clientSubmissionIsApproved(submissionStatus, phaseHint)
                 ? 'Your timeline submission has been approved by your instructor.'
-                : clientNeedsResubmit(submissionStatus, phaseHint)
-                  ? (submissionStatus.feedback || 'Your instructor requested revisions on this assignment.')
-                  : 'Your submission has been saved and sent to the admin for review. You will be notified once reviewed.'}
+                : 'Your submission has been saved and sent to the admin for review. You will be notified once reviewed.'}
             </p>
           </div>
 
@@ -331,26 +311,8 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
               </p>
             </div>
           )}
-          <div className="flex flex-wrap gap-3">
-            {clientNeedsResubmit(submissionStatus, phaseHint) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSubmitted(false);
-                  setSubmissionStatus(null);
-                  setPracticeMode(false);
-                  setAvailableTiles(shuffleArray(TILES));
-                  setTimelineSlots(Array(5).fill(null));
-                  setIsCorrect(false);
-                  setFeedback(null);
-                  setUniversalMessage(null);
-                }}
-                className="text-sm text-cyan-400 hover:text-cyan-300 underline"
-              >
-                Try again
-              </button>
-            )}
-            {clientAutoGradedCanPractice(submissionStatus, phaseHint) && (
+          {clientAutoGradedCanPractice(submissionStatus, phaseHint) && (
+            <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => setPracticeMode(true)}
@@ -358,12 +320,12 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
               >
                 Practice again
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
-      {(!submitted || practiceMode || clientNeedsResubmit(submissionStatus, phaseHint)) && (
+      {(!submitted || practiceMode) && (
         <div className="space-y-6">
           {/* Timeline */}
           <div className="space-y-3 sm:space-y-4">
