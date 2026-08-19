@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import { supabaseAdmin } from '@/lib/supabase';
-
 import { assignmentRequiresInstructorReview, getSubmissionPhase } from '@/lib/assignmentReview';
+import { ensureBuiltInAssignments } from '@/lib/builtInAssignments';
 
 /** Active assignment row from Supabase (fields used for dedupe + phase). */
 type AssignmentRow = Record<string, unknown> & {
@@ -101,6 +100,9 @@ export async function GET(req: NextRequest) {
     } else {
       profile = { id: null, cohort_id: null };
     }
+
+    // Auto-provision built-in assignments if missing from DB
+    await ensureBuiltInAssignments(supabaseAdmin);
 
     let assignmentsQuery = supabaseAdmin.from('assignments').select('*').eq('status', 'active');
 

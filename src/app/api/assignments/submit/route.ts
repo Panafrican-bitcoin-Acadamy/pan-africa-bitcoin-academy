@@ -12,6 +12,7 @@ import {
   assignmentRequiresInstructorReview,
   assignmentIsExplorerScavengerHunt,
 } from '@/lib/assignmentReview';
+import { ensureSingleBuiltInAssignment } from '@/lib/builtInAssignments';
 
 function submissionToClient(sub: Record<string, unknown>) {
   return {
@@ -148,14 +149,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Get assignment
-    const { data: assignment, error: assignmentError } = await supabaseAdmin
+    let { data: assignment } = await supabaseAdmin
       .from('assignments')
       .select('*')
       .eq('id', assignmentId)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
-    if (assignmentError || !assignment) {
+    if (!assignment) {
+      // Auto-provision if it's a built-in chapter assignment
+      const provisioned = await ensureSingleBuiltInAssignment(supabaseAdmin, assignmentId);
+      if (provisioned) {
+        assignment = provisioned as typeof assignment;
+      }
+    }
+
+    if (!assignment) {
       return NextResponse.json(
         { error: 'Assignment not found or inactive' },
         { status: 404 }
