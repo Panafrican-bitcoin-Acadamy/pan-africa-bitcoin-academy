@@ -371,19 +371,39 @@ export default function FlflPage() {
           </AnimatedSection>
 
           <AnimatedSection animation="slideUp">
-            <div className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link
-                href="/donate"
-                className="inline-flex rounded-full bg-gradient-to-r from-orange-400/90 to-cyan-500/80 px-8 py-3 text-sm font-semibold text-black transition hover:opacity-95"
-              >
-                Become a sponsor
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex rounded-full border border-cyan-400/40 px-8 py-3 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/10"
-              >
-                Get in touch
-              </Link>
+            <div className="mt-16 rounded-3xl border border-orange-500/30 bg-gradient-to-b from-zinc-900/90 via-zinc-900/60 to-zinc-950/90 p-8 sm:p-12 text-center shadow-2xl shadow-orange-950/30 backdrop-blur-md">
+              <div className="mx-auto mb-4 flex items-center justify-center">
+                <Image
+                  src="/images/logo_3.png"
+                  alt="PanAfrican Bitcoin Academy Logo"
+                  width={90}
+                  height={120}
+                  className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_0_20px_rgba(249,115,22,0.5)] transition-transform duration-300 hover:scale-105"
+                />
+              </div>
+
+              <h2 className="mt-4 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-zinc-50">
+                Every Sat Helps
+              </h2>
+
+              <p className="mx-auto mt-4 max-w-xl text-base sm:text-lg text-zinc-300 leading-relaxed">
+                Every sat contributed helps us provide Bitcoin education and make the experience more accessible to the community.
+              </p>
+
+              <div className="mt-8 flex flex-col items-center justify-center gap-5 sm:flex-row">
+                <Link
+                  href="/donate"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-cyan-400 px-10 py-4 text-base sm:text-lg font-bold text-zinc-950 shadow-xl shadow-orange-500/25 transition-all duration-300 hover:scale-105 hover:shadow-orange-500/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-zinc-950"
+                >
+                  Become a sponsor
+                </Link>
+                <Link
+                  href="/contact"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border-2 border-cyan-400/80 bg-cyan-950/50 px-10 py-4 text-base sm:text-lg font-bold text-cyan-200 shadow-xl shadow-cyan-950/50 transition-all duration-300 hover:bg-cyan-500/20 hover:border-cyan-300 hover:text-white hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-zinc-950"
+                >
+                  Get in touch
+                </Link>
+              </div>
             </div>
           </AnimatedSection>
         </div>
