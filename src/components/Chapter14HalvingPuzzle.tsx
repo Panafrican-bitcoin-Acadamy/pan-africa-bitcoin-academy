@@ -309,7 +309,7 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
             <p className="text-sm text-zinc-300">
               {clientSubmissionIsApproved(submissionStatus, phaseHint)
                 ? 'Your timeline submission has been approved by your instructor.'
-                : 'Your submission has been saved to the database. You will be notified once reviewed by your instructor.'}
+                : 'You will be notified once reviewed by your instructor.'}
             </p>
           </div>
 
