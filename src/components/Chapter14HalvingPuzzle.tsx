@@ -220,12 +220,10 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
 
       setPracticeMode(false);
       setSubmitted(true);
-      setSubmissionStatus(data.submission);
+      setSubmissionStatus(data.submission || { status: 'pending_review' });
       setIsCorrect(isCorrectAnswer);
-      
-      if (!isCorrectAnswer) {
-        setUniversalMessage("Bitcoin does not reduce gradually. It halves suddenly.");
-      }
+      setUniversalMessage(null);
+      setFeedback(null);
     } catch (err: any) {
       setError(err.message || 'Failed to submit assignment. Please try again.');
     } finally {
@@ -269,12 +267,14 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
         <p className="text-sm text-zinc-400 mb-3 sm:mb-4">
           Interactive exercise | Reward: TBD (after instructor review)
         </p>
-        <div className="p-3 sm:p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg mb-3 sm:mb-4">
-          <p className="text-sm text-orange-200 font-medium mb-2">Core rule (shown to students):</p>
-          <p className="text-sm text-orange-100 leading-relaxed">
-            Bitcoin's block reward does not decrease smoothly. It drops suddenly — like stairs, not a ramp.
-          </p>
-        </div>
+        {!submitted && (
+          <div className="p-3 sm:p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg mb-3 sm:mb-4">
+            <p className="text-sm text-orange-200 font-medium mb-2">Core rule (shown to students):</p>
+            <p className="text-sm text-orange-100 leading-relaxed">
+              Bitcoin's block reward does not decrease smoothly. It drops suddenly — like stairs, not a ramp.
+            </p>
+          </div>
+        )}
       </div>
 
       {submitted && submissionStatus && (
@@ -282,50 +282,39 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
           <div
             className={`p-4 border rounded-lg ${
               clientSubmissionIsApproved(submissionStatus, phaseHint)
-                ? 'bg-green-900/20 border-green-800/50'
-                : clientAwaitingInstructorReview(submissionStatus, phaseHint)
-                  ? 'bg-amber-900/20 border-amber-800/50'
-                  : clientNeedsResubmit(submissionStatus, phaseHint)
-                    ? 'bg-orange-900/20 border-orange-800/50'
-                    : isCorrect
-                      ? 'bg-green-900/20 border-green-800/50'
-                      : 'bg-orange-900/20 border-orange-800/50'
+                ? 'bg-green-950/40 border-green-500/40'
+                : clientNeedsResubmit(submissionStatus, phaseHint)
+                  ? 'bg-orange-900/20 border-orange-800/50'
+                  : 'bg-green-950/40 border-green-500/40'
             }`}
           >
             <p
-              className={`font-medium mb-2 ${
+              className={`font-semibold text-base sm:text-lg mb-1 ${
                 clientSubmissionIsApproved(submissionStatus, phaseHint)
-                  ? 'text-green-200'
-                  : clientAwaitingInstructorReview(submissionStatus, phaseHint)
-                    ? 'text-amber-100'
-                    : clientNeedsResubmit(submissionStatus, phaseHint)
-                      ? 'text-orange-200'
-                      : isCorrect
-                        ? 'text-green-200'
-                        : 'text-orange-200'
+                  ? 'text-green-300'
+                  : clientNeedsResubmit(submissionStatus, phaseHint)
+                    ? 'text-orange-200'
+                    : 'text-green-300'
               }`}
             >
               {clientSubmissionIsApproved(submissionStatus, phaseHint)
                 ? '✓ Approved'
-                : clientAwaitingInstructorReview(submissionStatus, phaseHint)
-                  ? '⏳ Submitted — awaiting review'
-                  : clientNeedsResubmit(submissionStatus, phaseHint)
-                    ? 'Not accepted — try again'
-                    : isCorrect
-                      ? "✓ Correct! You understand Bitcoin's halving schedule."
-                      : 'Assignment Submitted'}
+                : clientNeedsResubmit(submissionStatus, phaseHint)
+                  ? 'Revision needed'
+                  : '✓ Submitted — awaiting review by admin'}
             </p>
-            {clientAwaitingInstructorReview(submissionStatus, phaseHint) && (
-              <p className="text-sm text-zinc-300">Your instructor will approve or return this submission.</p>
-            )}
-            {clientNeedsResubmit(submissionStatus, phaseHint) && submissionStatus.feedback && (
-              <p className="text-sm text-zinc-300 mt-2">{submissionStatus.feedback}</p>
-            )}
+            <p className="text-sm text-zinc-300">
+              {clientSubmissionIsApproved(submissionStatus, phaseHint)
+                ? 'Your timeline submission has been approved by your instructor.'
+                : clientNeedsResubmit(submissionStatus, phaseHint)
+                  ? (submissionStatus.feedback || 'Your instructor requested revisions on this assignment.')
+                  : 'Your submission has been saved and sent to the admin for review. You will be notified once reviewed.'}
+            </p>
           </div>
 
-          {(!isCorrect || clientNeedsResubmit(submissionStatus, phaseHint)) && (
+          {clientSubmissionIsApproved(submissionStatus, phaseHint) && (
             <div className="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
-              <p className="text-sm text-orange-200 font-medium mb-2">Correct order:</p>
+              <p className="text-sm text-emerald-200 font-medium mb-2">Correct order:</p>
                <div className="flex items-center gap-2 flex-wrap">
                  {CORRECT_ORDER.map((tile, index) => (
                    <div key={index} className="px-3 py-2 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-indigo-400/40 rounded text-sm font-mono">

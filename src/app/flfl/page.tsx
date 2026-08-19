@@ -84,20 +84,20 @@ const sponsorshipNeeds = [
 
 const previousVideos = [
   {
-    label: 'Previous event videos',
-    href: 'https://www.youtube.com/results?search_query=FLFL+Expo',
+    label: 'Previous event videos on facebook ',
+    href: 'https://www.facebook.com/reel/1378530967495031',
+  }, 
+  {
+    label: '2025 event video on YouTube',
+    href: 'https://www.youtube.com/watch?v=F_cOAkq2jB4&t=2211s',
   },
   {
-    label: '2025 event video',
-    href: 'https://www.youtube.com/results?search_query=FLFL+Expo+2025',
+    label: '2025 kids playground YouTube',
+    href: 'https://www.youtube.com/watch?v=NuQnoFcneLg&t=198s',
   },
   {
-    label: '2025 kids playground',
-    href: 'https://www.youtube.com/results?search_query=FLFL+Expo+2025+kids',
-  },
-  {
-    label: 'More 2025 videos',
-    href: 'https://www.youtube.com/results?search_query=FLFL+Expo+2025+Uganda',
+    label: 'More 2025 videos on YouTube',
+    href: 'https://www.youtube.com/watch?v=j_uHKXQn4IA&t=289s',
   },
 ];
 
@@ -201,7 +201,8 @@ export default function FlflPage() {
                 </p>
                 <p>
                   Highlights, presentations, and activities from previous editions can be found through
-                  different YouTube channels:
+                  different YouTube channels and social media platforms, providing a glimpse of the event&apos;s scale and impact. 
+                  check out the links below for videos from previous editions.:
                 </p>
                 <div className="mt-2 space-y-4">
                   <div>
