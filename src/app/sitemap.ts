@@ -123,6 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/impact', priority: 0.75, changeFrequency: 'monthly' },
     { path: '/donate', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/events', priority: 0.85, changeFrequency: 'weekly' },
+    { path: '/flfl', priority: 0.85, changeFrequency: 'monthly' },
     { path: '/sponsor', priority: 0.65, changeFrequency: 'monthly' },
     { path: '/scam', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/search', priority: 0.55, changeFrequency: 'weekly' },

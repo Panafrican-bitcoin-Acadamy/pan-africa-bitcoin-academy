@@ -104,6 +104,7 @@ export function Footer() {
               <FooterLink href="/impact">Impact</FooterLink>
               <FooterLink href="/mentorship">Join us on mentoring</FooterLink>
               <FooterLink href="/events">Events</FooterLink>
+              <FooterLink href="/flfl">FLFL Expo 2026</FooterLink>
               <FooterLink href="/blog">Blog</FooterLink>
             </ul>
           </div>
