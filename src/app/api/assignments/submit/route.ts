@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
     const { data: existingSubmission } = await supabaseAdmin
       .from('assignment_submissions')
       .select('*')
-      .eq('assignment_id', assignmentId)
+      .eq('assignment_id', assignment.id)
       .eq('student_id', profile.id)
       .maybeSingle();
 
@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
       const { data: created, error: createError } = await supabaseAdmin
         .from('assignment_submissions')
         .insert({
-          assignment_id: assignmentId,
+          assignment_id: assignment.id,
           student_id: profile.id,
           answer: sanitizedAnswer,
           is_correct: isCorrect,

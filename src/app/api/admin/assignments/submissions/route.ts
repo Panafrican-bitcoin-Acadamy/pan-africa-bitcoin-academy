@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { ensureBuiltInAssignments } from '@/lib/builtInAssignments';
 
 /**
  * GET /api/admin/assignments/submissions
@@ -32,6 +33,9 @@ export async function GET(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Ensure built-in assignment records exist in DB
+    await ensureBuiltInAssignments(supabaseAdmin);
 
     // Build query for submissions
     let query = supabaseAdmin
@@ -119,10 +123,11 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.json({ submissions: submissionsWithCohort });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error in GET /api/admin/assignments/submissions:', err);
+    const details = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json(
-      { error: err.message || 'Internal server error' },
+      { error: details },
       { status: 500 }
     );
   }
