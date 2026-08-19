@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
 import {
   clientAutoGradedCanPractice,
-  clientNeedsResubmit,
   clientSubmissionIsApproved,
   phaseHintFromRow,
   type ClientAssignmentPhaseHint,
@@ -152,7 +151,7 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
   };
 
   const handleTileClick = (tileIndex: number) => {
-    if (submitted && submissionStatus && !clientNeedsResubmit(submissionStatus, phaseHint)) return;
+    if (submitted && submissionStatus) return;
 
     const tile = availableTiles[tileIndex];
     if (!tile) return;
@@ -184,7 +183,7 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
   };
 
   const handleSlotClick = (slotIndex: number) => {
-    if (submitted && submissionStatus && !clientNeedsResubmit(submissionStatus, phaseHint)) return;
+    if (submitted && submissionStatus) return;
 
     const tile = timelineSlots[slotIndex];
     if (!tile) return;
@@ -301,59 +300,18 @@ export function Chapter14HalvingPuzzle({ assignmentId }: Chapter14HalvingPuzzleP
 
       {submitted && submissionStatus && (
         <div className="space-y-4">
-          <div
-            className={`p-4 border rounded-lg ${
-              clientSubmissionIsApproved(submissionStatus, phaseHint)
-                ? 'bg-green-950/40 border-green-500/40'
-                : clientNeedsResubmit(submissionStatus, phaseHint)
-                  ? 'bg-red-950/40 border-red-500/40'
-                  : 'bg-amber-950/40 border-amber-500/40'
-            }`}
-          >
-            <p
-              className={`font-semibold text-base sm:text-lg mb-1 ${
-                clientSubmissionIsApproved(submissionStatus, phaseHint)
-                  ? 'text-green-300'
-                  : clientNeedsResubmit(submissionStatus, phaseHint)
-                    ? 'text-red-300'
-                    : 'text-amber-300'
-              }`}
-            >
+          <div className="p-4 border rounded-lg bg-green-950/40 border-green-500/40">
+            <p className="font-semibold text-base sm:text-lg mb-1 text-green-300">
               {clientSubmissionIsApproved(submissionStatus, phaseHint)
                 ? '✓ Approved'
-                : clientNeedsResubmit(submissionStatus, phaseHint)
-                  ? 'Revision needed'
-                  : '⏳ Submitted — awaiting review by admin'}
+                : '✓ Submitted'}
             </p>
             <p className="text-sm text-zinc-300">
               {clientSubmissionIsApproved(submissionStatus, phaseHint)
                 ? 'Your timeline submission has been approved by your instructor.'
-                : clientNeedsResubmit(submissionStatus, phaseHint)
-                  ? 'Your instructor requested revisions on your submission.'
-                  : 'Your submission has been saved and sent to the admin for review. You will be notified once reviewed.'}
+                : 'Your submission has been saved to the database. You will be notified once reviewed by your instructor.'}
             </p>
-            {clientNeedsResubmit(submissionStatus, phaseHint) && submissionStatus.feedback && (
-              <p className="mt-2 text-sm text-red-200 border-t border-red-800/40 pt-2">
-                Instructor feedback: {submissionStatus.feedback}
-              </p>
-            )}
           </div>
-
-          {clientNeedsResubmit(submissionStatus, phaseHint) && (
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setSubmitted(false);
-                  setSubmissionStatus(null);
-                  setPracticeMode(false);
-                }}
-                className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20 transition-all cursor-pointer"
-              >
-                Resubmit Assignment
-              </button>
-            </div>
-          )}
 
           {clientSubmissionIsApproved(submissionStatus, phaseHint) && (
             <div className="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
